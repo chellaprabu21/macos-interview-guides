@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Databases &amp; RESTful APIs — interview overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;--brand:#1c4f7c;--brandT:#e3edf5;--go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;--stop:#a03a2a;--stopT:#f9e7e2;--pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:var(--brand);z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:280px;flex:0 0 280px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#101620;color:#c5ccd7;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#848fa2;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#848fa2;margin:15px 4px 6px;border-top:1px solid #242b36;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#5f6a7d;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a8b0be;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#6c7789;min-width:20px}
+  nav a:hover{background:#19202b;color:#fff}nav a.active{background:var(--brand);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:850px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pur);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--brand)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.4px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .yo{border-left-color:var(--brand);background:var(--brandT)}.yo .l{color:var(--brand)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .tag{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.hot{background:var(--stopT);color:var(--stop)}
+  .tag.med{background:var(--brandT);color:var(--brand)}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.8px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.8px;color:var(--brand)}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.a{border-color:var(--brand);background:var(--brandT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .nd.p{border-color:var(--pur);background:var(--purT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Databases &amp; REST</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Databases &amp; REST<span class="s">for an interviewer who ported<br>Oracle to a Cray</span></div>
+  <div class="ct">14 sections</div>
+  <nav id="toc">
+    <div class="grp">Databases</div>
+    <a href="#model"><span class="n">01</span><span>The storage model</span></a>
+    <a href="#index"><span class="n">02</span><span>Indexes ★</span></a>
+    <a href="#txn"><span class="n">03</span><span>Transactions &amp; ACID</span></a>
+    <a href="#isolation"><span class="n">04</span><span>Isolation &amp; MVCC</span></a>
+    <a href="#locking"><span class="n">05</span><span>Locking &amp; deadlocks</span></a>
+    <a href="#schema"><span class="n">06</span><span>Schema &amp; normalisation</span></a>
+    <a href="#query"><span class="n">07</span><span>Query performance</span></a>
+    <a href="#scale"><span class="n">08</span><span>Scaling &amp; replication</span></a>
+    <a href="#nosql"><span class="n">09</span><span>SQL vs NoSQL &amp; CAP</span></a>
+    <div class="grp">APIs</div>
+    <a href="#rest"><span class="n">10</span><span>REST fundamentals</span></a>
+    <a href="#design"><span class="n">11</span><span>API design</span></a>
+    <a href="#apisec"><span class="n">12</span><span>API security</span></a>
+    <a href="#alt"><span class="n">13</span><span>REST vs GraphQL vs gRPC</span></a>
+    <div class="grp">Finish</div>
+    <a href="#qa"><span class="n">14</span><span>Interview Q&amp;A</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Round 4 focus area · "Good understanding of databases, RESTful APIs"</p>
+  <h1>Databases and APIs, at the depth this interviewer will probe.</h1>
+  <p class="led">Francis Kelly ported the Oracle RDBMS to Cray supercomputers and later designed query services and ETLs at Lookout. This is the one focus area where a confident approximation will be caught — so the aim here is precision, plus honest edges you can name.</p>
+</header>
+
+<section id="model">
+  <div class="sn">01 / DATABASES</div>
+  <h2>The storage model</h2>
+  <p class="ss">A quick foundation so the rest has somewhere to attach. Knowing this layer explains <em>why</em> indexes behave as they do.</p>
+
+  <h3>How a row actually gets read</h3>
+  <div class="dg">
+    <div class="fl">
+      <div class="nd">SQL text</div><span class="ar">→</span>
+      <div class="nd a"><b>parser</b>syntax +<br>semantics</div><span class="ar">→</span>
+      <div class="nd p"><b>planner</b>chooses an<br>execution plan</div><span class="ar">→</span>
+      <div class="nd"><b>executor</b>runs the plan</div><span class="ar">→</span>
+      <div class="nd g"><b>storage</b>pages from<br>buffer or disk</div>
+    </div>
+    <div class="cap">The planner is where performance is decided — which is why you read the plan rather than guess.</div>
+  </div>
+
+  <ul>
+    <li><strong>Pages (blocks)</strong> — the unit of I/O, typically 8 KB. Databases never read one row from disk; they read the page containing it. This is why row size and locality matter.</li>
+    <li><strong>Buffer pool</strong> — an in-memory cache of pages. Most tuning is really about keeping the working set in memory; once you're hitting disk on every query, nothing else saves you.</li>
+    <li><strong>Write-ahead log (WAL)</strong> — changes are written to a sequential log <em>before</em> the data pages. This is what makes durability possible without a random write per change, and it's what enables crash recovery and replication.</li>
+    <li><strong>Heap vs index-organised</strong> — a heap stores rows in no particular order with indexes pointing at them; an index-organised (clustered) table stores rows inside the index structure itself.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">Why this matters in an interview</span>
+    <p>Saying "the buffer pool caches pages, and the WAL gives durability without random writes" shows you understand that a database is a storage engine, not a magic box. With an interviewer who has worked inside one, that framing is worth more than memorised SQL syntax.</p></div>
+</section>
+
+<section id="index">
+  <div class="sn">02 / ★ THE CORE TOPIC</div>
+  <h2>Indexes</h2>
+  <p class="ss">The single most likely database question. Know the structures, the rules, and the costs.</p>
+
+  <h3>Structures</h3>
+  <table class="tb">
+    <tr><th>Type</th><th>How it works</th><th>Supports</th></tr>
+    <tr><td><strong>B-tree</strong></td><td>Balanced sorted tree; leaves link sideways</td><td>Equality, <strong>range scans</strong>, ordering, prefix matching. The default for a reason.</td></tr>
+    <tr><td>Hash</td><td>Hash of the key → bucket</td><td>Equality only. O(1) but no ranges, no ordering.</td></tr>
+    <tr><td>Bitmap</td><td>A bit vector per distinct value</td><td>Low-cardinality columns in analytics. Terrible under concurrent writes.</td></tr>
+    <tr><td>GIN / inverted</td><td>Term → list of rows</td><td>Full-text search, JSON containment, array membership.</td></tr>
+    <tr><td>GiST / R-tree</td><td>Spatial partitioning</td><td>Geometric and geographic queries.</td></tr>
+    <tr><td>LSM-tree</td><td>Buffered writes flushed and compacted</td><td>Write-heavy workloads (Cassandra, RocksDB). Trades read amplification for write throughput.</td></tr>
+  </table>
+
+  <h3>Clustered vs non-clustered</h3>
+  <ul>
+    <li><strong>Clustered</strong> — determines the <em>physical order of rows</em>. One per table, because the data can only be sorted one way. Range queries on the clustering key are extremely fast because the rows are physically adjacent.</li>
+    <li><strong>Non-clustered (secondary)</strong> — a separate structure holding the key plus a pointer to the row. A lookup means traversing the index, then fetching the row — a second I/O per row, which is why the planner sometimes prefers a table scan.</li>
+  </ul>
+
+  <h3>Composite indexes — the leftmost-prefix rule</h3>
+  <p>This is the classic probe. An index on <code>(tenant_id, created_at, status)</code> can serve:</p>
+<pre><code><span class="c">-- ✓ uses the index</span>
+<span class="k">WHERE</span> tenant_id = 42
+<span class="k">WHERE</span> tenant_id = 42 <span class="k">AND</span> created_at &gt; '2026-01-01'
+<span class="k">WHERE</span> tenant_id = 42 <span class="k">AND</span> created_at &gt; '...' <span class="k">AND</span> status = 'active'
+
+<span class="c">-- ✗ cannot use it (no leftmost prefix)</span>
+<span class="k">WHERE</span> created_at &gt; '2026-01-01'
+<span class="k">WHERE</span> status = 'active'</code></pre>
+  <p><strong>Why:</strong> the index is sorted by the first column, then the second within that, and so on — like a phone book sorted by surname then first name. You can't efficiently find everyone named "James" as a first name.</p>
+  <div class="bx wn"><span class="l">The follow-on rule</span>
+    <p>A <strong>range condition stops the index being used for columns after it</strong>. In <code>(a, b, c)</code> with <code>a = ? AND b &gt; ? AND c = ?</code>, the index helps for <code>a</code> and <code>b</code>, but <code>c</code> is filtered afterwards rather than seeked. So put <strong>equality columns first, range columns last</strong>. That detail is what distinguishes someone who has actually tuned queries.</p></div>
+
+  <h3>Covering indexes</h3>
+  <p>If an index contains every column the query needs — in the key or as included columns — the engine answers from the index and <strong>never touches the table</strong>. That's an "index-only scan," and it can be an order-of-magnitude win because it eliminates the row fetch.</p>
+
+  <h3>The costs — always name these</h3>
+  <ul>
+    <li><strong>Writes slow down</strong> — every <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> must update every affected index.</li>
+    <li><strong>Storage</strong> — indexes can exceed the size of the table itself.</li>
+    <li><strong>Low selectivity is useless</strong> — an index on a boolean or a status with three values usually won't be used; the planner correctly decides a scan is cheaper than millions of random row fetches.</li>
+    <li><strong>Unused indexes are pure cost</strong> — they slow writes and consume space for nothing. Auditing and dropping them is real work.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">The answer to "how do you decide what to index?"</span>
+    <p>"I start from the queries, not the schema — index for the actual access patterns, which means looking at what's slow and frequent rather than indexing everything plausible. Then: equality columns before range columns in a composite, aim for a covering index on the hottest query, check selectivity because a low-cardinality index won't get used, and audit for unused indexes because each one taxes every write. And I'd verify with <code>EXPLAIN</code> rather than assuming the planner does what I expect."</p></div>
+</section>
+
+<section id="txn">
+  <div class="sn">03</div>
+  <h2>Transactions &amp; ACID</h2>
+  <p class="ss">Know what each letter actually guarantees, and what the database does to provide it.</p>
+
+  <table class="tb">
+    <tr><th>Property</th><th>Guarantee</th><th>Mechanism</th></tr>
+    <tr><td><strong>A</strong>tomicity</td><td>All or nothing — no partial effects</td><td>Undo log / rollback segments</td></tr>
+    <tr><td><strong>C</strong>onsistency</td><td>Constraints hold before and after</td><td>Constraint checking, triggers, foreign keys</td></tr>
+    <tr><td><strong>I</strong>solation</td><td>Concurrent transactions don't see each other's intermediate state</td><td>Locking and/or MVCC</td></tr>
+    <tr><td><strong>D</strong>urability</td><td>Committed data survives a crash</td><td><strong>Write-ahead log</strong> flushed to stable storage before commit returns</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The nuance on Consistency</span>
+    <p>The C in ACID is the weakest letter — it means "the database's own constraints are satisfied," not "your business rules are correct." It's also a different thing entirely from the C in CAP, which is about all nodes seeing the same data. Interviewers sometimes probe that conflation deliberately.</p></div>
+
+  <h3>Durability in practice</h3>
+  <p>Commit means the WAL record has been <strong>fsync'd to durable storage</strong>. That fsync is often the dominant cost of a small transaction, which is why: group commit batches multiple transactions into one flush; some systems offer relaxed durability (acknowledge before fsync) trading a small crash window for throughput; and battery-backed write caches on controllers exist specifically to make fsync fast.</p>
+</section>
+
+<section id="isolation">
+  <div class="sn">04</div>
+  <h2>Isolation levels &amp; MVCC</h2>
+  <p class="ss">Know the levels <em>by the anomaly each prevents</em>, not by name alone.</p>
+
+  <h3>The anomalies</h3>
+  <table class="tb">
+    <tr><th>Anomaly</th><th>What happens</th></tr>
+    <tr><td><strong>Dirty read</strong></td><td>You read data another transaction wrote but hasn't committed — and it may roll back</td></tr>
+    <tr><td><strong>Non-repeatable read</strong></td><td>You read the same row twice in one transaction and get different values, because someone committed in between</td></tr>
+    <tr><td><strong>Phantom read</strong></td><td>You run the same <em>query</em> twice and get different <em>rows</em>, because someone inserted matching data</td></tr>
+    <tr><td><strong>Lost update</strong></td><td>Two transactions read, modify, and write the same row; one update silently disappears</td></tr>
+    <tr><td><strong>Write skew</strong></td><td>Two transactions each read a consistent state and write disjoint rows, together violating an invariant. Only Serializable prevents it.</td></tr>
+  </table>
+
+  <h3>The levels</h3>
+  <table class="tb">
+    <tr><th>Level</th><th>Prevents</th><th>Still allows</th></tr>
+    <tr><td>Read uncommitted</td><td>Nothing</td><td>Dirty reads</td></tr>
+    <tr><td>Read committed</td><td>Dirty reads</td><td>Non-repeatable and phantom reads. <strong>PostgreSQL's default.</strong></td></tr>
+    <tr><td>Repeatable read</td><td>+ non-repeatable reads</td><td>Phantoms (in the standard). <strong>MySQL InnoDB's default</strong>, which also blocks most phantoms via gap locks.</td></tr>
+    <tr><td>Serializable</td><td>Everything — behaves as if transactions ran one at a time</td><td>— at the cost of aborts or reduced concurrency</td></tr>
+  </table>
+
+  <h3>MVCC — the mechanism to name</h3>
+  <p><strong>Multi-Version Concurrency Control.</strong> Instead of readers blocking on locks, the database keeps multiple versions of each row. A transaction sees a consistent snapshot as of its start, so <strong>readers never block writers and writers never block readers</strong>. That's the single biggest reason PostgreSQL and Oracle handle mixed read/write workloads well.</p>
+  <div class="bx wn"><span class="l">The cost — worth volunteering</span>
+    <p>Old row versions accumulate and must be cleaned up. In PostgreSQL that's <strong>vacuum</strong>, and a long-running transaction holds back the cleanup horizon, causing <strong>table bloat</strong> — a very common production problem. So "we use MVCC" comes with "and we watch for long transactions." Saying that shows operational experience rather than textbook knowledge.</p></div>
+</section>
+
+<section id="locking">
+  <div class="sn">05</div>
+  <h2>Locking, deadlocks &amp; concurrency control</h2>
+  <p class="ss">The practical layer — where real applications go wrong.</p>
+
+  <h3>Optimistic vs pessimistic</h3>
+  <table class="tb">
+    <tr><th></th><th>Pessimistic</th><th>Optimistic</th></tr>
+    <tr><td>Approach</td><td>Lock first (<code>SELECT ... FOR UPDATE</code>)</td><td>Read, then check nothing changed at write time (version column)</td></tr>
+    <tr><td>Best when</td><td>Contention is high; conflicts are likely</td><td>Contention is low; conflicts are rare</td></tr>
+    <tr><td>Failure mode</td><td>Blocking, deadlocks, reduced throughput</td><td>Wasted work and retries under contention</td></tr>
+  </table>
+<pre><code><span class="c">-- Optimistic: the WHERE clause is the concurrency check</span>
+<span class="k">UPDATE</span> accounts
+   <span class="k">SET</span> balance = 50, version = version + 1
+ <span class="k">WHERE</span> id = 1 <span class="k">AND</span> version = 7;
+<span class="c">-- 0 rows affected → someone else won; re-read and retry.</span></code></pre>
+
+  <h3>Deadlocks</h3>
+  <p>Two transactions each hold a lock the other needs. Databases detect this and abort one as the victim, returning a deadlock error.</p>
+  <div class="bx go"><span class="l">The prevention answer</span>
+    <p>"<strong>Consistent lock ordering</strong> — if every transaction acquires resources in the same order, a cycle can't form. Beyond that: keep transactions short so locks are held briefly, avoid user interaction inside a transaction, use the lowest isolation level that's correct, and make the application <strong>retry on deadlock</strong>, because in a busy system they're normal rather than exceptional. Same principle as lock ordering in concurrent code — it's the identical problem at a different layer."</p></div>
+
+  <h3>Lock granularity</h3>
+  <p>Row-level locks give the best concurrency but consume more memory. Some engines <strong>escalate</strong> to page or table locks when a single transaction holds too many, which can turn a well-behaved query into a system-wide stall. Also know <strong>gap locks</strong> (MySQL locks the range between index entries to prevent phantoms) and <strong>advisory locks</strong> (application-level mutual exclusion using the database as the coordinator).</p>
+</section>
+
+<section id="schema">
+  <div class="sn">06</div>
+  <h2>Schema design &amp; normalisation</h2>
+  <p class="ss">Have a position on the normalise-vs-denormalise trade-off rather than reciting normal forms.</p>
+
+  <h3>Normal forms, briefly</h3>
+  <ul>
+    <li><strong>1NF</strong> — atomic values, no repeating groups in a column.</li>
+    <li><strong>2NF</strong> — no partial dependency on part of a composite key.</li>
+    <li><strong>3NF</strong> — no transitive dependency; non-key columns depend only on the key.</li>
+    <li>The informal version: <em>every non-key attribute depends on the key, the whole key, and nothing but the key.</em></li>
+  </ul>
+
+  <div class="bx go"><span class="l">The judgment answer</span>
+    <p>"Normalise until it hurts, denormalise until it works. Normalisation eliminates update anomalies and keeps a single source of truth, which is what you want for transactional data — user records, policy, entitlements. But it costs joins on read, so for read-heavy paths I'll denormalise deliberately: a materialised view, a counter cache, or duplicated fields — while being explicit that I've now created two places the truth lives, and I need a mechanism to keep them consistent. The mistake isn't denormalising; it's denormalising accidentally and having no plan for divergence."</p></div>
+
+  <h3>Practical schema decisions</h3>
+  <ul>
+    <li><strong>Primary keys:</strong> auto-increment integers are compact and index well but are enumerable and awkward across shards. <strong>UUIDv4</strong> is unguessable and shard-friendly but random, which causes B-tree page splits and poor locality. <strong>UUIDv7</strong> (time-ordered) is the modern compromise — unguessable <em>and</em> sequential.</li>
+    <li><strong>Soft deletes</strong> (<code>deleted_at</code>) preserve history and make recovery possible, but every query must filter on it and indexes must account for it — a very common source of leaked data.</li>
+    <li><strong>Timestamps in UTC</strong>, always, with timezone conversion at the edges.</li>
+    <li><strong>Multi-tenancy:</strong> a <code>tenant_id</code> column with row-level security (simplest, but a missing filter is a cross-tenant leak), separate schemas, or separate databases (strongest isolation, heaviest operations). At an identity company this trade-off is a real conversation.</li>
+    <li><strong>Migrations must be backward compatible</strong> in a rolling deployment — add a nullable column, backfill, then start writing, then make it non-null. Never a destructive change in one step.</li>
+  </ul>
+</section>
+
+<section id="query">
+  <div class="sn">07</div>
+  <h2>Query performance</h2>
+  <p class="ss">"This query is slow" is a likely prompt. Have a method, not a guess.</p>
+
+  <h3>The method</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd a" style="min-width:430px"><b>1 · measure</b>find the actual slow queries — slow query log, pg_stat_statements — rather than the one you suspect</div>
+      <div class="nd p" style="min-width:430px"><b>2 · EXPLAIN ANALYZE</b>read the plan. Sequential scan where you expected an index? Row estimates wildly off?</div>
+      <div class="nd" style="min-width:430px"><b>3 · diagnose</b>missing index · wrong index · stale statistics · non-sargable predicate · N+1 · fetching too much</div>
+      <div class="nd g" style="min-width:430px"><b>4 · fix and verify</b>re-run the plan; confirm the improvement under realistic data volume</div>
+    </div>
+    <div class="cap">"I'd read the plan" is the answer. Guessing at indexes is not.</div>
+  </div>
+
+  <h3>Reading a plan — what to look for</h3>
+  <ul>
+    <li><strong>Sequential scan on a large table</strong> where you expected an index seek.</li>
+    <li><strong>Estimated vs actual rows diverging badly</strong> — the planner is working from stale statistics, so it chose a bad plan. Fix with <code>ANALYZE</code>.</li>
+    <li><strong>Join algorithm:</strong> <em>nested loop</em> (good when one side is tiny), <em>hash join</em> (good for large unsorted sets), <em>merge join</em> (good when both inputs are already sorted). A nested loop over two large tables is a red flag.</li>
+    <li><strong>Sort or hash spilling to disk</strong> — the working memory setting is too low for this query.</li>
+  </ul>
+
+  <h3>Common causes</h3>
+  <table class="tb">
+    <tr><th>Cause</th><th>Fix</th></tr>
+    <tr><td><strong>N+1 queries</strong></td><td>One query for the list then one per item — the classic ORM bug. Batch or join.</td></tr>
+    <tr><td><strong>Non-sargable predicate</strong></td><td><code>WHERE YEAR(created) = 2026</code> wraps the column in a function so the index can't be used. Rewrite as a range: <code>created &gt;= '2026-01-01' AND created &lt; '2027-01-01'</code>. Same for leading wildcards in <code>LIKE '%x'</code>.</td></tr>
+    <tr><td><code>SELECT *</code></td><td>Fetches columns you don't need and defeats covering indexes.</td></tr>
+    <tr><td>Offset pagination deep in a set</td><td><code>OFFSET 100000</code> makes the database produce and discard 100,000 rows. Use keyset/cursor pagination.</td></tr>
+    <tr><td>Missing statistics</td><td>Planner mis-estimates and picks a bad plan. Run <code>ANALYZE</code>.</td></tr>
+    <tr><td>Connection exhaustion</td><td>Databases die from too many connections long before CPU. Use a pooler (PgBouncer) and bound the app's pool.</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The word to know</span>
+    <p><strong>Sargable</strong> — "Search ARGument ABLE," meaning a predicate the engine can satisfy with an index seek. Wrapping a column in a function, applying arithmetic to it, or leading a <code>LIKE</code> with a wildcard all make a predicate non-sargable. Using the term correctly signals real tuning experience.</p></div>
+</section>
+
+<section id="scale">
+  <div class="sn">08</div>
+  <h2>Scaling &amp; replication</h2>
+  <p class="ss">The order matters: exhaust the cheap options before reaching for distribution.</p>
+
+  <h3>The ladder</h3>
+  <ol>
+    <li><strong>Optimise first</strong> — indexes, queries, connection pooling. Most "we need to shard" conversations end here.</li>
+    <li><strong>Cache</strong> — the cheapest scaling there is. A read that never reaches the database costs nothing.</li>
+    <li><strong>Vertical scaling</strong> — unfashionable but effective; modern hardware is enormous, and a single PostgreSQL instance goes much further than people assume.</li>
+    <li><strong>Read replicas</strong> — for read-heavy workloads.</li>
+    <li><strong>Sharding</strong> — last, because it's a one-way door operationally.</li>
+  </ol>
+
+  <h3>Replication</h3>
+  <table class="tb">
+    <tr><th>Mode</th><th>Behaviour</th><th>Trade-off</th></tr>
+    <tr><td>Asynchronous</td><td>Primary commits without waiting for replicas</td><td>Fast, but replication lag and possible data loss on failover</td></tr>
+    <tr><td>Synchronous</td><td>Primary waits for replica acknowledgement</td><td>No data loss, but write latency now includes the network round trip</td></tr>
+    <tr><td>Semi-synchronous</td><td>Wait for at least one replica</td><td>A middle ground; common in practice</td></tr>
+  </table>
+  <div class="bx st"><span class="l">Replication lag — the bug it causes</span>
+    <p><strong>Read-after-write</strong>: a user updates their profile, is redirected, the read hits a lagging replica, and their change appears to have vanished. Fixes: route reads to the primary for a short window after a write, use a session token carrying the write position (replicas wait to catch up), or make the UI optimistic. Naming this failure unprompted shows you've operated replicas rather than just configured them.</p></div>
+
+  <h3>Sharding</h3>
+  <ul>
+    <li><strong>The shard key is the decision.</strong> Choose badly and you get hot shards, or every query fanning out to all of them. <code>tenant_id</code> is usually right for multi-tenant systems because most queries are naturally tenant-scoped.</li>
+    <li><strong>Strategies:</strong> range (simple, prone to hot spots), hash (even distribution, no range queries), directory (flexible, adds a lookup and a single point of failure).</li>
+    <li><strong>What you lose:</strong> cross-shard joins, cross-shard transactions, and global uniqueness — each of which needs a workaround.</li>
+    <li><strong>Resharding is the hard part</strong> — plan for it up front with more logical shards than physical nodes, so growth is a rebalance rather than a rewrite. <strong>Consistent hashing</strong> minimises movement when nodes change.</li>
+  </ul>
+</section>
+
+<section id="nosql">
+  <div class="sn">09</div>
+  <h2>SQL vs NoSQL &amp; CAP</h2>
+  <p class="ss">Have a real position, framed by access pattern.</p>
+
+  <h3>The families</h3>
+  <table class="tb">
+    <tr><th>Type</th><th>Examples</th><th>Fits when</th></tr>
+    <tr><td>Relational</td><td>PostgreSQL, MySQL</td><td>Joins, multi-row transactions, strong constraints, ad-hoc queries</td></tr>
+    <tr><td>Key-value</td><td>Redis, DynamoDB</td><td>Access is always by primary key; caching; session and rate-limit state</td></tr>
+    <tr><td>Document</td><td>MongoDB</td><td>Variable shape, hierarchical data read as a unit</td></tr>
+    <tr><td>Wide-column</td><td>Cassandra, HBase</td><td>Write-heavy, time-series, massive horizontal scale</td></tr>
+    <tr><td>Time-series</td><td>InfluxDB, Timescale</td><td>Telemetry — writes dominate, queries are windowed aggregates</td></tr>
+    <tr><td>Graph</td><td>Neo4j</td><td>Relationship traversal is the primary query</td></tr>
+    <tr><td>Search</td><td>Elasticsearch</td><td>Full-text and faceted search over documents</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The answer</span>
+    <p>"I choose by access pattern, not by category. Relational when I need joins, multi-row transactions, and constraints — and PostgreSQL scales far further than people assume, so 'we need NoSQL for scale' is usually premature. Key-value when access is always by primary key and there are no joins — a URL shortener or a device-posture store is a perfect fit, and that's <em>why</em> it scales, not because of the label. Time-series for telemetry. In our backend we use PostgreSQL for relational policy data and a document store for telemetry, precisely because the access patterns differ — polyglot persistence, chosen deliberately rather than by default."</p></div>
+
+  <h3>CAP — state it precisely</h3>
+  <p>Under a <strong>network partition</strong>, a distributed system must choose between <strong>consistency</strong> (refuse to answer rather than return stale data) and <strong>availability</strong> (answer, possibly with stale data). It is <em>not</em> "pick two of three" — partitions are a fact of networks, not a choice.</p>
+  <div class="bx wn"><span class="l">PACELC — the better framing</span>
+    <p>CAP only describes behaviour during a partition. <strong>PACELC</strong> extends it: <em>if Partition, choose Availability or Consistency; Else, choose Latency or Consistency.</em> That's more useful because it covers normal operation, where the real trade-off is that stronger consistency means more coordination means higher latency. Mentioning PACELC is a small, genuine signal of depth.</p></div>
+  <p>Know also <strong>BASE</strong> (Basically Available, Soft state, Eventually consistent) as the NoSQL counterpoint to ACID, and that "eventually consistent" needs a stated convergence window to be meaningful.</p>
+</section>
+
+<section id="rest">
+  <div class="sn">10 / APIs</div>
+  <h2>REST fundamentals</h2>
+  <p class="ss">Know the semantics precisely — especially safety and idempotency, which is where the interesting questions live.</p>
+
+  <h3>The constraints (what makes it REST)</h3>
+  <ul>
+    <li><strong>Client-server</strong> separation · <strong>Stateless</strong> — every request carries everything needed; no server-side session state, which is what makes horizontal scaling easy.</li>
+    <li><strong>Cacheable</strong> — responses declare their cacheability.</li>
+    <li><strong>Uniform interface</strong> — resources identified by URI, manipulated through representations, self-descriptive messages.</li>
+    <li><strong>Layered system</strong> — proxies and gateways are transparent. <strong>HATEOAS</strong> — hypermedia links; the constraint almost nobody implements, and it's fine to say so.</li>
+  </ul>
+
+  <h3>Methods — safety and idempotency</h3>
+  <table class="tb">
+    <tr><th>Method</th><th>Safe</th><th>Idempotent</th><th>Meaning</th></tr>
+    <tr><td>GET</td><td>Yes</td><td>Yes</td><td>Retrieve. Never mutates. Cacheable.</td></tr>
+    <tr><td>HEAD</td><td>Yes</td><td>Yes</td><td>GET without a body — metadata only</td></tr>
+    <tr><td>POST</td><td>No</td><td><strong>No</strong></td><td>Create, or any non-idempotent action</td></tr>
+    <tr><td>PUT</td><td>No</td><td><strong>Yes</strong></td><td>Full replace at a known URI</td></tr>
+    <tr><td>PATCH</td><td>No</td><td>Not necessarily</td><td>Partial update</td></tr>
+    <tr><td>DELETE</td><td>No</td><td>Yes</td><td>Remove (repeating it leaves the same state)</td></tr>
+  </table>
+  <p><strong>Safe</strong> = no side effects. <strong>Idempotent</strong> = doing it N times has the same effect as once.</p>
+
+  <div class="bx go"><span class="l">Why idempotency is the concept to emphasise</span>
+    <p>"It's not academic — it's what makes retries safe. A client whose request times out doesn't know whether the server processed it. If the operation is idempotent it can simply retry. If it isn't — a payment, a shorten request — you need an <strong>idempotency key</strong>: the client generates a unique ID, the server records it with the result, and a repeat with the same key returns the original result rather than acting again. That's the bridge between API design and distributed-systems reliability, and it's why at-least-once delivery plus idempotency beats chasing exactly-once."</p></div>
+
+  <h3>Status codes</h3>
+  <table class="tb">
+    <tr><th>Code</th><th>Use</th></tr>
+    <tr><td>200 / 201 / 202 / 204</td><td>OK · Created (with <code>Location</code>) · Accepted (async, still processing) · No Content</td></tr>
+    <tr><td><strong>301 vs 302</strong></td><td>Permanent is cached by browsers indefinitely — you lose analytics and revocation. Temporary keeps control. <em>The URL-shortener question.</em></td></tr>
+    <tr><td>304</td><td>Not Modified — conditional request, client's cache is valid</td></tr>
+    <tr><td>400 / 422</td><td>Malformed syntax · syntactically valid but semantically wrong</td></tr>
+    <tr><td><strong>401 vs 403</strong></td><td>Unauthenticated (who are you?) · authenticated but forbidden (you may not). Frequently confused.</td></tr>
+    <tr><td><strong>404 vs 410</strong></td><td>Not found · <strong>Gone</strong> — existed, now permanently removed. Semantically different, and useful for expiry.</td></tr>
+    <tr><td>409</td><td>Conflict — version mismatch, duplicate</td></tr>
+    <tr><td>429</td><td>Rate limited — always with <code>Retry-After</code></td></tr>
+    <tr><td>5xx</td><td>Your fault. Never leak stack traces in the body.</td></tr>
+  </table>
+  <div class="bx wn"><span class="l">A security nuance</span>
+    <p>Sometimes you should return <strong>404 instead of 403</strong> — telling an unauthorised user that a resource <em>exists</em> is itself an information leak. If the mere existence of a record is sensitive, deny by pretending it isn't there.</p></div>
+</section>
+
+<section id="design">
+  <div class="sn">11</div>
+  <h2>API design</h2>
+  <p class="ss">The concerns that separate an API you can evolve from one you're stuck with.</p>
+
+  <h3>Resources and URIs</h3>
+  <ul>
+    <li>Nouns, not verbs: <code>/users/42/sessions</code>, not <code>/getUserSessions</code>. The method is the verb.</li>
+    <li>Plural collections, consistent casing, hierarchy only where the child genuinely belongs to the parent.</li>
+    <li>For genuinely non-CRUD actions, a sub-resource is cleaner than contorting REST: <code>POST /devices/42/revoke</code>.</li>
+  </ul>
+
+  <h3>Versioning</h3>
+  <p>URI path (<code>/v1/</code>) is pragmatic, visible, and easy to route — the common choice. Header or media-type versioning is purer but harder to debug and cache. Pick one and be consistent. The real rule: <strong>never break an existing contract</strong>. Additive changes are safe; removing or renaming a field is not. Deprecate with a timeline and a <code>Sunset</code> header.</p>
+
+  <h3>Pagination</h3>
+<pre><code><span class="c">// Offset — simple, but degrades and can skip rows</span>
+GET /events?limit=50&amp;offset=100000
+<span class="c">// The DB produces and discards 100,000 rows. And if a row is</span>
+<span class="c">// inserted between pages, the reader silently misses an item.</span>
+
+<span class="c">// Cursor / keyset — stable and fast at any depth</span>
+GET /events?limit=50&amp;after=evt_01H9XK...
+<span class="c">// WHERE id > :cursor ORDER BY id LIMIT 50  — always an index seek</span></code></pre>
+  <p>Cursor pagination is the right answer for large or actively-changing sets. Say why: <strong>constant cost regardless of depth, and no skipped or duplicated rows when data shifts underneath.</strong></p>
+
+  <h3>Other design concerns</h3>
+  <ul>
+    <li><strong>Filtering and sorting</strong> as query parameters, with an allow-list of sortable fields (an arbitrary sort column is both an injection risk and a performance risk).</li>
+    <li><strong>Sparse fieldsets</strong> — <code>?fields=id,name</code> to reduce payload.</li>
+    <li><strong>ETags and conditional requests</strong> — <code>If-None-Match</code> for caching, <code>If-Match</code> for optimistic concurrency to prevent lost updates.</li>
+    <li><strong>Consistent error format</strong> — a machine-readable code, a human message, and a request ID for correlation. <code>application/problem+json</code> is the standard shape.</li>
+    <li><strong>Rate-limit headers</strong> so clients self-regulate rather than discovering limits by being blocked.</li>
+    <li><strong>Long-running work</strong> → <code>202 Accepted</code> with a status URL, rather than holding a connection open.</li>
+    <li><strong>Bulk operations</strong> — decide whether a partial failure is all-or-nothing or per-item results, and say which.</li>
+  </ul>
+
+  <div class="bx yo"><span class="l">Webhooks — worth mentioning</span>
+    <p>If push-style integration comes up: webhooks must be <strong>signed</strong> (HMAC over the payload with a shared secret) so the receiver can verify origin, include a <strong>timestamp</strong> to prevent replay, be delivered <strong>at-least-once with retries and backoff</strong> — which means receivers must be idempotent — and offer a dead-letter path for permanent failures. That's the same reliability vocabulary as the rest of this document.</p></div>
+</section>
+
+<section id="apisec">
+  <div class="sn">12</div>
+  <h2>API security</h2>
+  <p class="ss">At an identity company this is the part of the API conversation that matters most.</p>
+
+  <h3>Authentication vs authorization</h3>
+  <div class="bx st"><span class="l">The single most important point</span>
+    <p>They are <strong>different checks and both must happen on every request</strong>. Authenticating a user and then failing to verify they own the resource is <strong>broken object-level authorization</strong> — consistently the top vulnerability category in real APIs. It shows up as IDOR: change an ID in the URL, get someone else's data. The fix is authorizing against the acting principal on every access, server-side, not just at the entry point.</p></div>
+
+  <h3>Token handling</h3>
+  <ul>
+    <li><strong>Bearer tokens</strong> — whoever holds it can use it, so keep them short-lived and tightly scoped.</li>
+    <li><strong>Refresh tokens</strong> — long-lived and powerful; store securely (ideally hardware-backed), rotate on use, and make them revocable server-side. Binding a refresh token to a device key so a stolen token is useless off-device is the hardening move.</li>
+    <li><strong>JWT validation</strong> — verify the signature against the issuer's JWKS matching <code>kid</code>, then check <code>iss</code>, <code>aud</code>, <code>exp</code>/<code>nbf</code>, and <code>nonce</code>. Remember a JWT is <em>signed, not encrypted</em> — the payload is readable, so no secrets in it. And <strong>decoding is not validating</strong>.</li>
+    <li><strong>Scopes</strong> bound what a token can do — least privilege applied to credentials.</li>
+  </ul>
+
+  <h3>The checklist</h3>
+  <table class="tb">
+    <tr><th>Control</th><th>Why</th></tr>
+    <tr><td>TLS everywhere, validation never disabled</td><td>Confidentiality and server authenticity</td></tr>
+    <tr><td>Server-side input validation, allow-list based</td><td>Client validation is UX, not a control</td></tr>
+    <tr><td>Parameterised queries</td><td>Injection</td></tr>
+    <tr><td>No secrets or PII in URLs</td><td>URLs land in logs, proxies, referrers, browser history</td></tr>
+    <tr><td>Rate limiting per user and per IP</td><td>Brute force, scraping, cost control. Hardest on auth endpoints.</td></tr>
+    <tr><td>Bound response sizes and query complexity</td><td>Resource-exhaustion DoS</td></tr>
+    <tr><td>Restrictive CORS</td><td>A permissive <code>Access-Control-Allow-Origin</code> undermines the same-origin policy</td></tr>
+    <tr><td>Audit logging of security events</td><td>Detection and forensics — without logging the secrets themselves</td></tr>
+    <tr><td>Generic error messages</td><td>Detailed errors are a reconnaissance gift</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The CSRF nuance to volunteer</span>
+    <p>"Token-based APIs are naturally CSRF-resistant, because the browser doesn't automatically attach an <code>Authorization</code> header — the application must. Cookie-based sessions <em>are</em> vulnerable, because cookies are attached automatically, which is why they need <code>SameSite</code> and anti-CSRF tokens. So the auth mechanism you choose changes which class of attack you have to defend against."</p></div>
+</section>
+
+<section id="alt">
+  <div class="sn">13</div>
+  <h2>REST vs GraphQL vs gRPC</h2>
+  <p class="ss">Have an opinion with reasons, not a preference.</p>
+
+  <table class="tb">
+    <tr><th></th><th>REST</th><th>GraphQL</th><th>gRPC</th></tr>
+    <tr><td>Transport</td><td>HTTP + JSON</td><td>HTTP + JSON (usually one endpoint)</td><td>HTTP/2 + Protobuf (binary)</td></tr>
+    <tr><td>Contract</td><td>OpenAPI (optional)</td><td>Schema (mandatory, typed)</td><td>.proto (mandatory, typed)</td></tr>
+    <tr><td>Fetching</td><td>Fixed shapes — over/under-fetching</td><td>Client specifies exactly what it needs</td><td>Fixed, but efficient</td></tr>
+    <tr><td>Caching</td><td><strong>HTTP caching works natively</strong></td><td>Hard — everything is a POST to one URL</td><td>Manual</td></tr>
+    <tr><td>Streaming</td><td>No (SSE/WebSocket separately)</td><td>Subscriptions</td><td><strong>Bidirectional, first class</strong></td></tr>
+    <tr><td>Browser support</td><td>Native</td><td>Native</td><td>Needs grpc-web proxy</td></tr>
+    <tr><td>Best for</td><td>Public APIs, simple resources, cacheable reads</td><td>Varied client needs, mobile bandwidth, aggregating sources</td><td>Internal service-to-service, low latency, streaming</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">GraphQL's security cost</span>
+    <p>Letting the client shape the query means letting them shape the <em>cost</em>. Deeply nested or recursive queries can be a denial-of-service vector, so you need query depth and complexity limits, cost analysis, and persisted queries in production. Naming that trade-off is more valuable than praising the flexibility.</p></div>
+
+  <div class="bx go"><span class="l">The answer</span>
+    <p>"REST for public and partner APIs — it's cacheable, debuggable, universally understood, and HTTP semantics do a lot of work for you. gRPC for internal service-to-service where I want a typed contract, efficient binary encoding, and streaming. GraphQL when clients genuinely need varied shapes and I'm aggregating several sources — accepting that I now own query-cost control and lose HTTP caching. Most systems end up with more than one, chosen per boundary rather than standardised for its own sake."</p></div>
+</section>
+
+<section id="qa">
+  <div class="sn">14</div>
+  <h2>Interview Q&amp;A</h2>
+  <p class="ss">Two or three sentences, then depth if invited.</p>
+
+  <details class="q"><summary><span class="tag hot">LIKELY</span>How do indexes work, and when would you add one?</summary><div class="bod">
+    <p>A B-tree index is a sorted structure giving O(log n) lookup and supporting ranges and ordering, at the cost of slowing every write and consuming space. I add them from the queries, not the schema — find what's slow and frequent, then index for that access pattern. Rules I apply: equality columns before range columns in a composite because a range stops the index being used for anything after it, aim for a covering index on the hottest path so it never touches the table, and check selectivity because a low-cardinality index won't get chosen. Then verify with <code>EXPLAIN</code> rather than assuming.</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">LIKELY</span>Explain ACID.</summary><div class="bod">
+    <p>Atomicity — all or nothing, via the undo log. Consistency — the database's own constraints hold before and after, which is narrower than "your business rules are right." Isolation — concurrent transactions don't see each other's intermediate state, via locking or MVCC. Durability — committed data survives a crash, because the write-ahead log is fsync'd before commit returns. Worth noting the C in ACID is not the C in CAP; they're different properties.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>What are isolation levels?</summary><div class="bod">
+    <p>They define which concurrency anomalies you tolerate. Read committed prevents dirty reads but allows non-repeatable and phantom reads — it's PostgreSQL's default. Repeatable read also prevents non-repeatable reads. Serializable prevents everything including write skew, but costs concurrency and causes aborts you must retry. Most systems run read committed and handle the specific races explicitly, with optimistic concurrency on the rows where lost updates would matter.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>SQL or NoSQL — how do you choose?</summary><div class="bod">
+    <p>By access pattern. Relational when I need joins, multi-row transactions, and constraints — and PostgreSQL scales much further than people assume, so reaching for NoSQL "for scale" is usually premature. Key-value when access is always by primary key with no joins, which is exactly why something like a URL shortener or a posture store scales trivially. Time-series for telemetry. We run both: PostgreSQL for relational policy data, a document store for telemetry, because the access patterns genuinely differ.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>This query is slow. What do you do?</summary><div class="bod">
+    <p>Measure first — find the actually-slow queries from the slow log or <code>pg_stat_statements</code> rather than the one I suspect. Then <code>EXPLAIN ANALYZE</code> and read the plan: sequential scan where I expected a seek, estimated versus actual rows diverging badly (stale statistics), a nested loop over two large tables, or a sort spilling to disk. Common causes are a missing or wrong index, an N+1 pattern, or a non-sargable predicate like wrapping the column in a function. Fix, re-run the plan, and verify at realistic data volume.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>How would you scale a database?</summary><div class="bod">
+    <p>In order of cost. Optimise queries and indexes and pool connections — most "we need to shard" conversations end here. Then cache, because a read that never reaches the database is free. Then vertical scaling, which is unfashionable but a single modern instance goes very far. Then read replicas for read-heavy load, accepting replication lag and handling read-after-write. Sharding last, because the shard key choice is effectively irreversible and you lose cross-shard joins and transactions.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>What's the difference between PUT and POST?</summary><div class="bod">
+    <p>PUT is idempotent and replaces a resource at a URI the client already knows — sending it five times leaves the same state. POST is not idempotent and typically creates a resource whose URI the server assigns. Practically it matters for retries: a client whose request times out can safely retry a PUT, but retrying a POST might create duplicates. That's why non-idempotent endpoints should accept an idempotency key, so the server can recognise a repeat and return the original result.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>How do you secure a REST API?</summary><div class="bod">
+    <p>Authentication and authorization are separate checks and both happen on every request — authenticating then failing to verify resource ownership is broken object-level authorization, the top real-world API vulnerability. TLS everywhere with validation never disabled. Server-side allow-list input validation and parameterised queries. No secrets or PII in URLs, since they land in logs and proxies. Short-lived scoped tokens with a revocation path, rate limiting per user and IP with the auth endpoints limited hardest, restrictive CORS, and audit logging that doesn't log the secrets.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>How would you paginate a large result set?</summary><div class="bod">
+    <p>Cursor-based, not offset. Offset pagination makes the database produce and discard everything before the offset, so it degrades linearly with depth, and it silently skips or duplicates rows if data changes between pages. A cursor is an opaque encoding of the last seen sort key, so the query is always <code>WHERE id &gt; :cursor ORDER BY id LIMIT n</code> — a constant-cost index seek regardless of depth, and stable under concurrent inserts. The trade-off is you can't jump to page 50, which is almost never a real requirement.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>Explain CAP.</summary><div class="bod">
+    <p>Under a network partition a distributed system must choose between consistency — refusing to answer rather than returning stale data — and availability, answering with possibly stale data. It isn't "pick two of three," because partitions are a fact of networks rather than a design choice. PACELC is the more useful framing: during a partition choose availability or consistency, and <em>else</em>, in normal operation, choose latency or consistency — because stronger consistency means more coordination and therefore higher latency.</p></div></details>
+
+  <div class="bx st"><span class="l">If he goes deeper than you can</span>
+    <p>He may probe query planner internals, join algorithm selection, WAL mechanics, or buffer management. Say so cleanly and pivot: <em>"I've used EXPLAIN to diagnose plans and I understand the trade-offs at that level, but I haven't worked inside a query planner — you clearly have. What I'd do practically is…"</em> With a Principal engineer who ported a database engine to a supercomputer, an honest boundary plus sound reasoning reads far better than a confident guess. And you have genuine ground he'll respect: operating telemetry pipelines and stores at fleet scale.</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Databases &amp; RESTful APIs · storage model → indexes → transactions → scaling → REST semantics → API security.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

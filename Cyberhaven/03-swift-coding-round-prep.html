@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyberhaven Coding Round — Swift Ramp-Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EBEEF1; --card:#FFFFFF; --ink:#0F1419; --muted:#5C6672;
+    --line:#D6DBE1; --probe:#1F4E9C; --probe-soft:#E2EAF6;
+    --strength:#276B4E; --risk:#B0600A; --risk-bg:#FBF2E5;
+    --code-bg:#101720; --code-ink:#D5DDE8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15.5px;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:44px 22px 90px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--probe);font-weight:500;margin-bottom:12px}
+  h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+    font-size:clamp(28px,5vw,44px);line-height:1.05;letter-spacing:-.02em}
+  .dek{color:var(--muted);font-size:16px;margin-top:12px;max-width:66ch}
+
+  .toc{margin-top:30px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px 20px}
+  .toc-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;counter-reset:t;columns:2;column-gap:28px}
+  .toc li{counter-increment:t;font-size:14px;margin-bottom:6px;break-inside:avoid}
+  .toc li::before{content:counter(t,decimal-leading-zero);font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--probe);margin-right:9px}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--probe)}
+
+  section{margin-top:54px;scroll-margin-top:20px}
+  h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:25px;
+    letter-spacing:-.015em;line-height:1.18}
+  h2 .num{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+    color:var(--probe);margin-right:10px;vertical-align:2px}
+  .sub{color:var(--muted);font-size:14.5px;margin:6px 0 18px;max-width:72ch}
+  h3{font-size:16.5px;font-weight:600;margin:24px 0 9px}
+  h3:first-child{margin-top:0}
+  h4{font-size:14.5px;font-weight:600;margin:16px 0 7px;color:var(--probe)}
+  p{margin-bottom:11px}
+  p:last-child{margin-bottom:0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:20px 22px;margin-bottom:14px}
+  ul{list-style:none}
+  ul.tick li{padding-left:20px;position:relative;margin-bottom:9px}
+  ul.tick li:last-child{margin-bottom:0}
+  ul.tick li::before{content:"›";position:absolute;left:2px;color:var(--probe);font-weight:700}
+  b{font-weight:600}
+  code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:#EAEEF3;
+    padding:1px 5px;border-radius:4px;color:#243447}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+    padding:16px 18px;overflow-x:auto;margin:12px 0 14px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55}
+  pre .c{color:#7C8B9E}
+  pre .k{color:#7FB3FF}
+  pre .s{color:#8FD6A9}
+  pre .b{color:#F08A8A;font-weight:600}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:12px 0 14px;
+    font-size:13.5px}
+  th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  th{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;background:#F6F8FA}
+  td.mono,th.mono{font-family:'IBM Plex Mono',monospace;font-size:12px}
+
+  .callout{background:var(--risk-bg);border:1px solid #EFDCBE;border-left:3px solid var(--risk);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .callout b{color:var(--risk)}
+  .win{background:#EAF3EE;border:1px solid #C9E0D3;border-left:3px solid var(--strength);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .win b{color:var(--strength)}
+  .key{background:var(--probe-soft);border:1px solid #C6D6EC;border-left:3px solid var(--probe);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .key b{color:var(--probe)}
+
+  .prob{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    margin-bottom:18px;overflow:hidden}
+  .prob-h{padding:14px 20px;background:#F6F8FA;border-bottom:1px solid var(--line)}
+  .prob-h .tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--probe);display:block;margin-bottom:4px}
+  .prob-h .t{font-weight:600;font-size:16px}
+  .prob-b{padding:18px 20px}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px;font-family:'IBM Plex Mono',monospace}
+  @media(max-width:640px){.toc ol{columns:1} pre{font-size:11px} table{font-size:12.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Cyberhaven · Round 03 · 90 min · two panelists</div>
+  <h1>The Swift coding round</h1>
+  <p class="dek">You're right that this won't be a LeetCode grind. Ninety minutes with two interviewers, for a senior role on a team that ships a Swift system sensor, is a build-and-extend round: one realistic problem, implemented properly, then made concurrent, bounded and testable under questioning. This document ramps you on the Swift that round needs, then gives you the seven problems most likely to appear, with full solutions.</p>
+
+  <nav class="toc">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s1">What this round actually is</a></li>
+      <li><a href="#s2">How to run the 90 minutes</a></li>
+      <li><a href="#s3">Swift semantics they will probe</a></li>
+      <li><a href="#s4">Concurrency: GCD vs structured</a></li>
+      <li><a href="#s5">Locks, atomics, and the toolkit</a></li>
+      <li><a href="#s6">C interop — their real world</a></li>
+      <li><a href="#s7">Problem 1 · bounded queue</a></li>
+      <li><a href="#s8">Problem 2 · path-rule trie</a></li>
+      <li><a href="#s9">Problem 3 · LRU process cache</a></li>
+      <li><a href="#s10">Problem 4 · event coalescer</a></li>
+      <li><a href="#s11">Problem 5 · rate limiter</a></li>
+      <li><a href="#s12">Problem 6 · safe C struct parsing</a></li>
+      <li><a href="#s13">Problem 7 · find the race</a></li>
+      <li><a href="#s14">Performance in Swift</a></li>
+      <li><a href="#s15">Testing concurrent code</a></li>
+      <li><a href="#s16">Rapid-fire question bank</a></li>
+      <li><a href="#s17">Your prep plan</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ── 01 ── -->
+<section id="s1">
+  <h2><span class="num">01</span>What this round actually is</h2>
+  <p class="sub">A prediction, not inside knowledge — but the format constrains the possibilities tightly.</p>
+
+  <div class="card">
+    <h3>What 90 minutes with two panelists rules out</h3>
+    <ul class="tick">
+      <li><b>Not a puzzle round.</b> Nobody books 90 minutes and two senior engineers to watch you reverse a linked list. The duration exists so the problem can grow.</li>
+      <li><b>Not a whiteboard-only round.</b> That length implies real code that runs — expect a shared editor, possibly your own Xcode with screen share.</li>
+      <li><b>Not pure DSA.</b> There will be a data structure in it, but wrapped in a plausible sensor scenario. Their daily problem is event streams under load, and interview problems drift toward what the team argues about at work.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>The two shapes it will take</h3>
+    <table>
+      <tr><th>Shape</th><th>What it looks like</th></tr>
+      <tr><td><b>A · Build and extend</b><br><span class="mono">most likely</span></td><td>One problem, 3–4 escalating stages. "Implement X." → "Now make it thread-safe." → "Now bound it and handle overflow." → "Now how would you test it?" Each stage is the real question; the first is just setup.</td></tr>
+      <tr><td><b>B · Split round</b></td><td>Two 40-minute halves, one per panelist. Typically one implementation problem and one debugging/code-review problem, or one algorithmic and one API-design.</td></tr>
+    </table>
+    <p style="margin-top:11px">In both shapes the <b>extension stages carry the signal</b>. Finishing stage one quickly and cleanly buys you time in the stages that actually differentiate a senior candidate.</p>
+  </div>
+
+  <div class="key"><b>The domain tell:</b> every problem in §07–§13 is a real component of the architecture in your two previous documents — a bounded NOTIFY queue, a mute-path trie, a process cache keyed by <code>(pid, pidversion)</code>, a write coalescer, a telemetry rate limiter, a C-struct parser. That is not a coincidence. Teams generate interview problems by shrinking their own codebase.</div>
+</section>
+
+<!-- ── 02 ── -->
+<section id="s2">
+  <h2><span class="num">02</span>How to run the 90 minutes</h2>
+  <p class="sub">Process is graded as heavily as code at this level. Two panelists means one is often watching how you work rather than what you type.</p>
+
+  <table>
+    <tr><th>Minutes</th><th>Do this</th></tr>
+    <tr><td class="mono">0–5</td><td><b>Clarify before typing.</b> Single or multi producer? Bounded? What's the failure policy on overflow? Is this in the latency-critical path? Ask three sharp questions, then stop asking. Endless clarification reads as stalling.</td></tr>
+    <tr><td class="mono">5–10</td><td><b>State the approach and the complexity out loud, then get agreement.</b> "I'll do a fixed-capacity ring buffer with a lock, O(1) enqueue and dequeue, dropping oldest on overflow with a counter. Sound right?" This one sentence prevents 40 wasted minutes.</td></tr>
+    <tr><td class="mono">10–40</td><td><b>Write the type signature and the public API first, then fill in bodies.</b> Panelists can course-correct you from a signature. They cannot from a half-written function.</td></tr>
+    <tr><td class="mono">40–50</td><td><b>Test it yourself before they ask.</b> Even three assertions. Volunteering the empty case, the full case and the wraparound case is a senior signal that costs two minutes.</td></tr>
+    <tr><td class="mono">50–85</td><td><b>The extensions.</b> This is the round. Thread safety, bounding, metrics, cancellation, testability.</td></tr>
+    <tr><td class="mono">85–90</td><td><b>Ask them something real</b> about their sensor's actual implementation of what you just built.</td></tr>
+  </table>
+
+  <div class="win"><b>The habit that most separates senior from mid:</b> naming the trade-off before they find it. "I'm using a lock here rather than a lock-free ring because the contention profile is one writer and one reader, and a correct lock-free implementation is harder to review than it's worth — if profiling showed lock contention I'd revisit." That sentence is worth more than a flawless implementation delivered silently.</div>
+
+  <div class="callout"><b>Your known failure mode applies here too.</b> Under pressure you hedge. In a coding round hedging sounds like uncertainty about your own code. Commit to a design, say why, and change it if challenged — but commit first.</div>
+</section>
+
+<!-- ── 03 ── -->
+<section id="s3">
+  <h2><span class="num">03</span>Swift semantics they will probe</h2>
+  <p class="sub">Ten years of Swift means you know most of this. Skim for the ones you'd fumble if asked to justify out loud.</p>
+
+  <h3>Value vs reference — the one they always ask</h3>
+  <table>
+    <tr><th>Pick struct when</th><th>Pick class when</th></tr>
+    <tr><td>Data with no identity; you want copies; you want thread-safety by isolation; you want it in an array without a pointer chase.</td><td>You need identity, shared mutable state, deinit, inheritance, or ObjC interop.</td></tr>
+  </table>
+  <p>The sensor-flavoured answer: <b>events are structs, caches are classes.</b> An event is a value that gets handed between queues — copying it removes an entire class of data race. A cache has identity and lifetime, so it's a final class with a lock.</p>
+
+  <h4>Copy-on-write, precisely</h4>
+<pre><span class="k">struct</span> EventBatch {
+    <span class="k">private var</span> storage: ContiguousArray&lt;Event&gt;
+
+    <span class="k">mutating func</span> append(_ e: Event) {
+        <span class="c">// Array already does CoW. If you implement CoW over a class buffer:</span>
+        <span class="k">if</span> !isKnownUniquelyReferenced(&amp;buffer) { buffer = buffer.copy() }
+        ...
+    }
+}</pre>
+  <p><code>isKnownUniquelyReferenced</code> is the whole mechanism. Being able to name it is the difference between "structs are copied" and understanding why passing a large array is cheap until you mutate it.</p>
+
+  <h3>ARC pitfalls that show up in sensor code</h3>
+  <ul class="tick">
+    <li><b>Escaping closure capturing self</b> inside a class that owns the queue → retain cycle. <code>[weak self]</code> in every stored/escaping closure; <code>[unowned self]</code> only when the lifetime is genuinely guaranteed.</li>
+    <li><b><code>weak</code> costs.</b> Weak references go through side tables and are meaningfully slower than <code>unowned</code>. In hot paths this matters.</li>
+    <li><b>ARC traffic in tight loops.</b> Retain/release on every element of a loop over class instances is real overhead. <code>final</code> classes, value types, and occasionally <code>Unmanaged</code> are the escapes.</li>
+    <li><b><code>lazy var</code> is not thread-safe.</b> Two threads can both run the initialiser. Global <code>let</code> and static <code>let</code> <em>are</em> thread-safe (swift_once). This exact contrast is a favourite senior question.</li>
+  </ul>
+
+  <h3>Dispatch and generics</h3>
+  <table>
+    <tr><th>Construct</th><th>Dispatch</th><th>Note</th></tr>
+    <tr><td class="mono">final class method</td><td>static</td><td>Mark classes <code>final</code> by default; it's free performance.</td></tr>
+    <tr><td class="mono">non-final class method</td><td>vtable</td><td>Devirtualised by WMO when the compiler can prove no override.</td></tr>
+    <tr><td class="mono">protocol via generic &lt;T: P&gt;</td><td>static after specialisation</td><td>Preferred in hot paths.</td></tr>
+    <tr><td class="mono">any P (existential)</td><td>witness table + possible heap box</td><td>Flexible, slower. Fine at module boundaries, bad in a per-event loop.</td></tr>
+    <tr><td class="mono">@objc / dynamic</td><td>objc_msgSend</td><td>Slowest. Avoid entirely in the sensor path.</td></tr>
+  </table>
+  <p><code>some P</code> is an opaque type — one concrete type, resolved at compile time, no box. <code>any P</code> is an existential — heterogeneous, boxed. If you're asked "<code>some</code> vs <code>any</code>", that sentence is the answer.</p>
+
+  <h3>Memory and layout</h3>
+<pre>MemoryLayout&lt;T&gt;.size      <span class="c">// bytes actually used</span>
+MemoryLayout&lt;T&gt;.stride    <span class="c">// bytes per element in an array (size + padding)</span>
+MemoryLayout&lt;T&gt;.alignment <span class="c">// required alignment</span>
+<span class="c">// Allocating a buffer? Always use stride, never size. Classic bug source.</span></pre>
+</section>
+
+<!-- ── 04 ── -->
+<section id="s4">
+  <h2><span class="num">04</span>Concurrency: GCD vs structured concurrency</h2>
+  <p class="sub">Have an opinion here. On a sensor team it is the most consequential API choice in the codebase, and a strong opinion with reasons is the single highest-signal thing you can bring.</p>
+
+  <h3>The modern toolkit</h3>
+<pre><span class="c">// Actor: isolated mutable state, compiler-enforced.</span>
+<span class="k">actor</span> LineageGraph {
+    <span class="k">private var</span> edges: [Edge] = []
+    <span class="k">func</span> add(_ e: Edge) { edges.append(e) }      <span class="c">// implicitly serialised</span>
+    <span class="k">func</span> snapshot() -&gt; [Edge] { edges }
+}
+
+<span class="c">// Structured concurrency with cancellation.</span>
+<span class="k">try await withThrowingTaskGroup</span>(of: Result.self) { group <span class="k">in</span>
+    <span class="k">for</span> chunk <span class="k">in</span> chunks { group.addTask { <span class="k">try await</span> process(chunk) } }
+    <span class="k">for try await</span> r <span class="k">in</span> group { collect(r) }
+}   <span class="c">// group cannot outlive this scope; cancellation propagates in</span>
+
+<span class="c">// AsyncStream — the correct bridge from a C callback into async Swift,</span>
+<span class="c">// and note the buffering policy: this IS backpressure, expressed declaratively.</span>
+<span class="k">let</span> (stream, continuation) = AsyncStream&lt;Event&gt;.makeStream(
+    bufferingPolicy: .bufferingNewest(4096))
+
+continuation.onTermination = { _ <span class="k">in</span> teardownESClient() }
+
+<span class="c">// from the C callback thread:</span>
+<span class="k">switch</span> continuation.yield(event) {
+<span class="k">case</span> .enqueued:        <span class="k">break</span>
+<span class="k">case</span> .dropped:         metrics.droppedEvents += 1      <span class="c">// account for it!</span>
+<span class="k">case</span> .terminated:      <span class="k">break</span>
+@unknown <span class="k">default</span>:      <span class="k">break</span>
+}</pre>
+
+  <h3>Sendable and the concurrency checker</h3>
+  <ul class="tick">
+    <li><code>Sendable</code> = safe to cross an isolation boundary. Value types of Sendable members conform automatically; classes only if <code>final</code> and immutable, or manually synchronised.</li>
+    <li><code>@unchecked Sendable</code> = "I have synchronised this myself, trust me." Legitimate for a lock-protected final class. Be ready to justify every use — an interviewer will ask, and "I added it to silence the warning" is a failing answer.</li>
+    <li><b>Actor reentrancy</b> is the trap. An actor method suspends at every <code>await</code>, and other calls can interleave during the suspension. Invariants must hold across suspension points, not just at method boundaries. Being able to state this unprompted is a strong senior marker.</li>
+  </ul>
+
+  <h3>The opinion to hold</h3>
+  <div class="win"><b>Say something like this:</b> "I'd use structured concurrency for everything above the ingest boundary — correlation, transport, policy refresh — because the cancellation and isolation guarantees are worth a lot in a long-lived daemon. But I would not put an actor in the ESF AUTH path. An actor hop is a suspension with unbounded queuing latency, and that path has a hard deadline enforced by the kernel. That layer stays synchronous with an unfair lock and preallocated storage. Right tool, right layer."</div>
+  <p>That answer demonstrates you know modern Swift <em>and</em> know when not to use it, which is exactly the judgement a systems team is screening for. Candidates who reach for actors everywhere and candidates who've never used them both lose here.</p>
+
+  <table>
+    <tr><th>Layer</th><th>Tool</th><th>Why</th></tr>
+    <tr><td>ESF / NE callback</td><td>Plain function + lock</td><td>Hard deadline; no suspension allowed.</td></tr>
+    <tr><td>Ingest queue</td><td>Lock-protected ring, or AsyncStream with a bounded policy</td><td>Explicit, measurable backpressure.</td></tr>
+    <tr><td>Correlation / graph</td><td>Actor or serial queue</td><td>Isolated mutable state, latency-tolerant.</td></tr>
+    <tr><td>Transport</td><td><code>Task</code> + async/await</td><td>Retry, backoff, cancellation on shutdown.</td></tr>
+  </table>
+</section>
+
+<!-- ── 05 ── -->
+<section id="s5">
+  <h2><span class="num">05</span>Locks, atomics, and the toolkit</h2>
+
+  <table>
+    <tr><th>Primitive</th><th>Use for</th><th>Watch out</th></tr>
+    <tr><td class="mono">os_unfair_lock</td><td>Fastest lock. Short critical sections in hot paths.</td><td><b>Must not be stored as a plain Swift property</b> — see below. Not recursive. Not FIFO.</td></tr>
+    <tr><td class="mono">OSAllocatedUnfairLock</td><td>macOS 13+. The correct modern wrapper.</td><td>Use it if the deployment target allows; otherwise wrap manually.</td></tr>
+    <tr><td class="mono">NSLock</td><td>General purpose, ObjC-era.</td><td>Slower; fine outside hot paths.</td></tr>
+    <tr><td class="mono">DispatchQueue (serial)</td><td>Serialisation without a lock.</td><td>Each hop is a context switch. <code>sync</code> from the wrong queue deadlocks.</td></tr>
+    <tr><td class="mono">Concurrent queue + barrier</td><td>Reader-writer.</td><td>Easy to get wrong — see Problem 7.</td></tr>
+    <tr><td class="mono">DispatchSemaphore</td><td>Bounded resource counts.</td><td><b>Never</b> block a Swift-concurrency thread on one — you can exhaust the cooperative pool and deadlock the process.</td></tr>
+    <tr><td class="mono">Atomics (swift-atomics)</td><td>Counters, flags.</td><td>Memory ordering must be chosen deliberately, not by copy-paste.</td></tr>
+  </table>
+
+  <div class="callout"><b>The <code>os_unfair_lock</code> trap — a genuinely great answer if it comes up.</b> Storing <code>var lock = os_unfair_lock()</code> as a property and calling <code>os_unfair_lock_lock(&amp;lock)</code> is undefined behaviour: Swift's exclusivity rules mean <code>&amp;lock</code> may hand you a temporary copy, so different threads can lock different memory. It usually appears to work, which makes it worse. The lock must live at a stable address.</div>
+
+<pre><span class="k">final class</span> UnfairLock: @unchecked Sendable {
+    <span class="k">private let</span> _lock: UnsafeMutablePointer&lt;os_unfair_lock&gt;
+
+    <span class="k">init</span>() {
+        _lock = .allocate(capacity: 1)        <span class="c">// stable address — the whole point</span>
+        _lock.initialize(to: os_unfair_lock())
+    }
+    <span class="k">deinit</span> { _lock.deinitialize(count: 1); _lock.deallocate() }
+
+    @inline(__always)
+    <span class="k">func</span> withLock&lt;T&gt;(_ body: () <span class="k">throws</span> -&gt; T) <span class="k">rethrows</span> -&gt; T {
+        os_unfair_lock_lock(_lock)
+        <span class="k">defer</span> { os_unfair_lock_unlock(_lock) }
+        <span class="k">return try</span> body()
+    }
+}</pre>
+  <p>Every solution below uses this type. Introducing it unprompted, with the one-line reason, is a strong opening move.</p>
+</section>
+
+<!-- ── 06 ── -->
+<section id="s6">
+  <h2><span class="num">06</span>C interop — their real world</h2>
+  <p class="sub">EndpointSecurity is a C API. Every Swift engineer on that team writes bridging code weekly. This is the most under-prepared area in most candidates and the most likely place to stand out.</p>
+
+  <h3>The <code>es_string_token_t</code> conversion — a real bug factory</h3>
+<pre><span class="c">// es_string_token_t = { size_t length; const char *data }</span>
+<span class="c">// It is NOT guaranteed NUL-terminated. String(cString:) can over-read.</span>
+
+<span class="k">extension</span> es_string_token_t {
+    <span class="k">var</span> stringValue: String {
+        <span class="k">guard let</span> data, length &gt; 0 <span class="k">else</span> { <span class="k">return</span> "" }
+        <span class="k">return</span> String(decoding: UnsafeRawBufferPointer(start: data, count: length),
+                      as: UTF8.self)          <span class="c">// length-bounded, never over-reads</span>
+    }
+}</pre>
+  <div class="win"><b>Why this scores:</b> it's a bounded-read fix to an unbounded-read bug in a security product's parser, written for a manager who used to do penetration testing. If you get any opening to show this, take it.</div>
+
+  <h3>Making <code>audit_token_t</code> usable as a key</h3>
+<pre><span class="c">// audit_token_t imports into Swift as a tuple of 8 UInt32 — not Hashable.</span>
+<span class="k">struct</span> ProcessKey: Hashable, Sendable {
+    <span class="k">let</span> pid: pid_t
+    <span class="k">let</span> pidversion: Int32
+
+    <span class="k">init</span>(_ token: audit_token_t) {
+        <span class="k">var</span> t = token
+        pid        = audit_token_to_pid(t)
+        pidversion = audit_token_to_pidversion(t)   <span class="c">// PID reuse guard</span>
+    }
+}</pre>
+  <p>Keying on <code>pid</code> alone is the misattribution bug from document 1. Bringing it up here connects your coding round to your architecture answer, which is exactly the coherence panels talk about afterwards.</p>
+
+  <h3>Pointer lifetime rules to state correctly</h3>
+  <ul class="tick">
+    <li><code>withUnsafeBytes { }</code> — the pointer is <b>only valid inside the closure</b>. Escaping it is undefined behaviour, even though it compiles. Interviewers love asking this.</li>
+    <li>Copy out of C memory into Swift value types at the boundary. Never hold a C pointer past the callback — with ESF specifically, the message is freed when the handler returns unless you <code>es_retain_message</code>.</li>
+    <li><code>withMemoryRebound(to:capacity:)</code> for type punning; raw pointers plus <code>loadUnaligned(fromByteOffset:as:)</code> for wire formats, because <code>load(as:)</code> traps on misalignment.</li>
+    <li>C callbacks that take a context pointer: <code>Unmanaged.passUnretained(self).toOpaque()</code> going in, <code>Unmanaged&lt;T&gt;.fromOpaque(ctx).takeUnretainedValue()</code> coming back. Know who owns the lifetime.</li>
+  </ul>
+</section>
+
+<!-- ══ PROBLEMS ══ -->
+<section id="s7">
+  <h2><span class="num">07</span>Problem 1 · Bounded event queue with backpressure</h2>
+  <p class="sub">The single most likely problem on this list. It is literally their NOTIFY ingest path.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Prompt as they'd give it</span><span class="t">"Events arrive from a kernel callback faster than we can process them. Build a queue that never blocks the producer and never grows without bound."</span></div>
+    <div class="prob-b">
+<pre><span class="k">struct</span> QueueStats: Sendable {
+    <span class="k">var</span> enqueued: UInt64 = 0
+    <span class="k">var</span> dropped:  UInt64 = 0
+    <span class="k">var</span> highWaterMark: Int = 0
+}
+
+<span class="k">final class</span> BoundedEventQueue&lt;Element&gt;: @unchecked Sendable {
+
+    <span class="k">enum</span> OverflowPolicy { <span class="k">case</span> dropNewest, dropOldest }
+
+    <span class="k">private var</span> storage: ContiguousArray&lt;Element?&gt;
+    <span class="k">private var</span> head = 0            <span class="c">// read index</span>
+    <span class="k">private var</span> tail = 0            <span class="c">// write index</span>
+    <span class="k">private var</span> count = 0
+    <span class="k">private var</span> stats = QueueStats()
+
+    <span class="k">private let</span> capacity: Int
+    <span class="k">private let</span> policy: OverflowPolicy
+    <span class="k">private let</span> lock = UnfairLock()
+
+    <span class="k">init</span>(capacity: Int, policy: OverflowPolicy = .dropOldest) {
+        precondition(capacity &gt; 0)
+        <span class="k">self</span>.capacity = capacity
+        <span class="k">self</span>.policy = policy
+        <span class="c">// Preallocate. No allocation on the hot path, ever.</span>
+        <span class="k">self</span>.storage = ContiguousArray(repeating: <span class="k">nil</span>, count: capacity)
+    }
+
+    <span class="c">/// Called from the kernel callback thread. Never blocks, never allocates.</span>
+    @discardableResult
+    <span class="k">func</span> enqueue(_ element: Element) -&gt; Bool {
+        lock.withLock {
+            <span class="k">if</span> count == capacity {
+                <span class="k">switch</span> policy {
+                <span class="k">case</span> .dropNewest:
+                    stats.dropped &amp;+= 1
+                    <span class="k">return false</span>
+                <span class="k">case</span> .dropOldest:
+                    storage[head] = <span class="k">nil</span>
+                    head = (head &amp;+ 1) % capacity
+                    count &amp;-= 1
+                    stats.dropped &amp;+= 1
+                }
+            }
+            storage[tail] = element
+            tail = (tail &amp;+ 1) % capacity
+            count &amp;+= 1
+            stats.enqueued &amp;+= 1
+            stats.highWaterMark = max(stats.highWaterMark, count)
+            <span class="k">return true</span>
+        }
+    }
+
+    <span class="c">/// Drain in bulk — one lock acquisition per batch, not per element.</span>
+    <span class="k">func</span> drain(max limit: Int) -&gt; [Element] {
+        lock.withLock {
+            <span class="k">let</span> n = min(limit, count)
+            <span class="k">guard</span> n &gt; 0 <span class="k">else</span> { <span class="k">return</span> [] }
+            <span class="k">var</span> out = [Element]()
+            out.reserveCapacity(n)
+            <span class="k">for</span> _ <span class="k">in</span> 0..&lt;n {
+                out.append(storage[head]!)
+                storage[head] = <span class="k">nil</span>          <span class="c">// release the reference</span>
+                head = (head &amp;+ 1) % capacity
+            }
+            count &amp;-= n
+            <span class="k">return</span> out
+        }
+    }
+
+    <span class="k">var</span> statistics: QueueStats { lock.withLock { stats } }
+}</pre>
+
+      <h4>The points to make while writing it</h4>
+      <ul class="tick">
+        <li><b>Preallocated <code>ContiguousArray</code>.</b> No allocation in <code>enqueue</code>. Say this — it's the reason the structure exists.</li>
+        <li><b><code>storage[head] = nil</code> on drain.</b> Without it you hold references to drained elements until the slot is overwritten — a slow leak that only shows up under a quiet fleet, which is the worst kind.</li>
+        <li><b>Drop policy is a parameter, not a decision.</b> For file events you want oldest-dropped; for alerts you want newest-dropped. Making it a policy shows product thinking.</li>
+        <li><b>Dropping is counted and exposed.</b> Silent loss in a security sensor is a correctness bug, not a perf trade.</li>
+        <li><b>Bulk drain.</b> One lock per batch. If you drain element-by-element you've built a contention machine.</li>
+        <li><b><code>&amp;+</code> wrapping arithmetic</b> on counters that will run for months.</li>
+      </ul>
+
+      <h4>Extensions they will ask for</h4>
+      <table>
+        <tr><th>Ask</th><th>Answer</th></tr>
+        <tr><td>"Make the consumer wait when empty."</td><td>Add a <code>DispatchSemaphore</code> signalled per enqueue — but flag that the consumer must then never be a Swift-concurrency thread. Or expose an <code>AsyncStream</code> instead.</td></tr>
+        <tr><td>"Multiple consumers?"</td><td>Already safe — the lock covers it. Ordering across consumers is no longer guaranteed; say so.</td></tr>
+        <tr><td>"Can you make it lock-free?"</td><td>Single-producer/single-consumer, yes: atomic head and tail with acquire/release ordering. Then push back — a reviewable lock beats an unreviewable lock-free ring unless profiling proved contention. That pushback is the answer they want.</td></tr>
+        <tr><td>"Prioritise some events?"</td><td>Two rings, drain high-priority first with a starvation guard (e.g. every Nth batch takes from low). Naming starvation unprompted scores.</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ── 08 ── -->
+<section id="s8">
+  <h2><span class="num">08</span>Problem 2 · Path-rule trie</h2>
+  <p class="sub">Their mute-path and policy matcher. Tests string handling, tree structure, and hot-path thinking in one problem.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Prompt</span><span class="t">"We have thousands of path rules — some exact, some prefix. Given a file path, find the matching rule fast."</span></div>
+    <div class="prob-b">
+<pre><span class="k">struct</span> Rule: Sendable { <span class="k">let</span> id: Int; <span class="k">let</span> eventMask: UInt64 }
+
+<span class="k">final class</span> PathRuleTrie {
+
+    <span class="k">private final class</span> Node {
+        <span class="k">var</span> children: [String: Node] = [:]
+        <span class="k">var</span> exactRule:  Rule?     <span class="c">// matches only this full path</span>
+        <span class="k">var</span> prefixRule: Rule?     <span class="c">// matches this path and everything below it</span>
+    }
+
+    <span class="k">private let</span> root = Node()
+
+    <span class="k">enum</span> Kind { <span class="k">case</span> exact, prefix }
+
+    <span class="k">func</span> insert(_ path: String, kind: Kind, rule: Rule) {
+        <span class="k">var</span> node = root
+        <span class="k">for</span> component <span class="k">in</span> path.split(separator: "/", omittingEmptySubsequences: <span class="k">true</span>) {
+            <span class="k">let</span> key = String(component)
+            <span class="k">if let</span> next = node.children[key] {
+                node = next
+            } <span class="k">else</span> {
+                <span class="k">let</span> fresh = Node()
+                node.children[key] = fresh
+                node = fresh
+            }
+        }
+        <span class="k">switch</span> kind {
+        <span class="k">case</span> .exact:  node.exactRule = rule
+        <span class="k">case</span> .prefix: node.prefixRule = rule
+        }
+    }
+
+    <span class="c">/// Longest-prefix-wins, with exact match taking precedence at the leaf.</span>
+    <span class="k">func</span> match(_ path: String) -&gt; Rule? {
+        <span class="k">var</span> node = root
+        <span class="k">var</span> best = root.prefixRule
+        <span class="k">for</span> component <span class="k">in</span> path.split(separator: "/", omittingEmptySubsequences: <span class="k">true</span>) {
+            <span class="k">guard let</span> next = node.children[String(component)] <span class="k">else</span> { <span class="k">return</span> best }
+            node = next
+            <span class="k">if let</span> p = next.prefixRule { best = p }   <span class="c">// deeper prefix wins</span>
+        }
+        <span class="k">return</span> node.exactRule ?? best
+    }
+}</pre>
+
+      <h4>Complexity</h4>
+      <p>Insert and match are both <b>O(d)</b> in path depth, independent of the number of rules — which is the entire point versus scanning a rule list. State that explicitly: "matching cost is independent of rule count, so policy can grow without touching the hot path."</p>
+
+      <h4>The optimisation conversation (this is where seniority shows)</h4>
+      <ul class="tick">
+        <li><b><code>String(component)</code> allocates on every lookup.</b> Spot it yourself. Fixes: intern components into <code>Int</code> IDs at policy-compile time and key children by <code>Int</code>; or key by a precomputed hash of the UTF-8 bytes; or match over <code>path.utf8</code> without materialising components at all.</li>
+        <li><b>Swift <code>String</code> is grapheme-aware and expensive.</b> For byte-oriented filesystem paths, work over <code>String.UTF8View</code> or raw <code>[UInt8]</code>.</li>
+        <li><b>Case sensitivity.</b> APFS is case-insensitive by default but case-preserving, and HFS+ volumes vary. Ask which semantics they want — this is a genuine correctness question, not pedantry, and it's an evasion vector in a DLP product.</li>
+        <li><b>Normalisation.</b> <code>/a/./b</code>, <code>/a//b</code>, <code>/a/../a/b</code> and symlinks all reach the same file. Rules must be matched against a canonicalised path or they're trivially bypassed. In ESF you use the resolved path from the event rather than canonicalising yourself.</li>
+        <li><b>Unicode normalisation.</b> HFS+ uses decomposed UTF-8; two visually identical paths can differ byte-wise. A real evasion in a security product.</li>
+      </ul>
+      <div class="win"><b>Raising the normalisation and case-sensitivity points unprompted is probably the highest-value thirty seconds available in this entire problem.</b> It reframes you from "can implement a trie" to "thinks about how someone bypasses the rule."</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 09 ── -->
+<section id="s9">
+  <h2><span class="num">09</span>Problem 3 · LRU process cache with TTL</h2>
+  <p class="sub">Classic structure, domain wrapper. If they open with a plain LRU, this is the version to write.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Prompt</span><span class="t">"Cache process metadata. O(1) lookup, bounded size, and entries expire."</span></div>
+    <div class="prob-b">
+<pre><span class="k">struct</span> ProcessInfo: Sendable {
+    <span class="k">let</span> signingID: String
+    <span class="k">let</span> teamID: String?
+    <span class="k">let</span> executablePath: String
+    <span class="k">let</span> isPlatformBinary: Bool
+    <span class="k">let</span> policyTags: UInt64        <span class="c">// pre-resolved, so the hot path does no string work</span>
+}
+
+<span class="k">final class</span> ProcessCache: @unchecked Sendable {
+
+    <span class="k">private final class</span> Node {
+        <span class="k">let</span> key: ProcessKey
+        <span class="k">var</span> value: ProcessInfo
+        <span class="k">var</span> expiresAt: UInt64
+        <span class="k">weak var</span> prev: Node?        <span class="c">// weak backward → no retain cycle</span>
+        <span class="k">var</span> next: Node?             <span class="c">// strong forward → list stays alive</span>
+        <span class="k">init</span>(key: ProcessKey, value: ProcessInfo, expiresAt: UInt64) {
+            <span class="k">self</span>.key = key; <span class="k">self</span>.value = value; <span class="k">self</span>.expiresAt = expiresAt
+        }
+    }
+
+    <span class="k">private var</span> map: [ProcessKey: Node] = [:]
+    <span class="k">private var</span> head: Node?          <span class="c">// most recently used</span>
+    <span class="k">private var</span> tail: Node?          <span class="c">// least recently used → evict here</span>
+    <span class="k">private let</span> capacity: Int
+    <span class="k">private let</span> ttlNanos: UInt64
+    <span class="k">private let</span> lock = UnfairLock()
+
+    <span class="k">init</span>(capacity: Int, ttlSeconds: Double) {
+        <span class="k">self</span>.capacity = capacity
+        <span class="k">self</span>.ttlNanos = UInt64(ttlSeconds * 1_000_000_000)
+        map.reserveCapacity(capacity)
+    }
+
+    <span class="c">// MONOTONIC clock. Never Date() — wall clock jumps on NTP sync and sleep/wake.</span>
+    @inline(__always) <span class="k">private func</span> now() -&gt; UInt64 {
+        clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
+    }
+
+    <span class="k">func</span> get(_ key: ProcessKey) -&gt; ProcessInfo? {
+        lock.withLock {
+            <span class="k">guard let</span> node = map[key] <span class="k">else</span> { <span class="k">return nil</span> }
+            <span class="k">if</span> node.expiresAt &lt;= now() { removeLocked(node); <span class="k">return nil</span> }
+            moveToFrontLocked(node)
+            <span class="k">return</span> node.value
+        }
+    }
+
+    <span class="k">func</span> put(_ key: ProcessKey, _ value: ProcessInfo) {
+        lock.withLock {
+            <span class="k">if let</span> existing = map[key] {
+                existing.value = value
+                existing.expiresAt = now() &amp;+ ttlNanos
+                moveToFrontLocked(existing)
+                <span class="k">return</span>
+            }
+            <span class="k">let</span> node = Node(key: key, value: value, expiresAt: now() &amp;+ ttlNanos)
+            map[key] = node
+            insertAtFrontLocked(node)
+            <span class="k">if</span> map.count &gt; capacity, <span class="k">let</span> lru = tail { removeLocked(lru) }
+        }
+    }
+
+    <span class="c">// MARK: - list ops, all called with the lock held</span>
+
+    <span class="k">private func</span> insertAtFrontLocked(_ node: Node) {
+        node.prev = <span class="k">nil</span>
+        node.next = head
+        head?.prev = node
+        head = node
+        <span class="k">if</span> tail == <span class="k">nil</span> { tail = node }
+    }
+
+    <span class="k">private func</span> unlinkLocked(_ node: Node) {
+        <span class="k">let</span> p = node.prev, n = node.next
+        p?.next = n
+        n?.prev = p
+        <span class="k">if</span> head === node { head = n }
+        <span class="k">if</span> tail === node { tail = p }
+        node.prev = <span class="k">nil</span>; node.next = <span class="k">nil</span>
+    }
+
+    <span class="k">private func</span> moveToFrontLocked(_ node: Node) {
+        <span class="k">guard</span> head !== node <span class="k">else</span> { <span class="k">return</span> }
+        unlinkLocked(node)
+        insertAtFrontLocked(node)
+    }
+
+    <span class="k">private func</span> removeLocked(_ node: Node) {
+        unlinkLocked(node)
+        map.removeValue(forKey: node.key)
+    }
+}</pre>
+
+      <h4>What to say out loud</h4>
+      <ul class="tick">
+        <li><b>Why <code>weak prev</code>, strong <code>next</code>:</b> two strong links between adjacent nodes is a retain cycle and the whole list leaks. Explaining this pre-empts the question they were about to ask.</li>
+        <li><b>Monotonic clock.</b> <code>Date()</code> moves backwards on NTP correction and jumps across sleep/wake — on a laptop fleet that's not theoretical. <code>CLOCK_MONOTONIC_RAW</code> is the right call.</li>
+        <li><b>Lazy expiry on read</b>, not a sweeper thread. Mention that a bounded periodic sweep is worth adding if dead entries pin memory.</li>
+        <li><b>Naming convention <code>...Locked</code></b> for functions requiring the lock. Cheap, and it's how real concurrent codebases stay reviewable.</li>
+        <li><b>The eviction subtlety:</b> in a real sensor you evict on <code>NOTIFY_EXIT</code>, but with a grace period, because in-flight events for a dead PID still arrive. Drop that in and you've connected the data structure to the domain.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── 10 ── -->
+<section id="s10">
+  <h2><span class="num">10</span>Problem 4 · Event coalescer</h2>
+  <p class="sub">Underrated and very likely. Tests stateful design, timers, and the reentrancy instinct.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Prompt</span><span class="t">"A process writes the same file 10,000 times a second. Collapse that into one record per file per time window."</span></div>
+    <div class="prob-b">
+<pre><span class="k">struct</span> CoalescedWrite: Sendable {
+    <span class="k">let</span> path: String
+    <span class="k">var</span> count: Int
+    <span class="k">let</span> firstSeen: UInt64
+    <span class="k">var</span> lastSeen: UInt64
+    <span class="k">var</span> processes: Set&lt;ProcessKey&gt;
+}
+
+<span class="k">final class</span> WriteCoalescer: @unchecked Sendable {
+
+    <span class="k">private var</span> pending: [String: CoalescedWrite] = [:]
+    <span class="k">private var</span> flushScheduled = <span class="k">false</span>
+    <span class="k">private let</span> lock = UnfairLock()
+    <span class="k">private let</span> window: DispatchTimeInterval
+    <span class="k">private let</span> maxPending: Int
+    <span class="k">private let</span> timerQueue: DispatchQueue
+    <span class="k">private let</span> sink: ([CoalescedWrite]) -&gt; Void
+
+    <span class="k">init</span>(windowMillis: Int, maxPending: Int = 4096,
+         timerQueue: DispatchQueue, sink: @escaping ([CoalescedWrite]) -&gt; Void) {
+        <span class="k">self</span>.window = .milliseconds(windowMillis)
+        <span class="k">self</span>.maxPending = maxPending
+        <span class="k">self</span>.timerQueue = timerQueue
+        <span class="k">self</span>.sink = sink
+    }
+
+    <span class="k">func</span> record(path: String, process: ProcessKey, at t: UInt64) {
+        <span class="k">var</span> shouldSchedule = <span class="k">false</span>
+        <span class="k">var</span> immediateFlush: [CoalescedWrite]? = <span class="k">nil</span>
+
+        lock.withLock {
+            <span class="k">if var</span> existing = pending[path] {
+                existing.count &amp;+= 1
+                existing.lastSeen = t
+                existing.processes.insert(process)
+                pending[path] = existing
+            } <span class="k">else</span> {
+                pending[path] = CoalescedWrite(path: path, count: 1,
+                                               firstSeen: t, lastSeen: t,
+                                               processes: [process])
+            }
+
+            <span class="c">// Bound the map: a fan-out across many distinct paths must not</span>
+            <span class="c">// grow unbounded just because the window hasn't elapsed.</span>
+            <span class="k">if</span> pending.count &gt;= maxPending {
+                immediateFlush = Array(pending.values)
+                pending.removeAll(keepingCapacity: <span class="k">true</span>)
+                flushScheduled = <span class="k">false</span>
+            } <span class="k">else if</span> !flushScheduled {
+                flushScheduled = <span class="k">true</span>
+                shouldSchedule = <span class="k">true</span>
+            }
+        }
+
+        <span class="c">// CRITICAL: call out only AFTER releasing the lock.</span>
+        <span class="k">if let</span> batch = immediateFlush { sink(batch) }
+        <span class="k">if</span> shouldSchedule {
+            timerQueue.asyncAfter(deadline: .now() + window) { [<span class="k">weak self</span>] <span class="k">in</span>
+                <span class="k">self</span>?.flush()
+            }
+        }
+    }
+
+    <span class="k">func</span> flush() {
+        <span class="k">let</span> batch: [CoalescedWrite] = lock.withLock {
+            flushScheduled = <span class="k">false</span>
+            <span class="k">guard</span> !pending.isEmpty <span class="k">else</span> { <span class="k">return</span> [] }
+            <span class="k">let</span> out = Array(pending.values)
+            pending.removeAll(keepingCapacity: <span class="k">true</span>)   <span class="c">// keep the buckets</span>
+            <span class="k">return</span> out
+        }
+        <span class="k">guard</span> !batch.isEmpty <span class="k">else</span> { <span class="k">return</span> }
+        sink(batch)                       <span class="c">// outside the lock</span>
+    }
+}</pre>
+
+      <h4>The three things being tested</h4>
+      <ul class="tick">
+        <li><b>Never call a closure you don't own while holding a lock.</b> The sink may enqueue, log, or re-enter your API. Holding the lock across it is how real deadlocks ship. Swap the state out under the lock, call out after. This is <em>the</em> point of this problem.</li>
+        <li><b>Bound the pending map.</b> Time-based flushing alone is unbounded if the workload fans out across many distinct paths — a build touching 200,000 files. Size-based flush plus time-based flush.</li>
+        <li><b><code>removeAll(keepingCapacity: true)</code></b> — avoid rehashing on every window. Small, and it's the kind of detail that reads as having done this before.</li>
+      </ul>
+      <div class="callout"><b>Likely follow-up:</b> "What if the sink is slow?" Correct answer: the flush becomes backpressure on the timer queue, so either the sink must be non-blocking (hand to the bounded queue from Problem 1) or the coalescer needs its own drop policy. Connecting two components of the interview into one system is exactly the senior move.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 11 ── -->
+<section id="s11">
+  <h2><span class="num">11</span>Problem 5 · Token-bucket rate limiter</h2>
+  <p class="sub">Short, common, and easy to get subtly wrong. Good warm-up problem.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Prompt</span><span class="t">"Cap telemetry at N events/second with a burst allowance."</span></div>
+    <div class="prob-b">
+<pre><span class="k">final class</span> TokenBucket: @unchecked Sendable {
+    <span class="k">private let</span> capacity: Double        <span class="c">// burst size</span>
+    <span class="k">private let</span> refillPerSecond: Double
+    <span class="k">private var</span> tokens: Double
+    <span class="k">private var</span> lastRefill: UInt64
+    <span class="k">private let</span> lock = UnfairLock()
+
+    <span class="k">init</span>(ratePerSecond: Double, burst: Double) {
+        capacity = burst
+        refillPerSecond = ratePerSecond
+        tokens = burst
+        lastRefill = clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
+    }
+
+    <span class="k">func</span> allow(_ cost: Double = 1) -&gt; Bool {
+        lock.withLock {
+            <span class="k">let</span> now = clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
+            <span class="k">let</span> elapsed = Double(now &amp;- lastRefill) / 1_000_000_000
+            lastRefill = now
+            tokens = min(capacity, tokens + elapsed * refillPerSecond)
+            <span class="k">guard</span> tokens &gt;= cost <span class="k">else</span> { <span class="k">return false</span> }
+            tokens -= cost
+            <span class="k">return true</span>
+        }
+    }
+}</pre>
+      <ul class="tick">
+        <li><b>Lazy refill on access</b> — no timer, no background thread. Say this; the timer-based version is the naive answer.</li>
+        <li><b>Monotonic clock again.</b> Wall-clock time going backwards makes <code>elapsed</code> negative and the maths nonsense.</li>
+        <li><b>Clamp at capacity</b> or an idle period grants an unbounded burst.</li>
+        <li><b>Follow-up: per-key limiting.</b> A dictionary of buckets keyed by process or destination — which then needs bounding and eviction, i.e. Problem 3. Notice out loud when problems compose; panels like candidates who see the system.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── 12 ── -->
+<section id="s12">
+  <h2><span class="num">12</span>Problem 6 · Parse a C event safely</h2>
+  <p class="sub">Lower probability as a standalone problem, high probability as a follow-up. Nearly free marks if it comes up, because most candidates have never done it.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Prompt</span><span class="t">"Here's a C struct from the kernel. Turn it into a Swift value type safely."</span></div>
+    <div class="prob-b">
+<pre><span class="k">struct</span> FileEvent: Sendable {
+    <span class="k">let</span> path: String
+    <span class="k">let</span> process: ProcessKey
+    <span class="k">let</span> wasModified: Bool
+    <span class="k">let</span> timestamp: UInt64
+}
+
+<span class="k">func</span> parse(_ msg: UnsafePointer&lt;es_message_t&gt;) -&gt; FileEvent? {
+    <span class="k">let</span> m = msg.pointee
+
+    <span class="c">// 1. VERSION GATE — the struct grew across macOS releases.</span>
+    <span class="c">//    Reading a field the running OS doesn't populate is UB.</span>
+    <span class="k">guard</span> m.version &gt;= 4 <span class="k">else</span> { <span class="k">return nil</span> }
+    <span class="k">guard</span> m.event_type == ES_EVENT_TYPE_NOTIFY_CLOSE <span class="k">else</span> { <span class="k">return nil</span> }
+
+    <span class="k">let</span> close = m.event.close
+
+    <span class="c">// 2. Length-bounded string decode. Never String(cString:) on a token.</span>
+    <span class="k">guard let</span> file = close.target?.pointee <span class="k">else</span> { <span class="k">return nil</span> }
+    <span class="k">let</span> path = file.path.stringValue
+    <span class="k">guard</span> !path.isEmpty <span class="k">else</span> { <span class="k">return nil</span> }
+
+    <span class="c">// 3. Prefer the responsible process for attribution, fall back to the actor.</span>
+    <span class="k">guard let</span> proc = m.process?.pointee <span class="k">else</span> { <span class="k">return nil</span> }
+    <span class="k">let</span> token = m.version &gt;= 4 ? proc.responsible_audit_token : proc.audit_token
+
+    <span class="c">// 4. COPY everything out. The message dies when the handler returns</span>
+    <span class="c">//    unless retained — no Swift value here may point into C memory.</span>
+    <span class="k">return</span> FileEvent(path: path,
+                     process: ProcessKey(token),
+                     wasModified: close.modified,
+                     timestamp: m.mach_time)
+}</pre>
+      <p>Four numbered defensive steps, each with a one-line reason. If you can produce this shape under pressure you will look like someone who has shipped against this API, because the mistakes it avoids are the ones people only learn by making.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 13 ── -->
+<section id="s13">
+  <h2><span class="num">13</span>Problem 7 · Find the race</h2>
+  <p class="sub">A likely second-panelist segment: code review rather than authorship. Practise reading concurrent Swift for bugs.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Given code — find every bug</span><span class="t">"This has been crashing in production. What's wrong?"</span></div>
+    <div class="prob-b">
+<pre><span class="k">final class</span> MetricsCollector {
+    <span class="k">private var</span> counts: [String: Int] = [:]
+    <span class="k">private var</span> observers: [() -&gt; Void] = []
+    <span class="k">private let</span> queue = DispatchQueue(label: "metrics", attributes: .concurrent)
+
+    <span class="k">func</span> increment(_ key: String) {
+        queue.async { <span class="k">self</span>.counts[key, <span class="k">default</span>: 0] += 1 }
+    }
+
+    <span class="k">func</span> snapshot() -&gt; [String: Int] {
+        queue.sync { <span class="k">self</span>.counts }
+    }
+
+    <span class="k">func</span> addObserver(_ o: @escaping () -&gt; Void) {
+        observers.append(o)
+        o()
+    }
+}</pre>
+
+      <h4>The bugs, in the order you should call them</h4>
+      <table>
+        <tr><th>#</th><th>Bug</th><th>Fix</th></tr>
+        <tr><td>1</td><td><b>Concurrent writes to a Dictionary.</b> <code>.concurrent</code> + <code>async</code> mutation = multiple writers at once. Dictionary is not thread-safe; this corrupts the hash table and crashes non-deterministically. <em>This is the headline bug.</em></td><td><code>queue.async(flags: .barrier)</code> for writes, or a serial queue, or a lock.</td></tr>
+        <tr><td>2</td><td><b>Reads racing writes.</b> <code>sync</code> on a concurrent queue runs alongside in-flight non-barrier writes.</td><td>Fixed by the same barrier change.</td></tr>
+        <tr><td>3</td><td><b><code>observers</code> has no synchronisation at all.</b> Mutated from any caller's thread.</td><td>Same protection as <code>counts</code>.</td></tr>
+        <tr><td>4</td><td><b>Unbounded async growth.</b> Under an event storm, <code>increment</code> enqueues faster than the queue drains — memory grows without limit and the metrics path becomes the outage.</td><td>Atomic counters, or a lock with an O(1) critical section. Metrics must never queue.</td></tr>
+        <tr><td>5</td><td><b><code>self</code> captured strongly</b> in an escaping closure; the collector cannot deinit while work is pending.</td><td><code>[weak self]</code>, or accept it deliberately and say so.</td></tr>
+        <tr><td>6</td><td><b><code>addObserver</code> invokes the callback synchronously</b> while conceptually holding class state — a reentrancy hazard if the observer calls back in.</td><td>Invoke outside any lock, and document the threading contract.</td></tr>
+        <tr><td>7</td><td><b>String keys on a hot metrics path</b> — hashing and possible allocation per increment.</td><td>Enum or integer keys with a fixed-size array of counters.</td></tr>
+      </table>
+
+      <h4>Corrected version</h4>
+<pre><span class="k">final class</span> MetricsCollector: @unchecked Sendable {
+    <span class="k">enum</span> Counter: Int, CaseIterable { <span class="k">case</span> eventsIn, eventsDropped, authFallback }
+
+    <span class="k">private var</span> counts = [Int64](repeating: 0, count: Counter.allCases.count)
+    <span class="k">private let</span> lock = UnfairLock()
+
+    @inline(__always)
+    <span class="k">func</span> increment(_ c: Counter, by n: Int64 = 1) {
+        lock.withLock { counts[c.rawValue] &amp;+= n }    <span class="c">// O(1), no alloc, no hashing</span>
+    }
+
+    <span class="k">func</span> snapshot() -&gt; [Counter: Int64] {
+        <span class="k">let</span> copy = lock.withLock { counts }
+        <span class="k">return</span> Dictionary(uniqueKeysWithValues:
+            Counter.allCases.map { ($0, copy[$0.rawValue]) })
+    }
+}</pre>
+      <div class="win"><b>Close with this:</b> "And I'd run the test suite under Thread Sanitizer in CI — most of these are exactly what TSan catches, and a concurrency bug that only appears on a customer's 16-core machine under load is not one you find by reading." That's the answer that ends the segment well.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 14 ── -->
+<section id="s14">
+  <h2><span class="num">14</span>Performance in Swift — the hot-path rules</h2>
+  <div class="card">
+    <ul class="tick">
+      <li><b>Preallocate.</b> <code>reserveCapacity</code>, fixed-size <code>ContiguousArray</code>. Allocation in a per-event path is the first thing to remove.</li>
+      <li><b><code>final</code> everything</b> that isn't designed for subclassing. Static dispatch for free.</li>
+      <li><b>Generics over existentials</b> in hot paths. <code>any Protocol</code> boxes and dispatches through a witness table.</li>
+      <li><b>Avoid <code>String</code> in per-event work.</b> Grapheme-aware, heap-allocated, expensive to hash. Intern paths to integer IDs at policy-compile time; work over <code>UTF8View</code> when you must touch bytes.</li>
+      <li><b>Watch ARC traffic.</b> Retain/release per element in a loop over class instances is measurable. Value types avoid it entirely.</li>
+      <li><b><code>@inline(__always)</code></b> on tiny hot accessors; <code>@inlinable</code> only for cross-module inlining, and be aware it locks the implementation into your ABI.</li>
+      <li><b><code>autoreleasepool</code></b> around tight loops that touch ObjC bridging — otherwise autoreleased objects accumulate until the runloop turn, which on a daemon may be never.</li>
+      <li><b>Measure, don't guess.</b> Instruments Time Profiler, Allocations, and <code>os_signpost</code> intervals around the event path so you get p50/p99 rather than an average. Averages hide the tail, and the tail is what the deadline cares about.</li>
+    </ul>
+  </div>
+  <div class="key"><b>The framing to use:</b> "I'd instrument first with signposts and get percentile latency per stage, then optimise the stage that owns the p99. On a sensor the mean is nearly meaningless — the deadline is a tail-latency contract."</div>
+</section>
+
+<!-- ── 15 ── -->
+<section id="s15">
+  <h2><span class="num">15</span>Testing concurrent code</h2>
+  <p class="sub">Almost certainly one of the extension questions. Have a real answer, not "I'd write unit tests."</p>
+  <div class="card">
+    <ul class="tick">
+      <li><b>Inject the clock.</b> A <code>Clock</code> protocol with a real and a fake implementation makes TTL and rate-limiter behaviour deterministic. Tests that call <code>sleep()</code> are flaky by construction — say this explicitly.</li>
+      <li><b>Inject the scheduler.</b> Same reasoning for the coalescer's timer: a manual scheduler you tick by hand.</li>
+      <li><b>Stress tests for invariants, not outcomes.</b> N producers, M consumers, then assert conservation: <code>enqueued == drained + dropped</code>. You can't assert exact interleavings; you can assert nothing was lost or duplicated.</li>
+      <li><b>Thread Sanitizer in CI</b> on the concurrency suite. Address Sanitizer on the C-interop suite.</li>
+      <li><b>Property-based testing</b> over random operation sequences against a simple reference model — very effective for LRU and ring-buffer semantics.</li>
+      <li><b>Benchmark as a test.</b> A CI gate on throughput and p99 latency, so a perf regression fails the build rather than the fleet.</li>
+    </ul>
+  </div>
+<pre><span class="k">protocol</span> Clock: Sendable { <span class="k">func</span> nowNanos() -&gt; UInt64 }
+
+<span class="k">struct</span> MonotonicClock: Clock {
+    <span class="k">func</span> nowNanos() -&gt; UInt64 { clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW) }
+}
+
+<span class="k">final class</span> FakeClock: Clock, @unchecked Sendable {
+    <span class="k">private var</span> t: UInt64 = 0
+    <span class="k">private let</span> lock = UnfairLock()
+    <span class="k">func</span> nowNanos() -&gt; UInt64 { lock.withLock { t } }
+    <span class="k">func</span> advance(seconds: Double) { lock.withLock { t &amp;+= UInt64(seconds * 1e9) } }
+}</pre>
+  <div class="win"><b>Volunteering dependency injection for time before they ask</b> is one of the clearest senior signals available in a coding round. It shows you write code you intend to test, rather than code you'll test afterwards.</div>
+</section>
+
+<!-- ── 16 ── -->
+<section id="s16">
+  <h2><span class="num">16</span>Rapid-fire question bank</h2>
+  <p class="sub">One-line answers. Cover the mouth-feel of these so nothing catches you cold.</p>
+  <table>
+    <tr><th>Question</th><th>Answer</th></tr>
+    <tr><td>struct vs class?</td><td>Value semantics, no identity, thread-safe by copying vs identity, shared mutable state, deinit, inheritance.</td></tr>
+    <tr><td>How does CoW work?</td><td>Shared buffer until mutation; <code>isKnownUniquelyReferenced</code> decides whether to copy.</td></tr>
+    <tr><td>weak vs unowned?</td><td>weak is optional and zeroes on dealloc, costs a side-table lookup; unowned is non-optional, faster, crashes if accessed after dealloc.</td></tr>
+    <tr><td>Is <code>lazy var</code> thread-safe?</td><td>No. Global and static <code>let</code> are (swift_once).</td></tr>
+    <tr><td><code>some</code> vs <code>any</code>?</td><td>Opaque single concrete type resolved at compile time vs boxed existential with dynamic dispatch.</td></tr>
+    <tr><td>What makes a type Sendable?</td><td>Safe to cross isolation boundaries: value types of Sendable members, immutable final classes, or manually synchronised with <code>@unchecked</code>.</td></tr>
+    <tr><td>Actor reentrancy?</td><td>Other calls can interleave at every <code>await</code>. Invariants must hold across suspension points.</td></tr>
+    <tr><td>Why not an actor in the ESF callback?</td><td>Suspension with unbounded queuing latency against a hard kernel deadline.</td></tr>
+    <tr><td>escaping vs non-escaping?</td><td>Escaping outlives the call, requires explicit capture of self, can create cycles.</td></tr>
+    <tr><td>size vs stride?</td><td>Bytes used vs bytes per array element including padding. Allocate with stride.</td></tr>
+    <tr><td>Lifetime of <code>withUnsafeBytes</code> pointer?</td><td>Valid only inside the closure. Escaping it is UB.</td></tr>
+    <tr><td>Deadlock with DispatchQueue.sync?</td><td>Calling <code>sync</code> on the queue you're already on. Classic on serial queues.</td></tr>
+    <tr><td>Semaphore in async code?</td><td>Don't. Blocking a cooperative-pool thread can deadlock the whole runtime.</td></tr>
+    <tr><td>Array vs ContiguousArray?</td><td>Array may bridge to NSArray for ObjC-compatible elements; ContiguousArray never does.</td></tr>
+    <tr><td>How do you find a data race?</td><td>Thread Sanitizer, plus invariant stress tests. Not by reading.</td></tr>
+    <tr><td>Optional memory cost?</td><td>Often free via spare bit patterns (e.g. pointer nil), not always for arbitrary types.</td></tr>
+    <tr><td>throws vs Result vs Optional?</td><td>throws for recoverable errors in synchronous flow, Result to store or pass a completion, Optional when absence needs no explanation.</td></tr>
+    <tr><td>defer ordering?</td><td>Reverse order of declaration, runs on every exit path including throws.</td></tr>
+  </table>
+</section>
+
+<!-- ── 17 ── -->
+<section id="s17">
+  <h2><span class="num">17</span>Your prep plan</h2>
+  <div class="card">
+    <h3>Highest leverage, in order</h3>
+    <ul class="tick">
+      <li><b>1 · Type out Problems 1, 3 and 4 from scratch in Xcode, twice.</b> Not read — typed, compiling, with three tests each. Muscle memory on the ring buffer and the LRU is worth more than any amount of reading, and those two cover most of the plausible space.</li>
+      <li><b>2 · Write the <code>UnfairLock</code> wrapper from memory</b> until it's automatic. It's the opening move in four of the seven problems.</li>
+      <li><b>3 · Rehearse the GCD-vs-actors opinion out loud.</b> Thirty seconds, spoken, twice. It's the highest-signal thirty seconds in the round and it must not come out hedged.</li>
+      <li><b>4 · Do the Problem 7 bug hunt cold</b> — cover the answers, find all seven, time yourself.</li>
+      <li><b>5 · One evening on C interop</b>: the string-token decode, the audit-token key, pointer lifetime rules. Low probability, near-zero competition.</li>
+      <li><b>6 · Skim §16 the morning of.</b> Not the night before — the morning of, so it's warm.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>What not to spend time on</h3>
+    <ul class="tick">
+      <li><b>LeetCode grinding.</b> If a graph or DP problem appears it will be light, and your time is better spent where the round actually is.</li>
+      <li><b>SwiftUI, Combine, UIKit.</b> Zero relevance to a sysext role.</li>
+      <li><b>Memorising ESF event-type names.</b> They know you can read a header. They're testing whether you can build the thing behind it.</li>
+    </ul>
+  </div>
+  <div class="key"><b>One last thing.</b> Every problem here is a component from your architecture documents. If, mid-round, you can say "this is essentially the bounded NOTIFY queue in front of a correlation stage — is that roughly where it sits in your sensor?", you stop being a candidate solving a puzzle and start being an engineer discussing their codebase. That shift is what gets you to the design round with momentum.</div>
+</section>
+
+<footer>Cyberhaven · round 03 prep · Swift coding · 26 Jul 2026</footer>
+</div>
+</body>
+</html>

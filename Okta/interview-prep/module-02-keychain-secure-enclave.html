@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 02 - Keychain, Secure Enclave &amp; Cryptographic Identity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 02 of 10</span>
+    <h1>Keychain, Secure Enclave &amp; Cryptographic Device Identity</h1>
+    <p>How JumpCloud binds device identity to hardware: keychain ACLs, device-trust certs, and Secure Enclave DUK.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-01-macos-agent-arch.html">← Module 01</a>
+    <a href="index.html">Hub</a>
+    <a href="module-03-device-binding.html">Module 03 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">Device identity requires secrets that cannot be exfiltrated. JumpCloud uses two complementary approaches: (1) X.509 device-trust certificates in a per-user keychain with trusted-app ACLs for browser mTLS, and (2) a Secure Enclave–backed P256 signing key (DUK) for JumpCloud Go token refresh. A separate service-account keychain at <code>/opt/jc/</code> holds privileged credentials protected by an ES extension.</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>keychain/keychain_darwin.go</code> - SecKeychain APIs, PKCS#12 import, trusted-app ACL verification</li>
+        <li><code>user-agent/cert/cert_darwin.go</code> - <code>jumpcloud-device-trust-keychain-db</code>, Chrome/Safari auto-select</li>
+        <li><code>serviceaccount/serviceaccount_darwin.go</code> - dedicated SA keychain at <code>/opt/jc/</code></li>
+        <li><code>certificates/certificate_handler.go</code> - CSR generation, POST to <code>/signDeviceIdentificationCSR</code></li>
+        <li>External: <code>jumpcloud-durt-macos/DurtService/DUK.swift</code> - <code>SecureEnclave.P256.Signing.PrivateKey</code></li>
+      </ul>
+      <p><strong>Cert path:</strong> Agent generates CSR → agent-server signs → PKCS#12 imported into user keychain with private key ACL limited to Safari, Chrome, WebKit trusted apps → browser presents cert via mTLS → serial number maps to device in devices service.</p>
+      <p><strong>DUK path:</strong> On JumpCloud Go registration, DURT service provisions a refresh token bound to a Secure Enclave key. Each access request signs a challenge with DUK - key never leaves the SE.</p>
+    </section>
+
+    <section>
+      <h2>Okta Parallel</h2>
+      <div class="card okta">
+        <p><strong>Device Access certificates</strong> (SCEP via MDM) and <strong>Device-Bound SSO</strong> use similar crypto binding. Okta requires Secure Enclave hardware (macOS 14+) for dbSSO; certs are installed via SCEP and linked to FastPass enrollment. JumpCloud's cert path mirrors SCEP + mTLS; DUK path mirrors hardware-protected session binding.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Architecture Diagram</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart LR
+  subgraph certPath [Cert-Based Device Trust]
+    CSR[Agent generates CSR]
+    Sign[agent-server signs cert]
+    KC[User keychain jumpcloud-device-trust-keychain-db]
+    ACL[Trusted-app ACL Safari Chrome WebKit]
+    mTLS[Browser mTLS to portal]
+    Serial[cert serial lookup]
+    CSR --> Sign --> KC --> ACL
+    KC --> mTLS --> Serial
+  end
+
+  subgraph sePath [Secure Enclave DUK Path]
+    Reg[Go registration]
+    DUK[SecureEnclave P256 PrivateKey]
+    Sign2[DUK signs refresh challenge]
+    DURT[DURT token exchange]
+    Reg --> DUK --> Sign2 --> DURT
+  end
+
+  subgraph saPath [Service Account Keychain]
+    SA["SA keychain at opt/jc"]
+    ES[ES extension protects SA keychain]
+    SA --- ES
+  end
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Approach</th><th>Storage</th><th>Use Case</th><th>Hardware Binding</th></tr></thead>
+        <tbody>
+          <tr><td>Device-trust cert</td><td>User keychain</td><td>Portal SSO mTLS</td><td>Private key ACL + trusted apps</td></tr>
+          <tr><td>DUK</td><td>Secure Enclave</td><td>JumpCloud Go token refresh</td><td>SE non-exportable key</td></tr>
+          <tr><td>Service account</td><td>Root keychain /opt/jc</td><td>Privileged agent ops</td><td>ES file protection</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Key Tradeoff (ADR-011)</h2>
+      <p>Cert-based trust requires a round trip to the devices service (serial → assertion). DURT/DUST path lets auth mint device assertions directly - fewer inter-service calls, same CAP guarantees when signals are embedded. Desktop still uses certs; mobile and Go prefer DURT.</p>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">Why trusted-app ACLs on the device-trust private key?</div>
+        <div class="qa-a">Only Safari, Chrome, and WebKit should use the private key for mTLS. Without ACLs, any process in the user's session could export or use the key. We verify trusted apps at install time via <code>trustedapps/</code> handlers.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Cert-based vs Secure Enclave - when do you pick each?</div>
+        <div class="qa-a">Certs excel at browser mTLS (standard TLS stack). SE keys excel at programmatic signing without export - ideal for token refresh where the client proves possession without a browser. Okta dbSSO combines both: SCEP cert for device registration + SE for session crypto binding.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What protects the service account keychain?</div>
+        <div class="qa-a">Dedicated keychain at <code>/opt/jc/</code>, root-only access, plus a Swift Endpoint Security extension that restricts file access to the SA keychain database - defense in depth if malware runs as user.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Known gap in DeviceTrust RPC?</div>
+        <div class="qa-a"><code>jumpcloud-auth/services/device_trust.go</code> has a TODO to force signature from the system's private key on authenticate requests. Today binding relies on user password + system association, not cryptographic device proof. Closing it would align with Okta-joined device guarantees.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>DUK Swift code is in <code>jumpcloud-durt-macos</code>, not the agent repo.</li>
+          <li>Device private key signature on DeviceTrust authenticate is not yet enforced.</li>
+          <li>No Apple App Attest - pragmatic cert + SE binding, not full hardware attestation chain.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-01-macos-agent-arch.html">← Module 01</a> · <a href="module-03-device-binding.html">Module 03 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

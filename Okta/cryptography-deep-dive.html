@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cryptography — deep dive for interviews</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;--brand:#1c4f7c;--brandT:#e3edf5;--go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;--stop:#a03a2a;--stopT:#f9e7e2;--pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:var(--brand);z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:280px;flex:0 0 280px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#101620;color:#c5ccd7;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#848fa2;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#848fa2;margin:15px 4px 6px;border-top:1px solid #242b36;padding-top:12px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a8b0be;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#6c7789;min-width:20px}
+  nav a:hover{background:#19202b;color:#fff}nav a.active{background:var(--brand);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:850px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pur);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--brand)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.4px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .yo{border-left-color:var(--brand);background:var(--brandT)}.yo .l{color:var(--brand)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .tag{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.hot{background:var(--stopT);color:var(--stop)}
+  .tag.med{background:var(--brandT);color:var(--brand)}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.8px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.8px;color:var(--brand)}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.a{border-color:var(--brand);background:var(--brandT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .nd.p{border-color:var(--pur);background:var(--purT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Cryptography</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Cryptography<span class="s">primitives → protocols →<br>Apple platform → Q&amp;A</span></div>
+  <div class="ct">12 sections</div>
+  <nav id="toc">
+    <a href="#goals"><span class="n">01</span><span>The four goals</span></a>
+    <a href="#hash"><span class="n">02</span><span>Hashing</span></a>
+    <a href="#sym"><span class="n">03</span><span>Symmetric encryption</span></a>
+    <a href="#asym"><span class="n">04</span><span>Asymmetric encryption</span></a>
+    <a href="#dh"><span class="n">05</span><span>Key exchange &amp; Diffie-Hellman</span></a>
+    <a href="#sig"><span class="n">06</span><span>Signatures &amp; MACs</span></a>
+    <a href="#pki"><span class="n">07</span><span>Certificates &amp; PKI</span></a>
+    <a href="#tls"><span class="n">08</span><span>TLS in detail</span></a>
+    <a href="#pw"><span class="n">09</span><span>Password storage &amp; KDFs</span></a>
+    <a href="#apple"><span class="n">10</span><span>Apple platform crypto ★</span></a>
+    <a href="#mistakes"><span class="n">11</span><span>Classic mistakes</span></a>
+    <a href="#qa"><span class="n">12</span><span>Interview Q&amp;A</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Every primitive, every named algorithm, and the Apple platform layer</p>
+  <h1>Cryptography, properly — from primitives to production.</h1>
+  <p class="led">Built for an interview at an identity company, where crypto isn't trivia — it's the product. Each section gives the concept, the algorithms, what breaks it, and the exact words to say. Section 10 connects everything to the Secure Enclave work you already do.</p>
+</header>
+
+<section id="goals">
+  <div class="sn">01 / FOUNDATION</div>
+  <h2>The four goals</h2>
+  <p class="ss">Every primitive exists to serve one of these. When you meet a new tool, ask which.</p>
+  <table class="tb">
+    <tr><th>Goal</th><th>Plain question</th><th>Served by</th></tr>
+    <tr><td>Confidentiality</td><td>Can a stranger read this?</td><td>Encryption — symmetric and asymmetric</td></tr>
+    <tr><td>Integrity</td><td>Was this changed in transit?</td><td>Hashes, MACs, signatures</td></tr>
+    <tr><td>Authentication</td><td>Are you really who you claim?</td><td>Signatures, certificates, MACs</td></tr>
+    <tr><td>Non-repudiation</td><td>Can you later deny you sent it?</td><td>Digital signatures <em>only</em> — not MACs</td></tr>
+  </table>
+  <div class="bx go"><span class="l">The distinction interviewers probe</span>
+    <p>A <strong>MAC gives integrity and authentication but not non-repudiation</strong>, because both parties share the key — either could have produced it. A <strong>signature gives all three</strong>, because only the private-key holder could have signed. That single sentence separates people who've studied crypto from people who've read a blog post.</p></div>
+</section>
+
+<section id="hash">
+  <div class="sn">02</div>
+  <h2>Hashing</h2>
+  <p class="ss">One-way fingerprints. The building block under signatures, passwords, and integrity checks.</p>
+
+  <h3>Properties</h3>
+  <ul>
+    <li><strong>Deterministic</strong> — same input, same digest, always.</li>
+    <li><strong>Fixed output size</strong> — "hi" and a 4 GB file both produce a 256-bit SHA-256 digest.</li>
+    <li><strong>One-way (preimage resistance)</strong> — given a digest, you can't find an input producing it.</li>
+    <li><strong>Second preimage resistance</strong> — given input A, you can't find a different B with the same digest.</li>
+    <li><strong>Collision resistance</strong> — you can't find <em>any</em> two inputs sharing a digest. This is the weakest property and the first to fall.</li>
+    <li><strong>Avalanche effect</strong> — one bit of input change alters roughly half the output bits.</li>
+  </ul>
+
+  <h3>The algorithms</h3>
+  <table class="tb">
+    <tr><th>Algorithm</th><th>Output</th><th>Status</th></tr>
+    <tr><td>MD5</td><td>128-bit</td><td><strong>Broken.</strong> Practical collisions since 2004. Never for security.</td></tr>
+    <tr><td>SHA-1</td><td>160-bit</td><td><strong>Broken.</strong> SHAttered (2017) produced a real collision. Deprecated everywhere.</td></tr>
+    <tr><td>SHA-256 / SHA-512</td><td>256 / 512-bit</td><td>SHA-2 family. Current workhorse, no practical attacks.</td></tr>
+    <tr><td>SHA-3 (Keccak)</td><td>variable</td><td>Different internal construction (sponge). A hedge against a SHA-2 break, not a replacement.</td></tr>
+    <tr><td>BLAKE2 / BLAKE3</td><td>variable</td><td>Faster than SHA-2, secure. Common in non-standardised contexts.</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">Nuance worth knowing</span>
+    <p>MD5 and SHA-1 are broken for <strong>collision resistance</strong>, not preimage resistance. So MD5 as a non-security checksum for accidental corruption is still technically fine — but say you'd use SHA-256 anyway, because a reviewer shouldn't have to reason about which property you were relying on.</p></div>
+
+  <div class="bx st"><span class="l">Where hashing is misused</span>
+    <p><strong>Never hash passwords with a plain hash.</strong> SHA-256 is designed to be fast — modern GPUs compute billions per second, so a stolen database falls quickly. Passwords need a deliberately slow, salted KDF (section 09). This is the single most common crypto mistake in real applications.</p></div>
+</section>
+
+<section id="sym">
+  <div class="sn">03</div>
+  <h2>Symmetric encryption</h2>
+  <p class="ss">One shared key encrypts and decrypts. Fast, suitable for bulk data, with one structural problem.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd">plaintext</div><span class="ar">→</span>
+      <div class="nd p"><b>same key</b>encrypt</div><span class="ar">→</span>
+      <div class="nd">ciphertext</div><span class="ar">→</span>
+      <div class="nd p"><b>same key</b>decrypt</div><span class="ar">→</span>
+      <div class="nd g">plaintext</div>
+    </div>
+    <div class="cap">One key, both directions. Fast — but how do both parties get it?</div>
+  </div>
+
+  <h3>The algorithms</h3>
+  <table class="tb">
+    <tr><th>Algorithm</th><th>Key / block</th><th>Status</th></tr>
+    <tr><td><strong>AES</strong></td><td>128/192/256-bit key, 128-bit block</td><td>The standard. No practical break. AES-128 is fine; AES-256 for long-term or regulatory reasons.</td></tr>
+    <tr><td><strong>3DES</strong></td><td>168-bit effective, <strong>64-bit block</strong></td><td><strong>Deprecated.</strong> DES applied three times to extend the 56-bit key. Slow, and the 64-bit block enables birthday attacks (<strong>Sweet32</strong>) after ~32 GB under one key.</td></tr>
+    <tr><td>DES</td><td>56-bit</td><td>Broken by brute force since the 1990s.</td></tr>
+    <tr><td>ChaCha20</td><td>256-bit, stream cipher</td><td>Fast in software without AES hardware acceleration. Paired with Poly1305 for AEAD. Common on mobile.</td></tr>
+  </table>
+
+  <h3>Modes of operation — this is where implementations fail</h3>
+  <p>A block cipher encrypts one fixed-size block. A <em>mode</em> defines how you handle a message longer than one block, and the choice matters enormously.</p>
+  <table class="tb">
+    <tr><th>Mode</th><th>Behaviour</th><th>Verdict</th></tr>
+    <tr><td><strong>ECB</strong></td><td>Each block encrypted independently</td><td><strong>Never use.</strong> Identical plaintext blocks give identical ciphertext, so structure leaks. The famous "encrypted penguin" image is still recognisable.</td></tr>
+    <tr><td>CBC</td><td>Each block XORed with the previous ciphertext; needs an IV</td><td>Acceptable but fragile — padding-oracle attacks, and it provides no integrity on its own.</td></tr>
+    <tr><td>CTR</td><td>Turns a block cipher into a stream cipher</td><td>Fine, but no integrity, and <strong>nonce reuse is catastrophic</strong>.</td></tr>
+    <tr><td><strong>GCM</strong></td><td>CTR plus an authentication tag</td><td><strong>The default choice.</strong> AEAD — confidentiality and integrity together.</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The answer to "how would you encrypt data?"</span>
+    <p>"AES-256-GCM. GCM is authenticated encryption, so I get confidentiality and integrity in one primitive rather than bolting on a separate MAC and risking getting the composition order wrong. A unique nonce per message — <strong>never reused under the same key</strong>, because with GCM nonce reuse leaks the authentication key and lets an attacker forge messages. And I'd use the platform's implementation, not my own."</p></div>
+
+  <div class="bx wn"><span class="l">AEAD — know the term</span>
+    <p><strong>Authenticated Encryption with Associated Data.</strong> It encrypts the payload <em>and</em> authenticates additional unencrypted context (headers, a message ID) that must not be tampered with. AES-GCM and ChaCha20-Poly1305 are the two you'd name.</p></div>
+
+  <h3>The structural problem</h3>
+  <p>Two things symmetric encryption cannot solve alone: <strong>key distribution</strong> (how do both parties get the same secret without an eavesdropper capturing it?) and <strong>identity</strong> (the key proves nothing about who you are — anyone holding it can read and write). Those gaps are what asymmetric crypto exists for.</p>
+</section>
+
+<section id="asym">
+  <div class="sn">04</div>
+  <h2>Asymmetric encryption</h2>
+  <p class="ss">A mathematically linked key pair. The hinge that everything modern depends on.</p>
+
+  <h3>The core idea</h3>
+  <p>Each party has a <strong>public key</strong> (published freely) and a <strong>private key</strong> (guarded absolutely). Whatever one key does, only the other can undo — which gives two completely different capabilities:</p>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:10px">
+      <div class="nd a" style="min-width:430px"><b>confidentiality</b>encrypt with the recipient's PUBLIC key → only their PRIVATE key decrypts</div>
+      <div class="nd g" style="min-width:430px"><b>authenticity</b>sign with YOUR PRIVATE key → anyone verifies with your PUBLIC key</div>
+    </div>
+    <div class="cap">Two directions, two different guarantees. Getting these the right way round is the test.</div>
+  </div>
+
+  <h3>The algorithms</h3>
+  <table class="tb">
+    <tr><th>Algorithm</th><th>Hard problem</th><th>Notes</th></tr>
+    <tr><td><strong>RSA</strong></td><td>Factoring large semiprimes</td><td>Signing and key transport. 2048-bit minimum, 3072/4096 for longer term. <strong>Padding is mandatory</strong> — OAEP for encryption, PSS for signatures. Textbook RSA without padding is broken.</td></tr>
+    <tr><td><strong>ECC / ECDSA</strong></td><td>Elliptic curve discrete log</td><td>Equivalent security with far smaller keys — a 256-bit ECC key ≈ a 3072-bit RSA key. Faster, less memory. P-256 is what the Secure Enclave uses.</td></tr>
+    <tr><td><strong>Ed25519</strong></td><td>Edwards-curve discrete log</td><td>Modern signature scheme. Fast, deterministic, resistant to the nonce-reuse failure that has broken ECDSA implementations.</td></tr>
+    <tr><td><strong>Diffie-Hellman</strong></td><td>Discrete logarithm</td><td>Key <em>agreement</em>, not encryption. See section 05.</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">Why ECC won on constrained hardware</span>
+    <p>A 256-bit ECC key gives roughly the security of a 3072-bit RSA key. Smaller keys mean less storage, less bandwidth, and much less computation — which is why the Secure Enclave, smart cards, and IoT devices all use elliptic curves. It's also why the SEP supports P-256 and not RSA: the hardware is deliberately constrained.</p></div>
+
+  <div class="bx wn"><span class="l">The practical limitation</span>
+    <p>Asymmetric crypto is <strong>orders of magnitude slower</strong> than symmetric and size-limited (RSA can only encrypt data smaller than its key). So it's never used for bulk data. Real systems use it briefly — to authenticate and agree on a symmetric session key — then switch to AES. That handoff is exactly what TLS does, and saying so shows you understand why both exist.</p></div>
+
+  <div class="bx pu"><span class="l">Post-quantum — worth one sentence</span>
+    <p>Shor's algorithm on a sufficiently large quantum computer would break RSA and ECC (both rely on problems quantum computers solve efficiently). Symmetric crypto and hashes are far less affected — roughly, you double the key size. NIST has standardised post-quantum algorithms (ML-KEM/Kyber for key encapsulation, ML-DSA/Dilithium for signatures), and the current practice is <strong>hybrid</strong> — classical plus post-quantum together — because of "harvest now, decrypt later." Mentioning this shows currency without overclaiming.</p></div>
+</section>
+
+<section id="dh">
+  <div class="sn">05</div>
+  <h2>Key exchange &amp; Diffie-Hellman</h2>
+  <p class="ss">Named explicitly in your brief. It solves a problem that looks impossible.</p>
+
+  <h3>The problem it solves</h3>
+  <p>Two parties who have never met, communicating over a channel an attacker is fully monitoring, need to end up sharing a secret. Every byte they exchange is visible. How?</p>
+
+  <h3>The intuition — the paint analogy</h3>
+  <ol>
+    <li>Both agree publicly on a common colour (yellow). The attacker sees it.</li>
+    <li>Each privately picks a secret colour and mixes it with the yellow.</li>
+    <li>They exchange the mixtures publicly. The attacker sees both mixtures — but separating a mixture back into its components is prohibitively hard.</li>
+    <li>Each adds their own secret colour to the other's mixture. Both arrive at <strong>the same final colour</strong>, which the attacker cannot produce.</li>
+  </ol>
+  <p>Mathematically, the "mixing that's hard to reverse" is modular exponentiation, and the hard problem is the <strong>discrete logarithm</strong>.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd a"><b>Alice</b>secret a<br>sends g^a</div>
+      <span class="ar">⇄<small>public channel</small></span>
+      <div class="nd a"><b>Bob</b>secret b<br>sends g^b</div>
+    </div>
+    <div class="fl" style="margin-top:10px">
+      <div class="nd g" style="min-width:380px">both compute g^(ab) — the shared secret. The attacker saw g^a and g^b but cannot derive g^(ab).</div>
+    </div>
+    <div class="cap">The secret is never transmitted. It's independently derived by both sides.</div>
+  </div>
+
+  <h3>The variants to name</h3>
+  <table class="tb">
+    <tr><th>Variant</th><th>Meaning</th></tr>
+    <tr><td>DH</td><td>Classic finite-field Diffie-Hellman</td></tr>
+    <tr><td>ECDH</td><td>Elliptic-curve version — smaller, faster, what's used today</td></tr>
+    <tr><td><strong>DHE / ECDHE</strong></td><td><strong>Ephemeral</strong> — a fresh key pair per session, discarded afterwards. This gives <strong>forward secrecy</strong>.</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">Forward secrecy — the point to make</span>
+    <p>"With ephemeral key exchange, the session key is derived from key pairs that exist only for that session and are then thrown away. So if an attacker records encrypted traffic today and steals the server's long-term private key a year later, <strong>they still can't decrypt the recorded sessions</strong> — the keys that protected them no longer exist anywhere. That's forward secrecy, and it's why TLS 1.3 mandates ephemeral key exchange and removed static RSA key transport entirely."</p></div>
+
+  <div class="bx st"><span class="l">The critical weakness</span>
+    <p><strong>Raw Diffie-Hellman is completely vulnerable to man-in-the-middle.</strong> It establishes a shared secret with <em>someone</em>, but proves nothing about who. An attacker can run DH with each party separately and relay. That's precisely why DH is always combined with authentication — a certificate signature proving the server's identity. Volunteering this shows you understand what key exchange does and doesn't provide.</p></div>
+</section>
+
+<section id="sig">
+  <div class="sn">06</div>
+  <h2>Digital signatures &amp; MACs</h2>
+  <p class="ss">How you prove a message came from a specific source and wasn't altered.</p>
+
+  <h3>Signatures — how they actually work</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:9px">
+      <div class="nd a" style="min-width:430px"><b>sign</b>hash the message → encrypt the hash with the PRIVATE key → attach as signature</div>
+      <div class="nd g" style="min-width:430px"><b>verify</b>hash the message yourself → decrypt the signature with the PUBLIC key → compare</div>
+    </div>
+    <div class="cap">Hashing makes it efficient; the private key makes it unforgeable.</div>
+  </div>
+  <p>Why hash first? Asymmetric operations are slow and size-limited, so you sign a fixed-size digest rather than the whole message. A match proves <strong>authentication</strong> (only the private-key holder could produce it), <strong>integrity</strong> (any change breaks the comparison), and <strong>non-repudiation</strong> (they can't credibly deny it).</p>
+
+  <h3>MACs</h3>
+  <p>A <strong>Message Authentication Code</strong> uses a shared secret key rather than a key pair. <code>HMAC-SHA256</code> is the standard construction — a specific way of combining a hash with a key that resists length-extension attacks.</p>
+  <table class="tb">
+    <tr><th></th><th>Signature</th><th>MAC</th></tr>
+    <tr><td>Key</td><td>Asymmetric pair</td><td>Shared secret</td></tr>
+    <tr><td>Who can verify</td><td>Anyone with the public key</td><td>Only holders of the secret</td></tr>
+    <tr><td>Non-repudiation</td><td><strong>Yes</strong></td><td><strong>No</strong> — either party could have made it</td></tr>
+    <tr><td>Speed</td><td>Slow</td><td>Very fast</td></tr>
+    <tr><td>Use</td><td>Certificates, JWTs (RS256/ES256), code signing</td><td>API request signing, session tokens, JWTs (HS256)</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">Encrypt-then-MAC</span>
+    <p>If you're composing encryption and authentication manually, the correct order is <strong>encrypt, then MAC the ciphertext</strong>. MAC-then-encrypt and encrypt-and-MAC both have known weaknesses. Better still: use AEAD (AES-GCM) and avoid the question entirely — which is the real answer to give.</p></div>
+</section>
+
+<section id="pki">
+  <div class="sn">07</div>
+  <h2>Certificates &amp; PKI</h2>
+  <p class="ss">Public keys prove identity only if you know whose key it is. This solves that.</p>
+
+  <h3>The problem</h3>
+  <p>A signature proves the message came from "whoever holds this private key." But how do you know that key belongs to your bank rather than an impostor who also generated a key pair? You need a trusted third party to vouch.</p>
+
+  <h3>The chain of trust</h3>
+  <div class="dg">
+    <div class="fl">
+      <div class="nd p"><b>Root CA</b>pre-trusted in<br>the OS trust store</div>
+      <span class="ar">→<small>signs</small></span>
+      <div class="nd a"><b>Intermediate CA</b>operational,<br>revocable</div>
+      <span class="ar">→<small>signs</small></span>
+      <div class="nd g"><b>Leaf</b>bank.com<br>+ its public key</div>
+    </div>
+    <div class="cap">Trust flows down from a root your device already trusts. Roots stay offline; intermediates do the daily signing.</div>
+  </div>
+
+  <h3>X.509 fields worth knowing</h3>
+  <ul>
+    <li><strong>Subject</strong> — who it identifies. <strong>Issuer</strong> — who signed it.</li>
+    <li><strong>Subject Alternative Name (SAN)</strong> — the hostnames it's valid for. Modern validation uses SAN, <em>not</em> the legacy Common Name.</li>
+    <li><strong>Validity period</strong> — notBefore/notAfter. Expiry is the most common production TLS outage.</li>
+    <li><strong>Public key</strong> and <strong>signature</strong> from the issuer.</li>
+    <li><strong>Key usage / extended key usage</strong> — what the key may be used for (server auth, client auth, code signing).</li>
+  </ul>
+
+  <h3>Validation — what a client actually checks</h3>
+  <ol>
+    <li>Signature chain verifies up to a trusted root.</li>
+    <li>Certificate is within its validity period.</li>
+    <li>Hostname matches a SAN entry.</li>
+    <li>Not revoked — via <strong>CRL</strong> (a list, poorly scaling) or <strong>OCSP</strong> (a live query, with privacy and availability issues). <strong>OCSP stapling</strong> fixes both by having the server present a recent signed status.</li>
+    <li>Key usage permits this purpose.</li>
+  </ol>
+
+  <div class="bx go"><span class="l">Certificate pinning — say the trade-off</span>
+    <p>"Pinning means trusting a specific certificate or public key rather than any valid chain — it defeats a rogue or compromised CA, which matters for an agent talking to a known backend. The cost is operational: rotation must be planned well in advance or you brick clients, and pinning breaks under corporate TLS inspection, which is why some enterprise agents must be explicitly exempted from inspection. I'd pin the intermediate or a backup key rather than the leaf, to leave room to rotate."</p></div>
+
+  <div class="bx yo"><span class="l">Your angle — device certificates</span>
+    <p>PKI isn't only for websites. An enterprise issues <strong>device certificates</strong> binding a machine's hardware-backed key to an identity — that's how a device authenticates to a backend with mTLS, and it's the foundation of device trust. Say: "the same X.509 machinery that authenticates a web server authenticates a managed device, except the key lives in the Secure Enclave and the CA is the enterprise's own."</p></div>
+</section>
+
+<section id="tls">
+  <div class="sn">08</div>
+  <h2>TLS in detail</h2>
+  <p class="ss">Everything above, assembled. Be able to walk the handshake.</p>
+
+  <h3>The handshake, conceptually</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd" style="min-width:440px"><b>1 · hello</b>client offers TLS version, cipher suites, and its ephemeral key share</div>
+      <div class="nd a" style="min-width:440px"><b>2 · server response</b>picks the cipher suite, sends its certificate chain and its key share</div>
+      <div class="nd" style="min-width:440px"><b>3 · authenticate</b>client validates the chain, expiry, hostname, revocation</div>
+      <div class="nd p" style="min-width:440px"><b>4 · derive</b>both sides compute the same session key via ECDHE — never transmitted</div>
+      <div class="nd g" style="min-width:440px"><b>5 · switch</b>all further traffic encrypted with AES-GCM using that session key</div>
+    </div>
+    <div class="cap">Asymmetric to authenticate and agree; symmetric for throughput.</div>
+  </div>
+
+  <h3>TLS 1.3 — what changed and why</h3>
+  <ul>
+    <li><strong>One round trip</strong> instead of two (and 0-RTT resumption, with a replay caveat).</li>
+    <li><strong>Removed static RSA key transport</strong> — all key exchange is now ephemeral, so <strong>forward secrecy is mandatory</strong>.</li>
+    <li><strong>Removed weak primitives</strong> — RC4, 3DES, CBC modes, MD5/SHA-1 signatures, compression (which enabled CRIME).</li>
+    <li><strong>Encrypts more of the handshake</strong>, including the certificate.</li>
+    <li>Cipher suites are shorter because only AEAD modes remain.</li>
+  </ul>
+
+  <h3>mTLS</h3>
+  <p>Normally only the server proves identity. In <strong>mutual TLS</strong>, the client also presents a certificate — so both sides authenticate. This is the natural mechanism for a device with a hardware-bound key to authenticate to a backend, and for service-to-service auth inside a zero-trust network.</p>
+
+  <div class="bx st"><span class="l">Attacks to name</span>
+    <p><strong>Downgrade</strong> (forcing an older protocol — mitigated by HSTS and version pinning in the handshake), <strong>BEAST/CRIME/POODLE</strong> (older protocol and compression flaws, resolved by TLS 1.2+/1.3), <strong>Heartbleed</strong> (an OpenSSL implementation bug, not a protocol flaw — a good example of why implementation matters as much as design), and <strong>rogue CA</strong> (mitigated by pinning and Certificate Transparency).</p></div>
+</section>
+
+<section id="pw">
+  <div class="sn">09</div>
+  <h2>Password storage &amp; key derivation</h2>
+  <p class="ss">The most commonly botched area in real applications — and directly relevant at an identity company.</p>
+
+  <h3>Why a plain hash is wrong</h3>
+  <p>SHA-256 is designed to be <em>fast</em> — that's a virtue for integrity and a catastrophe for passwords. A modern GPU rig computes billions of SHA-256 hashes per second, so a stolen database of hashed passwords falls in hours. Passwords need functions that are deliberately <strong>slow and resource-hungry</strong>.</p>
+
+  <h3>Salt, pepper, and work factor</h3>
+  <ul>
+    <li><strong>Salt</strong> — a unique random value per password, stored alongside the hash. Defeats rainbow tables and ensures two users with the same password have different hashes. Not secret; uniqueness is the point.</li>
+    <li><strong>Pepper</strong> — a single application-wide secret kept <em>outside</em> the database (in an HSM or secrets manager). If only the database leaks, the hashes are still uncrackable. Optional but a nice detail.</li>
+    <li><strong>Work factor / cost</strong> — a tunable parameter making the function slower. You raise it as hardware improves.</li>
+  </ul>
+
+  <h3>The functions</h3>
+  <table class="tb">
+    <tr><th>Function</th><th>Resistance</th><th>Verdict</th></tr>
+    <tr><td><strong>Argon2id</strong></td><td>CPU + memory + parallelism tunable</td><td><strong>Current recommendation.</strong> Winner of the Password Hashing Competition.</td></tr>
+    <tr><td>scrypt</td><td>CPU + memory</td><td>Strong. Memory-hardness resists GPU and ASIC attacks.</td></tr>
+    <tr><td>bcrypt</td><td>CPU</td><td>Still fine and widely deployed. Note the 72-byte input limit.</td></tr>
+    <tr><td>PBKDF2</td><td>CPU only</td><td>Acceptable where required by standards, but not memory-hard, so GPUs parallelise it well. Needs a high iteration count.</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">Memory-hardness — the key concept</span>
+    <p>"The reason Argon2 and scrypt are preferred is <strong>memory-hardness</strong>. An attacker's advantage comes from massive parallelism on GPUs or custom ASICs — but those have limited memory per core. Forcing each hash computation to consume significant memory removes that advantage, because you can't run thousands of instances in parallel. PBKDF2 only burns CPU, which is exactly what specialised hardware is good at."</p></div>
+
+  <div class="bx wn"><span class="l">Two more points</span>
+    <p><strong>Constant-time comparison</strong> when checking a hash or token — a normal comparison returns early on the first mismatch, leaking information through timing. <strong>KDFs vs password hashing:</strong> <code>HKDF</code> is for deriving multiple keys from an already-strong secret (a TLS session key), while Argon2/bcrypt are for stretching a <em>weak</em> human-chosen secret. Different jobs; don't swap them.</p></div>
+</section>
+
+<section id="apple">
+  <div class="sn">10 / ★ YOUR GROUND</div>
+  <h2>Apple platform cryptography</h2>
+  <p class="ss">Where the theory meets what you actually ship. This is your strongest section — lead with it whenever crypto comes up.</p>
+
+  <h3>The Secure Enclave</h3>
+  <p>A separate, isolated coprocessor with its own boot ROM and encrypted memory. The property that matters: <strong>a key generated inside the SEP never leaves it.</strong> Not to your app, not to the OS, not to root. You can only ask the SEP to perform operations with it.</p>
+<pre><code><span class="c">// P-256 key, non-exportable, gated on biometric or passcode</span>
+<span class="k">let</span> access = SecAccessControlCreateWithFlags(
+    <span class="k">nil</span>,
+    kSecAttrAccessibleWhenUnlockedThisDeviceOnly,   <span class="c">// no backup, no migration</span>
+    [.privateKeyUsage, .userPresence],              <span class="c">// require user presence</span>
+    <span class="k">nil</span>)!
+
+<span class="k">let</span> attrs: [<span class="k">String</span>: Any] = [
+    kSecAttrKeyType <span class="k">as</span> <span class="k">String</span>:      kSecAttrKeyTypeECSECPrimeRandom,
+    kSecAttrKeySizeInBits <span class="k">as</span> <span class="k">String</span>: 256,
+    kSecAttrTokenID <span class="k">as</span> <span class="k">String</span>:      kSecAttrTokenIDSecureEnclave,   <span class="c">// ← in the SEP</span>
+    kSecPrivateKeyAttrs <span class="k">as</span> <span class="k">String</span>: [
+        kSecAttrIsPermanent <span class="k">as</span> <span class="k">String</span>:   <span class="k">true</span>,
+        kSecAttrAccessControl <span class="k">as</span> <span class="k">String</span>: access
+    ]
+]
+
+<span class="k">var</span> err: Unmanaged&lt;CFError&gt;?
+<span class="k">let</span> privateKey = SecKeyCreateRandomKey(attrs <span class="k">as</span> CFDictionary, &amp;err)!
+<span class="c">// Only signatures leave the device — never the key itself.</span></code></pre>
+
+  <div class="bx yo"><span class="l">The sentence to lead with</span>
+    <p>"The property I care about most in practice is <strong>non-exportability</strong>. A key in the Keychain is protected at rest, but to <em>use</em> it you load it into process memory — where a compromised process can exfiltrate it. A Secure Enclave key never enters the application processor's memory at all. Even root can't extract it; it can only request operations while policy allows. That's what makes a credential genuinely device-bound, and it's the same primitive underneath FIDO2 platform authenticators and MDM device attestation."</p></div>
+
+  <h3>Keychain vs Secure Enclave</h3>
+  <table class="tb">
+    <tr><th></th><th>Keychain</th><th>Secure Enclave</th></tr>
+    <tr><td>Stores</td><td>Any secret — passwords, tokens, keys, certificates</td><td>Only keys, and only supported algorithms (P-256)</td></tr>
+    <tr><td>Retrievable</td><td>Yes — that's the point</td><td><strong>Never</strong></td></tr>
+    <tr><td>In process memory</td><td>Yes, when in use</td><td>No, ever</td></tr>
+    <tr><td>Use for</td><td>Secrets you must read back</td><td>Credentials that should only ever sign or decrypt</td></tr>
+  </table>
+  <p>Keychain accessibility classes worth naming: <code>WhenUnlocked</code>, <code>AfterFirstUnlock</code> (for daemons that must work before a user logs in), and the <code>ThisDeviceOnly</code> suffix which prevents the item syncing or restoring to another device.</p>
+
+  <h3>CryptoKit — the modern Swift API</h3>
+<pre><code><span class="k">import</span> CryptoKit
+
+<span class="c">// Hashing</span>
+<span class="k">let</span> digest = SHA256.hash(data: data)
+
+<span class="c">// Symmetric AEAD</span>
+<span class="k">let</span> key = SymmetricKey(size: .bits256)
+<span class="k">let</span> sealed = <span class="k">try</span> AES.GCM.seal(plaintext, using: key)
+<span class="k">let</span> opened = <span class="k">try</span> AES.GCM.open(sealed, using: key)
+
+<span class="c">// Signing</span>
+<span class="k">let</span> signingKey = P256.Signing.PrivateKey()
+<span class="k">let</span> signature = <span class="k">try</span> signingKey.signature(<span class="k">for</span>: data)
+<span class="k">let</span> valid = signingKey.publicKey.isValidSignature(signature, <span class="k">for</span>: data)
+
+<span class="c">// Key agreement (ECDH) + HKDF derivation</span>
+<span class="k">let</span> priv = P256.KeyAgreement.PrivateKey()
+<span class="k">let</span> shared = <span class="k">try</span> priv.sharedSecretFromKeyAgreement(with: theirPublicKey)
+<span class="k">let</span> sessionKey = shared.hkdfDerivedSymmetricKey(
+    using: SHA256.<span class="k">self</span>, salt: salt, sharedInfo: <span class="k">Data</span>(), outputByteCount: 32)
+
+<span class="c">// MAC</span>
+<span class="k">let</span> mac = HMAC&lt;SHA256&gt;.authenticationCode(<span class="k">for</span>: data, using: key)</code></pre>
+  <p>Note CryptoKit deliberately <strong>doesn't expose ECB or unauthenticated modes</strong> — the API design steers you toward safe choices. Worth saying: "I prefer CryptoKit over CommonCrypto precisely because the unsafe options aren't reachable."</p>
+
+  <h3>Device attestation — the synthesis</h3>
+  <p>Where all of this converges in your work: a device generates a Secure Enclave key at enrollment, proves via <strong>hardware attestation</strong> that it's a genuine device with a non-exportable key, receives a device certificate binding that key to an identity, and then authenticates via mTLS or signed challenges. That's PKI plus hardware-backed keys plus challenge-response — the entire document in one flow.</p>
+</section>
+
+<section id="mistakes">
+  <div class="sn">11</div>
+  <h2>Classic mistakes</h2>
+  <p class="ss">Being able to name these is often more impressive than reciting algorithms.</p>
+  <table class="tb">
+    <tr><th>Mistake</th><th>Why it's wrong</th></tr>
+    <tr><td>Rolling your own crypto</td><td>The algorithm is rarely the weak point — the implementation is. Side channels, padding, nonce handling.</td></tr>
+    <tr><td>ECB mode</td><td>Identical plaintext blocks produce identical ciphertext; structure leaks visibly.</td></tr>
+    <tr><td>Nonce/IV reuse with GCM or CTR</td><td>Catastrophic — with GCM it leaks the authentication key and enables forgery.</td></tr>
+    <tr><td>Plain hash for passwords</td><td>Far too fast. Needs a salted, slow, memory-hard KDF.</td></tr>
+    <tr><td>Base64 mistaken for encryption</td><td>It's an encoding. Zero confidentiality.</td></tr>
+    <tr><td>Non-constant-time comparison</td><td>Early exit on mismatch leaks the secret through timing.</td></tr>
+    <tr><td>Textbook RSA (no padding)</td><td>Deterministic and malleable. Use OAEP or PSS.</td></tr>
+    <tr><td>Disabling certificate validation "to make it work"</td><td>Removes the entire authentication guarantee. Ships to production more often than you'd think.</td></tr>
+    <tr><td>Weak randomness</td><td><code>rand()</code> or a predictable seed for keys or nonces. Use the platform CSPRNG.</td></tr>
+    <tr><td>Hardcoded keys in source</td><td>Extractable from any binary. Use the Keychain or a secrets manager.</td></tr>
+    <tr><td>MAC-then-encrypt</td><td>Wrong composition order. Encrypt-then-MAC, or better, use AEAD.</td></tr>
+    <tr><td>Storing what you don't need</td><td>The strongest protection for a secret is not having it. Store a verifier, not the secret.</td></tr>
+  </table>
+</section>
+
+<section id="qa">
+  <div class="sn">12</div>
+  <h2>Interview Q&amp;A</h2>
+  <p class="ss">Answer in two or three sentences, then offer depth if invited.</p>
+
+  <details class="q"><summary><span class="tag hot">CERTAIN</span>Symmetric vs asymmetric — explain the difference.</summary><div class="bod">
+    <p>Symmetric uses one shared key for both encryption and decryption — fast and suitable for bulk data, but it has the key-distribution problem: both parties need the same secret and getting it to them securely is the hard part. Asymmetric uses a mathematically linked key pair: encrypt with the public key so only the private-key holder reads it, or sign with the private key so anyone can verify authorship. It solves distribution and identity but is far slower and size-limited. Real systems combine them — asymmetric to authenticate and agree a session key, symmetric for the payload. That's exactly TLS.</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">CERTAIN</span>Hashing vs encryption vs encoding?</summary><div class="bod">
+    <p>Encoding (base64) is a reversible format change with no key and no security — purely for transport. Hashing is one-way with no key, used for integrity and fingerprinting. Encryption is reversible <em>with a key</em>, used for confidentiality. Mixing these up is the classic tell, and "we base64 the password" is the classic incident.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>How would you encrypt sensitive data at rest?</summary><div class="bod">
+    <p>AES-256-GCM, with a unique nonce per message and never reused under the same key. GCM is AEAD, so I get integrity along with confidentiality rather than composing them by hand. The real question is key management, not the cipher: I'd derive or wrap the data key with a key held in hardware — on Apple platforms, a Secure Enclave key, so the wrapping key is non-exportable. Rotation strategy matters too: wrap the data key so rotating means re-wrapping rather than re-encrypting everything.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>How does TLS work?</summary><div class="bod">
+    <p>The client and server negotiate a version and cipher suite, the server presents its certificate chain, and the client validates it — signature chain to a trusted root, validity period, hostname against the SAN, revocation. Then both sides derive a shared session key via ephemeral ECDH, which is never transmitted, and switch to symmetric AES-GCM for the actual data. TLS 1.3 made ephemeral key exchange mandatory, which means forward secrecy by default, and dropped the weak primitives that enabled the older downgrade attacks.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>What is forward secrecy and why does it matter?</summary><div class="bod">
+    <p>Session keys are derived from ephemeral key pairs that are discarded after the session. So an attacker who records encrypted traffic today and later compromises the server's long-term private key still can't decrypt those recordings — the keys that protected them no longer exist. It's why TLS 1.3 removed static RSA key transport and mandates ECDHE, and it's the direct defence against "harvest now, decrypt later."</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>How do you store passwords?</summary><div class="bod">
+    <p>Argon2id, or bcrypt/scrypt if that's what the platform provides, with a unique per-password salt and a tuned work factor. Never a plain hash — SHA-256 is fast by design, so a stolen database falls to GPUs quickly. Memory-hardness is the key property: it removes the attacker's parallelism advantage on GPUs and ASICs. Optionally a pepper held outside the database. And constant-time comparison on verification. Better still, move to passwordless — a phishing-resistant credential means there's no password database to steal.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>Explain Diffie-Hellman.</summary><div class="bod">
+    <p>It lets two parties derive a shared secret over a fully public channel without ever transmitting it, based on the discrete logarithm problem — the exchanged values are easy to compute forward and infeasible to reverse. ECDH is the elliptic-curve version used today, and the ephemeral variant gives forward secrecy. The crucial caveat: raw DH is completely vulnerable to man-in-the-middle, because it establishes a secret with <em>someone</em> but proves nothing about who — which is why it's always paired with certificate-based authentication.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>Signature vs MAC?</summary><div class="bod">
+    <p>Both give integrity and authentication. A MAC uses a shared secret, so it's fast but offers no non-repudiation — either party could have produced it. A signature uses a private key, so only the holder could have made it and they can't credibly deny it, at the cost of being much slower. Certificates and code signing need signatures; internal API request signing is usually fine with HMAC.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>What does the Secure Enclave give you that the Keychain doesn't?</summary><div class="bod">
+    <p>Non-exportability. Keychain protects a secret at rest, but using it means loading it into process memory, where a compromised process can exfiltrate it. A Secure Enclave key never enters the application processor's memory at all — you can only request signing or decryption, optionally gated on biometric user presence. The trade-off is that SE keys are limited to supported algorithms like P-256 and can't be backed up or migrated, which is precisely the point for a device-bound credential.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>Why is 3DES deprecated?</summary><div class="bod">
+    <p>Two reasons. Its 64-bit block size makes it vulnerable to birthday-bound collision attacks — Sweet32 — after roughly 32 GB under a single key, which is reachable on a long-lived connection. And it's slow, being DES applied three times. AES has a 128-bit block, is faster, and has hardware acceleration. 3DES only appears now in legacy systems that can't be changed.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>What about quantum computing?</summary><div class="bod">
+    <p>Shor's algorithm on a sufficiently large quantum computer breaks RSA and ECC, since both rest on problems quantum computers solve efficiently. Symmetric crypto and hashes are much less affected — Grover's algorithm roughly halves the effective key length, so you double key sizes. NIST has standardised post-quantum algorithms like ML-KEM and ML-DSA, and current practice is hybrid deployment — classical plus post-quantum together — because of harvest-now-decrypt-later. It's not urgent for session data with short lifetimes, but it matters for anything that must stay confidential for a decade.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>How would you design credential storage for a device agent?</summary><div class="bod">
+    <p>Generate a P-256 key inside the Secure Enclave at enrollment, non-exportable and optionally user-presence gated. Send only the public key to the backend, which issues a device certificate binding it to an identity. Authenticate via mTLS or signed challenges. The result is that there's no bearer secret to steal — even root on the machine can't exfiltrate the private key, only request signatures while policy allows. Rotation means minting a new SE key and re-binding. That's the design I'd defend, and it's what I've shipped.</p></div></details>
+
+  <div class="bx go"><span class="l">The closing posture</span>
+    <p>If pushed past your depth — internals of a cipher, lattice-based constructions, side-channel countermeasures — say so cleanly and pivot: <em>"I haven't worked at that level; my depth is in applied crypto and key management on Apple platforms. Here's how I'd reason about it…"</em> At an identity company, judgment about <strong>key management</strong> matters far more than reciting algorithm internals, and that's where your real experience sits.</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Cryptography · primitives → algorithms → protocols → Apple platform → interview Q&amp;A.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

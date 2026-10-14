@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ES &amp; Network Extension — from scratch to fleet scale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c2128;
+    --ink-soft:#4b5563;
+    --ink-faint:#7a8394;
+    --paper:#f4f4f0;
+    --surface:#ffffff;
+    --surface-2:#ebebe4;
+    --line:#dedecf;
+    --line-strong:#c8c8b8;
+    --forest:#1d5c3f;         /* primary — ES / trust */
+    --forest-tint:#e4efe8;
+    --ocean:#1a4f7a;          /* Network Extension */
+    --ocean-tint:#e3edf5;
+    --amber:#996a15;          /* layman explainers */
+    --amber-tint:#f7efdc;
+    --crimson:#a03d2e;        /* traps / hot path warnings */
+    --crimson-tint:#f8e7e2;
+    --violet:#5f4491;         /* interview ammo */
+    --violet-tint:#ece6f6;
+    --code-bg:#161b22;
+    --code-ink:#e6edf3;
+    --code-key:#a5c9f5;
+    --code-str:#9fd6a0;
+    --code-com:#6e7a8a;
+    --radius:13px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.5px;line-height:1.65;-webkit-font-smoothing:antialiased;}
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--forest);z-index:60;}
+
+  .shell{display:flex;min-height:100vh;}
+  #sidebar{width:288px;flex:0 0 288px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#141a15;color:#c8d4cb;padding:26px 16px 44px;}
+  .brand{font-family:'Sora';font-weight:800;font-size:18px;color:#fff;line-height:1.2;letter-spacing:-.01em;}
+  .brand .sub{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10.5px;color:#7f957f;margin-top:8px;letter-spacing:.03em;line-height:1.5;}
+  .counter{font-family:'JetBrains Mono';font-size:11px;color:#7f957f;margin:18px 4px 8px;border-top:1px solid #263a2b;padding-top:14px;}
+  .counter b{color:#a8e0b8;}
+  nav a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:#aebfb2;font-size:13.5px;padding:7px 9px;border-radius:8px;line-height:1.3;}
+  nav a .n{font-family:'JetBrains Mono';font-size:10.5px;color:#6d8571;min-width:24px;}
+  nav a:hover{background:#1e2a20;color:#fff;}
+  nav a.active{background:var(--forest);color:#fff;font-weight:500;}
+  nav a.active .n{color:#bfe6cb;}
+
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 34px 130px;}
+  .col{width:100%;max-width:860px;}
+
+  header.hero{padding:60px 0 30px;border-bottom:2px solid var(--ink);margin-bottom:6px;}
+  .kicker{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--forest);margin:0 0 16px;}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(29px,4.8vw,44px);line-height:1.05;letter-spacing:-.02em;margin:0 0 16px;}
+  .lede{font-size:18px;color:var(--ink-soft);max-width:64ch;margin:0;}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;}
+  .lg{font-family:'JetBrains Mono';font-size:11px;padding:5px 11px;border-radius:999px;border:1px solid;}
+  .lg.a{background:var(--amber-tint);color:var(--amber);border-color:#e8d5a8;}
+  .lg.e{background:var(--forest-tint);color:var(--forest);border-color:#bcd8c6;}
+  .lg.n{background:var(--ocean-tint);color:var(--ocean);border-color:#b9d2e4;}
+  .lg.v{background:var(--violet-tint);color:var(--violet);border-color:#d4c8ec;}
+
+  section{padding:52px 0 8px;border-top:1px solid var(--line);margin-top:30px;}
+  section:first-of-type{border-top:none;margin-top:0;}
+  .secnum{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:.1em;color:var(--forest);}
+  h2{font-family:'Sora';font-weight:800;font-size:28px;letter-spacing:-.015em;margin:6px 0 6px;line-height:1.1;}
+  .secsub{color:var(--ink-faint);font-size:15px;margin:0 0 22px;}
+  h3{font-family:'Sora';font-weight:700;font-size:19px;margin:32px 0 8px;letter-spacing:-.01em;}
+  h4{font-family:'Sora';font-weight:700;font-size:15.5px;margin:22px 0 6px;}
+  p{margin:0 0 14px;}
+  ul,ol{margin:0 0 16px;padding-left:22px;}
+  li{margin:5px 0;}
+  strong{font-weight:600;}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surface-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:17px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.6px;line-height:1.62;margin:14px 0 18px;}
+  pre code{background:none;border:none;padding:0;color:inherit;}
+  .k{color:var(--code-key);}.s{color:var(--code-str);}.c{color:var(--code-com);font-style:italic;}
+
+  .box{border-radius:12px;padding:15px 17px;margin:16px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surface);}
+  .box .lbl{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;}
+  .layman{border-left-color:var(--amber);background:var(--amber-tint);}   .layman .lbl{color:var(--amber);}
+  .hot{border-left-color:var(--crimson);background:var(--crimson-tint);}  .hot .lbl{color:var(--crimson);}
+  .ammo{border-left-color:var(--violet);background:var(--violet-tint);}   .ammo .lbl{color:var(--violet);}
+  .you{border-left-color:var(--forest);background:var(--forest-tint);}    .you .lbl{color:var(--forest);}
+  .box p:last-child{margin-bottom:0;}
+
+  /* diagrams */
+  .dg{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 16px;margin:18px 0;}
+  .dg .cap{font-family:'JetBrains Mono';font-size:11px;color:var(--ink-faint);text-align:center;margin-top:13px;letter-spacing:.02em;}
+  .flow{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;}
+  .nd{background:var(--surface-2);border:1.5px solid var(--line-strong);border-radius:10px;padding:9px 12px;font-size:12.5px;text-align:center;min-width:70px;line-height:1.35;}
+  .nd b{font-family:'JetBrains Mono';font-size:10px;display:block;color:var(--ink-faint);font-weight:500;margin-bottom:2px;letter-spacing:.03em;}
+  .nd.es{border-color:var(--forest);background:var(--forest-tint);}
+  .nd.ne{border-color:var(--ocean);background:var(--ocean-tint);}
+  .nd.kr{border-color:#444;background:#e8e8e8;}
+  .nd.bad{border-color:var(--crimson);background:var(--crimson-tint);}
+  .nd.cl{border-color:var(--violet);background:var(--violet-tint);}
+  .ar{font-family:'JetBrains Mono';color:var(--ink-faint);font-size:16px;padding:0 2px;text-align:center;}
+  .ar small{display:block;font-size:9px;line-height:1.1;margin-top:1px;}
+  .lane{border:1px dashed var(--line-strong);border-radius:10px;padding:12px 10px 8px;margin:8px 0;position:relative;}
+  .lane .ttl{position:absolute;top:-9px;left:12px;background:var(--surface);padding:0 8px;font-family:'JetBrains Mono';font-size:10px;color:var(--ink-faint);letter-spacing:.05em;text-transform:uppercase;}
+  .stack{display:flex;flex-direction:column;gap:9px;}
+  .step{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;}
+  .step .num{font-family:'JetBrains Mono';font-weight:600;color:var(--forest);font-size:12.5px;min-width:26px;}
+  .step .txt{font-size:14px;}
+
+  details.q{border:1px solid var(--line-strong);border-radius:12px;margin:12px 0;background:var(--surface);overflow:hidden;}
+  details.q summary{cursor:pointer;list-style:none;padding:14px 46px 14px 17px;position:relative;font-weight:600;font-size:15px;}
+  details.q summary::-webkit-details-marker{display:none;}
+  details.q summary:hover{background:var(--surface-2);}
+  details.q summary::after{content:"+";position:absolute;right:17px;top:11px;font-family:'JetBrains Mono';font-size:18px;color:var(--ink-faint);}
+  details.q[open] summary::after{content:"–";}
+  .ans{padding:2px 17px 16px;border-top:1px solid var(--line);}
+  .ans p:first-child{margin-top:13px;}
+  .ans .albl{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);margin:12px 0 4px;font-weight:600;}
+
+  .tbl{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+  .tbl th,.tbl td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .tbl th{font-family:'Sora';font-weight:700;font-size:12.5px;border-bottom:2px solid var(--ink);}
+  .tbl td:first-child{font-family:'JetBrains Mono';font-size:12px;color:var(--forest);}
+
+  .review{display:flex;align-items:center;gap:10px;margin:26px 0 0;padding:12px 15px;border:1px dashed var(--line-strong);border-radius:10px;background:var(--surface);}
+  .review input{width:18px;height:18px;accent-color:var(--forest);cursor:pointer;}
+  .review label{font-size:14px;color:var(--ink-soft);cursor:pointer;}
+
+  .topbar{display:none;}
+  @media (max-width:920px){
+    .shell{flex-direction:column;}
+    #sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s;z-index:50;}
+    #sidebar.open{transform:translateX(0);}
+    .topbar{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:12px 18px;z-index:40;}
+    .topbar .burger{font-size:22px;background:none;border:none;cursor:pointer;}
+    .topbar .t{font-family:'Sora';font-weight:800;font-size:14.5px;}
+    main{padding:0 18px 100px;}
+    header.hero{padding:32px 0 22px;}
+    #scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none;}
+    #scrim.show{display:block;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important;}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar"><button class="burger" id="burger" aria-label="Menu">☰</button><span class="t">ES &amp; NE — from scratch</span></div>
+<div id="scrim"></div>
+
+<div class="shell">
+  <aside id="sidebar">
+    <div class="brand">Endpoint Security &amp;<br>Network Extension<span class="sub">macOS · from scratch → industry<br>→ fleet scale · interview-ready</span></div>
+    <div class="counter">Sections done · <b><span id="done">0</span></b> / 9</div>
+    <nav id="toc">
+      <a href="#big"><span class="n">01</span><span>The big picture — why these exist</span></a>
+      <a href="#es1"><span class="n">02</span><span>Endpoint Security — from scratch</span></a>
+      <a href="#es2"><span class="n">03</span><span>ES deep dive — the hot path</span></a>
+      <a href="#ne1"><span class="n">04</span><span>Network Extension — from scratch</span></a>
+      <a href="#ne2"><span class="n">05</span><span>NE deep dive — the five providers</span></a>
+      <a href="#industry"><span class="n">06</span><span>Industry: EDR · DLP · governance</span></a>
+      <a href="#scale"><span class="n">07</span><span>Fleet scale — millions of devices</span></a>
+      <a href="#deploy"><span class="n">08</span><span>Deployment, approval &amp; ops</span></a>
+      <a href="#drill"><span class="n">09</span><span>Interview drills — say this</span></a>
+    </nav>
+  </aside>
+
+  <main>
+  <div class="col">
+
+    <header class="hero">
+      <p class="kicker">Built for today's interview · read top to bottom · ~50 min</p>
+      <h1>Two frameworks, one mission: see and control everything on the Mac.</h1>
+      <p class="lede">Endpoint Security watches <strong>what happens on the machine</strong> (processes, files). Network Extension watches <strong>what leaves and enters it</strong> (traffic, DNS). Together they are the entire sensory and enforcement system of every modern macOS security product — EDR, DLP, ZTNA, governance. This document takes each from zero to fleet-scale architecture.</p>
+      <div class="legend">
+        <span class="lg a">● PLAIN ENGLISH — the layman entry point</span>
+        <span class="lg e">● ES — Endpoint Security</span>
+        <span class="lg n">● NE — Network Extension</span>
+        <span class="lg v">● INTERVIEW AMMO — exact lines to say</span>
+      </div>
+    </header>
+
+    <!-- 01 BIG PICTURE -->
+    <section id="big">
+      <div class="secnum">01 / FOUNDATION</div>
+      <h2>The big picture — why these frameworks exist at all</h2>
+      <p class="secsub">Every deep answer in your interview should be able to zoom out to this story. It's the "why" underneath both frameworks.</p>
+
+      <div class="box layman"><span class="lbl">Plain English</span>
+        <p>Think of the Mac as a building. The <strong>kernel</strong> is the building's core machinery room — electricity, plumbing, elevators. Security products used to install their own equipment <em>inside</em> that machinery room (kernel extensions, "kexts"). Powerful — but one mistake and the whole building loses power (kernel panic), and a burglar who breaks into your equipment owns the entire building (kernel-level compromise).</p>
+        <p>Apple's fix: kick everyone out of the machinery room, and instead install <strong>official observation windows and control levers</strong> on the outside. Security vendors now stand outside the room, watching through the windows and pulling approved levers. That's what System Extensions are — and Endpoint Security and Network Extension are the two most important windows.</p></div>
+
+      <h3>The architecture shift, precisely</h3>
+      <div class="dg">
+        <div class="lane"><span class="ttl">Old world — kexts (deprecated)</span>
+          <div class="flow">
+            <div class="nd bad"><b>vendor code</b>runs INSIDE<br>the kernel</div>
+            <span class="ar">→</span>
+            <div class="nd bad">bug = kernel panic<br>compromise = root of everything</div>
+          </div>
+        </div>
+        <div class="lane"><span class="ttl">New world — System Extensions (current)</span>
+          <div class="flow">
+            <div class="nd kr"><b>kernel</b>emits events,<br>enforces verdicts</div>
+            <span class="ar">⇄<small>brokered API</small></span>
+            <div class="nd es"><b>ES client</b>user-space process<br>(vendor's agent)</div>
+            <div class="nd ne"><b>NE provider</b>user-space process<br>(vendor's agent)</div>
+          </div>
+        </div>
+        <div class="cap">Vendor code moved from inside the kernel to sandboxed user-space processes talking to kernel-owned hook points.</div>
+      </div>
+      <ul>
+        <li><strong>Why Apple did it:</strong> stability (a crashing security agent restarts as a process instead of panicking the machine), security (agents are signed, entitled, sandboxed, least-privilege), and maintainability (a stable versioned API instead of vendors interposing on private kernel internals that broke every OS release).</li>
+        <li><strong>What vendors lost:</strong> arbitrary kernel interposition. You now operate within Apple's event vocabulary, Apple's deadlines, and Apple's approval flow. Part of the engineering craft today is doing world-class security <em>inside those constraints</em>.</li>
+        <li><strong>The System Extensions umbrella</strong> has three families: <strong>Endpoint Security</strong> (system events: process, file, and related activity), <strong>Network Extension</strong> (traffic: filter, tunnel, proxy, DNS), and <strong>DriverKit</strong> (user-space drivers — not our focus today).</li>
+      </ul>
+      <div class="box ammo"><span class="lbl">Interview ammo — the one-liner</span>
+        <p>"ES and NE split the observability of a Mac cleanly: <strong>ES answers 'what is happening on the machine' — process, file, and system events; NE answers 'what is the machine saying to the world' — flows, packets, DNS.</strong> A complete endpoint product almost always runs both, correlated by process identity."</p></div>
+      <div class="review"><input type="checkbox" id="c1"><label for="c1">Section 01 done</label></div>
+    </section>
+
+    <!-- 02 ES FROM SCRATCH -->
+    <section id="es1">
+      <div class="secnum">02 / ENDPOINT SECURITY</div>
+      <h2>Endpoint Security framework — from scratch</h2>
+      <p class="secsub">The framework that lets your agent observe and authorize system events. Start with the mental model, then the moving parts.</p>
+
+      <div class="box layman"><span class="lbl">Plain English</span>
+        <p>Imagine a security guard posted at every door of the building. Every time <em>anything</em> important happens — a program starts, a file opens, a USB disk mounts — the guard either <strong>writes it in a logbook</strong> (a notification) or <strong>physically holds the door shut and phones you</strong>: "someone wants to run this program — yes or no?" (an authorization). Your agent is the person answering that phone. And here's the drama: while you're deciding, <em>the door stays held and the person stays frozen</em>. Answer too slowly and the whole building starts jamming up. That single fact drives the entire architecture of every ES product ever built.</p></div>
+
+      <h3>The moving parts</h3>
+      <ul>
+        <li><strong><code>es_client</code></strong> — your connection to the ES subsystem. Created with <code>es_new_client()</code>, which hands you a message stream. One process can hold multiple clients (commonly: one for AUTH events, one for NOTIFY, so slow telemetry never blocks verdicts).</li>
+        <li><strong>Subscriptions</strong> — you subscribe to specific event types with <code>es_subscribe()</code>. You get only what you ask for; subscribing to everything is a rookie mistake that drowns you.</li>
+        <li><strong>Events come in two families</strong> — this is the most important distinction in the whole framework:</li>
+      </ul>
+      <table class="tbl">
+        <tr><th>Family</th><th>What it means</th><th>Examples</th><th>Your obligation</th></tr>
+        <tr><td>AUTH_*</td><td>The kernel <strong>blocks the operation</strong> and waits for your verdict</td><td><code>AUTH_EXEC</code>, <code>AUTH_OPEN</code>, <code>AUTH_MOUNT</code>, <code>AUTH_RENAME</code>, <code>AUTH_SIGNAL</code></td><td>Respond ALLOW/DENY via <code>es_respond_*</code> <strong>before the deadline</strong></td></tr>
+        <tr><td>NOTIFY_*</td><td>Fire-and-forget telemetry — it already happened</td><td><code>NOTIFY_EXEC</code>, <code>NOTIFY_FORK</code>, <code>NOTIFY_EXIT</code>, <code>NOTIFY_WRITE</code>, <code>NOTIFY_MOUNT</code>, file events</td><td>None — but volume is enormous; process off-thread</td></tr>
+      </table>
+
+      <h3>What an event message carries</h3>
+      <p>Each <code>es_message_t</code> is rich — this richness is what makes ES powerful:</p>
+      <ul>
+        <li><strong>The acting process</strong>: pid, parent pid, and crucially the <strong>audit token</strong> (the kernel-vouched identity of the process — unforgeable, unlike a pid which can be reused).</li>
+        <li><strong>Code-signing info</strong>: signing ID, team ID, <strong>CDHash</strong> (the code directory hash — a cryptographic fingerprint of the binary), platform-binary flag. This is how you recognize "who" is acting without trusting paths.</li>
+        <li><strong>Event-specific payload</strong>: for exec — the target binary, args, env; for open — the file and flags; for mount — the volume.</li>
+        <li><strong>Timing</strong>: including, for AUTH events, the <strong>deadline</strong> (a mach time by which you must respond).</li>
+      </ul>
+
+      <h3>Minimal working shape</h3>
+<pre><code><span class="k">var</span> client: OpaquePointer?
+<span class="k">let</span> res = es_new_client(&amp;client) { client, message <span class="k">in</span>
+    <span class="k">switch</span> message.pointee.event_type {
+
+    <span class="k">case</span> ES_EVENT_TYPE_AUTH_EXEC:
+        <span class="c">// KERNEL IS BLOCKED. Deadline ticking. No I/O here.</span>
+        <span class="k">let</span> verdict = policyCache.verdict(<span class="k">for</span>: message)   <span class="c">// O(1) lookup</span>
+        es_respond_auth_result(client, message,
+            verdict ? ES_AUTH_RESULT_ALLOW : ES_AUTH_RESULT_DENY,
+            <span class="k">false</span>)                                          <span class="c">// cache flag — see §03</span>
+
+    <span class="k">case</span> ES_EVENT_TYPE_NOTIFY_EXEC:
+        <span class="c">// Not blocking anything — but copy what you need and get off</span>
+        <span class="c">// this thread fast; the message buffer is recycled.</span>
+        telemetryQueue.enqueue(EventRecord(message))       <span class="c">// bounded queue!</span>
+
+    <span class="k">default</span>: <span class="k">break</span>
+    }
+}
+<span class="c">// then:</span>
+es_subscribe(client!, [ES_EVENT_TYPE_AUTH_EXEC,
+                       ES_EVENT_TYPE_NOTIFY_EXEC], 2)</code></pre>
+      <div class="box hot"><span class="lbl">The rule that rules everything</span>
+        <p><strong>Never block the ES message handler.</strong> No network calls, no disk reads, no lock contention, no hashing a 2 GB binary inline. AUTH verdicts come from a pre-warmed in-memory cache; anything expensive happens on other threads <em>before</em> or <em>after</em> the event. If you remember one sentence: <em>the handler decides from memory; everything else is async.</em></p></div>
+      <div class="review"><input type="checkbox" id="c2"><label for="c2">Section 02 done</label></div>
+    </section>
+
+    <!-- 03 ES DEEP -->
+    <section id="es2">
+      <div class="secnum">03 / ENDPOINT SECURITY</div>
+      <h2>ES deep dive — deadlines, caching, muting, flood control</h2>
+      <p class="secsub">This section is where senior candidates separate from juniors. Every topic here is a real production battle scar.</p>
+
+      <h3>1. The AUTH deadline — the design constraint</h3>
+      <p>Every AUTH message carries a deadline (order of seconds, but treat your budget as <em>milliseconds</em> — you are on the launch path of every process on the machine). Miss deadlines and the OS concludes your client is sick: events start getting auto-resolved and your client can be killed and banished. Design consequences:</p>
+      <div class="dg">
+        <div class="flow">
+          <div class="nd kr"><b>kernel</b>process wants<br>to exec</div>
+          <span class="ar">→<small>AUTH_EXEC<br>+ deadline</small></span>
+          <div class="nd es"><b>handler thread</b>cache lookup<br>only</div>
+          <span class="ar">→<small>&lt; ms</small></span>
+          <div class="nd es"><b>verdict</b>ALLOW / DENY</div>
+          <span class="ar">→</span>
+          <div class="nd kr"><b>kernel</b>unblocks or<br>kills the exec</div>
+        </div>
+        <div class="flow" style="margin-top:12px;">
+          <div class="nd"><b>meanwhile, async</b>hash new binaries · fetch cloud reputation · warm the cache</div>
+        </div>
+        <div class="cap">The verdict path touches only memory. Everything slow happens off-path and feeds the cache.</div>
+      </div>
+      <ul>
+        <li><strong>Verdict cache keyed by code identity</strong> — CDHash / signing ID, not file path (paths lie; hashes don't). First sighting of a binary: respond from a safe default policy, hash and evaluate async, cache the result for next time.</li>
+        <li><strong>Deadline insurance:</strong> a watchdog that force-responds with the policy's safe default just before deadline if the real verdict hasn't landed. Missing deadlines is worse than a conservative answer.</li>
+        <li><strong>Safe default is a product decision:</strong> fail-open (allow unknown, log loudly) for general fleets; fail-closed (deny unknown) for high-security modes. Say "we made this configurable per policy" — that's the mature answer.</li>
+      </ul>
+
+      <h3>2. The response cache flag — your load-shedder</h3>
+      <p>That <code>cache: true/false</code> parameter in <code>es_respond_auth_result</code> is a big deal: with <code>true</code>, the <em>kernel itself</em> caches your verdict for that exact binary and stops asking you about it. Massive load reduction. The trade: you must <strong>invalidate</strong> (<code>es_clear_cache</code>) when policy changes, or your old verdicts keep enforcing themselves. Mentioning kernel-side result caching + invalidation discipline is a strong senior signal.</p>
+
+      <h3>3. Muting — surviving the firehose</h3>
+      <p>A busy Mac generates a <em>huge</em> stream of file events; without filtering you'll melt. ES gives you server-side (kernel-side) filters:</p>
+      <ul>
+        <li><strong>Mute by process</strong> (<code>es_mute_process</code>): stop receiving events <em>caused by</em> chatty-but-trusted processes (Spotlight indexing, Time Machine, your own agent — always mute yourself, or you'll recurse on your own file writes).</li>
+        <li><strong>Mute by path</strong> (<code>es_mute_path</code>): stop receiving events for noisy trusted paths.</li>
+        <li><strong>Mute inversion</strong> (<code>es_invert_muting</code>): flip semantics into an <em>allow-list</em> — "only send me events for these paths/processes." For targeted products (e.g., watch only ~/Documents for DLP) this cuts volume by orders of magnitude.</li>
+      </ul>
+      <div class="box ammo"><span class="lbl">Interview ammo</span><p>"The difference between an ES agent that works in a demo and one that survives a customer fleet is almost entirely <strong>event-volume engineering</strong>: kernel-side muting and mute-inversion, kernel result caching with disciplined invalidation, separate clients for AUTH vs NOTIFY so telemetry pressure can never delay a verdict, and bounded in-agent queues with explicit drop policy."</p></div>
+
+      <h3>4. Process identity done right</h3>
+      <ul>
+        <li>Use the <strong>audit token</strong>, never a bare pid (pids recycle; the token is kernel-vouched for that exact process incarnation).</li>
+        <li>Trust <strong>code signature</strong>, not path: signing ID + team ID + CDHash tell you <em>what</em> is running; the platform-binary flag tells you it's Apple's own.</li>
+        <li>Maintain a <strong>process tree</strong> from FORK/EXEC/EXIT notifications — ancestry is what turns isolated events into a story ("Word spawned a shell which spawned curl" is an incident; each event alone is noise).</li>
+      </ul>
+
+      <h3>5. Event categories worth naming in an interview</h3>
+      <table class="tbl">
+        <tr><th>Category</th><th>Representative events</th><th>Products that live on them</th></tr>
+        <tr><td>Process lifecycle</td><td>EXEC, FORK, EXIT, SIGNAL</td><td>EDR (behavioral detection), allow/deny-listing, governance</td></tr>
+        <tr><td>File I/O</td><td>OPEN, CREATE, WRITE, RENAME, UNLINK, CLONE</td><td>DLP (data-at-rest movement), ransomware detection, FIM</td></tr>
+        <tr><td>Volumes &amp; devices</td><td>MOUNT, UNMOUNT</td><td>USB/removable-media control (classic DLP lever)</td></tr>
+        <tr><td>Memory/injection-adjacent</td><td>MMAP, MPROTECT, PROC_SUSPEND_RESUME, task-port events</td><td>EDR (injection &amp; tampering detection)</td></tr>
+        <tr><td>Auth &amp; sessions</td><td>login/session/authentication events, XProtect detections (newer OSes)</td><td>Governance, device trust, audit</td></tr>
+      </table>
+      <div class="review"><input type="checkbox" id="c3"><label for="c3">Section 03 done</label></div>
+    </section>
+
+    <!-- 04 NE FROM SCRATCH -->
+    <section id="ne1">
+      <div class="secnum">04 / NETWORK EXTENSION</div>
+      <h2>Network Extension framework — from scratch</h2>
+      <p class="secsub">The traffic side of the house: everything the machine says to the network, observable and controllable from user space.</p>
+
+      <div class="box layman"><span class="lbl">Plain English</span>
+        <p>If ES is the guard inside the building, Network Extension is the <strong>mailroom and the gatehouse</strong>. Every letter and package (network connection) entering or leaving the building can be routed through your mailroom. You can read the address on each envelope and decide "deliver it" or "shred it" (content filter), you can put everything into an armored truck to headquarters (VPN tunnel), you can quietly redirect certain letters through an inspection office (proxy), and you can control the building's address book so you see every lookup (DNS proxy). Different counters in the same mailroom — you choose which ones to staff.</p></div>
+
+      <h3>The provider model</h3>
+      <p>NE is a family of <strong>provider classes</strong> you subclass. Each provider type plugs into a different point of the network stack, runs in your System Extension process, and gets callbacks as traffic happens. The OS routes traffic through your provider based on which type you've activated and its configuration.</p>
+      <div class="dg">
+        <div class="flow">
+          <div class="nd"><b>app</b>makes a<br>connection</div>
+          <span class="ar">→</span>
+          <div class="nd kr"><b>OS network stack</b>routes by<br>active providers</div>
+          <span class="ar">→</span>
+          <div class="nd ne"><b>your provider</b>observe / verdict /<br>tunnel / proxy</div>
+          <span class="ar">→</span>
+          <div class="nd"><b>network</b>or blocked</div>
+        </div>
+        <div class="cap">Providers are interception points the OS itself routes traffic through — no packet-stealing hacks required.</div>
+      </div>
+
+      <h3>The five providers at a glance (deep dive next section)</h3>
+      <table class="tbl">
+        <tr><th>Provider</th><th>Granularity</th><th>One-line job</th><th>Classic product</th></tr>
+        <tr><td>Content Filter</td><td>Flows (and optionally bytes)</td><td>Allow/deny network flows per app, per destination</td><td>DLP, web filtering, egress control</td></tr>
+        <tr><td>Packet Tunnel</td><td>IP packets</td><td>Route the device's traffic into an encrypted tunnel</td><td>VPN, ZTNA client</td></tr>
+        <tr><td>App Proxy</td><td>Flows (TCP/UDP)</td><td>Transparent per-flow proxying to your infrastructure</td><td>Per-app VPN, SASE agents</td></tr>
+        <tr><td>Transparent Proxy</td><td>Flows, system-wide</td><td>Silently intercept matching flows without app changes</td><td>ZTNA/SASE steering, egress inspection</td></tr>
+        <tr><td>DNS Proxy / DNS Settings</td><td>DNS queries</td><td>See/answer/forward every DNS lookup</td><td>DNS security, content filtering, telemetry</td></tr>
+      </table>
+      <div class="box ammo"><span class="lbl">Interview ammo — the one-liner</span><p>"Content filter is the <strong>verdict</strong> plane, tunnels and proxies are the <strong>transport</strong> plane, DNS proxy is the <strong>naming</strong> plane. Most real products combine two or three: a SASE agent is typically transparent proxy + DNS proxy; a DLP is content filter + ES file events."</p></div>
+      <div class="review"><input type="checkbox" id="c4"><label for="c4">Section 04 done</label></div>
+    </section>
+
+    <!-- 05 NE DEEP -->
+    <section id="ne2">
+      <div class="secnum">05 / NETWORK EXTENSION</div>
+      <h2>NE deep dive — how each provider actually works</h2>
+      <p class="secsub">Enough depth on each to survive follow-up questions, plus the sharp edges vendors hit in production.</p>
+
+      <h3>1. Content Filter — the two-process split you must know</h3>
+      <p>The content filter is deliberately split into <strong>two components with different privileges</strong> — a privacy-by-design decision worth praising in the interview:</p>
+      <ul>
+        <li><strong>Filter Data Provider</strong> — sees the actual flows (and can request byte-level data). It runs <em>heavily sandboxed with no network access of its own</em>, so it can inspect everything but exfiltrate nothing.</li>
+        <li><strong>Filter Control Provider</strong> — can talk to the network (fetch rules, upload logs) but <em>doesn't see flow contents</em>. The two communicate through constrained channels.</li>
+      </ul>
+      <div class="dg">
+        <div class="flow">
+          <div class="nd"><b>every flow</b>app → dest,<br>proto, port</div>
+          <span class="ar">→</span>
+          <div class="nd ne"><b>data provider</b>sees flows ·<br>NO network of its own</div>
+          <span class="ar">→<small>verdict</small></span>
+          <div class="nd"><b>allow · drop ·<br>need-more-bytes</b></div>
+        </div>
+        <div class="flow" style="margin-top:12px;">
+          <div class="nd ne"><b>control provider</b>fetches rules ·<br>uploads logs · has network</div>
+          <span class="ar">⇄<small>constrained IPC</small></span>
+          <div class="nd ne"><b>data provider</b></div>
+        </div>
+        <div class="cap">See-everything-send-nothing vs send-things-see-nothing: Apple's answer to "can the filter itself leak my data?"</div>
+      </div>
+      <p><strong>Verdict flow:</strong> for each new flow you get metadata — the source app (signing identity!), destination host/IP, port, protocol — and return allow / drop / or "give me some bytes first" (peek) for content-aware decisions. Verdicts can also be <em>paused</em> pending a rules fetch — but a slow verdict here means user-visible connection hangs, so the same hot-path discipline as ES applies.</p>
+
+      <h3>2. Packet Tunnel — the VPN primitive</h3>
+      <ul>
+        <li>You get a <strong>virtual network interface (utun)</strong>; the OS routes selected traffic (routes/rules you configure) into it as raw IP packets; you encrypt/encapsulate and ship them to your gateway; reverse on the way back.</li>
+        <li>You own the data path — so <strong>throughput engineering is on you</strong>: batch packet reads/writes, minimize copies, keep crypto off the main loop. (Your Citrix UDP-tuning experience is directly relevant — say so.)</li>
+        <li>Full-tunnel vs split-tunnel (only corporate routes into the tunnel); on-demand rules to bring the tunnel up automatically.</li>
+      </ul>
+
+      <h3>3 &amp; 4. App Proxy and Transparent Proxy — the ZTNA workhorses</h3>
+      <ul>
+        <li><strong>App Proxy</strong>: flows (not packets) from managed/designated apps are handed to your provider, which forwards them to your infra. Flow-level = you get nice TCP/UDP abstractions instead of reassembling packets.</li>
+        <li><strong>Transparent Proxy</strong> (<code>NETransparentProxyProvider</code>): the modern SASE favorite — system-wide, silently claims only the flows matching your rules (by destination, port, domain), everything else passes untouched. No per-app configuration, no visible VPN icon semantics. This is how zero-trust access agents steer corporate-destined traffic through their fabric while leaving Netflix alone.</li>
+        <li>Sharp edges to name: ordering/interaction when multiple NE products coexist (a customer running your ZTNA + another vendor's filter is a classic support nightmare), UDP and QUIC handling, and captive-portal coexistence.</li>
+      </ul>
+
+      <h3>5. DNS Proxy — small provider, huge leverage</h3>
+      <ul>
+        <li>Every DNS query from the system flows through you: observe (beaconing/malware-domain telemetry), block (answer NXDOMAIN or a sinkhole IP), or forward to your resolver (DoH/DoT to your infra).</li>
+        <li>DNS is the earliest, cheapest signal in the kill chain — you see the malicious domain lookup before any connection exists. Also the cheapest control: blocking at name resolution costs almost nothing.</li>
+        <li>Interaction to name: apps doing their own DoH bypass the system resolver — so serious products pair DNS proxy with flow-level enforcement (content filter / transparent proxy) as backstop.</li>
+      </ul>
+
+      <div class="box hot"><span class="lbl">The TLS question — they will ask</span>
+        <p>"Can you inspect HTTPS content?" The honest answer: <strong>not by magic.</strong> NE shows you flow metadata (app, destination, SNI/hostname, ports, byte counts) but encrypted payloads stay encrypted. Content inspection requires an explicit TLS-interception proxy with an enterprise-trusted CA — a deliberate, visible enterprise deployment choice with real trade-offs (breaks pinning, privacy implications, and some vendors' agents — including Okta Verify — explicitly must be exempted from SSL inspection or they break). Metadata-only designs avoid all that and are often enough: app identity + destination + volume catches most exfil patterns.</p></div>
+      <div class="review"><input type="checkbox" id="c5"><label for="c5">Section 05 done</label></div>
+    </section>
+
+    <!-- 06 INDUSTRY -->
+    <section id="industry">
+      <div class="secnum">06 / HOW THE INDUSTRY USES THEM</div>
+      <h2>EDR, DLP, and endpoint governance — the real implementations</h2>
+      <p class="secsub">How the frameworks compose into the three product categories you'll be asked about. Each comes with its architecture pattern.</p>
+
+      <h3>Pattern A — EDR (Endpoint Detection &amp; Response)</h3>
+      <div class="box layman"><span class="lbl">Plain English</span><p>EDR is a flight recorder plus an air marshal: record everything meaningful that happens (for later investigation), detect attack patterns as they form, and when needed, intervene — kill the process, isolate the machine.</p></div>
+      <ul>
+        <li><strong>Sense (ES-heavy):</strong> subscribe to process lifecycle (EXEC/FORK/EXIT), file writes in sensitive paths, memory-protection changes, mounts, signal/task-port events. Maintain the live <strong>process tree</strong> with code-signing identity per node.</li>
+        <li><strong>Correlate on-device:</strong> raw events → behaviors. "Office app → spawned shell → curl to rare domain → wrote Mach-O to ~/Library → exec'd it" is a detection <em>chain</em>; each hop alone is noise. On-device rules engine evaluates chains cheaply; only meaningful composites go upstream.</li>
+        <li><strong>Network context (NE):</strong> flow metadata joined to the process tree by audit token / signing identity — "which process talked to which domain" is the single most valuable join in endpoint security.</li>
+        <li><strong>Respond:</strong> AUTH_EXEC deny-listing (block known-bad by CDHash), process kill, and <strong>network isolation</strong> — flip the content filter into deny-all-except-management-plane. Isolation via NE while keeping your own control channel alive is a classic design question.</li>
+      </ul>
+
+      <h3>Pattern B — DLP (Data Loss Prevention)</h3>
+      <div class="box layman"><span class="lbl">Plain English</span><p>DLP answers one question: <em>is sensitive data leaving?</em> Data leaves through channels — USB drives, cloud uploads, email, AirDrop, print, clipboard. DLP watches the channels and applies policy: allow, warn, or block.</p></div>
+      <div class="dg">
+        <div class="lane"><span class="ttl">Data-at-rest movement — ES side</span>
+          <div class="flow">
+            <div class="nd es"><b>ES file events</b>OPEN · WRITE ·<br>RENAME · CLONE</div>
+            <span class="ar">→</span>
+            <div class="nd es"><b>AUTH_MOUNT</b>USB / removable<br>media control</div>
+            <span class="ar">→</span>
+            <div class="nd"><b>classify</b>content tags ·<br>labels · origin</div>
+          </div>
+        </div>
+        <div class="lane"><span class="ttl">Data-in-motion — NE side</span>
+          <div class="flow">
+            <div class="nd ne"><b>content filter</b>flow verdicts:<br>app × destination</div>
+            <span class="ar">→</span>
+            <div class="nd ne"><b>DNS proxy</b>block unsanctioned<br>services at lookup</div>
+            <span class="ar">→</span>
+            <div class="nd"><b>policy</b>allow · warn ·<br>block · audit</div>
+          </div>
+        </div>
+        <div class="cap">Real macOS DLP = ES (files, media) + NE (flows, DNS) under one policy engine.</div>
+      </div>
+      <ul>
+        <li><strong>Example policies you can cite:</strong> block writes of files tagged "confidential" to removable volumes (ES: file events + mount context); block uploads from unmanaged browsers to non-corporate cloud storage (NE: content filter keyed on app signing ID × destination domain); allow the corporate Google Drive but block personal accounts (needs host/SNI-level distinction, sometimes header-level via proxy).</li>
+        <li><strong>The honest limitation:</strong> without TLS interception you enforce on <em>metadata</em> (which app, which destination, how much data), not content. Many modern DLPs accept that and combine endpoint metadata enforcement with API-side (CASB) content scanning in the cloud services themselves. Saying this shows real-world judgment.</li>
+        <li><strong>UX matters:</strong> a DLP that silently eats uploads generates support tickets; good products surface "blocked by policy" with a reason and an override/request-exception path. Enforcement without explanation is how security tools get ripped out.</li>
+      </ul>
+
+      <h3>Pattern C — Endpoint governance / device trust (your home turf)</h3>
+      <ul>
+        <li><strong>Goal:</strong> continuously answer "is this device healthy and compliant enough to access corporate resources?" — and feed that answer into access decisions (conditional access).</li>
+        <li><strong>Sense:</strong> ES events for posture-relevant facts (what security tooling is running, unexpected agents killed, OS integrity signals) + system state (FileVault on? screen lock? OS version?) + NE for basic egress hygiene.</li>
+        <li><strong>Assert:</strong> posture snapshot signed with a <strong>Secure-Enclave-backed device key</strong> and reported to the trust service; the IdP consults it at auth time. The agent isn't just a sensor — it's the <em>attestor</em> that makes the device a credential.</li>
+        <li><strong>Governance twist (AI era):</strong> the newest variant — which your current team literally pioneers — extends "what's running on this device" to <em>AI tools and agents</em>: which AI apps/processes execute, what they access (ES), where they send data (NE flow + DNS telemetry). Same primitives, new policy domain. This framing — "AI governance is EDR+DLP semantics applied to a new class of principal" — is a genuinely strong interview line.</li>
+      </ul>
+      <div class="box you"><span class="lbl">Your positioning line</span><p>"I've shipped in all three quadrants of this space from the same agent: detection-grade ES telemetry, enforcement (exec and media control), and device-trust attestation feeding conditional access — and at JumpCloud I've extended that into AI governance: treating AI tools as a new principal class whose execution and data flows need the same visibility and policy."</p></div>
+      <div class="review"><input type="checkbox" id="c6"><label for="c6">Section 06 done</label></div>
+    </section>
+
+    <!-- 07 SCALE -->
+    <section id="scale">
+      <div class="secnum">07 / FLEET SCALE</div>
+      <h2>Millions of devices, billions of events — the full architecture</h2>
+      <p class="secsub">The interviewer's favorite escalation: "great, it works on one Mac — now make it work on 5 million." Here is the whole answer, agent to backend.</p>
+
+      <h3>First, feel the numbers</h3>
+      <div class="box layman"><span class="lbl">Plain English</span><p>One busy Mac can produce <strong>thousands of raw ES/NE events per minute</strong>. Multiply by 5 million devices and the raw stream is <strong>billions of events per hour</strong> — no backend on earth wants that raw. So the golden rule of fleet scale: <strong>reduce at every stage, and never let all devices do anything at the same time.</strong></p></div>
+
+      <h3>Stage 1 — reduce on the device (the cheapest compute you own)</h3>
+      <ul>
+        <li><strong>Kernel-side first:</strong> muting, mute-inversion, kernel verdict caching (§03) — events you never receive cost nothing.</li>
+        <li><strong>Filter &amp; aggregate in-agent:</strong> drop known-noise, coalesce (one "process X wrote 4,000 files to path Y" instead of 4,000 events), correlate into behaviors and ship <em>composites</em>, not raw streams.</li>
+        <li><strong>Tiered verbosity:</strong> steady state sends summaries + security-relevant events; full-fidelity raw capture flips on <em>per device, on demand</em> during an investigation. This single design idea cuts backend cost by orders of magnitude.</li>
+        <li><strong>Bounded everything:</strong> ring-buffer local spool (survives offline, uploads on reconnect), explicit drop policy under pressure (drop verbose telemetry first, never security verdict records), and hard caps on agent CPU/memory — the agent must never become the performance problem it's meant to detect.</li>
+      </ul>
+
+      <h3>Stage 2 — transport discipline</h3>
+      <ul>
+        <li><strong>Batch + compress:</strong> events upload in compressed batches on an interval, not one-by-one.</li>
+        <li><strong>Jitter every timer:</strong> heartbeats, policy polls, uploads all carry randomized offsets. Without jitter, an OS update or network blip synchronizes millions of agents into a <strong>thundering herd</strong> that flattens ingestion. (Real war story material.)</li>
+        <li><strong>Backoff with budget:</strong> exponential backoff + retry budget on failures; <strong>idempotency keys</strong> on every batch so retries never duplicate downstream.</li>
+        <li><strong>Push, don't hold:</strong> the cloud can't keep 5M open connections. Devices check in; urgent changes (policy update, isolation command, kill switch) arrive via a push/wake channel (APNs-style doorbell) → device pulls over its authenticated channel.</li>
+      </ul>
+
+      <h3>Stage 3 — the backend, plane by plane</h3>
+      <div class="dg">
+        <div class="lane"><span class="ttl">Telemetry plane — high volume, latency-tolerant</span>
+          <div class="flow">
+            <div class="nd"><b>5M agents</b>batched, jittered,<br>idempotent uploads</div>
+            <span class="ar">→</span>
+            <div class="nd cl"><b>ingest edge</b>stateless · authN ·<br>validate · shed load</div>
+            <span class="ar">→</span>
+            <div class="nd cl"><b>queue / log</b>Kafka: absorbs<br>spikes, partitions<br>by device ID</div>
+            <span class="ar">→</span>
+            <div class="nd cl"><b>stream procs</b>enrich · detect ·<br>aggregate</div>
+            <span class="ar">→</span>
+            <div class="nd cl"><b>stores</b>hot state · search<br>index · cold object<br>storage (tiered)</div>
+          </div>
+        </div>
+        <div class="lane"><span class="ttl">Decision plane — low volume, latency-critical</span>
+          <div class="flow">
+            <div class="nd"><b>auth request</b>"is device 123<br>trusted?"</div>
+            <span class="ar">→</span>
+            <div class="nd cl"><b>posture cache</b>hot KV read ·<br>ms budget</div>
+            <span class="ar">→</span>
+            <div class="nd cl"><b>policy engine</b>allow · deny ·<br>step-up</div>
+          </div>
+        </div>
+        <div class="lane"><span class="ttl">Command plane — tiny volume, must always work</span>
+          <div class="flow">
+            <div class="nd cl"><b>console</b>isolate device ·<br>update policy</div>
+            <span class="ar">→</span>
+            <div class="nd cl"><b>push wake</b>doorbell only,<br>no payload</div>
+            <span class="ar">→</span>
+            <div class="nd"><b>agent</b>pulls signed command<br>over authed channel</div>
+          </div>
+        </div>
+        <div class="cap">Three planes, three SLOs. Never let telemetry pressure touch the decision path; never let anything break the command path.</div>
+      </div>
+      <ul>
+        <li><strong>Partitioning:</strong> Kafka partitions keyed by device ID keep per-device ordering and spread load; consumer groups scale horizontally; lag is your primary health metric with autoscaling and load-shedding tied to it.</li>
+        <li><strong>Storage tiering:</strong> hot posture/state in a fast KV store (the decision plane reads only this); recent searchable events in an index (analyst investigations); everything else compressed into object storage with a retention policy. Never query raw telemetry on an auth path.</li>
+        <li><strong>Multi-tenancy:</strong> per-tenant quotas and rate limits at ingest (one noisy customer must not starve others), tenant-scoped encryption/isolation for the data at rest.</li>
+        <li><strong>Failure posture:</strong> ingest down → agents spool locally and drain later (design the drain rate! 5M agents draining at full speed is the herd again — drain with jitter and pacing). Decision plane degrades to cached posture with a freshness window and a policy-driven fail-open/fail-closed choice per resource sensitivity.</li>
+      </ul>
+
+      <h3>Stage 4 — fleet safety (the Principal paragraph)</h3>
+      <ul>
+        <li><strong>Staged rollout for everything</strong> — agent binaries <em>and</em> policies: internal ring → canary tenants → 1% → 10% → 100%, with automatic halt on health-metric regression.</li>
+        <li><strong>Kill switch:</strong> a remotely deliverable "agent, go passive" command that survives even a broken agent build — because a security agent that blocks execs on the login path can brick a fleet. This must ride the command plane, be signed, and be tested regularly.</li>
+        <li><strong>Health telemetry about the agent itself:</strong> deadline-miss counts, dropped-event counts, CPU/memory, crash loops — the fleet dashboard that tells you a bad build is spreading <em>before</em> customers call.</li>
+      </ul>
+      <div class="box ammo"><span class="lbl">Interview ammo — the scale summary</span><p>"My mental model is <strong>reduce → discipline → separate → protect</strong>: reduce event volume as close to the kernel as possible; discipline the transport with jitter, batching, and idempotency; separate telemetry, decision, and command planes with independent SLOs; and protect the fleet with staged rollouts and a kill switch. Every incident I've seen at fleet scale traces to skipping one of those four."</p></div>
+      <div class="review"><input type="checkbox" id="c7"><label for="c7">Section 07 done</label></div>
+    </section>
+
+    <!-- 08 DEPLOY -->
+    <section id="deploy">
+      <div class="secnum">08 / DEPLOYMENT &amp; OPS</div>
+      <h2>Getting it onto machines — approval, MDM, and process topology</h2>
+      <p class="secsub">A short but interview-critical section: how these extensions actually get installed, approved, and operated in an enterprise.</p>
+      <ul>
+        <li><strong>Packaging:</strong> System Extensions ship <em>inside a host app's</em> bundle and are activated via <code>OSSystemExtensionRequest</code>; they're managed by the OS (<code>systemextensionsctl list</code> to inspect).</li>
+        <li><strong>Approval:</strong> by default the user must approve a System Extension (and TCC prompts like Full Disk Access for ES visibility). At fleet scale nobody clicks dialogs: <strong>MDM configuration profiles pre-approve</strong> the extension (by team ID/bundle ID), grant TCC permissions, and configure NE providers (filter/VPN/DNS payloads). "MDM-delivered approval" is the phrase to say.</li>
+        <li><strong>Entitlements:</strong> ES requires a restricted entitlement (<code>com.apple.developer.endpoint-security.client</code>) that Apple grants to vetted vendors; NE providers require their own entitlements. Mentioning that ES entitlement is gated shows you've actually shipped one.</li>
+        <li><strong>Process topology of a real agent:</strong> UI app (menu bar, user session) ⇄ XPC ⇄ root daemon (policy, state, uploads) ⇄ ES System Extension (verdicts/telemetry) + NE System Extension (flows/DNS). XPC connections validated by code-signing requirement on every hop; least privilege per component.</li>
+        <li><strong>Self-protection:</strong> the agent watches for attempts to unload/kill it (ES signal/task events on its own processes), and enterprise policy prevents extension removal on managed devices. Tamper-resistance is a standard interview follow-up.</li>
+        <li><strong>Upgrades:</strong> extension replacement is OS-mediated; design for the brief handover window (event gaps during swap) and always support rollback in the staged-rollout machinery.</li>
+      </ul>
+      <div class="review"><input type="checkbox" id="c8"><label for="c8">Section 08 done</label></div>
+    </section>
+
+    <!-- 09 DRILLS -->
+    <section id="drill">
+      <div class="secnum">09 / DRILLS</div>
+      <h2>Interview drills — the questions and your answers</h2>
+      <p class="secsub">Rehearse these out loud once before the interview. Commit first, caveat second.</p>
+
+      <details class="q"><summary>Walk me through what happens when a user double-clicks an app, with your agent installed.</summary><div class="ans">
+        <p>Launch Services asks the kernel to exec the binary → the kernel emits <code>AUTH_EXEC</code> to my ES client and <strong>blocks the exec</strong> with a deadline. My handler does a pure in-memory verdict lookup keyed on the binary's code identity — CDHash/signing ID, never the path. Known-good → ALLOW with the kernel-cache flag so the kernel stops asking for this binary. Unknown → respond per safe-default policy immediately while an async pipeline hashes the binary, checks local rules and cloud reputation, and warms the cache for next time. Meanwhile <code>NOTIFY_EXEC</code> feeds the process tree, and any flows the new process opens hit my NE content filter, joined to the same process identity. That join — process to flow — is where detection actually lives.</p></div></details>
+
+      <details class="q"><summary>Your ES client starts missing deadlines in the field. Diagnose and fix.</summary><div class="ans">
+        <p>First, what changed — new agent build, new policy, new OS, or new workload? Then instrument: deadline-miss counters and handler latency histograms per event type (we ship these as agent health telemetry). Usual suspects in order: something blocking snuck onto the handler path (a lock shared with the telemetry side, a logging call doing I/O, a cache miss cascading to synchronous evaluation), event-volume explosion from a chatty process that should be muted, or CPU starvation from the machine itself. Fixes match causes: audit the handler path to memory-only, split AUTH and NOTIFY onto separate clients, add/repair muting, pre-warm the cache on policy load, and keep the watchdog that force-responds with the safe default before deadline. Then a regression test that fails the build if handler p99 exceeds budget.</p></div></details>
+
+      <details class="q"><summary>Design macOS DLP for "no confidential files leave via USB or personal cloud."</summary><div class="ans">
+        <p>Two channels, two frameworks, one policy engine. USB: ES — <code>AUTH_MOUNT</code> gives me removable-media control (block or force read-only per policy), and file events (OPEN/WRITE/RENAME/CLONE with destination on the removable volume) enforce per-file policy using classification (tags/labels/origin tracking). Personal cloud: NE content filter — verdicts keyed on app signing identity × destination host; corporate tenant allowed, personal blocked; DNS proxy blocks unsanctioned services at lookup as the cheap first layer. I'd be explicit about the limitation: without TLS interception this is metadata-level enforcement — app, destination, volume — which catches most exfil; content-level inspection either needs an interception proxy (with its trade-offs) or API-side scanning in the cloud services. And every block surfaces a clear user-facing reason with an exception path — silent blocking is how DLP gets uninstalled.</p></div></details>
+
+      <details class="q"><summary>How do you isolate a compromised Mac remotely — without losing control of it?</summary><div class="ans">
+        <p>Isolation = flip the NE content filter into default-deny with an allow-list of exactly my management plane (my cloud endpoints, plus essentials like DHCP/DNS for the allow-listed hosts). The command arrives via the push/wake doorbell, the agent pulls the <em>signed</em> isolation command over its authenticated channel, applies the filter, and confirms. The critical design point: the allow-list keeps my own control channel alive — isolation that cuts your own management plane is a one-way door. Un-isolation is the same signed command path. And the whole thing is tested regularly in staging, because an untested isolation path is theater.</p></div></details>
+
+      <details class="q"><summary>One busy Mac emits thousands of events a minute. Five million Macs. Design the pipeline.</summary><div class="ans">
+        <p>Reduce → discipline → separate → protect. Reduce at the kernel (muting, inversion, kernel verdict cache) and in-agent (coalesce, correlate to composites, tiered verbosity with on-demand full fidelity). Discipline the transport: compressed batches, jitter on every timer, exponential backoff with idempotency keys, local ring-buffer spool for offline. Separate three planes with independent SLOs — telemetry (Kafka partitioned by device, stream processing, tiered storage), decision (hot posture cache, ms budget, never touches raw telemetry), command (push doorbell + signed pull, must always work). Protect the fleet: staged rollout with auto-halt, kill switch on the command plane, and agent-health telemetry (deadline misses, drops, CPU) as first-class metrics. Per-tenant quotas at ingest so one noisy customer can't starve the rest.</p></div></details>
+
+      <details class="q"><summary>ES vs NE — when do you need both?</summary><div class="ans">
+        <p>Almost always, because the valuable signal is the <em>join</em>. ES gives process truth — what's running, with kernel-vouched identity; NE gives network truth — where data goes. EDR needs both to say "this process contacted that domain." DLP needs both because data leaves via files (ES) and flows (NE). Governance needs both to attest "healthy device, sane egress." Single-framework products exist — a pure web filter is NE-only, a pure file-integrity monitor is ES-only — but anything claiming "endpoint security" without both has a blind side.</p></div></details>
+
+      <details class="q"><summary>What would you change about these frameworks if you could?</summary><div class="ans">
+        <p>(A judgment question — have a real opinion.) Candidates: richer kernel-side filtering predicates so even less volume reaches user space; a first-class supported story for multiple security products coexisting (provider ordering today is a customer-support minefield); lower-friction full-fidelity capture for incident response; and tighter primitives for joining ES process identity to NE flows without vendor-side correlation. Ending with "but the constraint-driven design is fundamentally right — the kext era was worse for everyone" shows balance.</p></div></details>
+
+      <div class="box you"><span class="lbl">Last word before you walk in</span>
+        <p>You are not learning this domain for the interview — you operate a production ES-based agent at fleet scale today. So in every answer: <strong>commit to the design first, then name the trade-off, then — where true — anchor it with "we hit exactly this in production."</strong> That last clause is the one thing no amount of studying can fake, and it's yours. Go get it.</p></div>
+      <div class="review"><input type="checkbox" id="c9"><label for="c9">All done — walk in ready</label></div>
+    </section>
+
+    <p style="margin-top:60px;color:var(--ink-faint);font-size:13px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:20px;">
+      Endpoint Security + Network Extension · from scratch → industry patterns → fleet scale · companion to your Okta battle guide &amp; security-from-scratch primer.
+    </p>
+
+  </div>
+  </main>
+</div>
+
+<script>
+  const prog = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    prog.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  };
+  document.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+
+  const links = Array.from(document.querySelectorAll('#toc a'));
+  const sections = links.map(a => document.querySelector(a.getAttribute('href')));
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.getAttribute('id');
+        links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, {rootMargin: '-18% 0px -72% 0px', threshold: 0});
+  sections.forEach(s => s && spy.observe(s));
+
+  const sidebar = document.getElementById('sidebar');
+  const scrim = document.getElementById('scrim');
+  const burger = document.getElementById('burger');
+  const toggle = (open) => { sidebar.classList.toggle('open', open); scrim.classList.toggle('show', open); };
+  burger && burger.addEventListener('click', () => toggle(!sidebar.classList.contains('open')));
+  scrim && scrim.addEventListener('click', () => toggle(false));
+  links.forEach(l => l.addEventListener('click', () => toggle(false)));
+
+  const boxes = Array.from(document.querySelectorAll('.review input'));
+  const done = document.getElementById('done');
+  const recount = () => { done.textContent = boxes.filter(b => b.checked).length; };
+  boxes.forEach(b => b.addEventListener('change', recount));
+  recount();
+</script>
+</body>
+</html>

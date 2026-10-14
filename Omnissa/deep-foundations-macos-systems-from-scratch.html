@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Foundations — macOS Systems Engineering from Scratch</title>
+<style>
+  :root{
+    --bg:#16181d; --panel:#1d2026; --panel2:#22262e; --ink:#d7dae0; --dim:#8b919c;
+    --blue:#5aa9e6; --teal:#4ec9b0; --amber:#e0af68; --red:#e06c75; --green:#98c379; --purple:#c678dd;
+    --line:#2c313a; --code-bg:#12141a; --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.7 var(--sans)}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:flex;min-height:100vh}
+  nav{width:270px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{font:600 12px var(--mono);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;
+      padding:0 18px 14px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav .brand b{display:block;color:var(--amber);font-size:14px;margin-top:2px;letter-spacing:.02em}
+  nav a{display:block;padding:5px 18px;color:var(--dim);font-size:13px}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none}
+  main{flex:1;min-width:0;max-width:900px;padding:36px 44px 120px}
+  header.hero{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:30px}
+  .crumb{font:600 12px var(--mono);color:var(--amber);letter-spacing:.14em;text-transform:uppercase}
+  h1{font-size:29px;line-height:1.2;margin:10px 0 8px;font-weight:700}
+  .sub{color:var(--dim);max-width:66ch}
+  h2{font-size:22px;margin:56px 0 4px;padding-top:16px;border-top:1px solid var(--line)}
+  h2 small{display:block;font-size:13px;color:var(--dim);font-weight:400;margin-top:2px}
+  h3{font-size:16.5px;margin:30px 0 6px;color:var(--blue)}
+  h4{font-size:14px;margin:20px 0 4px;color:var(--teal);font-family:var(--mono)}
+  p{margin:9px 0}
+  code{font:13px var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;
+      overflow-x:auto;font:12.5px/1.55 var(--mono);color:#c8ccd4;margin:12px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  pre.diagram{color:#9aa3b0;line-height:1.35}
+  .c{color:#5f6672}.k{color:#c678dd}.s{color:#98c379}.f{color:#5aa9e6}.t{color:#4ec9b0}.n{color:#d19a66}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:600;font-size:12.5px}
+  .why{border-left:3px solid var(--purple);background:var(--panel);border-radius:0 8px 8px 0;padding:10px 16px;margin:14px 0;font-size:14px}
+  .why b:first-child{color:var(--purple)}
+  .miscon{border-left:3px solid var(--red);background:var(--panel);border-radius:0 8px 8px 0;padding:10px 16px;margin:14px 0;font-size:14px}
+  .miscon b:first-child{color:var(--red)}
+  .agent{border-left:3px solid var(--teal);background:var(--panel);border-radius:0 8px 8px 0;padding:10px 16px;margin:14px 0;font-size:14px}
+  .agent b:first-child{color:var(--teal)}
+  .check{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 18px;margin:20px 0}
+  .check h4{margin:0 0 6px;color:var(--amber)}
+  .check ol{margin:4px 0;padding-left:20px}
+  .check li{margin:5px 0;font-size:14px}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:8px 0}
+  summary{cursor:pointer;padding:9px 14px;font-weight:600;font-size:13.5px;color:var(--dim)}
+  summary:hover{color:var(--ink)}
+  details .body{padding:2px 16px 12px;border-top:1px solid var(--line);font-size:14px}
+  ul{margin:6px 0;padding-left:22px} li{margin:4px 0}
+  @media(max-width:900px){nav{display:none}main{padding:24px 18px 80px}}
+  @media print{nav{display:none}body{background:#fff;color:#111}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand">Volume 2<b>Deep Foundations</b></div>
+  <a href="#ch1">1 · How a Program Actually Runs</a>
+  <a href="#ch2">2 · The C++ Object Model</a>
+  <a href="#ch3">3 · Ownership: Build Smart Pointers</a>
+  <a href="#ch4">4 · Templates from Scratch</a>
+  <a href="#ch5">5 · Concurrency from Silicon Up</a>
+  <a href="#ch6">6 · Swift Under the Hood</a>
+  <a href="#ch7">7 · Interop: ABIs & Bridging</a>
+  <a href="#ch8">8 · macOS from the Kernel Up</a>
+  <a href="#ch9">9 · Networking from Packets Up</a>
+  <a href="#ch10">10 · Build Systems & Testing</a>
+  <a href="#ch11">11 · How Profilers Work</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">Companion to the Omnissa Study Guide · Read this first, then the Q&amp;A volume</div>
+  <h1>Deep Foundations: macOS Systems Engineering from Scratch</h1>
+  <p class="sub">This volume teaches the <i>machinery</i> — from how a binary loads, up through the C++ object model, threads and caches, Swift's compiler output, Mach ports, and TCP — so that interview answers stop being recalled facts and become things you can re-derive under pressure. Every chapter: the problem → the mental model → how it really works → misconceptions → check yourself.</p>
+</header>
+
+<h2 id="ch1">Chapter 1 · How a Program Actually Runs<small>Compilation, linking, loading, and the memory map — the substrate everything else sits on</small></h2>
+
+<h3>1.1 From text to machine code: the four stages</h3>
+<p>When you run <code>clang++ main.cpp -o main</code>, four distinct programs run in sequence. Understanding what each one does — and what it <i>cannot</i> see — explains half of C++'s "weird rules."</p>
+<pre class="diagram">
+ main.cpp ──▶ [1 PREPROCESSOR] ──▶ one giant "translation unit" (all #includes pasted in)
+                                    │  #include is literal text paste. Nothing more.
+                                    ▼
+              [2 COMPILER]     ──▶ main.o  (machine code + a symbol table)
+                                    │  Sees ONE translation unit at a time. Other .cpp
+                                    │  files do not exist for it. This is why it needs
+                                    │  declarations (headers): promises that symbols exist.
+                                    ▼
+              [3 LINKER]       ──▶ main    (all .o files + libraries stitched together)
+                                    │  Resolves every promise: each undefined symbol must be
+                                    │  found exactly once. "Undefined symbol" and "duplicate
+                                    │  symbol" errors live HERE, not in the compiler.
+                                    ▼
+              [4 LOADER: dyld] ──▶ running process (at launch, on macOS)
+                                       maps the binary + dylibs into memory, fixes up
+                                       addresses (ASLR), runs static initializers, calls main()
+</pre>
+<div class="why"><b>Why this matters:</b> almost every "mysterious" C++ rule is a consequence of stage 2's blindness. Templates must live in headers because the compiler must <i>see the source</i> to stamp out code per-type in each translation unit. The One Definition Rule exists because stage 3 will find your duplicates. <code>extern "C"</code> exists because stage 3 matches by symbol <i>name</i>, and C++ mangles names (encodes types into them: <code>foo(int)</code> → <code>_Z3fooi</code>) while C doesn't.</div>
+
+<h3>1.2 The memory map of a running process</h3>
+<p>Once dyld finishes, your process has a virtual address space — a private fiction maintained by the kernel's VM system; every address you ever see is virtual, translated to physical RAM page-by-page (4KB/16KB pages) by the MMU.</p>
+<pre class="diagram">
+ high addresses
+ ┌───────────────────────────┐
+ │  STACK (per thread)       │ ◀─ grows DOWN. Function frames: locals, saved registers,
+ │   main thread: 8MB max    │    return address. Allocation = "move a register." Free.
+ │        ↓ grows            │    Overflow it (deep recursion) → guard page → crash.
+ ├───────────────────────────┤
+ │        ↑ grows            │
+ │  HEAP                     │ ◀─ malloc/new territory. Managed by malloc in USERSPACE
+ │                           │    (size-class buckets, per-thread caches); it asks the
+ ├───────────────────────────┤    kernel for big regions (mmap), then subdivides.
+ │  dylibs (shared cache)    │ ◀─ Foundation, libc++ etc. mapped in, shared between
+ ├───────────────────────────┤    processes (read-only pages mapped once, physically).
+ │  __DATA  (globals, r/w)   │ ◀─ initialized globals; also __bss (zero-filled)
+ │  __TEXT  (code, r/x)      │ ◀─ your machine code. Read-only+execute. W^X enforced.
+ └───────────────────────────┘
+ low addresses
+</pre>
+<p>Three consequences you should be able to derive, not memorize:</p>
+<ul>
+<li><b>Stack allocation is near-free; heap allocation is not.</b> A stack "allocation" is literally subtracting from the stack-pointer register. A heap allocation walks malloc's data structures, may take a lock, may fault in new pages. This — not superstition — is why C++ prefers value types on the stack and why <code>std::vector</code> amortizes by growing capacity geometrically.</li>
+<li><b>A pointer is just a 64-bit number.</b> "Dangling pointer" means: the number still points at an address whose contents have been freed or reused. The hardware won't stop you — the page is still mapped, still readable. That's why use-after-free is <i>silent corruption</i>, not a crash, most of the time — and why it's UB, not an exception.</li>
+<li><b>A null-pointer dereference crashes reliably</b> only because the OS deliberately leaves page 0 unmapped. It's a courtesy, not a language feature.</li>
+</ul>
+<div class="agent"><b>Agent connection:</b> a long-running daemon lives and dies by this map. "Memory leak" = heap regions never returned; "dirty memory" = pages you wrote (can't be shared or discarded — what the OS actually pressures you about); Instruments' Allocations tool is literally interposing on malloc in that userspace layer. When you say "I reduced the agent's footprint," you mean dirty+swapped pages, not virtual size.</div>
+
+<h3>1.3 What a function call really is</h3>
+<pre class="diagram">
+ caller:                              stack during callee:
+   put args in registers (x0–x7        ┌────────────────────┐
+   on arm64; rest on stack)            │ caller's frame     │
+   bl callee   ; save return addr      ├────────────────────┤
+                                       │ return address     │  ◀ how "return" knows where
+ callee prologue:                      │ saved fp, regs     │    to go. Smash this =
+   push frame pointer                  │ locals             │    classic exploit; macOS
+   reserve space for locals            │ …                  │    defends w/ stack canaries
+ callee epilogue: undo, ret            └────────────────────┘    + pointer authentication
+                                                                  (arm64e PAC).
+</pre>
+<p>Hold onto this picture: it is <i>the</i> mental model behind stack traces (walk the saved frame pointers — exactly what a sampling profiler and LLDB's <code>bt</code> do), recursion cost, why returning a reference to a local dangles (the frame is gone), and inlining (the compiler pastes the callee's body into the caller, deleting all of this overhead — which is why tiny functions are free and why <code>virtual</code> hurts: an indirect call can't be inlined).</p>
+
+<div class="check"><h4>Check yourself — Ch. 1</h4><ol>
+<li>Why does moving a function definition from a .cpp into a header risk a linker error, and what keyword fixes it? (ODR; <code>inline</code>.)</li>
+<li>Derive: why is use-after-free usually silent but nullptr deref usually a crash?</li>
+<li>What exactly does dyld fix up at launch, and what does ASLR change?</li>
+<li>Explain a stack trace to a junior: what is physically being walked?</li>
+</ol></div>
+
+<h2 id="ch2">Chapter 2 · The C++ Object Model<small>What an object IS in memory — construction, copying, moving, and virtual dispatch, byte by byte</small></h2>
+
+<h3>2.1 An object is bytes with an interpretation</h3>
+<pre><code><span class="k">struct</span> <span class="t">Event</span> {
+    uint64_t timestamp;   <span class="c">// offset 0,  8 bytes</span>
+    uint32_t pid;         <span class="c">// offset 8,  4 bytes</span>
+    <span class="k">bool</span>     allowed;     <span class="c">// offset 12, 1 byte</span>
+};                        <span class="c">// sizeof == 16, not 13. Why?</span></code></pre>
+<p><b>Alignment.</b> Hardware reads memory in aligned chunks; a <code>uint64_t</code> wants an address divisible by 8. So the compiler inserts padding: 3 bytes after <code>allowed</code>, so that in an <i>array</i> of Events, every element's timestamp stays 8-aligned. Rules you can now derive: a struct's alignment = its largest member's alignment; its size is rounded up to that; reordering members largest-first minimizes padding. This is why telemetry structs at fleet scale get hand-ordered — millions of devices × millions of events makes 3 wasted bytes real money in bandwidth and cache.</p>
+<div class="why"><b>Why "cache-friendly" keeps winning:</b> the CPU pulls memory in 64-byte cache lines. Iterating a <code>vector&lt;Event&gt;</code> streams 4 events per line fetch and the prefetcher sees the linear pattern; iterating a <code>list&lt;Event&gt;</code> chases pointers to random heap addresses — every node is a potential cache miss costing ~100× a hit. Big-O says both are O(n); the constant factor is the whole story. This one paragraph is the true answer behind "vector vs list."</div>
+
+<h3>2.2 Construction and destruction: what the compiler writes for you</h3>
+<p>A constructor is an ordinary function whose job is to turn raw bytes into a valid object. The compiler enforces an order you don't control with your <code>{ }</code> body:</p>
+<ul>
+<li>Base classes construct first, then members <b>in declaration order</b> (not initializer-list order — a classic bug: <code>B(int x): b(x), a(b) {}</code> where <code>a</code> is declared before <code>b</code> reads garbage), then your body runs.</li>
+<li>Destruction is the exact mirror: your body, then members in reverse, then bases. This symmetry is what makes RAII composable — a struct of RAII members needs no destructor at all (Rule of Zero, now derived rather than memorized).</li>
+</ul>
+
+<h3>2.3 Copy vs move — watch the bytes</h3>
+<pre class="diagram">
+ std::string s = "endpoint-telemetry-payload";      (heap-allocated, too big for SSO)
+
+ s:      [ ptr ●──────▶ heap: "endpoint-telemetry-payload" ]  size=26  cap=26
+
+ COPY  std::string t = s;
+ t:      [ ptr ●──────▶ NEW heap block, 26 bytes memcpy'd ]   ← allocation + copy: O(n)
+ s:      unchanged
+
+ MOVE  std::string u = std::move(s);
+ u:      [ ptr ●──────▶ the ORIGINAL heap block ]              ← 3 pointer-sized copies: O(1)
+ s:      [ ptr = null/empty ]  valid but unspecified — destructible, assignable, nothing else
+</pre>
+<p>Now <code>std::move</code> demystifies itself: it generates <i>no instructions</i>. It's a cast that changes the value category of the expression from lvalue ("has a name, might be used again") to rvalue ("temporary, safe to gut"), which makes overload resolution select <code>string(string&amp;&amp;)</code> instead of <code>string(const string&amp;)</code>. The theft happens inside the move constructor; <code>std::move</code> just grants permission.</p>
+<div class="miscon"><b>Misconception to kill:</b> "move is always fast" — only for types that own remote resources. Moving an <code>std::array&lt;int,1000&gt;</code> copies 4000 bytes either way; moving a small string (SSO: ~15 chars stored inline in the object itself) is also a copy. And <code>return std::move(local);</code> is <i>worse</i> than <code>return local;</code> — it disables copy elision (RVO), where the compiler constructs the local directly in the caller's slot: zero copies, zero moves.</div>
+
+<h3>2.4 Virtual dispatch: build the vtable yourself</h3>
+<pre><code><span class="k">struct</span> <span class="t">Provider</span> {                          <span class="c">// what you write</span>
+    <span class="k">virtual</span> <span class="k">void</span> <span class="f">start</span>();
+    <span class="k">virtual</span> <span class="k">void</span> <span class="f">emit</span>();
+    <span class="k">virtual</span> ~Provider();
+    <span class="k">int</span> id;
+};
+<span class="k">struct</span> <span class="t">ESProvider</span> : Provider { <span class="k">void</span> <span class="f">emit</span>() <span class="k">override</span>; };</code></pre>
+<pre class="diagram">
+ what the compiler builds (conceptually):
+
+ static, one per CLASS:                     each OBJECT:
+ vtable_Provider:   [&Provider::start ]     ESProvider e:
+                    [&Provider::emit  ]       ┌──────────────────┐
+                    [&Provider::~dtor ]       │ vptr ●───────────┼──▶ vtable_ESProvider
+ vtable_ESProvider: [&Provider::start ]       │ int id           │
+                    [&ESProvider::emit] ◀── overridden slot
+                    [&ESProvider::~dtor]      └──────────────────┘
+
+ p->emit()  compiles to:  load p->vptr → load slot[1] → call through pointer
+</pre>
+<p>Everything about virtual functions now falls out of this picture instead of being trivia:</p>
+<ul>
+<li><b>Cost:</b> two dependent loads + an indirect call the CPU can't easily predict or inline. Fine per-event at human scale; visible in a per-syscall hot loop.</li>
+<li><b>Why virtual destructors:</b> <code>delete basePtr</code> without a virtual dtor calls <code>Provider::~Provider</code> <i>directly</i> (static dispatch) — <code>ESProvider</code>'s members leak. With virtual, the call goes through the slot and the right chain runs. UB otherwise, per the standard.</li>
+<li><b>Why constructors can't dispatch to derived:</b> during <code>Provider</code>'s constructor, the object's vptr points at <code>vtable_Provider</code> — the ESProvider parts don't exist yet. The language is protecting you from calling methods on unconstructed state.</li>
+<li><b>sizeof grows by 8:</b> the vptr. A class with no virtuals has no vptr — "you don't pay for what you don't use" made concrete.</li>
+</ul>
+
+<div class="check"><h4>Check yourself — Ch. 2</h4><ol>
+<li>Reorder <code>Event</code>'s members to make sizeof 13→16 differently; predict sizeof of <code>{bool; uint64_t; bool;}</code>. (24.)</li>
+<li>Walk the bytes: what happens on <code>vector.push_back</code> when size==capacity, and why does that invalidate iterators? Why must the element's move ctor be <code>noexcept</code> for vector to use it?</li>
+<li>Draw the vtable picture for a second override level; where does <code>dynamic_cast</code> get its information? (Type info reachable via the vtable.)</li>
+</ol></div>
+
+<h2 id="ch3">Chapter 3 · Ownership from Scratch: Build the Smart Pointers<small>You understand a tool when you can write a workable version of it</small></h2>
+
+<h3>3.1 The problem statement</h3>
+<p>Manual <code>new</code>/<code>delete</code> fails not because programmers are careless but because <b>every early return, thrown exception, and code path multiplies the cleanup obligations combinatorially</b>. RAII collapses all paths into one: the destructor runs on scope exit, period — the compiler generates the calls for returns and during exception unwinding alike. Smart pointers are just RAII applied to heap ownership.</p>
+
+<h3>3.2 unique_ptr in 25 lines — and why it's free</h3>
+<pre><code><span class="k">template</span>&lt;<span class="k">typename</span> T&gt;
+<span class="k">class</span> <span class="t">UniquePtr</span> {
+    T* p_ = <span class="k">nullptr</span>;
+<span class="k">public</span>:
+    <span class="k">explicit</span> <span class="f">UniquePtr</span>(T* p) : p_(p) {}
+    ~UniquePtr() { <span class="k">delete</span> p_; }
+
+    <span class="f">UniquePtr</span>(<span class="k">const</span> UniquePtr&amp;) = <span class="k">delete</span>;             <span class="c">// copying = two owners = double delete.</span>
+    UniquePtr&amp; <span class="k">operator</span>=(<span class="k">const</span> UniquePtr&amp;) = <span class="k">delete</span>;  <span class="c">// so we FORBID it at compile time.</span>
+
+    <span class="f">UniquePtr</span>(UniquePtr&amp;&amp; o) <span class="k">noexcept</span> : p_(o.p_) { o.p_ = <span class="k">nullptr</span>; }   <span class="c">// move = transfer</span>
+    UniquePtr&amp; <span class="k">operator</span>=(UniquePtr&amp;&amp; o) <span class="k">noexcept</span> {
+        <span class="k">if</span> (<span class="k">this</span> != &amp;o) { <span class="k">delete</span> p_; p_ = o.p_; o.p_ = <span class="k">nullptr</span>; }
+        <span class="k">return</span> *<span class="k">this</span>;
+    }
+    T&amp; <span class="k">operator</span>*()  <span class="k">const</span> { <span class="k">return</span> *p_; }
+    T* <span class="k">operator</span>-&gt;() <span class="k">const</span> { <span class="k">return</span> p_; }
+};</code></pre>
+<p>Study what this design <i>teaches</i>: deleted copy operations are ownership policy expressed in the type system — the compiler now rejects double-ownership bugs instead of you debugging them. And since the class is one pointer with no destructor logic beyond <code>delete</code>, the optimizer compiles it away entirely: <b>zero-overhead abstraction</b> is a checkable claim, not marketing. (Real <code>std::unique_ptr</code> adds a deleter parameter — which is how you RAII-wrap C APIs: <code>std::unique_ptr&lt;es_message_t, decltype(&amp;es_release_message)&gt;</code>.)</p>
+
+<h3>3.3 shared_ptr: the control block, drawn</h3>
+<pre class="diagram">
+ shared_ptr&lt;Session&gt; a = make_shared&lt;Session&gt;();
+ shared_ptr&lt;Session&gt; b = a;
+ weak_ptr&lt;Session&gt;   w = a;
+
+ a: [obj ●, ctrl ●]──┐        ┌──────────────────────────────┐
+ b: [obj ●, ctrl ●]──┼──────▶ │ CONTROL BLOCK  (heap)        │
+ w: [obj ●, ctrl ●]──┘        │  strong count: 2  ◀ atomic   │
+                              │  weak count:   1  ◀ atomic   │
+                              │  deleter, allocator          │
+                              │  Session object (fused here  │
+                              │   because make_shared)       │
+                              └──────────────────────────────┘
+ strong hits 0 → Session destructor runs.
+ weak  hits 0 → control block memory freed.
+ w.lock(): atomically "if strong>0, ++strong, return shared_ptr; else null."
+</pre>
+<p>Everything difficult about shared_ptr becomes readable off this diagram:</p>
+<ul>
+<li><b>Cost of a copy:</b> one atomic increment — a synchronized, cache-coherent RMW that serializes across cores. Passing <code>shared_ptr</code> by value through ten call layers on a hot path is real contention; pass <code>const&amp;</code> or a raw pointer downward when no ownership transfers.</li>
+<li><b>The cycle leak:</b> A strongly holds B, B strongly holds A → both counts stuck at ≥1 forever, destructors never run. <code>weak_ptr</code> breaks it by observing through the control block without touching the strong count. In ObjC/Swift terms: this is <i>exactly</i> a retain cycle and <code>[weak self]</code> — same math, different syntax. Say that sentence in the interview.</li>
+<li><b>make_shared's trade:</b> one allocation (block+object fused) instead of two — but a lingering <code>weak_ptr</code> keeps the <i>whole</i> fused block, object memory included, alive after destruction. Two allocations via <code>shared_ptr&lt;T&gt;(new T)</code> release object memory promptly. Nuance = senior signal.</li>
+<li><b>What "thread-safe" means here:</b> the <i>counts</i> are atomic; the pointed-to object is not protected at all. Two threads copying shared_ptrs: fine. Two threads calling methods on the Session: your mutex, your problem.</li>
+</ul>
+<div class="agent"><b>Agent connection:</b> the async keep-alive pattern — a completion handler capturing <code>shared_from_this()</code> so the session outlives the request even if the owner drops it — and its failure mode, callbacks silently extending lifetimes until "why is memory flat but never falling." You have debugged this; connect the mechanism to the memory-graph work.</div>
+
+<h3>3.4 The decision procedure</h3>
+<table>
+<tr><th>Situation</th><th>Type</th><th>Reasoning from first principles</th></tr>
+<tr><td>Single owner, transfers possible</td><td>unique_ptr</td><td>Ownership is a fact of your design; encode the fact. Free.</td></tr>
+<tr><td>Genuinely shared lifetime (caches, async)</td><td>shared_ptr</td><td>Pay atomics only where shared fate is real, not "I'm unsure who owns this."</td></tr>
+<tr><td>Observe without extending life</td><td>weak_ptr / raw ptr</td><td>weak when the object may die concurrently; raw when a parent guarantees lifetime.</td></tr>
+<tr><td>"I'm unsure who owns this"</td><td>—</td><td>Design bug, not a pointer-type choice. The senior answer.</td></tr>
+</table>
+
+<div class="check"><h4>Check yourself — Ch. 3</h4><ol>
+<li>Extend UniquePtr with a custom deleter and wrap an <code>es_client_t</code>. What must the deleter call? (es_delete_client.)</li>
+<li>Why must the move constructor null the source? Trace the double-delete if it doesn't.</li>
+<li>Two threads: one runs <code>w.lock()</code>, another drops the last strong ref. Why is lock() safe? (CAS loop on the strong count — it increments only from a nonzero value, atomically.)</li>
+</ol></div>
+
+<h2 id="ch4">Chapter 4 · Templates from Scratch<small>Compile-time code generation — and why every rule follows from "stamped per type, per TU"</small></h2>
+
+<h3>4.1 The core mechanism</h3>
+<p>A template is not code; it's a <b>recipe</b>. Nothing is compiled until you use it with concrete types — then the compiler stamps out (<i>instantiates</i>) a fresh, ordinary function or class with the type substituted. <code>vector&lt;int&gt;</code> and <code>vector&lt;string&gt;</code> share zero machine code; each is fully compiled, fully optimized for its type. That's the deal: C-macro flexibility with full type checking, paid for in compile time and binary size.</p>
+<p>Two rules stop being arbitrary once you hold "stamped at use, per translation unit":</p>
+<ul>
+<li><b>Templates live in headers</b> because the stamping happens in whatever .cpp uses them — the compiler needs the recipe's source visible there (stage-2 blindness from Ch. 1). The resulting duplicate instantiations across .o files are deduplicated by the linker (they're "weak" symbols) — a sanctioned ODR exception.</li>
+<li><b>Error messages explode</b> because errors surface at stamp time, deep inside nested substitutions, not at the recipe. C++20 concepts fix this by checking requirements at the call site: <code>template&lt;std::integral T&gt;</code> fails with one readable line.</li>
+</ul>
+
+<h3>4.2 Specialization, deduction, and where you stop</h3>
+<pre><code><span class="k">template</span>&lt;<span class="k">typename</span> T&gt; <span class="k">struct</span> <span class="t">Serializer</span> {           <span class="c">// general recipe</span>
+    <span class="k">static</span> std::string <span class="f">encode</span>(<span class="k">const</span> T&amp; v);
+};
+<span class="k">template</span>&lt;&gt; <span class="k">struct</span> <span class="t">Serializer</span>&lt;<span class="t">es_process_t</span>&gt; {         <span class="c">// full specialization:</span>
+    <span class="k">static</span> std::string <span class="f">encode</span>(<span class="k">const</span> es_process_t&amp; p); <span class="c">// custom recipe for one type</span>
+};</code></pre>
+<p>That pattern — generic default, specialized override — is how <code>std::hash</code>, traits, and every serialization layer work; being able to sketch it is "working knowledge of templates" for this loop. Add: deduction (the compiler infers T from arguments; class template argument deduction since C++17), <code>if constexpr</code> (branch discarded at compile time — the readable replacement for most SFINAE), and variadic templates (<code>template&lt;typename... Args&gt;</code> — recognize the pack-expansion syntax in logging/forwarding code). Beyond that lies metaprogramming you can honestly defer: "I use templates for containers, traits and generic pipelines; I reach for concepts over SFINAE cleverness in code others maintain." That sentence, delivered with the above understood, is a strong answer — it shows judgment, not absence.</p>
+
+<div class="check"><h4>Check yourself — Ch. 4</h4><ol>
+<li>Explain to a junior why moving a template's definition into a .cpp breaks the build of other files — using only Ch. 1 concepts.</li>
+<li>What does <code>if constexpr</code> do that a regular <code>if</code> cannot? (Discarded branch never instantiated — may contain code invalid for T.)</li>
+<li>Write a <code>Serializer</code> specialization for <code>std::vector&lt;T&gt;</code>. Partial or full? (Partial — still generic over T.)</li>
+</ol></div>
+
+<h2 id="ch5">Chapter 5 · Concurrency from Silicon Up<small>What a thread is, why caches make races undefined, and how every primitive is built from three ideas</small></h2>
+
+<h3>5.1 What a thread physically is</h3>
+<p>A thread is: a stack (its own — recall Ch. 1) + a saved register set + a kernel scheduling entry. That's it. All threads in a process share the heap, globals, and code. A <b>context switch</b> is the kernel saving one thread's registers and loading another's — a few microseconds plus the hidden cost that matters more: the new thread's working set isn't in cache, so it eats misses for a while. This is why "just add threads" often slows programs, and why GCD's design goal is keeping roughly one <i>running</i> thread per core and reusing warm threads from a pool.</p>
+
+<h3>5.2 The cache problem — why races are UB, physically</h3>
+<pre class="diagram">
+        Core 0                    Core 1
+      ┌────────┐                ┌────────┐
+      │  L1: x=1 (stale!)       │  L1: x=2│
+      └───┬────┘                └───┬────┘
+          └─────────┬───────────────┘
+              shared L2/L3, then RAM: x=?
+</pre>
+<p>Cores don't read RAM; they read their private L1 caches (~1ns) with RAM ~100× further away. Hardware keeps caches <i>coherent</i> (MESI protocol — a line is Modified/Exclusive/Shared/Invalid, and writes invalidate other cores' copies), but coherence is per-cache-line and says nothing about <b>ordering across variables</b>. Meanwhile both the compiler and the CPU aggressively reorder your reads and writes — legally, because the rules only require single-threaded behavior to look right. So this classic breaks:</p>
+<pre><code><span class="c">// Thread A                         // Thread B</span>
+data = 42;                          <span class="k">while</span> (!ready) {}     <span class="c">// may spin forever: compiler may</span>
+ready = <span class="k">true</span>;                       use(data);            <span class="c">// hoist the load; or B sees ready==true</span>
+                                                          <span class="c">// but data==0 (reordered stores). UB.</span></code></pre>
+<p>The language's answer: a <b>data race is undefined behavior</b> — not "stale values," but "the optimizer may assume it never happens and transform your code beyond recognition." You need to communicate two things to compiler and CPU: <i>don't tear/optimize this access</i> (atomicity) and <i>don't reorder around it</i> (ordering). Hence:</p>
+<pre><code>std::atomic&lt;<span class="k">bool</span>&gt; ready{<span class="k">false</span>};
+<span class="c">// A:</span> data = 42;
+      ready.store(<span class="k">true</span>, std::memory_order_release);   <span class="c">// nothing above sinks below</span>
+<span class="c">// B:</span> <span class="k">while</span> (!ready.load(std::memory_order_acquire)) {} <span class="c">// nothing below hoists above</span>
+      use(data);   <span class="c">// GUARANTEED 42: release-store "publishes", acquire-load "receives"</span></code></pre>
+<p>That release/acquire pair is the <i>entire</i> foundation: a mutex unlock is a release, a lock is an acquire — which is exactly why "protect shared data with a mutex" works: the unlock publishes everything you wrote inside the critical section to the next locker. <code>seq_cst</code> (the default) adds a single global order of all such operations — costlier, simplest to reason about; <code>relaxed</code> gives atomicity only (statistics counters). You now understand memory ordering rather than reciting it.</p>
+
+<h3>5.3 Building the primitives — three ideas compose everything</h3>
+<ul>
+<li><b>Atomic RMW</b> (compare-and-swap): the hardware instruction that reads-modifies-writes one variable indivisibly. A <b>spinlock</b> is: CAS a flag from 0→1 in a loop. Correct, but a losing thread burns its whole timeslice — and on macOS may spin at high priority while the holder sits preempted at low priority forever: <b>priority inversion</b>, the OSSpinLock scandal. <code>os_unfair_lock</code> fixes it by recording the owner so the kernel can boost it.</li>
+<li><b>Kernel wait queues</b>: a <b>mutex</b> = fast-path CAS, and on contention, ask the kernel to sleep this thread on a queue; unlock wakes one. No burning. This two-layer design (userspace fast path, kernel slow path) is how essentially all modern locks work.</li>
+<li><b>Condition variables</b> = "sleep until a predicate might be true": <code>wait(lock)</code> atomically releases the mutex and sleeps; wake re-acquires and — critically — you re-check the predicate in a <code>while</code>, because wakeups can be spurious and another consumer may have raced you to the item. From these three you can now construct the canonical exercise, and should, by hand:</li>
+</ul>
+<pre><code><span class="k">template</span>&lt;<span class="k">typename</span> T&gt; <span class="k">class</span> <span class="t">BoundedQueue</span> {          <span class="c">// producer/consumer — build it, don't read it</span>
+    std::queue&lt;T&gt; q_; std::mutex m_;
+    std::condition_variable notEmpty_, notFull_;
+    size_t cap_;
+<span class="k">public</span>:
+    <span class="k">void</span> <span class="f">push</span>(T v) {
+        std::unique_lock lk(m_);
+        notFull_.wait(lk, [&amp;]{ <span class="k">return</span> q_.size() &lt; cap_; });   <span class="c">// while-loop in disguise</span>
+        q_.push(std::move(v));
+        notEmpty_.notify_one();
+    }
+    T <span class="f">pop</span>() {
+        std::unique_lock lk(m_);
+        notEmpty_.wait(lk, [&amp;]{ <span class="k">return</span> !q_.empty(); });
+        T v = std::move(q_.front()); q_.pop();
+        notFull_.notify_one();
+        <span class="k">return</span> v;
+    }
+};</code></pre>
+<div class="agent"><b>Agent connection:</b> this queue <i>is</i> your ES-event pipeline: the handler block is the producer (must never wait — so in the real agent, replace blocking push with try-push + drop/coalesce counters), workers consume, and the bound is your memory ceiling. Deadlock analysis also becomes mechanical now: a cycle in the "who waits on whom" graph — including <code>dispatch_sync</code> onto your own queue, which is a self-edge. Fix = global lock ordering, or removing sync hops.</div>
+
+<h3>5.4 GCD, rebuilt on this foundation</h3>
+<p>A <b>serial queue</b> is a mutex generalized: an ordered list of blocks drained by one pool thread at a time — mutual exclusion <i>plus</i> ordering <i>plus</i> asynchrony (submitters don't wait). The pool keeps ~1 thread per core busy; blocking a pool thread (sync I/O, semaphore waits) starves it, which is the root of both GCD thread explosion and Swift-concurrency's stricter "forward progress" contract. <code>dispatch_sync</code> = submit + block until done (hence self-deadlock); barriers on a concurrent queue = writer-exclusion; <code>DispatchSource</code> = kqueue events (fds, signals, timers, proc exit) delivered as blocks — the event backbone of every daemon you've shipped. Swift actors, finally, are serial queues with compiler-enforced access: the compiler proves at build time that the actor's state is only touched from its executor — the mutex discipline you enforce by review in C++, made a type error.</p>
+
+<div class="check"><h4>Check yourself — Ch. 5</h4><ol>
+<li>Re-derive why the mutex-protected pattern needs no explicit atomics for the data it guards.</li>
+<li>Why is the condition-variable wait a while-loop, mechanically? Name both reasons. (Spurious wakeups; lost race to another woken consumer between wake and reacquire.)</li>
+<li>Explain false sharing from the MESI paragraph: two atomic counters 8 bytes apart, two cores. What happens per increment? (Line ping-pongs M↔I between cores.) Fix? (Pad/align to 64B.)</li>
+<li>Trace the exact deadlock in <code>dispatch_sync(queueA)</code> from a block already running on queueA.</li>
+</ol></div>
+
+<h2 id="ch6">Chapter 6 · Swift Under the Hood<small>What the compiler actually emits — ARC calls, witness tables, existential boxes</small></h2>
+
+<h3>6.1 ARC is inserted code, not a runtime service</h3>
+<p>Where C++ makes you write <code>shared_ptr</code>, Swift's compiler inserts <code>swift_retain</code>/<code>swift_release</code> calls around ownership transfers of class instances — then an optimizer pass deletes provably-redundant pairs. The refcount lives in the object header (alongside the class metadata pointer — Swift's "vptr"). Consequences you can now derive: structs generate <i>zero</i> ARC traffic (nothing to count — a real performance lever, not style advice); <code>weak</code> references live in a side table so they can be zeroed safely when the object dies; <code>unowned</code> skips the side table for speed and traps if wrong; a closure is itself a heap-allocated, refcounted object whose captures are its stored properties — which is why a closure capturing <code>self</code> while <code>self</code> stores the closure is <i>exactly</i> the shared_ptr cycle from Ch. 3, and <code>[weak self]</code> is the weak_ptr.</p>
+
+<h3>6.2 Dispatch: three mechanisms, chosen by declaration site</h3>
+<table>
+<tr><th>Call form</th><th>Mechanism</th><th>Cost profile</th></tr>
+<tr><td>Struct method, final class, private, <code>some P</code></td><td>Static (direct call)</td><td>Free; inlinable; specialized generics land here</td></tr>
+<tr><td>Non-final class method</td><td>Class vtable</td><td>= C++ virtual: indirect, not inlinable</td></tr>
+<tr><td><code>any P</code> (existential), unspecialized generic</td><td>Protocol <b>witness table</b></td><td>Indirect via a per-(type, protocol) function table</td></tr>
+</table>
+<p>The witness table is the piece worth truly getting: when <code>struct ESProvider</code> conforms to <code>Provider</code>, the compiler emits a table mapping each protocol requirement to ESProvider's implementation. A generic function <code>f&lt;T: Provider&gt;(t: T)</code> receives that table as a hidden parameter — and when the compiler can see the concrete type, it <i>specializes</i>: stamps a T=ESProvider version (template instantiation, Ch. 4!) with direct calls. An existential <code>any Provider</code> instead carries a 5-word <b>box</b>: 3 words of inline storage (bigger values spill to the heap), the type's metadata, and the witness table. Now "why is <code>some P</code> faster than <code>any P</code>" is not a fact but a diagram: known-type direct calls vs boxed dynamic lookup — and it's the same trade as C++ templates vs virtual dispatch, which is precisely the comparative sentence to say in a dual-language interview.</p>
+
+<h3>6.3 Value semantics + COW, mechanically</h3>
+<p>An <code>Array&lt;Int&gt;</code> struct is one pointer to a refcounted heap buffer. Copying the array copies the pointer and retains the buffer (O(1)). Any <i>mutating</i> method first asks <code>isKnownUniquelyReferenced(&amp;buffer)</code>: refcount 1 → mutate in place; shared → clone the buffer, then mutate (the "copy" in copy-on-write, paid only when sharing meets mutation). Two practical corollaries: an "accidental copy" perf bug is usually one lingering reference forcing every mutation to clone; and value semantics is a concurrency tool — hand a struct snapshot to another thread and there is no shared mutable state to race on. That's the principled version of "structs are thread-safe."</p>
+
+<div class="check"><h4>Check yourself — Ch. 6</h4><ol>
+<li>Predict ARC traffic: passing a struct with two class-type stored properties into a function. (Retains on the two references — value types containing references still count their references.)</li>
+<li>Where does the witness table travel in <code>f(t: any Provider)</code> vs <code>f&lt;T: Provider&gt;(t: T)</code>? (Inside the box vs hidden parameter.)</li>
+<li>Why can actor state change across an <code>await</code> inside one of its own methods? (Suspension releases the executor; reentrancy — re-check invariants after awaits.)</li>
+</ol></div>
+
+<h2 id="ch7">Chapter 7 · Interop: ABIs and Bridging, from First Principles<small>Why extern "C" works, what a bridging header does, and where the bodies are buried</small></h2>
+
+<h3>7.1 The ABI: the contract beneath the languages</h3>
+<p>An ABI (application binary interface) answers, for compiled code: how are arguments passed (which registers, what stack layout — Ch. 1's calling convention), how are symbols named, how are types laid out, who cleans up. Two functions can call each other iff they agree on these — <i>language is irrelevant at this level; agreement is everything.</i></p>
+<ul>
+<li><b>C is the lingua franca</b> because its ABI is minimal and universally implemented: plain symbol names, simple layout rules. <code>extern "C"</code> tells C++ "emit this with C naming (no mangling) and C conventions" — instantly callable from Swift, Go, Python, anything. This is <i>why</i> the C-shim bridging route exists (Vol. 1 §3.1): it's the lowest-common-denominator contract.</li>
+<li><b>C++'s ABI is rich and fragile:</b> mangled names encode signatures; exceptions need unwind tables; templates don't exist post-compilation (only instantiations do); std::string's layout is a library detail. Hence: you can't stably export C++ classes across a dylib boundary you don't fully control, and Swift's direct C++ interop is genuinely hard compiler work — it must understand C++ layout, mangling, and lifetime rules (which is also why its unsupported corners — exceptions across the boundary, move-only types, exotic templates — are exactly the fragile parts of the C++ ABI).</li>
+<li><b>Objective-C's trick:</b> methods aren't linked calls at all — every call compiles to <code>objc_msgSend(receiver, selector, args...)</code>, a runtime lookup (with inline caching, so ~a few ns amortized). Dynamic to its core, which is why Swift↔ObjC bridging is comparatively easy (both sides talk to the same runtime) and why ObjC++ is the pragmatic bridge: an .mm file compiles with <i>both</i> compilers' knowledge in one translation unit — ObjC method bodies may freely contain C++ objects.</li>
+</ul>
+
+<h3>7.2 What actually happens in the .mm sandwich</h3>
+<pre class="diagram">
+ Swift app code
+   │  (Swift↔ObjC bridge: same runtime, bridging/umbrella header exposes ObjC API)
+   ▼
+ @interface SessionWrapper : NSObject        ◀ header: PURE ObjC. No C++ types leak —
+   - (void)connect;                            otherwise every importer must be C++.
+ @end
+   │
+ SessionWrapper.mm                            ◀ implementation: ObjC++ — both worlds
+   struct Impl { webrtc::Session s; };          pimpl hides the C++ member
+   Impl* _impl;                                 alloc in init, delete in dealloc:
+   │                                            ARC lifetime drives C++ lifetime
+   ▼
+ webrtc::Session (C++)                        ◀ callbacks fire on C++ threads: no
+                                                autorelease pool, no queue guarantees →
+                                                wrap in @autoreleasepool, hop to a queue,
+                                                catch ALL C++ exceptions at this line
+</pre>
+<p>Every rule you follow by instinct is now derivable: headers stay pure ObjC (ABI/compiler contamination), one side owns (Ch. 3 ownership discipline applied across a language boundary), exceptions stop at the shim (two incompatible unwinding machineries — C++ tables vs ObjC/Swift — crossing frames is UB), strings copy at the boundary (layouts differ; <code>c_str()</code> lifetime = the std::string's), and hot paths cross the boundary coarsely (each crossing costs marshaling + often a queue hop — batch telemetry, don't chat per-event).</p>
+
+<div class="check"><h4>Check yourself — Ch. 7</h4><ol>
+<li>From ABI first principles: why can a C header be imported by Swift directly, but a C++ header historically not?</li>
+<li>Your C++ callback fires with a <code>const std::string&amp;</code>. List everything that must happen before a Swift closure can safely use it later. (Copy the bytes out; retain/queue-hop; pool.)</li>
+<li>Why does hiding the C++ member behind pimpl change who can #import your header?</li>
+</ol></div>
+
+<h2 id="ch8">Chapter 8 · macOS from the Kernel Up<small>Mach ports → launchd → XPC → Endpoint Security: one architecture, four layers</small></h2>
+
+<h3>8.1 The kernel you're actually talking to</h3>
+<p>XNU is a hybrid: <b>Mach</b> (tasks, threads, virtual memory, and <i>ports</i> — kernel-protected message queues) fused with <b>BSD</b> (processes, files, sockets, users — the POSIX face) plus IOKit for drivers. Every "process" is simultaneously a Mach task and a BSD process. Almost everything interesting on macOS is built on one primitive:</p>
+<pre class="diagram">
+ MACH PORT = a one-way message queue inside the kernel, with capability semantics:
+   RECEIVE right: exactly one task may dequeue (the owner)
+   SEND rights:   any number of tasks may enqueue — but ONLY if the kernel
+                  granted them the right. You cannot forge one; you can only
+                  be GIVEN one. Security by unforgeable reference, not by checking IDs.
+
+ Who hands out rights? ──▶ launchd (pid 1), the bootstrap server:
+   daemons declare MachServices in their plist; launchd holds their receive
+   rights, hands send rights to authorized lookers-up, and launches the
+   daemon ON DEMAND when the first message arrives. Crash? Relaunch, same name.
+</pre>
+<p>Now the platform assembles itself in front of you:</p>
+<ul>
+<li><b>XPC</b> = a serialization layer (dictionaries, typed protocols via NSXPCConnection) over Mach messages, with launchd doing discovery and lifecycle. On-demand launch, crash recovery, and connection identity aren't XPC features — they're Mach/launchd properties showing through.</li>
+<li><b>The audit token</b> — the kernel-stamped identity (uid, pid, pid <i>version</i>) riding on every Mach message — is why token-based peer validation is correct and PID-checking is a race: PIDs recycle; the token's pidversion distinguishes the dead process from its reincarnation. <code>SecCodeCopyGuestWithAttributes(token)</code> → verify signing requirement = "is the peer a binary my team signed," answered by the kernel + Security.framework rather than by trust.</li>
+<li><b>LaunchDaemons vs LaunchAgents</b>, derived: daemons are launchd-domain system-wide, root-capable, no GUI session; agents run per-user-session. An endpoint agent is typically a daemon (privileged core) + an agent (menubar UI) + extensions, all talking over XPC/UDS — the topology you drew in Vol. 1 §12 is forced by these primitives, not chosen by fashion.</li>
+</ul>
+
+<h3>8.2 Endpoint Security, mechanically</h3>
+<pre class="diagram">
+ process calls execve() ──▶ BSD syscall layer
+                              │ hook: kernel ES subsystem
+                              ▼
+                    ┌── event ES_EVENT_TYPE_AUTH_EXEC ──┐
+                    │  kernel BLOCKS the exec,           │
+                    │  posts message to subscribed        │
+                    │  clients' queues, starts DEADLINE   │
+                    ▼                                     │
+   your es_client handler block (userspace, your queue)  │
+     inspect es_process_t: audit token, signing ID,      │
+     Team ID, CDHash, path                                │
+     es_respond_auth_result(ALLOW/DENY) ──────────────────┘
+     … or miss the deadline → kernel applies its default AND
+       marks you; chronic lateness → client killed. The deadline
+       IS the design constraint: verdicts must come from cache/
+       memory, never network — hence CDHash verdict caches.
+ NOTIFY events: same pipe, nobody blocked — fire-and-forget telemetry.
+ MUTING: kernel-side subscription filters — events from muted paths/
+ processes are never generated for you. Filtering at the source is why
+ muting is a 10× CPU lever while userspace filtering is a 1.1× lever.
+</pre>
+<div class="agent"><b>Now re-read your own architecture:</b> ES client in a System Extension (userspace — a bug crashes your extension, and launchd restarts it; the 2000s kext version would have panicked the machine: the entire rationale for the SysExt migration in one sentence). Events flow into the Ch. 5 bounded queue; enrichment joins the audit token to code-signing info; the Ch. 3 RAII wrappers hold <code>es_message_t</code> retains. Every chapter of this volume is physically present in the agent you already ship.</div>
+
+<h3>8.3 The security stack in one pass (signing → Gatekeeper → TCC)</h3>
+<p>A code signature is a cryptographic identity chain: your binary's page hashes → CodeDirectory (its hash = the <b>CDHash</b>, the binary's true name in ES events) → signed by your Developer ID cert → chained to Apple's root. Entitlements are sealed <i>inside</i> the signature — unforgeable capability claims the kernel/daemons check (that's what makes the ES entitlement meaningful). Notarization staples Apple's "we scanned this" ticket; Gatekeeper enforces at first launch of quarantine-flagged files (the quarantine xattr browsers attach — which is why your CI-built pkg runs fine locally but prompts on a customer download). TCC is the final, orthogonal layer: per-app privacy grants (Full Disk Access, Screen Recording) stored in a database, keyed by signing identity — user-prompted normally, MDM-provisioned (PPPC profiles) at fleet scale. Four layers, four different questions: who made this / did Apple scan it / may it launch / what may it touch.</p>
+
+<div class="check"><h4>Check yourself — Ch. 8</h4><ol>
+<li>Derive why an XPC service "starts on demand" without the daemon running. (launchd holds the receive right; first message triggers launch.)</li>
+<li>Attack: a malicious app kills your UI helper and spawns itself reusing the PID, then connects to your daemon. Which check defeats it and why? (Audit-token + signing requirement; pidversion breaks PID reuse.)</li>
+<li>Why can't you "just filter events in your handler" instead of muting, at 10k events/sec? Follow the events' path.</li>
+</ol></div>
+
+<h2 id="ch9">Chapter 9 · Networking from Packets Up<small>Rebuild TCP and TLS from their problem statements — then every knob explains itself</small></h2>
+
+<h3>9.1 The layered fiction, and what each layer buys</h3>
+<pre class="diagram">
+ your bytes ─▶ [TLS: privacy+identity] ─▶ [TCP: reliability+order] ─▶ [IP: routing, best-effort]
+                                                                        ─▶ [link: one hop]
+ Each layer solves exactly one failure of the layer below:
+   IP loses, duplicates, reorders, corrupts. TCP fixes all four. TLS fixes "anyone can read/impersonate."
+</pre>
+<p><b>TCP from its problem statement.</b> Given lossy IP, build a reliable ordered stream: number every byte (sequence numbers), acknowledge received data (ACKs), retransmit on timeout or duplicate-ACK evidence. Add flow control (receiver advertises a window: "I can buffer this much") and congestion control (sender probes the <i>network's</i> capacity: start small — slow start — grow until loss signals congestion, back off, repeat; loss is the feedback signal). Derive the consequences: the handshake (SYN/SYN-ACK/ACK) exists to agree on initial sequence numbers — costing 1 RTT before data; head-of-line blocking exists because ordering is promised — one lost segment stalls delivery of everything after it (the exact motivation for QUIC and for WebRTC choosing UDP: your Citrix/Zoho work sits at this fork); throughput ≈ window/RTT — why long-fat networks need window scaling, and why your TURN-relay placement (cutting RTT) directly raised achievable throughput, not just latency. And MTU: IP fragmentation is fragile and often black-holed, so discovering the path MTU and sizing datagrams under it — your Citrix story — is the difference between "works in the lab" and "works on hotel Wi-Fi."</p>
+
+<h3>9.2 TLS from its problem statement</h3>
+<p>Two strangers on a hostile wire need a shared secret and proof of identity. The tools: <b>asymmetric crypto</b> (key pairs — slow, but works between strangers), <b>symmetric crypto</b> (fast, needs a shared key), <b>certificates</b> (a CA's signature binding a public key to a name — outsourced trust). TLS 1.3's shape follows: ephemeral Diffie-Hellman key agreement in the first round trip (both sides contribute randomness → shared secret that was never transmitted; <i>ephemeral</i> = new per connection = forward secrecy: yesterday's traffic stays safe even if the server key leaks later), server proves identity by presenting its cert chain and signing the handshake transcript with the certified key, then everything switches to symmetric AEAD ciphers. Client verification = chain to a trusted root + hostname match + validity/revocation. Now the applied pieces are derivations, not facts: <b>mTLS</b> = the client also presents a cert — and if that client key lives in the Secure Enclave (Ch. 8's identity stack), possession of the device becomes part of authentication: your JumpCloud device-trust design, explained from primitives. <b>Pinning</b> = additionally requiring a specific key (SPKI hash) in the chain — defeating a compromised CA, at the price of rotation planning.</p>
+
+<h3>9.3 The agent's HTTP layer, from queueing theory you already believe</h3>
+<p>One fleet, one clock: if a backend hiccup makes a million agents retry on the same schedule, the retries <i>are</i> the outage (thundering herd). Exponential backoff spreads load over time; <b>jitter</b> spreads it across devices; retry budgets cap amplification; idempotency decides what's safe to retry at all (GETs yes; a non-idempotent POST needs an idempotency key or no retry). Connection pooling/keep-alive amortizes TCP+TLS handshakes (now quantifiable: 1–2 RTTs each — you know what an RTT costs from 9.1); HTTP/2 multiplexes streams over one connection, trading per-request TCP overhead for shared-connection head-of-line blocking. Enterprise reality: proxies (PAC files via SystemConfiguration), TLS-inspecting middleboxes (why pinning breaks in enterprises — know the trade), and captive portals. You have operated all of this; the point of this section is that you can now <i>derive</i> each practice from RTT math and herd math instead of listing best practices.</p>
+
+<div class="check"><h4>Check yourself — Ch. 9</h4><ol>
+<li>From first principles: why does a lossy 200ms-RTT link hurt TCP so much more than a lossy 10ms one? (Loss recovery and window growth are paced in RTTs.)</li>
+<li>Derive forward secrecy: which key is ephemeral, and what exactly can a future server-key thief decrypt? (Nothing past — transcripts used per-connection DH secrets.)</li>
+<li>Design the retry policy for a telemetry POST at 2M devices. Name every ingredient and why it's there.</li>
+</ol></div>
+
+<h2 id="ch10">Chapter 10 · Build Systems &amp; Testing from Scratch<small>Why CMake exists at all — then it stops being syntax and becomes obvious</small></h2>
+
+<h3>10.1 Derive the build system</h3>
+<p>Start from Ch. 1: every .cpp compiles independently to a .o; the linker joins them. At three files you script it; at three hundred, two problems force tooling into existence: <b>(1) minimal rebuilds</b> — recompile only what a change affects, which requires tracking the real dependency graph (crucially: which .cpp files include which headers — compilers emit this, build systems consume it); <b>(2) configuration explosion</b> — Debug/Release, macOS/Windows, arm64/x86_64, finding OpenSSL here vs there. Make solves (1) with a dependency graph + timestamps. CMake exists for (2): it's a <i>generator</i> — one CMakeLists.txt describing targets and relationships, generating Ninja/Make/Xcode/VS projects per platform. That's the whole idea; everything else is vocabulary.</p>
+<p><b>Modern CMake's one concept</b> is the target with propagating properties — and now PUBLIC/PRIVATE/INTERFACE derives from Ch. 1's compilation model instead of being memorized: if <code>agent_core</code>'s <i>headers</i> mention OpenSSL types, then anyone compiling against those headers needs OpenSSL's include paths too → PUBLIC (both my TU and consumers' TUs need it). If only core's .cpp files touch OpenSSL → PRIVATE (my TUs only). Header-only library → INTERFACE (only consumers compile anything). Usage requirements flow along <code>target_link_libraries</code> edges — the dependency graph made first-class. Re-read the Vol. 1 §9.1 CMakeLists now; every line should feel forced rather than arbitrary.</p>
+
+<h3>10.2 Derive the testing stack</h3>
+<p>A unit test is a second executable linking your code with a main() that runs checks — that's all GTest is: that main, an auto-registration macro (<code>TEST()</code> constructs a static registrar object before main — static initialization, Ch. 1, doing something useful), assertion macros with good failure output, fixtures for shared setup, and death tests. The <i>deep</i> part is design-for-test, which is Ch. 2's dispatch section applied: code that calls OS APIs directly (<code>es_new_client</code>, sockets) can't run in CI, so you put an interface (virtual dispatch or a template parameter — dynamic vs static polymorphism, your choice with known costs) between logic and OS, inject the real implementation in production and a mock in tests. gMock generates the mock's method-recording machinery. Sanitizers complete the stack and connect to Ch. 5: ASan shadow-maps memory to catch use-after-free/overflows at the moment of access; TSan tracks happens-before relationships (the release/acquire edges you now understand) and reports pairs of accesses with no ordering edge — i.e., it detects the actual UB definition, not symptoms. Run tests under both in CI; that sentence is a strong, honest answer to the JD's "code quality and static analysis" line, and after Day 6 of the plan it's also literally true in your hands.</p>
+
+<div class="check"><h4>Check yourself — Ch. 10</h4><ol>
+<li>agent_core's public header gains <code>#include &lt;openssl/ssl.h&gt;</code>. What must change in CMakeLists and why — trace it through the compilation model.</li>
+<li>How does <code>TEST(A,B)</code> run without you registering it? (Static registrar object, constructed pre-main.)</li>
+<li>Why can TSan prove a race that never misbehaved in the run? (It checks for missing ordering edges, not bad outcomes.)</li>
+</ol></div>
+
+<h2 id="ch11">Chapter 11 · How Profilers Work<small>Knowing the mechanism tells you when the numbers lie</small></h2>
+<p><b>Sampling profilers</b> (Time Profiler): interrupt the process ~1000×/sec, walk each thread's stack (the frame-pointer chain from Ch. 1), aggregate. Statistical truth: cheap, unbiased for CPU-bound work — but blind to <i>waiting</i>. A thread blocked on a lock or disk shows ~no samples; your "CPU profile looks fine but the agent is slow" case is off-CPU time, so reach for System Trace (thread states, lock contention) instead. <b>Instrumenting tools</b> (Allocations, Leaks): interpose on malloc/free (the userspace layer from Ch. 1) recording every event with backtraces — exact but heavy, and it changes timing (Heisenberg: never benchmark under Allocations). Leak detection = reachability analysis: heap objects with no pointer path from roots (stacks, globals, registers) are leaked; <i>reachable-but-forgotten</i> growth (caches, retain cycles via shared_ptr/ARC — Ch. 3/6) needs generational diffing instead: snapshot, exercise, snapshot, and everything surviving N idle cycles is suspect. <code>os_signpost</code> closes the loop: you annotate your own pipeline's spans (queue depth, batch latency — Ch. 5's bounded queue instrumented), Instruments renders them on the same timeline as the system's story. Method over tools, always: define the metric → reproduce → profile with the mechanism that can actually see your problem → fix one thing → re-measure. Numbers before and after, or it didn't happen.</p>
+<div class="check"><h4>Check yourself — Ch. 11</h4><ol>
+<li>Agent at 0.3% CPU but users report sluggishness during its runs. Which mechanism can even see the cause, and why can't Time Profiler?</li>
+<li>Memory grows 1MB/day, Leaks reports clean. Reconcile — and name the two ownership mechanisms from earlier chapters that produce exactly this. (Reachable growth: caches; shared_ptr/ARC cycles.)</li>
+<li>Why does walking stacks require frame pointers, and what breaks profiling when they're omitted (-fomit-frame-pointer)?</li>
+</ol></div>
+
+<div class="why" style="margin-top:30px"><b>How to use both volumes together:</b> read this one linearly — each chapter builds on the previous (the memory map feeds the object model feeds ownership; caches feed the memory model feeds GCD; Mach feeds XPC feeds ES). Then re-read Volume 1's Q&amp;A: answers that were memorizable become derivable, which is what survives a hostile follow-up chain. When a mock-interview answer feels shaky, the shakiness will point at a specific chapter here — return to it, re-derive, retry.</div>
+
+</main>
+</div>
+</body>
+</html>

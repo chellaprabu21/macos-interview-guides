@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swift / iOS Interview Knowledge Base — Consolidated</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a20; --panel2:#1c2028; --ink:#e2e5ea; --dim:#9aa0ab;
+    --blue:#6cb2eb; --teal:#57cbb0; --amber:#e6b673; --red:#e07a86; --green:#a3cf8a; --purple:#c99ee0;
+    --line:#282d36; --code-bg:#0c0e12;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.72 var(--sans);-webkit-font-smoothing:antialiased}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:flex}
+  nav{width:280px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:22px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{padding:0 20px 14px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav .brand span{font:600 11px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  nav .brand b{display:block;color:var(--purple);font-size:14.5px;margin-top:3px;font-weight:600}
+  nav a{display:block;padding:6px 20px;color:var(--dim);font-size:13px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none;border-left-color:var(--purple)}
+  nav a .num{color:#565c66;font:600 10px var(--mono);margin-right:7px}
+  nav .grp{padding:12px 20px 3px;font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#4b5158}
+
+  main{flex:1;min-width:0;max-width:860px;padding:40px 50px 130px;margin:0 auto}
+  header.hero{margin-bottom:10px}
+  .crumb{font:600 12px var(--mono);color:var(--purple);letter-spacing:.12em;text-transform:uppercase}
+  h1{font-size:30px;line-height:1.2;margin:12px 0 10px;font-weight:700;letter-spacing:-.02em}
+  .hero p{color:var(--dim);font-size:15.5px;max-width:64ch}
+
+  h2{font-size:14px;font-family:var(--mono);color:var(--amber);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+  .chapter{border-top:1px solid var(--line);margin-top:54px;padding-top:34px}
+  .chapter-title{font-size:25px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+  .chapter-tag{color:var(--dim);font-size:14.5px;margin-bottom:8px}
+  h3{font-size:18px;margin:32px 0 6px;font-weight:650;letter-spacing:-.01em;color:var(--teal)}
+  h4{font-size:14.5px;margin:20px 0 4px;color:var(--blue);font-weight:600}
+  p{margin:10px 0} strong{color:#fff;font-weight:650}
+  ul,ol{margin:10px 0;padding-left:22px} li{margin:5px 0}
+
+  code{font:13px var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:9px;padding:14px 16px;overflow-x:auto;font:12.5px/1.55 var(--mono);color:#cbd0d8;margin:14px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  pre.ascii{color:#8b93a1;line-height:1.4}
+  .c{color:#5c6470}.k{color:#c99ee0}.s{color:#a3cf8a}.f{color:#6cb2eb}.t{color:#57cbb0}.n{color:#e6b673}.str{color:#a3cf8a}
+  .bad{border-left:3px solid var(--red)} .good{border-left:3px solid var(--green)}
+  pre.bad::before{content:'✗ avoid';color:var(--red);font:600 10px var(--mono);display:block;margin-bottom:6px}
+  pre.good::before{content:'✓ better';color:var(--green);font:600 10px var(--mono);display:block;margin-bottom:6px}
+
+  .qa{border:1px solid var(--line);border-radius:11px;margin:14px 0;overflow:hidden;background:var(--panel)}
+  .qa .q{padding:12px 16px;font-weight:600;font-size:15px;background:var(--panel2);cursor:pointer;list-style:none;position:relative;padding-left:42px}
+  .qa .q::before{content:'Q';position:absolute;left:16px;top:12px;color:var(--bg);background:var(--blue);width:19px;height:19px;border-radius:5px;font:700 11px var(--mono);text-align:center;line-height:19px}
+  .qa .q::after{content:'+';position:absolute;right:16px;color:var(--dim);font-size:17px}
+  .qa[open] .q::after{content:'\2212'}
+  .qa .a{padding:2px 16px 14px;font-size:14px;border-top:1px solid var(--line)}
+
+  .note{border-left:3px solid var(--amber);padding:2px 15px;margin:14px 0;font-size:14px}
+  .note.gotcha{border-left-color:var(--red)} .note.tip{border-left-color:var(--green)}
+  .note b:first-child{display:block;font-size:11px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;color:var(--amber)}
+  .note.gotcha b:first-child{color:var(--red)} .note.tip b:first-child{color:var(--green)}
+
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600;font-size:12.5px}
+  .tt{font-family:var(--mono);font-size:12.5px;color:var(--teal)}
+  @media(max-width:900px){nav{display:none}main{padding:26px 18px 80px}}
+  @media print{nav{display:none}body{background:#fff;color:#111}.qa,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand"><span>Personal Knowledge Base</span><b>Swift / iOS Interviews</b></div>
+  <a href="#post"><span class="num">00</span>Rejection post-mortem</a>
+  <div class="grp">Design</div>
+  <a href="#solid"><span class="num">01</span>SOLID principles</a>
+  <a href="#patterns"><span class="num">02</span>Architecture &amp; patterns</a>
+  <div class="grp">Language</div>
+  <a href="#fundamentals"><span class="num">03</span>Swift fundamentals</a>
+  <a href="#memory"><span class="num">04</span>Memory &amp; ARC</a>
+  <a href="#dispatch"><span class="num">05</span>Static vs dynamic dispatch</a>
+  <div class="grp">Concurrency</div>
+  <a href="#concurrency"><span class="num">06</span>Threads, GCD, async/await</a>
+  <a href="#threadsafe"><span class="num">07</span>Thread safety</a>
+  <a href="#tools"><span class="num">08</span>Barrier · Semaphore · Group · WorkItem</a>
+  <div class="grp">Systems</div>
+  <a href="#ipc"><span class="num">09</span>IPC — every method</a>
+  <a href="#network"><span class="num">10</span>Networking, TLS, JSON</a>
+  <a href="#signing"><span class="num">11</span>Code signing &amp; security</a>
+  <div class="grp">iOS</div>
+  <a href="#lifecycle"><span class="num">12</span>App &amp; VC lifecycle</a>
+  <a href="#comm"><span class="num">13</span>Communication patterns</a>
+  <div class="grp">Practice</div>
+  <a href="#worked"><span class="num">14</span>The VMware problem, solved</a>
+  <a href="#checklist"><span class="num">15</span>Study checklist</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">Consolidated from years of scattered prep notes</div>
+  <h1>Swift / iOS Interview Knowledge Base</h1>
+  <p>Every article, snippet, and topic you kept re-preparing — SOLID, patterns, ARC, concurrency, IPC, networking, lifecycle — in one ordered reference, with the VMware rejection analyzed so it doesn't repeat. Collapsible Q&amp;A, worked examples, and "commit first, then caveat" answers throughout.</p>
+</header>
+
+
+<!-- ================= 00 post-mortem ================= -->
+<section class="chapter" id="post" style="border-top:none;margin-top:30px;padding-top:0">
+<h2>Start here</h2>
+<div class="chapter-title">The rejection post-mortem</div>
+<div class="chapter-tag">What VMware (and similar loops) actually asked, the likely reasons it didn't land, and where to fix each — honestly.</div>
+
+<p>Your notes show a recurring VMware-style round (interviewer Zhanglin): <strong>JSON/CSV parser with a design pattern, SOLID, "design the class + properties + concurrency while loading an API response into a table view," GCD, ARC, and IPC (pipes + shared memory).</strong> None of those are trick questions — they're all <em>fundamentals + clean design</em>. Which tells you something important about why loops like this are lost.</p>
+
+<div class="note gotcha"><b>The pattern behind the rejection</b>When every question is a fundamentals-and-design question and the result is still "no," it's almost never that you didn't know the topic — it's that the <em>answer wasn't crisp, structured, or committed</em>. Rambling through a design, hedging on ARC, or a concurrency answer with a gap (forgetting cell reuse or main-thread UI) reads as "shaky on fundamentals" even when you know them. This matches your standing coaching note: <strong>commit to a design first, then refine — don't think out loud without landing.</strong></div>
+
+<h3>Question-by-question: what a strong answer looks like</h3>
+<table>
+<tr><th>They asked</th><th>Strong answer looks like</th><th>Common miss</th><th>Study</th></tr>
+<tr><td>JSON parser <em>with a design pattern</em></td><td>Codable model + a <code>Parser</code> protocol + a service that depends on the abstraction (DIP). Name the pattern out loud.</td><td>Just calling <code>JSONDecoder</code> inline with no design — answers the "parse" but not the "design pattern"</td><td>§01, §10, §14</td></tr>
+<tr><td>SOLID</td><td>One crisp sentence per letter + a Swift example applying it <em>to their parser</em></td><td>Reciting definitions without applying them to the problem on the table</td><td>§01</td></tr>
+<tr><td>Design class + concurrency loading API into a table view</td><td>Background fetch → decode off main → dispatch UI update to main → handle cell reuse &amp; cancel-on-scroll</td><td>Forgetting main-thread UI, cell reuse race, or image/task cancellation. This is the make-or-break question.</td><td>§06, §07, §14</td></tr>
+<tr><td>GCD</td><td>Serial vs concurrent, sync vs async as independent axes; when each; deadlock awareness</td><td>Blurring serial/concurrent with sync/async</td><td>§06</td></tr>
+<tr><td>ARC</td><td>Retain counts, retain cycles, <code>weak</code>/<code>unowned</code>, <code>[weak self]</code> in closures</td><td>Vague "it manages memory" without the cycle mechanics</td><td>§04</td></tr>
+<tr><td>IPC: pipes &amp; shared memory</td><td>Name the mechanism, its API calls, and a trade-off (shared memory is fastest but needs your own sync)</td><td>Surface-level "processes talk to each other"</td><td>§09</td></tr>
+</table>
+
+<h3>The three habits that turn these losses into wins</h3>
+<ol>
+<li><strong>Commit to a design in the first sentence.</strong> "I'd model this with a Codable struct, a Parser protocol so it's testable, and inject it into the service." Then elaborate. Landing a decision first is the single biggest fix for your loop history.</li>
+<li><strong>For any "load data into a list" question, always cover the four beats:</strong> fetch on background → decode off main → update UI on main → handle reuse/cancellation. Missing the fourth is the classic senior-level miss.</li>
+<li><strong>Tie every fundamentals answer to the problem on the table.</strong> Don't recite SOLID — apply it to <em>their</em> parser. Don't define ARC — show the retain cycle <em>their</em> closure would create.</li>
+</ol>
+
+<div class="note tip"><b>Reframe</b>These loops reward <em>calm, structured, applied</em> fundamentals over cleverness. You have the knowledge — this document is organized so you can rehearse it into crisp, committed answers. Work §14 (the actual VMware problem, solved end-to-end) last, after the fundamentals sections, and you'll have a ready-made response to the exact question that's beaten you before.</div>
+</section>
+<!-- ================= 01 SOLID ================= -->
+<section class="chapter" id="solid">
+<h2>Design 01</h2>
+<div class="chapter-title">SOLID principles</div>
+<div class="chapter-tag">Five rules for maintainable OO code (Robert C. Martin). One crisp line + one Swift example each — say them applied, not recited.</div>
+
+<h3>S — Single Responsibility</h3>
+<p><strong>"A class should have only one reason to change."</strong> One job per type.</p>
+<pre class="bad"><code><span class="k">class</span> <span class="t">UserManager</span> {           <span class="c">// 3 reasons to change: DB, validation, email</span>
+    <span class="k">func</span> <span class="f">save</span>(_ u: User) {}
+    <span class="k">func</span> <span class="f">validate</span>(_ u: User) -> Bool { <span class="k">true</span> }
+    <span class="k">func</span> <span class="f">sendWelcome</span>(to u: User) {}
+}</code></pre>
+<pre class="good"><code><span class="k">class</span> <span class="t">UserRepository</span> { <span class="k">func</span> <span class="f">save</span>(_ u: User) {} }       <span class="c">// persistence</span>
+<span class="k">class</span> <span class="t">UserValidator</span>  { <span class="k">func</span> <span class="f">isValid</span>(_ u: User) -> Bool { <span class="k">true</span> } }
+<span class="k">class</span> <span class="t">EmailService</span>   { <span class="k">func</span> <span class="f">sendWelcome</span>(to u: User) {} }</code></pre>
+
+<h3>O — Open/Closed</h3>
+<p><strong>"Open for extension, closed for modification."</strong> Add behavior without editing existing code — via protocols + polymorphism.</p>
+<pre class="bad"><code><span class="k">func</span> <span class="f">discount</span>(type: String, price: Double) -> Double {
+    <span class="k">if</span> type == <span class="str">"student"</span> { <span class="k">return</span> price * <span class="n">0.9</span> }        <span class="c">// new type = edit this fn</span>
+    <span class="k">else if</span> type == <span class="str">"veteran"</span> { <span class="k">return</span> price * <span class="n">0.8</span> }
+    <span class="k">return</span> price
+}</code></pre>
+<pre class="good"><code><span class="k">protocol</span> <span class="t">DiscountStrategy</span> { <span class="k">func</span> <span class="f">apply</span>(to p: Double) -> Double }
+<span class="k">struct</span> <span class="t">Student</span>: DiscountStrategy { <span class="k">func</span> <span class="f">apply</span>(to p: Double) -> Double { p * <span class="n">0.9</span> } }
+<span class="k">struct</span> <span class="t">Veteran</span>: DiscountStrategy { <span class="k">func</span> <span class="f">apply</span>(to p: Double) -> Double { p * <span class="n">0.8</span> } }
+<span class="c">// new discount = new struct, zero edits to existing code</span></code></pre>
+
+<h3>L — Liskov Substitution</h3>
+<p><strong>"Subtypes must be substitutable for their base type"</strong> — without breaking behavior.</p>
+<pre class="bad"><code><span class="k">class</span> <span class="t">Bird</span> { <span class="k">func</span> <span class="f">fly</span>() {} }
+<span class="k">class</span> <span class="t">Penguin</span>: Bird { <span class="k">override func</span> <span class="f">fly</span>() { fatalError(<span class="str">"can't fly"</span>) } }  <span class="c">// breaks the contract</span></code></pre>
+<pre class="good"><code><span class="k">protocol</span> <span class="t">Bird</span> { <span class="k">func</span> <span class="f">move</span>() }
+<span class="k">struct</span> <span class="t">Sparrow</span>: Bird { <span class="k">func</span> <span class="f">move</span>() { <span class="c">/* fly */</span> } }
+<span class="k">struct</span> <span class="t">Penguin</span>: Bird { <span class="k">func</span> <span class="f">move</span>() { <span class="c">/* swim */</span> } }  <span class="c">// both honor "move"</span></code></pre>
+
+<h3>I — Interface Segregation</h3>
+<p><strong>"Don't force clients to depend on methods they don't use."</strong> Split fat protocols.</p>
+<pre class="bad"><code><span class="k">protocol</span> <span class="t">Machine</span> { <span class="k">func</span> <span class="f">print</span>(); <span class="k">func</span> <span class="f">scan</span>(); <span class="k">func</span> <span class="f">fax</span>() }
+<span class="k">class</span> <span class="t">SimplePrinter</span>: Machine {        <span class="c">// forced to stub scan + fax</span>
+    <span class="k">func</span> <span class="f">print</span>() {}; <span class="k">func</span> <span class="f">scan</span>() {}; <span class="k">func</span> <span class="f">fax</span>() {}
+}</code></pre>
+<pre class="good"><code><span class="k">protocol</span> <span class="t">Printable</span> { <span class="k">func</span> <span class="f">print</span>() }
+<span class="k">protocol</span> <span class="t">Scannable</span> { <span class="k">func</span> <span class="f">scan</span>() }
+<span class="k">class</span> <span class="t">SimplePrinter</span>: Printable { <span class="k">func</span> <span class="f">print</span>() {} }        <span class="c">// only what it needs</span>
+<span class="k">class</span> <span class="t">MFP</span>: Printable, Scannable { <span class="k">func</span> <span class="f">print</span>() {}; <span class="k">func</span> <span class="f">scan</span>() {} }</code></pre>
+
+<h3>D — Dependency Inversion</h3>
+<p><strong>"Depend on abstractions, not concretions."</strong> High-level code depends on a protocol; concrete types are injected.</p>
+<pre class="good"><code><span class="k">protocol</span> <span class="t">Database</span> { <span class="k">func</span> <span class="f">save</span>(_ d: String) }
+<span class="k">struct</span> <span class="t">MySQL</span>: Database { <span class="k">func</span> <span class="f">save</span>(_ d: String) {} }
+<span class="k">struct</span> <span class="t">Mongo</span>: Database { <span class="k">func</span> <span class="f">save</span>(_ d: String) {} }
+
+<span class="k">class</span> <span class="t">UserService</span> {
+    <span class="k">let</span> db: Database
+    <span class="k">init</span>(db: Database) { <span class="k">self</span>.db = db }   <span class="c">// inject any DB → testable, flexible</span>
+    <span class="k">func</span> <span class="f">add</span>(_ u: String) { db.save(u) }
+}</code></pre>
+
+<table>
+<tr><th>Letter</th><th>One-liner</th><th>Swift tool</th></tr>
+<tr><td>S</td><td>One responsibility per type</td><td>Split into focused types</td></tr>
+<tr><td>O</td><td>Extend without editing</td><td>Protocols + polymorphism</td></tr>
+<tr><td>L</td><td>Subtypes honor the contract</td><td>Protocols over broken inheritance</td></tr>
+<tr><td>I</td><td>Small, focused protocols</td><td>Multiple mini-protocols</td></tr>
+<tr><td>D</td><td>Depend on protocols</td><td>Protocol-based injection</td></tr>
+</table>
+
+<div class="note tip"><b>The move that wins the VMware question</b>When asked "parse this JSON with a design pattern," reach for SOLID out loud: "Codable model (SRP), a <code>Parser</code> protocol so I depend on an abstraction (DIP) and can swap JSON for CSV (OCP), injected into the service for testability." That single sentence answers "parser" <em>and</em> "design pattern" <em>and</em> "SOLID" at once — see §14.</div>
+</section>
+
+
+<!-- ================= 02 patterns ================= -->
+<section class="chapter" id="patterns">
+<h2>Design 02</h2>
+<div class="chapter-title">Architecture &amp; patterns</div>
+<div class="chapter-tag">MVC, MVVM, dependency injection, protocol-oriented programming — the vocabulary for "how would you structure this?"</div>
+
+<h3>MVC vs MVVM</h3>
+<table>
+<tr><th></th><th>MVC</th><th>MVVM</th></tr>
+<tr><td>Layers</td><td>Model · View · Controller</td><td>Model · View · ViewModel</td></tr>
+<tr><td>Problem</td><td>Controller becomes a "Massive View Controller" — UI + logic + networking all pile in</td><td>ViewModel holds presentation logic &amp; state; VC/View just binds to it</td></tr>
+<tr><td>Testability</td><td>Hard — logic tangled with UIKit</td><td>Easy — ViewModel is plain, UIKit-free, unit-testable</td></tr>
+<tr><td>Binding</td><td>Manual</td><td>Data binding (Combine, closures, or a <code>Box</code>/Observable)</td></tr>
+</table>
+
+<h4>MVVM binding with a simple Box (no Combine needed)</h4>
+<pre><code><span class="k">final class</span> <span class="t">Box</span>&lt;T&gt; {
+    <span class="k">var</span> value: T { <span class="k">didSet</span> { listener?(value) } }
+    <span class="k">private var</span> listener: ((T) -> Void)?
+    <span class="k">init</span>(_ v: T) { value = v }
+    <span class="k">func</span> <span class="f">bind</span>(_ l: <span class="k">@escaping</span> (T) -> Void) { listener = l; l(value) }
+}
+
+<span class="k">class</span> <span class="t">LoginViewModel</span> {
+    <span class="k">let</span> isValid = Box(<span class="k">false</span>)                <span class="c">// VM exposes observable state</span>
+    <span class="k">func</span> <span class="f">update</span>(email: String, pass: String) {
+        isValid.value = email.contains(<span class="str">"@"</span>) &amp;&amp; pass.count &gt;= <span class="n">6</span>
+    }
+}
+<span class="c">// In the VC: viewModel.isValid.bind { [weak self] ok in self?.button.isEnabled = ok }</span></code></pre>
+
+<h3>Dependency Injection</h3>
+<p>Passing a type's dependencies <em>in</em> (via init, property, or method) instead of it creating them itself. Enables swapping real/mock — the backbone of testable code and the "D" in SOLID. Three forms: <strong>initializer injection</strong> (preferred — dependencies explicit and immutable), property injection, method injection.</p>
+
+<h3>Protocol-Oriented Programming (POP)</h3>
+<p>Swift's preference for composing behavior via protocols + protocol extensions (default implementations) over class inheritance. Benefits: value types can adopt behavior, no single-inheritance limit, better testability. "Prefer protocol + extension over a base class" is the POP one-liner.</p>
+<pre><code><span class="k">protocol</span> <span class="t">Identifiable</span> { <span class="k">var</span> id: String { <span class="k">get</span> } }
+<span class="k">extension</span> Identifiable { <span class="k">var</span> shortID: String { String(id.prefix(<span class="n">8</span>)) } }  <span class="c">// default impl, shared</span></code></pre>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">Why MVVM over MVC?</summary>
+<div class="a"><p><strong>Commit:</strong> MVVM moves presentation logic and state out of the view controller into a ViewModel that has no UIKit dependency, so it's unit-testable and the VC shrinks to binding. It directly fixes the "massive view controller" problem where networking, formatting, and state all pile into the controller.</p>
+<p><strong>Nuance:</strong> MVVM needs a binding mechanism — Combine, a closure-based observable, or a small Box type — and it's not free; for a trivial screen MVC is fine. I reach for MVVM when a screen has real state and logic worth testing in isolation.</p></div></details>
+<details class="qa"><summary class="q">What is dependency injection and why does it matter?</summary>
+<div class="a"><p><strong>Commit:</strong> It's providing a type's dependencies from outside rather than having it construct them, usually through the initializer. It matters because it decouples the type from concrete implementations — I can inject a real network service in production and a mock in tests — which is the Dependency Inversion principle in practice.</p>
+<p><strong>Nuance:</strong> initializer injection is my default because it makes dependencies explicit and lets them be immutable. It's also what makes the parser design in the VMware question testable — the service depends on a <code>Parser</code> protocol I inject, not a concrete JSON decoder.</p></div></details>
+</section>
+
+<!-- ================= 03 fundamentals ================= -->
+<section class="chapter" id="fundamentals">
+<h2>Language 03</h2>
+<div class="chapter-title">Swift fundamentals</div>
+<div class="chapter-tag">Struct vs class, closures, property attributes, lazy — the rapid-fire questions.</div>
+
+<h3>Struct vs Class — the most-asked question</h3>
+<table>
+<tr><th></th><th>struct (value type)</th><th>class (reference type)</th></tr>
+<tr><td>Copy semantics</td><td>Copied on assignment (independent copies)</td><td>Shared reference (both point to same instance)</td></tr>
+<tr><td>Memory</td><td>Usually stack; no ARC</td><td>Heap; ARC-managed</td></tr>
+<tr><td>Inheritance</td><td>No (composition/protocols instead)</td><td>Yes</td></tr>
+<tr><td>Mutability</td><td><code>mutating</code> needed to change self</td><td>Mutate freely</td></tr>
+<tr><td>Identity</td><td>No <code>===</code> (only equality)</td><td><code>===</code> compares identity</td></tr>
+<tr><td>Use when</td><td>Data, models, thread-safe snapshots — the Swift default</td><td>Shared mutable state, identity, UIKit/inheritance needs</td></tr>
+</table>
+<p><strong>Rule of thumb:</strong> start with a struct; switch to a class only when you need reference semantics (shared mutable state, identity, or inheritance). Standard library favors structs — <code>Array</code>, <code>String</code>, <code>Dictionary</code> are all structs with copy-on-write.</p>
+
+<h3>Closures — escaping vs non-escaping</h3>
+<ul>
+<li><strong>Non-escaping</strong> (default): the closure is used <em>within</em> the function call and doesn't outlive it. No retain-cycle risk, no explicit <code>self</code>.</li>
+<li><strong><code>@escaping</code></strong>: the closure is stored and called <em>later</em> (async callbacks, completion handlers) — it outlives the function, so it captures <code>self</code> strongly and needs <code>[weak self]</code> discipline.</li>
+</ul>
+<pre><code><span class="k">func</span> <span class="f">fetch</span>(completion: <span class="k">@escaping</span> (Data) -> Void) {   <span class="c">// stored until network returns</span>
+    URLSession.shared.dataTask(with: url) { data, _, _ <span class="k">in</span>
+        completion(data ?? Data())
+    }.resume()
+}</code></pre>
+
+<h3>Capture lists</h3>
+<p><code>[weak self]</code> / <code>[unowned self]</code> at the start of a closure controls how captured references are held — the fix for retain cycles (see §04). <code>[weak self]</code> makes <code>self</code> optional inside; <code>[unowned self]</code> assumes it's alive (crashes if not).</p>
+
+<h3>lazy var vs computed property</h3>
+<table>
+<tr><th></th><th><code>lazy var</code></th><th>computed <code>var</code></th></tr>
+<tr><td>When it runs</td><td>Once, on first access; then stored</td><td>Every access, recomputed</td></tr>
+<tr><td>Stores a value?</td><td>Yes (cached)</td><td>No</td></tr>
+<tr><td>Use for</td><td>Expensive one-time setup</td><td>Values derived from other state</td></tr>
+</table>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">Struct or class — how do you decide?</summary>
+<div class="a"><p><strong>Commit:</strong> I default to struct. Value semantics mean copies are independent, so there's no accidental shared mutable state and no data races from sharing — which is why Swift's own collections are structs. I switch to a class only when I specifically need reference semantics: shared mutable state, object identity, or class inheritance, or when interoperating with UIKit which is class-based.</p>
+<p><strong>Nuance:</strong> structs also skip ARC overhead since they're typically stack-allocated. The one cost is that large structs copy on assignment, but copy-on-write in the standard library types handles that for collections. So: struct first, class when I have a concrete reason.</p></div></details>
+<details class="qa"><summary class="q">What does @escaping mean?</summary>
+<div class="a"><p><strong>Commit:</strong> It marks a closure that outlives the function it's passed to — it gets stored and called later, like a network completion handler. Because it escapes, it captures <code>self</code> strongly, so I use <code>[weak self]</code> to avoid retain cycles, and Swift forces explicit <code>self</code> to make that capture visible.</p>
+<p><strong>Nuance:</strong> non-escaping is the default and is cheaper — the compiler knows the closure won't outlive the call, so there's no cycle risk and no explicit-self requirement. The distinction exists precisely so the compiler can warn you where lifetime and capture actually matter.</p></div></details>
+</section>
+
+
+<!-- ================= 04 memory ================= -->
+<section class="chapter" id="memory">
+<h2>Language 04</h2>
+<div class="chapter-title">Memory management &amp; ARC</div>
+<div class="chapter-tag">The ARC question sank the VMware loop for many — nail the retain-cycle mechanics, not just "it manages memory."</div>
+
+<h3>What ARC is</h3>
+<p><strong>Automatic Reference Counting</strong>: the compiler inserts retain/release calls so each class instance is freed the moment its reference count hits zero. It's deterministic (no garbage collector, no pauses) and happens at compile time. <strong>ARC applies to classes and closures — not structs/enums</strong> (value types have nothing to count).</p>
+
+<h3>Retain cycles — the mechanism</h3>
+<p>If A holds a strong reference to B and B holds a strong reference back to A, neither count ever reaches zero → both leak forever. The two classic sources:</p>
+<pre class="bad"><code><span class="c">// 1. Two objects referencing each other</span>
+<span class="k">class</span> <span class="t">Parent</span> { <span class="k">var</span> child: Child? }
+<span class="k">class</span> <span class="t">Child</span>  { <span class="k">var</span> parent: Parent? }   <span class="c">// strong ↔ strong = cycle</span>
+
+<span class="c">// 2. A closure capturing self, while self stores the closure</span>
+<span class="k">class</span> <span class="t">VC</span> {
+    <span class="k">var</span> onDone: (() -> Void)?
+    <span class="k">func</span> <span class="f">setup</span>() { onDone = { <span class="k">self</span>.reload() } }  <span class="c">// closure retains self, self retains closure</span>
+}</code></pre>
+<pre class="good"><code><span class="k">class</span> <span class="t">Child</span> { <span class="k">weak var</span> parent: Parent? }        <span class="c">// break with weak</span>
+onDone = { [<span class="k">weak self</span>] <span class="k">in</span> <span class="k">self</span>?.reload() }         <span class="c">// break with capture list</span></code></pre>
+
+<h3>weak vs unowned</h3>
+<table>
+<tr><th></th><th><code>weak</code></th><th><code>unowned</code></th></tr>
+<tr><td>Optionality</td><td>Optional — auto-set to <code>nil</code> when target dies</td><td>Non-optional — assumes target outlives it</td></tr>
+<tr><td>If target is gone</td><td>Safely <code>nil</code></td><td><strong>Crash</strong> (dangling access)</td></tr>
+<tr><td>Use when</td><td>Target may become nil (delegates, parent refs)</td><td>Target is guaranteed to live as long or longer (e.g. closure tied to self's lifetime)</td></tr>
+</table>
+<p><strong>Safe default: <code>weak</code>.</strong> Use <code>unowned</code> only when you're certain of the lifetime and want to avoid the optional.</p>
+
+<h3>Property attributes (Obj-C heritage, still asked)</h3>
+<table>
+<tr><td class="tt">strong</td><td>Default; keeps the object alive (owning)</td></tr>
+<tr><td class="tt">weak</td><td>Non-owning, auto-nils; breaks cycles</td></tr>
+<tr><td class="tt">assign / unsafe_unretained</td><td>Non-owning, doesn't nil (unsafe — dangling risk)</td></tr>
+<tr><td class="tt">copy</td><td>Stores a copy (use for value-like objects that could be mutated, e.g. NSString/NSArray properties)</td></tr>
+<tr><td class="tt">atomic / nonatomic</td><td>atomic = thread-safe accessor (slower); nonatomic = not thread-safe (faster, the common UI default)</td></tr>
+</table>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">Explain ARC and how a retain cycle happens.</summary>
+<div class="a"><p><strong>Commit:</strong> ARC is compile-time automatic reference counting — the compiler inserts retain and release so each class instance is deallocated the instant its reference count drops to zero, deterministically, with no garbage collector. A retain cycle happens when two objects hold strong references to each other, so neither count ever reaches zero and both leak. The most common case in iOS is a closure capturing <code>self</code> strongly while <code>self</code> stores that closure.</p>
+<p><strong>Nuance:</strong> I break cycles with <code>weak</code> or <code>unowned</code> — <code>weak</code> for references that can legitimately become nil like delegates and parent pointers, <code>unowned</code> only when the target is guaranteed to outlive the reference. In closures that's the <code>[weak self]</code> capture list. ARC applies to classes and closures, not value types, since structs have nothing to reference-count.</p></div></details>
+<details class="qa"><summary class="q">weak vs unowned — which and when?</summary>
+<div class="a"><p><strong>Commit:</strong> <code>weak</code> is optional and automatically becomes nil when its target is deallocated, so accessing it is always safe. <code>unowned</code> is non-optional and assumes the target still exists — if it doesn't, accessing it crashes. I default to <code>weak</code>; I use <code>unowned</code> only when the reference's lifetime is guaranteed to be within the target's, to avoid an unnecessary optional.</p>
+<p><strong>Nuance:</strong> a common correct <code>unowned</code> is a closure that can't outlive <code>self</code> because <code>self</code> owns it and they die together. But if I'm unsure, <code>weak</code> is the safe choice — a nil is recoverable, a crash isn't.</p></div></details>
+</section>
+
+
+<!-- ================= 05 dispatch ================= -->
+<section class="chapter" id="dispatch">
+<h2>Language 05</h2>
+<div class="chapter-title">Static vs dynamic dispatch</div>
+<div class="chapter-tag">How Swift decides which method to call — a performance + correctness question.</div>
+
+<p><strong>Dispatch</strong> = how the runtime picks which implementation to run for a call.</p>
+<table>
+<tr><th>Type</th><th>How</th><th>Cost</th><th>When Swift uses it</th></tr>
+<tr><td><strong>Static (direct)</strong></td><td>Address known at compile time; can inline</td><td>Cheapest</td><td>structs, <code>final</code> classes, <code>private</code>, non-overridable</td></tr>
+<tr><td><strong>Table (vtable/witness)</strong></td><td>Look up in a per-type table</td><td>One indirection, no inline</td><td>Non-final class methods; protocol methods</td></tr>
+<tr><td><strong>Message (objc_msgSend)</strong></td><td>Dynamic runtime lookup by selector</td><td>Slowest, but enables KVO/swizzling</td><td><code>@objc dynamic</code>, Obj-C interop</td></tr>
+</table>
+<p>Practical lever: marking a class or method <code>final</code> (or using structs) lets the compiler use static dispatch and inline — a real optimization for hot paths. Marking something <code>@objc dynamic</code> opts into message dispatch, needed for KVO.</p>
+
+<details class="qa"><summary class="q">How can you make method dispatch faster in Swift?</summary>
+<div class="a"><p><strong>Commit:</strong> Give the compiler enough information to use static dispatch. Marking a class or method <code>final</code>, using <code>private</code>, or using structs all let the compiler resolve the call at compile time and inline it, versus a class method that goes through a vtable. For a hot code path that's a measurable win.</p>
+<p><strong>Nuance:</strong> the trade is flexibility — <code>final</code> and static dispatch mean no overriding and no runtime features like KVO or swizzling, which require <code>@objc dynamic</code> message dispatch. So I optimize with <code>final</code> where I don't need dynamism, and accept the slower path only where I actually need runtime behavior.</p></div></details>
+</section>
+
+<!-- ================= 06 concurrency ================= -->
+<section class="chapter" id="concurrency">
+<h2>Concurrency 06</h2>
+<div class="chapter-title">Threads, GCD &amp; async/await</div>
+<div class="chapter-tag">The core concurrency model — and the two axes people always confuse.</div>
+
+<h3>Threads vs queues</h3>
+<p>A <strong>thread</strong> is a line of execution you'd otherwise manage by hand (create, schedule, tear down — error-prone). <strong>GCD</strong> flips it: you submit work to <strong>queues</strong>, and a managed thread pool runs it. You think in queues, not threads.</p>
+
+<h3>The two independent axes (the classic confusion)</h3>
+<pre class="ascii">
+ QUEUE TYPE  (how many at once)      CALL TYPE  (does the caller wait?)
+ ─────────────────────────────      ────────────────────────────────
+ Serial     one task at a time      sync   block caller until done
+ Concurrent many tasks at once      async  return immediately
+
+ These are INDEPENDENT. Any combination is valid.
+ sync-on-your-own-serial-queue = DEADLOCK (you wait for a queue you're occupying)
+</pre>
+<pre><code>DispatchQueue.global(qos: .userInitiated).async {   <span class="c">// background work</span>
+    <span class="k">let</span> data = heavyDecode()
+    DispatchQueue.main.async { self.render(data) }  <span class="c">// UI back on main</span>
+}</code></pre>
+
+<h3>QoS (quality of service)</h3>
+<p>Priority hints so the system schedules important work first and defers the rest (saving battery): <code>.userInteractive</code> → <code>.userInitiated</code> → <code>.utility</code> → <code>.background</code>. The main queue is serial and runs UI.</p>
+
+<h3>GCD vs Operation Queues</h3>
+<table>
+<tr><th></th><th>GCD (DispatchQueue)</th><th>OperationQueue</th></tr>
+<tr><td>Level</td><td>Lightweight, C-based, closures</td><td>Higher-level, object-based (Operation)</td></tr>
+<tr><td>Dependencies</td><td>Manual (groups)</td><td>Built-in (<code>addDependency</code>)</td></tr>
+<tr><td>Cancellation</td><td>Manual (DispatchWorkItem)</td><td>Built-in (<code>cancel()</code>)</td></tr>
+<tr><td>Max concurrency</td><td>Not directly</td><td><code>maxConcurrentOperationCount</code></td></tr>
+<tr><td>Use when</td><td>Simple async dispatch</td><td>Complex dependency graphs, cancellable, throttled work</td></tr>
+</table>
+
+<h3>Modern: async/await</h3>
+<p>Lets async code read top-to-bottom. An <code>await</code> <strong>suspends</strong> (frees the thread) rather than blocks. Actors serialize shared state with compile-time safety. Bridge old callbacks with continuations.</p>
+<pre><code><span class="k">func</span> <span class="f">loadUsers</span>() <span class="k">async throws</span> -> [User] {
+    <span class="k">let</span> (data, _) = <span class="k">try await</span> URLSession.shared.data(from: url)  <span class="c">// suspends</span>
+    <span class="k">return try</span> JSONDecoder().decode([User].<span class="k">self</span>, from: data)
+}</code></pre>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">Serial vs concurrent vs sync vs async?</summary>
+<div class="a"><p><strong>Commit:</strong> Serial vs concurrent describes the queue — how many tasks run at once. Sync vs async describes the call — whether the caller blocks until the work finishes. They're independent: I can submit sync to a concurrent queue or async to a serial one.</p>
+<p><strong>Nuance:</strong> the dangerous combination is calling sync onto the serial queue I'm already running on — I block waiting for a queue I'm occupying, which deadlocks. In practice I use async-to-background for heavy work and always hop back to the main queue for UI updates.</p></div></details>
+<details class="qa"><summary class="q">GCD or OperationQueue?</summary>
+<div class="a"><p><strong>Commit:</strong> GCD for simple, fire-and-forget async work — it's lightweight and closure-based. OperationQueue when I need dependencies between tasks, cancellation, or a concurrency limit, because those are built in as <code>addDependency</code>, <code>cancel()</code>, and <code>maxConcurrentOperationCount</code>.</p>
+<p><strong>Nuance:</strong> a good example is image loading in a table view — OperationQueue lets me cap concurrent downloads and cancel a cell's operation when it scrolls off. For new code I'd increasingly use async/await with task groups, which gives structured cancellation natively.</p></div></details>
+</section>
+
+
+<!-- ================= 07 thread safety ================= -->
+<section class="chapter" id="threadsafe">
+<h2>Concurrency 07</h2>
+<div class="chapter-title">Thread safety</div>
+<div class="chapter-tag">Race conditions, deadlocks, and the read/write problem — the "make this safe" question.</div>
+
+<h3>The three problems</h3>
+<ul>
+<li><strong>Race condition</strong> — two threads touch shared state unsynchronized; result depends on timing (e.g. two threads both do <code>count += 1</code> and one update is lost).</li>
+<li><strong>Deadlock</strong> — each thread waits on a resource the other holds; both freeze.</li>
+<li><strong>Readers-writers</strong> — many can read safely at once, but a write must be exclusive.</li>
+</ul>
+
+<h3>The tools (Swift)</h3>
+<table>
+<tr><td><strong>Serial queue</strong></td><td>Route all access through it → one-at-a-time. Simple, idiomatic.</td></tr>
+<tr><td><strong>Concurrent queue + barrier</strong></td><td>Reads run in parallel; barrier makes writes exclusive. Best for read-heavy state.</td></tr>
+<tr><td><strong><code>os_unfair_lock</code> / <code>NSLock</code></strong></td><td>Low-level mutex for a small hot section. (Never <code>OSSpinLock</code> — priority inversion.)</td></tr>
+<tr><td><strong>actor</strong></td><td>Compiler-enforced serialized access. The modern answer.</td></tr>
+</table>
+
+<h4>Reader-writer with a barrier — the pattern to memorize</h4>
+<pre><code><span class="k">final class</span> <span class="t">SafeCache</span> {
+    <span class="k">private var</span> store: [String: Data] = [:]
+    <span class="k">private let</span> q = DispatchQueue(label: <span class="str">"cache"</span>, attributes: .concurrent)
+
+    <span class="k">func</span> <span class="f">value</span>(_ k: String) -> Data? {
+        q.sync { store[k] }                          <span class="c">// concurrent reads</span>
+    }
+    <span class="k">func</span> <span class="f">set</span>(_ k: String, _ v: Data) {
+        q.async(flags: .barrier) { store[k] = v }    <span class="c">// exclusive write</span>
+    }
+}</code></pre>
+
+<div class="note gotcha"><b>The UIKit rule that's easy to forget under pressure</b>All UIKit updates must happen on the main thread. A background completion handler that touches a label, table view, or any UI without <code>DispatchQueue.main.async</code> is a bug — sometimes a crash, sometimes silent corruption. In the "load API into table view" question, forgetting this is an instant red flag. Always say it out loud.</div>
+
+<details class="qa"><summary class="q">How do you make a shared resource thread-safe?</summary>
+<div class="a"><p><strong>Commit:</strong> I serialize access. The idiomatic GCD way is routing all reads and writes through a serial queue, or for a read-heavy resource like a cache, a concurrent queue where reads run in parallel with <code>sync</code> and writes are exclusive using an <code>async(flags: .barrier)</code>. For new code, an <code>actor</code> gives the same guarantee with compile-time enforcement.</p>
+<p><strong>Nuance:</strong> for a tiny hot critical section a plain <code>os_unfair_lock</code> is lowest-overhead — but never a spinlock, because of priority inversion. And separately, any UI mutation must be dispatched to the main thread regardless of how I protect the model.</p></div></details>
+</section>
+
+
+<!-- ================= 08 tools ================= -->
+<section class="chapter" id="tools">
+<h2>Concurrency 08</h2>
+<div class="chapter-title">Barrier · Semaphore · Group · WorkItem</div>
+<div class="chapter-tag">The four GCD tools your notes flagged — each solves one specific coordination problem.</div>
+
+<h3>Dispatch Barrier — a synchronization point in a concurrent queue</h3>
+<p>Submitted with <code>.barrier</code>, the block waits for all prior tasks to finish, runs <em>alone</em>, then lets subsequent tasks resume. This is what makes exclusive writes in the reader-writer pattern (§07).</p>
+
+<h3>Dispatch Semaphore — gate a limited resource</h3>
+<p>A counter. <code>wait()</code> decrements (blocks if zero); <code>signal()</code> increments. Use to limit concurrency (e.g. max 3 downloads) or to make async work look synchronous.</p>
+<pre><code><span class="k">let</span> sem = DispatchSemaphore(value: <span class="n">3</span>)   <span class="c">// allow 3 at once</span>
+<span class="k">for</span> url <span class="k">in</span> urls {
+    sem.wait()                             <span class="c">// blocks if 3 already running</span>
+    download(url) { sem.signal() }         <span class="c">// release a slot when done</span>
+}</code></pre>
+
+<h3>DispatchGroup — wait for N tasks to all finish</h3>
+<p>Your exact note: "2 network calls, proceed only when both are over." <code>enter()</code>/<code>leave()</code> bracket each task; <code>notify()</code> fires when the count returns to zero.</p>
+<pre><code><span class="k">let</span> group = DispatchGroup()
+group.enter(); fetchProfile { group.leave() }
+group.enter(); fetchSettings { group.leave() }
+group.notify(queue: .main) { self.render() }   <span class="c">// runs after BOTH complete</span></code></pre>
+
+<h3>DispatchWorkItem — cancellable work (debounce)</h3>
+<p>Your note: "API call in a work item, cancel it, only fire after the user stops typing 1 sec" — the classic search debounce.</p>
+<pre><code><span class="k">var</span> pending: DispatchWorkItem?
+<span class="k">func</span> <span class="f">searchTextChanged</span>(_ text: String) {
+    pending?.cancel()                              <span class="c">// cancel the previous</span>
+    <span class="k">let</span> item = DispatchWorkItem { self.search(text) }
+    pending = item
+    DispatchQueue.main.asyncAfter(deadline: .now() + <span class="n">1</span>, execute: item)  <span class="c">// fire after 1s idle</span>
+}</code></pre>
+
+<table>
+<tr><th>Tool</th><th>Solves</th><th>Key calls</th></tr>
+<tr><td>Barrier</td><td>Exclusive write in a concurrent queue</td><td class="tt">.barrier</td></tr>
+<tr><td>Semaphore</td><td>Limit concurrency / gate a resource</td><td class="tt">wait / signal</td></tr>
+<tr><td>Group</td><td>Wait for many tasks to complete</td><td class="tt">enter / leave / notify</td></tr>
+<tr><td>WorkItem</td><td>Cancellable / debounced work</td><td class="tt">cancel / asyncAfter</td></tr>
+</table>
+
+<details class="qa"><summary class="q">You need to make two network calls and continue only when both finish. How?</summary>
+<div class="a"><p><strong>Commit:</strong> A DispatchGroup. I call <code>enter()</code> before each request and <code>leave()</code> in each completion handler, then <code>notify(queue: .main)</code> to run the continuation once both have left — which fires only after both complete, back on the main thread for UI.</p>
+<p><strong>Nuance:</strong> the discipline is balancing every <code>enter</code> with exactly one <code>leave</code> on every path including errors, or <code>notify</code> never fires. With async/await this becomes cleaner — an <code>async let</code> for each call and a single <code>await</code> on both, which also gives me structured cancellation for free.</p></div></details>
+<details class="qa"><summary class="q">How would you debounce a search field?</summary>
+<div class="a"><p><strong>Commit:</strong> A DispatchWorkItem I cancel and recreate on every keystroke, scheduled with <code>asyncAfter</code> a second out. Each new character cancels the pending item and schedules a fresh one, so the search only actually runs after the user pauses typing for a second.</p>
+<p><strong>Nuance:</strong> this avoids firing a network request per keystroke, which saves bandwidth and backend load. The modern equivalent is Combine's <code>debounce</code> operator or an async Task I cancel, but the WorkItem version is the clearest to write on a whiteboard.</p></div></details>
+</section>
+
+<!-- ================= 09 IPC ================= -->
+<section class="chapter" id="ipc">
+<h2>Systems 09</h2>
+<div class="chapter-title">IPC — every method</div>
+<div class="chapter-tag">Inter-process communication: how separate processes (no shared memory) talk. VMware asked specifically about pipes and shared memory.</div>
+
+<h3>The landscape — pick by need</h3>
+<table>
+<tr><th>Method</th><th>One-liner</th><th>Trade-off</th></tr>
+<tr><td>Anonymous pipe</td><td>One-way byte stream between parent &amp; child</td><td>Related processes only</td></tr>
+<tr><td>Named pipe (FIFO)</td><td>Pipe with a filesystem path — unrelated processes</td><td>One-way; stream (needs framing)</td></tr>
+<tr><td>Unix domain socket</td><td>Bidirectional local socket, filesystem path</td><td>Rich, bidirectional; the go-to for local IPC</td></tr>
+<tr><td>Mach ports</td><td>Kernel message queues — the macOS primitive</td><td>Low-level; usually via XPC</td></tr>
+<tr><td>XPC</td><td>Apple's high-level IPC (typed, launchd-managed)</td><td>Apple-only</td></tr>
+<tr><td><strong>Shared memory</strong></td><td>Two processes map the same memory region</td><td><strong>Fastest — but you provide synchronization</strong></td></tr>
+<tr><td>Message queue</td><td>Kernel-held queue of discrete messages</td><td>Message boundaries preserved</td></tr>
+<tr><td>Signals</td><td>Async notification (a number) to a process</td><td>No payload; interrupt-style</td></tr>
+<tr><td>Distributed notifications</td><td>Broadcast NSNotifications across processes</td><td>Loose, no delivery guarantee</td></tr>
+</table>
+
+<h3>Named pipe (FIFO) — sender &amp; receiver</h3>
+<pre><code><span class="c">// WRITER</span>
+mkfifo(<span class="str">"/tmp/my_fifo"</span>, <span class="n">0666</span>);
+<span class="k">int</span> fd = open(<span class="str">"/tmp/my_fifo"</span>, O_WRONLY);
+write(fd, msg, strlen(msg)+<span class="n">1</span>);
+close(fd);
+
+<span class="c">// READER</span>
+<span class="k">int</span> fd = open(<span class="str">"/tmp/my_fifo"</span>, O_RDONLY);
+read(fd, buffer, <span class="k">sizeof</span> buffer);
+close(fd); unlink(<span class="str">"/tmp/my_fifo"</span>);</code></pre>
+
+<h3>Unix domain socket — the local go-to</h3>
+<pre><code><span class="c">// SERVER</span>
+<span class="k">int</span> s = socket(AF_UNIX, SOCK_STREAM, <span class="n">0</span>);
+<span class="k">struct</span> sockaddr_un a = { .sun_family = AF_UNIX };
+strcpy(a.sun_path, <span class="str">"/tmp/sock"</span>); unlink(a.sun_path);
+bind(s, (<span class="k">struct</span> sockaddr*)&amp;a, <span class="k">sizeof</span> a);
+listen(s, <span class="n">5</span>);
+<span class="k">int</span> c = accept(s, NULL, NULL);
+read(c, buf, <span class="k">sizeof</span> buf);
+
+<span class="c">// CLIENT</span>
+<span class="k">int</span> s = socket(AF_UNIX, SOCK_STREAM, <span class="n">0</span>);
+connect(s, (<span class="k">struct</span> sockaddr*)&amp;a, <span class="k">sizeof</span> a);
+write(s, <span class="str">"hello"</span>, <span class="n">6</span>);</code></pre>
+
+<h3>Shared memory — fastest, but you sync it yourself</h3>
+<pre><code><span class="c">// WRITER: create, size, map, write</span>
+<span class="k">int</span> fd = shm_open(<span class="str">"/shm"</span>, O_CREAT | O_RDWR, <span class="n">0666</span>);
+ftruncate(fd, <span class="n">1024</span>);
+<span class="k">char</span> *m = mmap(NULL, <span class="n">1024</span>, PROT_READ|PROT_WRITE, MAP_SHARED, fd, <span class="n">0</span>);
+strcpy(m, <span class="str">"hello"</span>);
+
+<span class="c">// READER: open, map read-only, read</span>
+<span class="k">int</span> fd = shm_open(<span class="str">"/shm"</span>, O_RDONLY, <span class="n">0666</span>);
+<span class="k">char</span> *m = mmap(NULL, <span class="n">1024</span>, PROT_READ, MAP_SHARED, fd, <span class="n">0</span>);
+printf(<span class="str">"%s"</span>, m);
+shm_unlink(<span class="str">"/shm"</span>);</code></pre>
+<div class="note gotcha"><b>The shared-memory follow-up VMware would ask</b>"Shared memory is fastest — <em>why</em>?" Because there's no kernel copy on each message: both processes access the same physical pages directly, whereas pipes/sockets copy data through the kernel. The catch: the kernel gives you <em>no</em> synchronization, so you must add your own — a semaphore or mutex in the shared region — or you'll get exactly the race conditions from §07. Naming that trade-off is the whole point of the question.</div>
+
+<h3>Signals &amp; XPC (quick reference)</h3>
+<pre><code><span class="c">// SIGNAL — notification only, no payload</span>
+<span class="c">// receiver:</span> signal(SIGUSR1, handler); <span class="k">while</span>(<span class="n">1</span>) pause();
+<span class="c">// sender:</span>   kill(pid, SIGUSR1);
+
+<span class="c">// XPC — typed dictionaries over Mach, launchd-managed (see the Concurrency/IPC deep-dive doc)</span>
+xpc_connection_t c = xpc_connection_create_mach_service(<span class="str">"com.x.svc"</span>, NULL, <span class="n">0</span>);</code></pre>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">Compare pipes and shared memory.</summary>
+<div class="a"><p><strong>Commit:</strong> A pipe is a kernel-managed byte stream — one process writes, another reads, and the data is copied through the kernel on each transfer, so it's simple and safe but has copy overhead. Shared memory maps the same physical pages into both processes, so they read and write the same bytes directly with no kernel copy — the fastest IPC — but the kernel provides no synchronization, so I have to coordinate access myself with a semaphore or mutex.</p>
+<p><strong>Nuance:</strong> so I'd choose a pipe or socket when I want simplicity and built-in flow control, and shared memory when I'm moving large volumes and can't afford the copy — accepting that I now own the race-condition problem. On macOS specifically, for structured app-to-helper communication I'd usually reach for XPC over raw pipes.</p></div></details>
+</section>
+
+
+<!-- ================= 10 networking ================= -->
+<section class="chapter" id="network">
+<h2>Systems 10</h2>
+<div class="chapter-title">Networking, TLS &amp; JSON</div>
+<div class="chapter-tag">The network layers, TLS chain of trust, NAT, and the JSON parsing every iOS loop tests.</div>
+
+<h3>The layers</h3>
+<pre class="ascii">
+ your data ─▶ HTTP ─▶ TLS ─▶ TCP ─▶ IP ─▶ wire
+   IP   best-effort packets (lose/reorder/dupe)
+   TCP  reliable, ordered stream on top of IP
+   TLS  privacy + integrity + identity
+   HTTP request/response structure
+</pre>
+
+<h3>TLS &amp; chain of trust</h3>
+<p>TLS gives <strong>privacy</strong> (encryption), <strong>integrity</strong> (tamper detection), and <strong>identity</strong> (certificates). The handshake: client and server agree a shared symmetric key via ephemeral Diffie-Hellman (forward secrecy) and the server proves identity with a certificate. <strong>Chain of trust</strong>: the server's cert is signed by an intermediate CA, signed by a root CA in your device's trust store — the client walks that chain to a trusted root, and checks the hostname and expiry. (Full depth in the dedicated Networking doc.)</p>
+
+<h3>NAT (Network Address Translation)</h3>
+<p>Lets many devices on a private network share one public IP: the router rewrites source addresses/ports on the way out and maps replies back. Relevant to peer-to-peer (WebRTC) because it hides devices behind the router — solved with STUN (discover your public address) and TURN (relay when direct connection fails). This is your Zoho Assist territory.</p>
+
+<h3>JSON parsing with Codable — the bread-and-butter question</h3>
+<pre><code><span class="k">struct</span> <span class="t">User</span>: Codable {           <span class="c">// maps JSON keys → properties automatically</span>
+    <span class="k">let</span> id: Int
+    <span class="k">let</span> name: String
+    <span class="k">let</span> email: String
+}
+
+URLSession.shared.dataTask(with: url) { data, _, error <span class="k">in</span>
+    <span class="k">guard let</span> data = data, error == <span class="k">nil</span> <span class="k">else</span> { <span class="k">return</span> }
+    <span class="k">do</span> {
+        <span class="k">let</span> users = <span class="k">try</span> JSONDecoder().decode([User].<span class="k">self</span>, from: data)
+        DispatchQueue.main.async { self.update(users) }   <span class="c">// UI on main!</span>
+    } <span class="k">catch</span> { print(<span class="str">"decode error:"</span>, error) }
+}.resume()                                                <span class="c">// don't forget .resume()</span></code></pre>
+<div class="note tip"><b>Codable follow-ups to have ready</b>Custom key names via <code>CodingKeys</code>; nested objects (nest Codable structs); dates via <code>decoder.dateDecodingStrategy</code>; snake_case via <code>.convertFromSnakeCase</code>; a mismatched type throws <code>DecodingError</code> — always wrap in do/catch. And the modern form: <code>let (data, _) = try await URLSession.shared.data(from: url)</code>.</div>
+
+<details class="qa"><summary class="q">Walk me through calling an API and parsing the response.</summary>
+<div class="a"><p><strong>Commit:</strong> I define a <code>Codable</code> model matching the JSON, create a URLSession data task with the URL, and in the completion I guard against error and nil data, then <code>JSONDecoder().decode</code> into my model inside a do/catch. Any UI update from the result goes back on the main queue, and I call <code>.resume()</code> to start the task.</p>
+<p><strong>Nuance:</strong> for a cleaner design I'd put this behind a protocol-based service so it's injectable and testable rather than calling URLSession inline — which is exactly the "parser with a design pattern" the VMware round wanted. And I'd prefer the async/await form, <code>try await URLSession.shared.data(from:)</code>, which removes the callback nesting.</p></div></details>
+</section>
+
+
+<!-- ================= 11 signing ================= -->
+<section class="chapter" id="signing">
+<h2>Systems 11</h2>
+<div class="chapter-title">Code signing &amp; security</div>
+<div class="chapter-tag">Signing, entitlements, hardened runtime — the macOS distribution chain your notes flagged.</div>
+
+<table>
+<tr><td><strong>Code signing</strong></td><td>Cryptographically signs your binary with your Developer ID → proves <em>who built it</em> and that it hasn't been tampered with. Verify: <code>codesign -dv --verify</code>.</td></tr>
+<tr><td><strong>Entitlements</strong></td><td>Capability claims baked <em>into</em> the signature (e.g. keychain access groups, network client, the Endpoint Security entitlement). The system grants privileges based on them; they can't be forged because they're inside the signature.</td></tr>
+<tr><td><strong>Hardened runtime</strong></td><td>Opt-in protections: blocks code injection, DYLD hijacking, and unsigned memory execution unless you declare specific exception entitlements. Required for notarization.</td></tr>
+<tr><td><strong>Notarization</strong></td><td>Apple scans your signed app for malware and issues a ticket you <em>staple</em> to it. Separate from signing — signing = identity, notarization = Apple's scan.</td></tr>
+<tr><td><strong>Gatekeeper</strong></td><td>On first launch of a downloaded (quarantined) app, checks valid Developer ID + notarization; else blocks. Verify: <code>spctl -a -vvv</code>.</td></tr>
+</table>
+<p><strong>The chain in order:</strong> sign (identity) → hardened runtime (protections) → notarize (Apple's malware scan) → staple ticket → Gatekeeper allows launch. Don't blur signing, notarization, and Gatekeeper — they're three different checks answering three different questions (who made it / did Apple scan it / may it launch).</p>
+
+<details class="qa"><summary class="q">What's the difference between code signing and notarization?</summary>
+<div class="a"><p><strong>Commit:</strong> Code signing proves identity and integrity — my Developer ID signed this binary and it hasn't been altered. Notarization is a separate step where Apple scans the already-signed app for malware and returns a ticket I staple to it. Signing says who built it; notarization says Apple checked it.</p>
+<p><strong>Nuance:</strong> Gatekeeper is yet a third thing — the runtime check at first launch that a downloaded app is both validly signed and notarized before it's allowed to run. All three are required for smooth distribution, and the hardened runtime is a prerequisite for notarization because Apple requires those protections.</p></div></details>
+</section>
+
+<!-- ================= 12 lifecycle ================= -->
+<section class="chapter" id="lifecycle">
+<h2>iOS 12</h2>
+<div class="chapter-title">App &amp; View Controller lifecycle</div>
+<div class="chapter-tag">The states an app and a screen move through — a guaranteed iOS question.</div>
+
+<h3>App execution states</h3>
+<pre class="ascii">
+ Not running ──▶ Inactive ──▶ Active            (foreground, receiving events)
+                    │  ▲
+                    ▼  │
+                Background ──▶ Suspended         (in memory, not executing; may be killed)
+</pre>
+<table>
+<tr><td class="tt">Not running</td><td>Not launched, or terminated</td></tr>
+<tr><td class="tt">Inactive</td><td>Foreground but not receiving events (transitioning, e.g. incoming call)</td></tr>
+<tr><td class="tt">Active</td><td>Foreground, receiving events — normal use</td></tr>
+<tr><td class="tt">Background</td><td>Executing but not visible; finite time to finish work</td></tr>
+<tr><td class="tt">Suspended</td><td>In memory, frozen; system may purge under pressure</td></tr>
+</table>
+<p>Key AppDelegate/SceneDelegate hooks: <code>didFinishLaunching</code>, <code>didBecomeActive</code>, <code>willResignActive</code>, <code>didEnterBackground</code>, <code>willEnterForeground</code>, <code>willTerminate</code>. Background work needs <code>beginBackgroundTask</code> or the BGTaskScheduler.</p>
+
+<h3>View Controller lifecycle</h3>
+<pre class="ascii">
+ loadView ─▶ viewDidLoad ─▶ viewWillAppear ─▶ viewDidAppear
+                                                    │  (visible)
+ viewDidDisappear ◀─ viewWillDisappear ◀───────────┘
+</pre>
+<table>
+<tr><td class="tt">viewDidLoad</td><td>Once, after view loads into memory — one-time setup, outlets ready</td></tr>
+<tr><td class="tt">viewWillAppear</td><td>Every time before it appears — refresh data, restart animations</td></tr>
+<tr><td class="tt">viewDidAppear</td><td>After it's on screen — start expensive work, analytics</td></tr>
+<tr><td class="tt">viewWillDisappear / viewDidDisappear</td><td>Leaving — save state, stop timers/observers</td></tr>
+</table>
+<div class="note gotcha"><b>The trap</b><code>viewDidLoad</code> runs <em>once</em>; <code>viewWillAppear</code> runs <em>every</em> appearance. Putting per-appearance refresh in <code>viewDidLoad</code> (so it only updates the first time) is a classic bug they probe.</div>
+
+<details class="qa"><summary class="q">Where do you put a network refresh — viewDidLoad or viewWillAppear?</summary>
+<div class="a"><p><strong>Commit:</strong> It depends on whether the data can change between appearances. One-time setup goes in <code>viewDidLoad</code> since it runs once. A refresh that should happen every time the screen is shown — like re-fetching a list that another screen might have modified — goes in <code>viewWillAppear</code>, because <code>viewDidLoad</code> would only fire on the first load.</p>
+<p><strong>Nuance:</strong> I'm careful not to kick off heavy work in <code>viewWillAppear</code> that runs on every appearance and janks the transition — for that I'd start it in <code>viewDidAppear</code> after the view is on screen, or debounce it.</p></div></details>
+</section>
+
+
+<!-- ================= 13 communication ================= -->
+<section class="chapter" id="comm">
+<h2>iOS 13</h2>
+<div class="chapter-title">Communication patterns</div>
+<div class="chapter-tag">How objects/screens talk — delegate vs closure vs the rest.</div>
+
+<h3>Passing data between view controllers</h3>
+<table>
+<tr><th>Direction</th><th>Mechanism</th></tr>
+<tr><td>Forward (A → B)</td><td>Set B's properties before pushing/presenting</td></tr>
+<tr><td>Back (B → A)</td><td>Delegate, closure/completion, or unwind segue</td></tr>
+<tr><td>One-to-many / decoupled</td><td>NotificationCenter, KVO, Combine</td></tr>
+<tr><td>Shared state</td><td>A shared service/singleton (use sparingly)</td></tr>
+</table>
+
+<h3>Delegate vs Closure — the head-to-head</h3>
+<table>
+<tr><th></th><th>Delegate (protocol)</th><th>Closure (callback)</th></tr>
+<tr><td>Shape</td><td>Protocol + <code>weak var delegate</code></td><td>A stored/passed function</td></tr>
+<tr><td>Best for</td><td>Many related callbacks, formal contract (e.g. UITableViewDataSource)</td><td>One-off results, inline, concise</td></tr>
+<tr><td>Memory</td><td><code>weak</code> delegate avoids cycles</td><td><code>[weak self]</code> avoids cycles</td></tr>
+<tr><td>Coupling</td><td>More ceremony, very clear</td><td>Lightweight, can nest</td></tr>
+</table>
+
+<h3>KVO &amp; NotificationCenter (quick reference)</h3>
+<ul>
+<li><strong>KVO</strong> — observe a specific property's changes on a specific object (<code>@objc dynamic</code> property). Fine-grained, one-to-one.</li>
+<li><strong>NotificationCenter</strong> — broadcast named events to any number of observers. Decoupled, one-to-many; remember to remove observers (or use the block API with tokens).</li>
+</ul>
+
+<details class="qa"><summary class="q">Delegate or closure — how do you choose?</summary>
+<div class="a"><p><strong>Commit:</strong> A delegate when there are several related callbacks or I want a formal contract — like a table view's data source and delegate methods. A closure for a single, one-off result, like "here's the fetched user" — it's more concise and keeps the logic inline at the call site.</p>
+<p><strong>Nuance:</strong> both need cycle discipline — a <code>weak</code> delegate and <code>[weak self]</code> in an escaping closure. For one-to-many or fully decoupled communication I'd instead use NotificationCenter or Combine. The choice is really about how many callbacks and how tight the coupling should be.</p></div></details>
+</section>
+
+
+<!-- ================= 14 worked ================= -->
+<section class="chapter" id="worked">
+<h2>Practice 14 · The one that mattered</h2>
+<div class="chapter-title">The VMware problem, solved end-to-end</div>
+<div class="chapter-tag">"Parse JSON/CSV with a design pattern, design the classes, and load it into a table view with concurrency." Rehearse this until it's automatic.</div>
+
+<h3>Step 1 — Model + a parser abstraction (SOLID: SRP, DIP, OCP)</h3>
+<pre><code><span class="k">struct</span> <span class="t">User</span>: Codable { <span class="k">let</span> id: Int; <span class="k">let</span> name: String; <span class="k">let</span> email: String }
+
+<span class="k">protocol</span> <span class="t">Parser</span> {                                <span class="c">// DIP: depend on abstraction</span>
+    <span class="k">func</span> <span class="f">parse</span>&lt;T: Decodable&gt;(_ data: Data, as: T.Type) <span class="k">throws</span> -> T
+}
+<span class="k">struct</span> <span class="t">JSONParser</span>: Parser {                          <span class="c">// OCP: add CSVParser without editing</span>
+    <span class="k">func</span> <span class="f">parse</span>&lt;T: Decodable&gt;(_ data: Data, as t: T.Type) <span class="k">throws</span> -> T {
+        <span class="k">try</span> JSONDecoder().decode(t, from: data)
+    }
+}</code></pre>
+<p>Say out loud: <em>"Codable model is the single-responsibility data type; a <code>Parser</code> protocol lets me depend on an abstraction and swap JSON for CSV without changing the service — that's DIP and OCP."</em> That sentence alone answers "parser + design pattern + SOLID."</p>
+
+<h3>Step 2 — An injectable service (DIP + testability)</h3>
+<pre><code><span class="k">final class</span> <span class="t">UserService</span> {
+    <span class="k">private let</span> parser: Parser
+    <span class="k">private let</span> session: URLSession
+    <span class="k">init</span>(parser: Parser = JSONParser(), session: URLSession = .shared) {
+        <span class="k">self</span>.parser = parser; <span class="k">self</span>.session = session   <span class="c">// inject → mockable in tests</span>
+    }
+    <span class="k">func</span> <span class="f">loadUsers</span>() <span class="k">async throws</span> -> [User] {
+        <span class="k">let</span> (data, _) = <span class="k">try await</span> session.data(from: url)  <span class="c">// off main automatically</span>
+        <span class="k">return try</span> parser.parse(data, as: [User].<span class="k">self</span>)     <span class="c">// decode off main</span>
+    }
+}</code></pre>
+
+<h3>Step 3 — Table view load with the four concurrency beats</h3>
+<pre><code><span class="k">func</span> <span class="f">refresh</span>() {
+    Task {
+        <span class="k">do</span> {
+            <span class="k">let</span> users = <span class="k">try await</span> service.loadUsers()   <span class="c">// 1 fetch + 2 decode: off main</span>
+            <span class="k">await</span> MainActor.run {                     <span class="c">// 3 UI update: on main</span>
+                <span class="k">self</span>.users = users
+                <span class="k">self</span>.tableView.reloadData()
+            }
+        } <span class="k">catch</span> { showError(error) }
+    }
+}
+<span class="c">// 4 cell reuse + cancellation for per-cell async (e.g. images):</span>
+<span class="k">func</span> <span class="f">tableView</span>(_ t: UITableView, cellForRowAt i: IndexPath) -> UITableViewCell {
+    <span class="k">let</span> cell = t.dequeueReusableCell(withIdentifier: <span class="str">"c"</span>, for: i) <span class="k">as</span>! UserCell
+    cell.tag = i.row                                     <span class="c">// guard against reuse race</span>
+    cell.imageTask?.cancel()                             <span class="c">// cancel stale work on reuse</span>
+    cell.imageTask = Task {
+        <span class="k">let</span> img = <span class="k">await</span> loadImage(users[i.row].id)
+        <span class="k">if</span> cell.tag == i.row { <span class="k">await</span> MainActor.run { cell.imageView?.image = img } }
+    }
+    <span class="k">return</span> cell
+}</code></pre>
+
+<div class="note tip"><b>Why this wins the round</b>You've hit every part they were testing, in order, out loud: a design pattern (protocol + DI), SOLID applied to the actual problem, GCD/concurrency done correctly (off-main decode, on-main UI), <em>and</em> the two things most candidates miss — <strong>cell reuse race</strong> (the tag guard) and <strong>cancellation on scroll</strong>. Landing all four concurrency beats is exactly the senior signal that was missing before. Memorize this shape; it generalizes to any "load data into a list" question.</div>
+
+<h3>The GCD-only version (if they say "no async/await")</h3>
+<pre><code>DispatchQueue.global(qos: .userInitiated).async {
+    <span class="k">guard let</span> data = <span class="k">try</span>? Data(contentsOf: url),
+          <span class="k">let</span> users = <span class="k">try</span>? JSONDecoder().decode([User].<span class="k">self</span>, from: data) <span class="k">else</span> { <span class="k">return</span> }
+    DispatchQueue.main.async { self.users = users; self.tableView.reloadData() }
+}</code></pre>
+</section>
+
+
+<!-- ================= 15 checklist ================= -->
+<section class="chapter" id="checklist">
+<h2>Practice 15</h2>
+<div class="chapter-title">Study checklist</div>
+<div class="chapter-tag">Tick these before any iOS loop. If you can say each out loud in under a minute, you're ready.</div>
+
+<table>
+<tr><th>Area</th><th>Can you, out loud, in 60s…</th><th>§</th></tr>
+<tr><td>SOLID</td><td>Give each letter + a Swift example applied to a parser</td><td>01</td></tr>
+<tr><td>Patterns</td><td>Explain MVVM vs MVC and write a Box binding</td><td>02</td></tr>
+<tr><td>Struct/class</td><td>Decide with reasons; explain COW</td><td>03</td></tr>
+<tr><td>ARC</td><td>Draw a retain cycle and fix it with [weak self]</td><td>04</td></tr>
+<tr><td>Dispatch</td><td>Static vs dynamic + how to make it faster</td><td>05</td></tr>
+<tr><td>Concurrency</td><td>Serial/concurrent vs sync/async; cause a deadlock</td><td>06</td></tr>
+<tr><td>Thread safety</td><td>Write the reader-writer barrier; state the UIKit-main rule</td><td>07</td></tr>
+<tr><td>GCD tools</td><td>DispatchGroup for 2 calls; WorkItem debounce</td><td>08</td></tr>
+<tr><td>IPC</td><td>Pipe vs shared memory + why shared memory needs sync</td><td>09</td></tr>
+<tr><td>Networking</td><td>Layers, TLS chain of trust, Codable API call</td><td>10</td></tr>
+<tr><td>Signing</td><td>Signing vs notarization vs Gatekeeper</td><td>11</td></tr>
+<tr><td>Lifecycle</td><td>App states; viewDidLoad vs viewWillAppear</td><td>12</td></tr>
+<tr><td>Communication</td><td>Delegate vs closure; pass data back</td><td>13</td></tr>
+<tr><td><strong>The worked problem</strong></td><td><strong>Parser + DI + table-view load with all 4 concurrency beats</strong></td><td>14</td></tr>
+</table>
+
+<div class="note"><b>The one habit that changes your results</b>For every answer above: <strong>commit to a position or design in your first sentence, then add the nuance.</strong> Your knowledge isn't the gap — the delivery is. Rehearse these aloud, land the decision first, and tie fundamentals to the problem on the table. That's what turns these exact questions from a rejection into an offer.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

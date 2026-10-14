@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Enclave &amp; TPM — Step-by-Step for Layman (JumpCloud)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #fffdf8;
+      --surface: #ffffff;
+      --surface2: #f7f4ee;
+      --border: #e8e2d6;
+      --text: #292524;
+      --muted: #57534e;
+      --accent: #7c3aed;
+      --accent-bg: #f5f3ff;
+      --green: #047857;
+      --green-bg: #ecfdf5;
+      --amber: #b45309;
+      --amber-bg: #fffbeb;
+      --red: #b91c1c;
+      --red-bg: #fef2f2;
+      --blue: #1d4ed8;
+      --blue-bg: #eff6ff;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 20px; }
+    body { font-family: "Source Sans 3", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.85; }
+    p { margin-bottom: 1.15rem; }
+    ul, ol { margin: 0 0 1.15rem 1.4rem; }
+    li { margin-bottom: .5rem; }
+
+    header {
+      background: linear-gradient(180deg, #f5f3ff, var(--bg));
+      border-bottom: 2px solid var(--border);
+      padding: 3rem 2rem 1.75rem;
+      text-align: center;
+    }
+    header h1 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      margin-bottom: .75rem;
+      color: #0f172a;
+    }
+    header p { color: var(--muted); font-size: 1.1rem; max-width: 680px; margin: 0 auto; }
+
+    .nav-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; margin-top: 1.5rem; }
+    .nav-pills a {
+      text-decoration: none; color: var(--muted); font-size: .85rem; font-weight: 600;
+      padding: .45rem .9rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+    }
+    .nav-pills a:hover { color: var(--accent); border-color: #c4b5fd; background: var(--accent-bg); }
+
+    main { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+    section { margin-bottom: 3.5rem; }
+    h2 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.55rem; color: #0f172a; margin-bottom: 1rem;
+      padding-bottom: .5rem; border-bottom: 3px solid var(--accent);
+    }
+    h3 { font-size: 1.2rem; font-weight: 700; color: #5b21b6; margin: 1.75rem 0 .65rem; }
+
+    .big-number {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2.4rem; height: 2.4rem; border-radius: 50%;
+      background: var(--accent); color: white; font-weight: 800; font-size: 1.1rem;
+      margin-right: .6rem; vertical-align: middle;
+    }
+
+    .story-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.4rem 1.5rem; margin: 1.25rem 0;
+    }
+    .story-box strong.label {
+      display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--accent); margin-bottom: .4rem;
+    }
+
+    .do { background: var(--green-bg); border-left: 5px solid var(--green); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+    .dont { background: var(--red-bg); border-left: 5px solid var(--red); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+    .pause { background: var(--amber-bg); border-left: 5px solid var(--amber); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+    .info { background: var(--blue-bg); border-left: 5px solid var(--blue); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+
+    .step-card {
+      display: flex; gap: 1rem; margin-bottom: 1.4rem; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.2rem 1.3rem;
+    }
+    .step-card .n {
+      flex-shrink: 0; width: 2.3rem; height: 2.3rem; border-radius: 50%;
+      background: var(--accent); color: white; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-card h4 { margin: 0 0 .35rem; font-size: 1.08rem; color: #0f172a; }
+    .step-card p { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: .95rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin: 1.4rem 0;
+    }
+    th, td { padding: .85rem 1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+    th { background: var(--surface2); font-weight: 700; font-size: .8rem; text-transform: uppercase; color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+
+    .diagram {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.35rem; margin: 1.4rem 0; overflow-x: auto;
+    }
+
+    .timeline {
+      border-left: 4px solid #c4b5fd; margin: 1.5rem 0 1.5rem 1rem; padding-left: 1.4rem;
+    }
+    .timeline-item { margin-bottom: 1.5rem; position: relative; }
+    .timeline-item::before {
+      content: ""; position: absolute; left: -1.72rem; top: .45rem;
+      width: .85rem; height: .85rem; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg);
+    }
+    .timeline-item h4 { margin: 0 0 .3rem; color: #0f172a; }
+    .timeline-item p { margin: 0; color: var(--muted); font-size: .98rem; }
+
+    .vocab {
+      display: grid; grid-template-columns: 1fr; gap: .75rem; margin: 1.25rem 0;
+    }
+    .vocab-item {
+      background: var(--accent-bg); border: 1px solid #ddd6fe; border-radius: 12px;
+      padding: 1rem 1.15rem;
+    }
+    .vocab-item .word { font-weight: 800; color: #5b21b6; }
+    .vocab-item .meaning { color: var(--muted); font-size: .95rem; margin-top: .25rem; }
+
+    code { font-family: ui-monospace, monospace; font-size: .86em; background: #f5f5f4; padding: .1rem .35rem; border-radius: 4px; color: #5b21b6; }
+
+    footer {
+      text-align: center; padding: 2rem; color: var(--muted); font-size: .92rem;
+      border-top: 2px solid var(--border); background: var(--surface);
+    }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Secure Enclave &amp; TPM<br/>explained step by step</h1>
+  <p>
+    Read this like a story. Start at Step 1 and go in order.
+    No prior security knowledge needed. This is how JumpCloud actually uses these things.
+  </p>
+  <div class="nav-pills">
+    <a href="#s1">1. Keys</a>
+    <a href="#s2">2. Signing</a>
+    <a href="#s3">3. Soft vs hard</a>
+    <a href="#s4">4. What is TPM/SE</a>
+    <a href="#s5">5. JumpCloud split</a>
+    <a href="#s6">6. Register</a>
+    <a href="#s7">7. Sign in</a>
+    <a href="#s8">8. Per OS</a>
+    <a href="#s9">9. Other features</a>
+    <a href="#s10">10. Full story</a>
+  </div>
+</header>
+
+<main>
+
+<!-- STEP 1 -->
+<section id="s1">
+  <h2><span class="big-number">1</span> First: what is a “key”?</h2>
+
+  <p>
+    Forget computers for a second. Imagine you have a <strong>wax seal stamp</strong> and a
+    <strong>matching seal reader</strong> that can check if a seal came from <em>your</em> stamp.
+  </p>
+
+  <div class="vocab">
+    <div class="vocab-item">
+      <div class="word">Private key</div>
+      <div class="meaning">Your wax stamp. Keep it secret. Whoever has it can stamp documents “as you.”</div>
+    </div>
+    <div class="vocab-item">
+      <div class="word">Public key</div>
+      <div class="meaning">The seal reader. You can give it to anyone. It only <em>checks</em> seals — it cannot stamp.</div>
+    </div>
+  </div>
+
+  <div class="story-box">
+    <strong class="label">Remember this</strong>
+    <p style="margin:0">
+      Private key = secret stamp.<br/>
+      Public key = stamp checker.<br/>
+      You create them as a pair. They always match.
+    </p>
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section id="s2">
+  <h2><span class="big-number">2</span> What does “signing” mean?</h2>
+
+  <p>
+    Signing does <strong>not</strong> mean encrypting your whole laptop.
+    It means: “stamp this short message so JumpCloud can prove it came from your device/key.”
+  </p>
+
+  <div class="step-card">
+    <div class="n">A</div>
+    <div>
+      <h4>JumpCloud sends a challenge</h4>
+      <p>Like: “Prove you still have the stamp. Sign this random number: 918273.”</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">B</div>
+    <div>
+      <h4>Your device stamps that number</h4>
+      <p>Using the private key, it creates a signature (math proof).</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">C</div>
+    <div>
+      <h4>JumpCloud checks with the public key</h4>
+      <p>If it matches → “Yes, this device/user really has the private key.”</p>
+    </div>
+  </div>
+
+  <div class="info">
+    The private key never needs to travel over the internet for this to work.
+    Only the signature (the stamp on the paper) is sent.
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section id="s3">
+  <h2><span class="big-number">3</span> Soft key vs hardware key</h2>
+
+  <p>There are two places you can keep the private key (your stamp).</p>
+
+  <table>
+    <thead>
+      <tr><th></th><th>Software key (soft)</th><th>Hardware key (hard)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Where it lives</strong></td>
+        <td>A file on the hard drive (like <code>client.key</code>)</td>
+        <td>Inside a special security chip</td>
+      </tr>
+      <tr>
+        <td><strong>Can someone copy it?</strong></td>
+        <td>Yes — if malware gets admin access and reads the file</td>
+        <td>No — the chip refuses to export the raw stamp</td>
+      </tr>
+      <tr>
+        <td><strong>How signing works</strong></td>
+        <td>App loads the key into memory and stamps</td>
+        <td>App asks the chip: “please stamp this”; chip stamps and returns only the signature</td>
+      </tr>
+      <tr>
+        <td><strong>Everyday analogy</strong></td>
+        <td>Stamp sitting in an unlocked desk drawer</td>
+        <td>Stamp locked inside a bank vault that only stamps papers slipped through a slot</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="pause">
+    <strong>Pause and absorb:</strong> Secure Enclave and TPM are just fancy names for
+    <em>that bank vault chip</em>. Same idea on different brands of computers.
+  </div>
+</section>
+
+<!-- STEP 4 -->
+<section id="s4">
+  <h2><span class="big-number">4</span> What are Secure Enclave and TPM?</h2>
+
+  <p>
+    Your computer has a main brain (CPU) and often a <strong>tiny separate security chip</strong>.
+    That chip is purposefully dumb and strict: it can create keys, store them, and sign —
+    but it will not hand you the private key.
+  </p>
+
+  <div class="vocab">
+    <div class="vocab-item">
+      <div class="word">Secure Enclave (Apple)</div>
+      <div class="meaning">
+        Apple’s name for the vault chip on iPhone, iPad, and modern Macs (T2 or Apple Silicon).
+        Same family of tech that powers Touch ID / Face ID keys.
+      </div>
+    </div>
+    <div class="vocab-item">
+      <div class="word">TPM (Windows &amp; Linux)</div>
+      <div class="meaning">
+        Trusted Platform Module — the vault chip on most business PCs.
+        Windows Hello and BitLocker also use it. JumpCloud Go uses it for the user signing key.
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  App["JumpCloud app"] -->|"Please sign this"| Chip["Vault chip<br/>SE or TPM"]
+  Chip -->|"Here is the signature"| App
+  Chip -.->|"Private key never leaves"| X["Blocked"]
+    </pre>
+  </div>
+
+  <p>
+    So when people say “hardware-backed key,” they mean:
+    <strong>the private key was born inside the chip and cannot come out.</strong>
+  </p>
+</section>
+
+<!-- STEP 5 -->
+<section id="s5">
+  <h2><span class="big-number">5</span> The most important JumpCloud fact</h2>
+
+  <div class="dont">
+    <strong>JumpCloud does NOT put the main agent certificate key in Secure Enclave / TPM.</strong><br/><br/>
+    The agent’s daily cloud identity (<code>client.key</code>) is a <strong>software key file</strong> on disk.
+    That key is used for mTLS (proving “this is managed device X”) when polling and syncing.
+  </div>
+
+  <div class="do">
+    <strong>JumpCloud DOES put JumpCloud Go’s DUK in Secure Enclave / TPM.</strong><br/><br/>
+    DUK = Device User Key. It proves “this <em>person</em> on this device is asking to open Slack / Google / etc.”
+  </div>
+
+  <div class="story-box">
+    <strong class="label">Two badges, two storage places</strong>
+    <p style="margin:0">
+      <strong>Device badge</strong> (agent mTLS) → file in a locked drawer on disk.<br/>
+      <strong>User SSO stamp</strong> (JumpCloud Go DUK) → locked in the vault chip.
+    </p>
+  </div>
+
+  <p>If you mix those two up, Secure Enclave “in JumpCloud” will never make sense.</p>
+</section>
+
+<!-- STEP 6 -->
+<section id="s6">
+  <h2><span class="big-number">6</span> One-time setup: creating the DUK (register)</h2>
+
+  <p>
+    When a user first enables JumpCloud Go on a laptop, JumpCloud creates the hardware key.
+    This happens roughly once per user per device.
+  </p>
+
+  <div class="step-card">
+    <div class="n">1</div>
+    <div>
+      <h4>User is already logged into JumpCloud</h4>
+      <p>Browser (or Safari SSO) has an ID token proving who the person is.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">2</div>
+    <div>
+      <h4>JumpCloud Go client asks: “Do we have a vault chip?”</h4>
+      <p>
+        Code calls <code>keyStore.IsSupported()</code>.
+        Windows looks for TPM via Platform Crypto Provider.
+        Linux tries to open TPM 2.0.
+        Mac uses Secure Enclave path in the macOS DURT client.
+      </p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">3</div>
+    <div>
+      <h4>If no chip → stop</h4>
+      <p>
+        Registration returns “No TPM found. JumpCloud Go not supported.”
+        JumpCloud Go will not enroll without hardware backing.
+      </p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">4</div>
+    <div>
+      <h4>If chip exists → create DUK inside the chip</h4>
+      <p>
+        Windows example: <code>GenerateECDSAKey("jumpcloud-duk-{userId}", … nonExportable=true)</code>.
+        The private key is born in TPM. App only receives the <strong>public</strong> key.
+      </p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">5</div>
+    <div>
+      <h4>Send public key + proof of user to JumpCloud cloud</h4>
+      <p>
+        Cloud stores: “User Alice on device ABC has this public key.”
+        Cloud cannot and does not get the private key.
+      </p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">6</div>
+    <div>
+      <h4>Cloud returns a DURT (refresh token)</h4>
+      <p>
+        DURT is like a library card. It is not the stamp.
+        It is stored encrypted in OS keyring (Linux) or registry+DPAPI (Windows) — software storage, not the vault chip.
+      </p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant Go as JumpCloud Go client
+  participant Chip as TPM / Secure Enclave
+  participant Cloud as JumpCloud cloud
+
+  U->>Go: Enable JumpCloud Go
+  Go->>Chip: Do you exist?
+  Chip-->>Go: Yes
+  Go->>Chip: Create DUK (private stays here)
+  Chip-->>Go: Public key only
+  Go->>Cloud: Register (public key + user token)
+  Cloud-->>Go: DURT refresh token
+  Go->>Go: Save DURT in OS secure storage
+    </pre>
+  </div>
+
+  <div class="vocab">
+    <div class="vocab-item">
+      <div class="word">DUK</div>
+      <div class="meaning">Device User Key — the stamp in the vault chip. Hardware-backed.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="word">DURT</div>
+      <div class="meaning">Device User Refresh Token — long-lived “card” from the server. Encrypted on disk/registry, not in TPM.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="word">DUST</div>
+      <div class="meaning">Device User Session Token — short ticket cloud issues for one SSO session. Not stored as a permanent key.</div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 7 -->
+<section id="s7">
+  <h2><span class="big-number">7</span> Every day: opening an app with JumpCloud Go</h2>
+
+  <p>This is the repeating flow. The vault chip is used for signing, not for storing the whole session.</p>
+
+  <div class="step-card">
+    <div class="n">1</div>
+    <div>
+      <h4>You click an app that uses JumpCloud Go</h4>
+      <p>Browser extension (or Safari SSO) asks the local JumpCloud Go client for a session.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">2</div>
+    <div>
+      <h4>Client loads the DURT</h4>
+      <p>Looks up the saved refresh token for this user.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">3</div>
+    <div>
+      <h4>Client builds an access request</h4>
+      <p>Includes what app you want, device signals, and the DURT.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">4</div>
+    <div>
+      <h4>Client asks the chip to stamp the request</h4>
+      <p>
+        “GetDUKSigner(username)” finds the named DUK in TPM/SE and asks it to sign.
+        Private key never leaves the chip. Only the signature comes back.
+      </p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">5</div>
+    <div>
+      <h4>Cloud verifies the stamp</h4>
+      <p>
+        Cloud already has your public key from registration.
+        Signature matches + DURT valid + policy OK → cloud issues a short DUST/session for SSO.
+      </p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">6</div>
+    <div>
+      <h4>You are signed into the app</h4>
+      <p>No agent mTLS key was involved. This was the DUK vault stamp.</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Ext as Browser
+  participant Go as JC Go client
+  participant Chip as Vault chip
+  participant Cloud as JumpCloud cloud
+  participant App as Work app
+
+  Ext->>Go: Need SSO session
+  Go->>Go: Load DURT
+  Go->>Chip: Sign this access request
+  Chip-->>Go: Signature only
+  Go->>Cloud: Signed request + DURT
+  Cloud->>Cloud: Check public key + policies
+  Cloud-->>Go: Short session (DUST)
+  Go-->>Ext: Session
+  Ext->>App: Log me in
+    </pre>
+  </div>
+
+  <div class="do">
+    <strong>Why use the vault here?</strong>
+    Even if malware steals the DURT file, without the DUK stamp from this specific machine’s chip,
+    it cannot prove “I am Alice on this trusted device.” Stealing the stamp itself is much harder because it cannot be copied out of the chip.
+  </div>
+</section>
+
+<!-- STEP 8 -->
+<section id="s8">
+  <h2><span class="big-number">8</span> How each operating system does the vault</h2>
+
+  <p>Same story, different chip name and code path.</p>
+
+  <h3>Windows — TPM</h3>
+  <ol>
+    <li>Client checks if Platform Crypto Provider (TPM) is available.</li>
+    <li>Creates ECDSA key named <code>jumpcloud-duk-{windowsUserId}</code>, marked non-exportable.</li>
+    <li>Signing goes through PCP / TPM APIs.</li>
+    <li>Separately, the agent mTLS key is still loaded from the disk file <code>client.key</code> — not TPM.</li>
+  </ol>
+
+  <h3>Linux — TPM 2.0</h3>
+  <ol>
+    <li>Client opens the TPM device.</li>
+    <li>Creates an ECDSA key inside TPM with “fixed to this TPM” flags.</li>
+    <li>TPM private blobs can be saved via local agent gRPC (<code>SaveDUK</code>) — these are sealed references, not a plain private key file.</li>
+    <li>Signing happens by sending a digest into the TPM and getting a signature out.</li>
+  </ol>
+
+  <h3>macOS — Secure Enclave</h3>
+  <ol>
+    <li>JumpCloud Go on Mac uses a separate Swift client: <code>jumpcloud-durt-macos</code>.</li>
+    <li>Architecture docs define DUK as tied to Secure Enclave (or TPM on other platforms).</li>
+    <li>Keys created against Secure Enclave cannot be exported as raw private material.</li>
+    <li>Again: the main agent poll certificate is still the disk file, not Secure Enclave.</li>
+  </ol>
+</section>
+
+<!-- STEP 9 -->
+<section id="s9">
+  <h2><span class="big-number">9</span> Other JumpCloud places that use hardware keys</h2>
+
+  <p>JumpCloud Go is the biggest desktop example. Two more related ideas:</p>
+
+  <div class="step-card">
+    <div class="n">A</div>
+    <div>
+      <h4>JumpCloud Protect (phone MFA)</h4>
+      <p>
+        Your phone stores a WebAuthn private key in its Secure Enclave / Android Keystore.
+        Approving a push or challenge = signing with that hardware key.
+      </p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">B</div>
+    <div>
+      <h4>Browser WebAuthn / Touch ID / Windows Hello</h4>
+      <p>
+        When you register a passkey for MFA, the private key often lives in SE (Mac) or TPM (Windows Hello).
+        Same pattern: public key in JumpCloud Auth database, private key stays in the chip.
+      </p>
+    </div>
+  </div>
+
+  <div class="pause">
+    Desktop “Device Trust certificates” for Conditional Access can live in macOS Keychain.
+    That is encrypted OS storage, but it is <strong>not the same thing</strong> as the JumpCloud Go DUK living in Secure Enclave.
+  </div>
+</section>
+
+<!-- STEP 10 -->
+<section id="s10">
+  <h2><span class="big-number">10</span> The full story in order (one page)</h2>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <h4>You install the JumpCloud agent</h4>
+      <p>
+        Agent creates a software RSA key file (<code>client.key</code>), gets a certificate, and uses
+        mTLS forever to prove “I am this managed device.” <strong>No Secure Enclave here.</strong>
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>Agent talks to cloud every day</h4>
+      <p>
+        Poll, policies, System Insights uploads — all authenticated with the disk certificate.
+        Still the drawer key, not the vault.
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>You turn on JumpCloud Go</h4>
+      <p>
+        Client checks for TPM / Secure Enclave. Creates DUK inside the chip. Uploads only the public key.
+        Cloud gives you a DURT. Now you have a vault stamp for SSO.
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>You open Slack / Google via JumpCloud Go</h4>
+      <p>
+        Client asks the chip to sign. Cloud verifies. You get a short session.
+        Device identity (mTLS) and user SSO identity (DUK) stay separate.
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>Phone MFA / WebAuthn (if used)</h4>
+      <p>
+        Same vault idea on phone or Touch ID: hardware private key, cloud public key, signature proves presence.
+      </p>
+    </div>
+  </div>
+
+  <div class="do">
+    <strong>One sentence to remember in an interview:</strong><br/>
+    “Secure Enclave and TPM are hardware vaults. JumpCloud puts JumpCloud Go’s per-user DUK in that vault
+    so the private key cannot be stolen from disk. The main agent mTLS key is still a software file on disk.
+    Signing means the chip stamps a challenge; the private key never leaves.”
+  </div>
+
+  <h3>Quick quiz (answers below)</h3>
+  <ol>
+    <li>Does agent poll use Secure Enclave? </li>
+    <li>What lives in the vault for JumpCloud Go?</li>
+    <li>What is sent to JumpCloud during registration — private or public key?</li>
+    <li>Does signing mean sending your private key to the cloud?</li>
+  </ol>
+
+  <div class="info">
+    <strong>Answers:</strong>
+    1) No.<br/>
+    2) DUK (Device User Key).<br/>
+    3) Public key only.<br/>
+    4) No — only the signature/stamp.
+  </div>
+
+  <p style="margin-top:1.75rem;">
+    More detail:
+    <a href="jumpcloud-secure-enclave-guide.html">technical Secure Enclave guide</a> ·
+    <a href="jumpcloud-mtls-complete-guide.html">mTLS layman guide</a> ·
+    <a href="jumpcloud-agent-endpoint-interview-guide.html">agent interview guide</a>
+  </p>
+</section>
+
+</main>
+
+<footer>
+  JumpCloud Secure Enclave &amp; TPM — step-by-step layman guide
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { padding: 18 } });
+</script>
+</body>
+</html>

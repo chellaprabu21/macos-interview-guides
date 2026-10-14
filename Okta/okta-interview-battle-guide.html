@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Okta Interview Battle Guide — Staff/Principal macOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;450;600&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#20242c;
+    --ink-soft:#4d5361;
+    --ink-faint:#7d8494;
+    --paper:#f2f3f5;
+    --surface:#ffffff;
+    --surface-2:#eaecef;
+    --line:#dcdfe4;
+    --line-strong:#c3c8d1;
+    --navy:#153057;          /* primary — Okta-adjacent deep blue */
+    --navy-tint:#e6ecf5;
+    --verdict:#0e766e;       /* what wins */
+    --verdict-tint:#e0f0ee;
+    --flag:#b3541e;          /* traps & reported failure modes */
+    --flag-tint:#faeee4;
+    --intel:#5b3d8f;         /* scraped-from-real-reports marker */
+    --intel-tint:#efe9f8;
+    --code-bg:#171c26;
+    --code-ink:#e7eaf1;
+    --code-key:#a8c7fa;
+    --code-str:#a3d9a0;
+    --code-com:#707a8f;
+    --radius:13px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,sans-serif;font-size:16.5px;line-height:1.64;-webkit-font-smoothing:antialiased;}
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--navy);z-index:60;}
+
+  .shell{display:flex;min-height:100vh;}
+  #sidebar{width:292px;flex:0 0 292px;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--navy);color:#c9d4e5;padding:26px 16px 44px;}
+  .brand{font-family:'Archivo';font-weight:800;font-size:19px;color:#fff;line-height:1.15;letter-spacing:-.01em;}
+  .brand .sub{display:block;font-family:'Fira Code';font-weight:400;font-size:10.5px;color:#8ba0c2;margin-top:8px;letter-spacing:.03em;line-height:1.5;}
+  .counter{font-family:'Fira Code';font-size:11px;color:#8ba0c2;margin:18px 4px 8px;border-top:1px solid #2b4a77;padding-top:14px;}
+  .counter b{color:#9fe8d8;}
+  nav a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:#b6c3d9;font-size:13.5px;padding:7px 9px;border-radius:8px;line-height:1.3;}
+  nav a .n{font-family:'Fira Code';font-size:10.5px;color:#7d94b8;min-width:24px;}
+  nav a:hover{background:#1d3d68;color:#fff;}
+  nav a.active{background:#fff;color:var(--navy);font-weight:600;}
+  nav a.active .n{color:var(--navy);}
+
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 34px 130px;}
+  .col{width:100%;max-width:860px;}
+
+  header.hero{padding:64px 0 30px;border-bottom:2px solid var(--ink);margin-bottom:6px;}
+  .kicker{font-family:'Fira Code';font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--intel);margin:0 0 16px;}
+  h1{font-family:'Archivo';font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.02em;margin:0 0 16px;}
+  .lede{font-size:18px;color:var(--ink-soft);max-width:64ch;margin:0;}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px;}
+  .lg{font-family:'Fira Code';font-size:11px;padding:5px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;}
+  .lg.i{background:var(--intel-tint);color:var(--intel);border:1px solid #d6c8ef;}
+  .lg.v{background:var(--verdict-tint);color:var(--verdict);border:1px solid #bfe0dc;}
+  .lg.f{background:var(--flag-tint);color:var(--flag);border:1px solid #eed3bd;}
+
+  section{padding:52px 0 8px;border-top:1px solid var(--line);margin-top:30px;}
+  section:first-of-type{border-top:none;margin-top:0;}
+  .secnum{font-family:'Fira Code';font-size:11.5px;color:var(--intel);letter-spacing:.1em;}
+  h2{font-family:'Archivo';font-weight:800;font-size:29px;letter-spacing:-.015em;margin:6px 0 6px;line-height:1.08;}
+  .secsub{color:var(--ink-faint);font-size:15px;margin:0 0 22px;}
+  h3{font-family:'Archivo';font-weight:700;font-size:19px;margin:32px 0 8px;letter-spacing:-.01em;}
+  h4{font-family:'Archivo';font-weight:700;font-size:15.5px;margin:22px 0 6px;}
+  p{margin:0 0 14px;}
+  ul,ol{margin:0 0 16px;padding-left:22px;}
+  li{margin:5px 0;}
+  strong{font-weight:600;}
+  code{font-family:'Fira Code';font-size:.84em;background:var(--surface-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:17px;overflow-x:auto;font-family:'Fira Code';font-size:12.8px;line-height:1.62;margin:14px 0 18px;}
+  pre code{background:none;border:none;padding:0;color:inherit;}
+  .k{color:var(--code-key);}.s{color:var(--code-str);}.c{color:var(--code-com);font-style:italic;}
+
+  .box{border-radius:12px;padding:15px 17px;margin:16px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surface);}
+  .box .lbl{font-family:'Fira Code';font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;}
+  .intel{border-left-color:var(--intel);background:var(--intel-tint);}   .intel .lbl{color:var(--intel);}
+  .win{border-left-color:var(--verdict);background:var(--verdict-tint);} .win .lbl{color:var(--verdict);}
+  .trap{border-left-color:var(--flag);background:var(--flag-tint);}      .trap .lbl{color:var(--flag);}
+  .you{border-left-color:var(--navy);background:var(--navy-tint);}       .you .lbl{color:var(--navy);}
+  .box p:last-child{margin-bottom:0;}
+
+  details.q{border:1px solid var(--line-strong);border-radius:12px;margin:12px 0;background:var(--surface);overflow:hidden;}
+  details.q summary{cursor:pointer;list-style:none;padding:14px 46px 14px 17px;position:relative;font-weight:600;font-size:15.5px;}
+  details.q summary::-webkit-details-marker{display:none;}
+  details.q summary .tag{font-family:'Fira Code';font-size:10px;padding:2px 8px;border-radius:999px;margin-right:9px;vertical-align:1px;}
+  details.q summary .tag.rep{background:var(--intel-tint);color:var(--intel);}
+  details.q summary .tag.lik{background:var(--navy-tint);color:var(--navy);}
+  details.q summary:hover{background:var(--surface-2);}
+  details.q summary::after{content:"+";position:absolute;right:17px;top:12px;font-family:'Fira Code';font-size:18px;color:var(--ink-faint);}
+  details.q[open] summary::after{content:"–";}
+  .ans{padding:2px 17px 17px;border-top:1px solid var(--line);}
+  .ans p:first-child{margin-top:13px;}
+  .ans .albl{font-family:'Fira Code';font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);margin:13px 0 4px;font-weight:600;}
+
+  .tbl{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;}
+  .tbl th,.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .tbl th{font-family:'Archivo';font-weight:700;font-size:13px;border-bottom:2px solid var(--ink);}
+  .tbl td:first-child{font-family:'Fira Code';font-size:12.5px;color:var(--navy);}
+
+  .loopmap{display:flex;flex-direction:column;gap:10px;margin:18px 0;}
+  .round{display:flex;gap:13px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px;}
+  .round .rn{font-family:'Fira Code';font-weight:600;color:#fff;background:var(--navy);font-size:12px;min-width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .round .rt{font-size:14.5px;}
+  .round .rt b{display:block;font-family:'Archivo';font-weight:700;font-size:15px;margin-bottom:2px;}
+
+  .review{display:flex;align-items:center;gap:10px;margin:28px 0 0;padding:13px 15px;border:1px dashed var(--line-strong);border-radius:10px;background:var(--surface);}
+  .review input{width:18px;height:18px;accent-color:var(--navy);cursor:pointer;}
+  .review label{font-size:14px;color:var(--ink-soft);cursor:pointer;}
+
+  .topbar{display:none;}
+  @media (max-width:920px){
+    .shell{flex-direction:column;}
+    #sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s;z-index:50;}
+    #sidebar.open{transform:translateX(0);}
+    .topbar{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:12px 18px;z-index:40;}
+    .topbar .burger{font-size:22px;background:none;border:none;cursor:pointer;}
+    .topbar .t{font-family:'Archivo';font-weight:800;font-size:15px;}
+    main{padding:0 20px 100px;}
+    header.hero{padding:34px 0 24px;}
+    #scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none;}
+    #scrim.show{display:block;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important;}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar"><button class="burger" id="burger" aria-label="Menu">☰</button><span class="t">Okta Battle Guide</span></div>
+<div id="scrim"></div>
+
+<div class="shell">
+  <aside id="sidebar">
+    <div class="brand">Okta Interview<br>Battle Guide<span class="sub">staff / principal · macOS<br>built from real candidate reports</span></div>
+    <div class="counter">Sections cleared · <b><span id="done">0</span></b> / 10</div>
+    <nav id="toc">
+      <a href="#intel"><span class="n">01</span><span>The real loop — scraped intel</span></a>
+      <a href="#values"><span class="n">02</span><span>Okta's values &amp; what they score</span></a>
+      <a href="#coding"><span class="n">03</span><span>Coding round — reported questions</span></a>
+      <a href="#ratelimiter"><span class="n">04</span><span>The rate limiter (recurring!)</span></a>
+      <a href="#lld"><span class="n">05</span><span>LLD round — parking lot &amp; patterns</span></a>
+      <a href="#sysdesign"><span class="n">06</span><span>System design ×3 — full designs</span></a>
+      <a href="#macos"><span class="n">07</span><span>macOS domain — their products</span></a>
+      <a href="#iam"><span class="n">08</span><span>IAM rapid-fire Q&amp;A bank</span></a>
+      <a href="#behavioral"><span class="n">09</span><span>HM · Leadership · Director rounds</span></a>
+      <a href="#run"><span class="n">10</span><span>Run plan &amp; process warnings</span></a>
+    </nav>
+  </aside>
+
+  <main>
+  <div class="col">
+
+    <header class="hero">
+      <p class="kicker">Compiled from Glassdoor · LeetCode Discuss · Taro · interview guides · Okta's own materials</p>
+      <h1>Everything candidates actually faced — and how you beat each round.</h1>
+      <p class="lede">This is not a generic prep doc. Every question marked <strong>REPORTED</strong> came from a real Okta candidate's account. Everything else is marked <strong>LIKELY</strong> — inferred from the JD, the team's products, and your specific profile. Work through it in order.</p>
+      <div class="legend">
+        <span class="lg i">● REPORTED — real candidates faced this</span>
+        <span class="lg v">● WIN CONDITION — what passes the round</span>
+        <span class="lg f">● TRAP — reported failure modes</span>
+      </div>
+    </header>
+
+    <!-- 01 INTEL -->
+    <section id="intel">
+      <div class="secnum">01 / INTEL</div>
+      <h2>The real loop, reconstructed</h2>
+      <p class="secsub">Cross-referencing candidate reports from India Staff/Principal loops, US Principal loops, and Okta's own process descriptions.</p>
+
+      <h3>What a Bengaluru Staff/Principal loop has actually looked like</h3>
+      <div class="box intel"><span class="lbl">Reported — Principal, Bengaluru</span>
+        <p>One Principal candidate in Bengaluru reported <strong>six rounds</strong>: an Engineering Manager general discussion, then <strong>three separate system design rounds</strong>, a leadership/team-fitment round, and a combined programming + system design round. Read that again: <em>half the loop was system design.</em> For Staff/Principal in India, design is the battleground — not LeetCode.</p></div>
+      <div class="box intel"><span class="lbl">Reported — Staff, India</span>
+        <p>A Staff candidate reported five rounds: (1) screening by a Staff engineer — frameworks, microservice architecture, infra; (2) tech round — Kubernetes/Docker internals plus a <strong>complex JSON parsing-and-filtering</strong> exercise; (3) LeetCode easy→medium, starting with palindrome basics and escalating to <strong>backtracking (palindrome partitioning)</strong>; (4) managerial — HLD plus deep dives on their projects; (5) Director round — behavioral + broad tech discussion.</p></div>
+      <div class="box intel"><span class="lbl">Reported — US Principal</span>
+        <p>A US Principal loop: recruiter → tech phone screen → five virtual onsite rounds including the <strong>Chief Architect</strong> and Hiring Manager. Coding was LeetCode-medium; architecture rounds were "design a large-scale system" and "given these constraints and this scenario, design a system." One candidate also reported a game-board design, BST problems, and a <strong>threading design</strong> question.</p></div>
+      <div class="box intel"><span class="lbl">Reported — take-home pattern</span>
+        <p>Multiple candidates across roles reported the same take-home: <strong>implement a rate-limiter endpoint</strong>, followed by a code-walkthrough round defending the implementation to the team. It also appears as a CodeSignal assessment topic. Section 04 makes you bulletproof on it.</p></div>
+
+      <h3>Your most probable loop shape</h3>
+      <div class="loopmap">
+        <div class="round"><span class="rn">R1</span><span class="rt"><b>Recruiter screen (30 min)</b>Background, motivation, level calibration, comp expectations. Prepare the 90-second pitch (Section 09).</span></div>
+        <div class="round"><span class="rn">R2</span><span class="rt"><b>Hiring Manager (45–60 min)</b>Your projects in depth, why Okta, why this team, leadership stories. HM rounds at Okta are substantive, not formalities.</span></div>
+        <div class="round"><span class="rn">R3</span><span class="rt"><b>Coding (60 min)</b>LC easy→medium with escalation, or a practical exercise (file parsing + JSON filtering was reported). In Swift for a macOS role. Section 03.</span></div>
+        <div class="round"><span class="rn">R4</span><span class="rt"><b>System design ×1–3 (60 min each)</b>Large-scale design, constraint-driven scenarios, possibly one LLD (parking lot was reported at Principal level). Sections 05–06.</span></div>
+        <div class="round"><span class="rn">R5</span><span class="rt"><b>Domain / platform deep dive</b>macOS internals, security, and their product surface — Platform SSO, Desktop MFA, FastPass. Section 07.</span></div>
+        <div class="round"><span class="rn">R6</span><span class="rt"><b>Leadership + Director round</b>Values fit, force multiplication, strategy. Possibly Chief-Architect-style broad technical discussion. Section 09.</span></div>
+      </div>
+
+      <div class="box trap"><span class="lbl">Trap — reported repeatedly</span>
+        <p>Multiple candidates — including ones told verbally they'd advance — reported being <strong>ghosted after 4–5 rounds</strong>, with follow-ups ignored. This is a process risk, not a you problem. Countermeasures: keep your other tracks warm through the entire loop, get your referral contact to nudge internally after each round, and never let Okta's timeline stall your parallel applications. Average reported time-to-hire is ~3–6 weeks.</p></div>
+      <div class="review"><input type="checkbox" id="c1"><label for="c1">Section 01 cleared</label></div>
+    </section>
+
+    <!-- 02 VALUES -->
+    <section id="values">
+      <div class="secnum">02 / CULTURE</div>
+      <h2>Okta's values — and how they score you</h2>
+      <p class="secsub">Behavioral rounds at Okta map answers to stated values. Speak their language without sounding rehearsed.</p>
+      <table class="tbl">
+        <tr><th>Okta value</th><th>What it means in an interview answer</th><th>Your story hook</th></tr>
+        <tr><td>Love our customers</td><td>Decisions framed by customer/user impact, not tech elegance. Show you traced an engineering call to an end-user or admin outcome.</td><td>Agent reliability at fleet scale — an engineering choice that reduced IT tickets or login friction for millions of devices.</td></tr>
+        <tr><td>Always secure. Always on.</td><td>Security and availability as non-negotiables. Fail-safe thinking, secure-by-design, on-call maturity.</td><td>Your ES AUTH-deadline design; a fail-open vs fail-closed policy decision at the device login path.</td></tr>
+        <tr><td>Build and own it</td><td>End-to-end ownership: conception → deployment → operating it in production. No "that was another team's part."</td><td>A feature you owned from design doc through rollout, incidents included.</td></tr>
+        <tr><td>Drive what's next</td><td>Prototyping ahead of the roadmap, spotting industry shifts (device attestation, AI-native dev, passwordless).</td><td>Your take on where device identity goes next (attestation, Platform SSO maturity, agentic AI identity).</td></tr>
+      </table>
+      <div class="box intel"><span class="lbl">Reported — new emphasis</span><p>Recent Okta interview guidance highlights <strong>"speed and urgency"</strong> — expect a question like "tell me about executing under a tight deadline without sacrificing quality." Have one story where you cut scope deliberately, shipped, and hardened after — that's the mature answer, not heroics.</p></div>
+      <div class="box you"><span class="lbl">Your framing sentence</span><p>"Okta's mission is turning the device into a trusted identity factor — that's the exact intersection I've built my career on: System Extensions, Secure Enclave credentials, MDM attestation, conditional access at JumpCloud and Citrix. I'm not learning this domain at Okta; I'm bringing a decade of the device side to it."</p></div>
+      <div class="review"><input type="checkbox" id="c2"><label for="c2">Section 02 cleared</label></div>
+    </section>
+
+    <!-- 03 CODING -->
+    <section id="coding">
+      <div class="secnum">03 / CODING</div>
+      <h2>The coding round — every reported question, solved</h2>
+      <p class="secsub">Okta's coding bar is LC easy→medium with escalation, plus practical exercises. The bar is explanation quality, not algorithm obscurity. Write Swift — it's a macOS role.</p>
+
+      <div class="box win"><span class="lbl">Win condition</span><p>Interview guides analyzing Okta loops agree: the bar is set by <strong>how well you explain your engineering choices</strong>, not by exotic algorithms. Narrate: restate the problem, state the brute force + its complexity, name the insight, code cleanly, test with edge cases out loud, state final complexity. Every reported question below is solvable in that rhythm.</p></div>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>Minimum element in a rotated sorted array</summary><div class="ans">
+        <p class="albl">Insight</p><p>Binary search on the "broken" property: compare <code>mid</code> to <code>right</code>. If <code>nums[mid] &gt; nums[right]</code>, the minimum is right of mid; else it's at mid or left of it. O(log n).</p>
+<pre><code><span class="k">func</span> findMin(_ nums: [<span class="k">Int</span>]) -&gt; <span class="k">Int</span> {
+    <span class="k">var</span> lo = 0, hi = nums.count - 1
+    <span class="k">while</span> lo &lt; hi {
+        <span class="k">let</span> mid = (lo + hi) / 2
+        <span class="k">if</span> nums[mid] &gt; nums[hi] { lo = mid + 1 }   <span class="c">// min is to the right</span>
+        <span class="k">else</span> { hi = mid }                           <span class="c">// min is mid or left</span>
+    }
+    <span class="k">return</span> nums[lo]
+}</code></pre>
+        <p class="albl">Edge cases to say out loud</p><p>Not rotated at all (already sorted), single element, two elements. If they add duplicates, note it degrades to O(n) worst case (<code>hi -= 1</code> when equal).</p>
+      </div></details>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>sqrt(x) — integer square root, optimal complexity</summary><div class="ans">
+        <p>Binary search for the largest <code>m</code> with <code>m*m ≤ x</code>. O(log x). Mention Newton's method as the alternative if they push for "even better in practice."</p>
+<pre><code><span class="k">func</span> mySqrt(_ x: <span class="k">Int</span>) -&gt; <span class="k">Int</span> {
+    <span class="k">if</span> x &lt; 2 { <span class="k">return</span> x }
+    <span class="k">var</span> lo = 1, hi = x / 2
+    <span class="k">while</span> lo &lt;= hi {
+        <span class="k">let</span> mid = lo + (hi - lo) / 2
+        <span class="k">if</span> mid &lt;= x / mid, (mid + 1) &gt; x / (mid + 1) { <span class="k">return</span> mid }
+        <span class="k">if</span> mid &gt; x / mid { hi = mid - 1 } <span class="k">else</span> { lo = mid + 1 }
+    }
+    <span class="k">return</span> lo
+}</code></pre>
+        <p>Note the overflow-safe trick: compare <code>mid ≤ x/mid</code> instead of <code>mid*mid ≤ x</code>. Saying that unprompted is a senior signal.</p>
+      </div></details>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>3-Sum — all sets of 3 indexes summing to 0</summary><div class="ans">
+        <p>Sort, fix one element, two-pointer the rest. O(n²), O(1) extra. Skip duplicates at all three positions.</p>
+<pre><code><span class="k">func</span> threeSum(_ nums: [<span class="k">Int</span>]) -&gt; [[<span class="k">Int</span>]] {
+    <span class="k">let</span> a = nums.sorted(); <span class="k">var</span> res = [[<span class="k">Int</span>]]()
+    <span class="k">for</span> i <span class="k">in</span> 0..&lt;a.count {
+        <span class="k">if</span> i &gt; 0 &amp;&amp; a[i] == a[i-1] { <span class="k">continue</span> }        <span class="c">// skip dup anchors</span>
+        <span class="k">var</span> l = i + 1, r = a.count - 1
+        <span class="k">while</span> l &lt; r {
+            <span class="k">let</span> s = a[i] + a[l] + a[r]
+            <span class="k">if</span> s == 0 {
+                res.append([a[i], a[l], a[r]])
+                <span class="k">repeat</span> { l += 1 } <span class="k">while</span> l &lt; r &amp;&amp; a[l] == a[l-1]
+                <span class="k">repeat</span> { r -= 1 } <span class="k">while</span> l &lt; r &amp;&amp; a[r] == a[r+1]
+            } <span class="k">else if</span> s &lt; 0 { l += 1 } <span class="k">else</span> { r -= 1 }
+        }
+    }
+    <span class="k">return</span> res
+}</code></pre>
+      </div></details>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>Palindrome escalation → palindrome partitioning (backtracking)</summary><div class="ans">
+        <p>The reported round started easy ("is this a palindrome") and escalated to backtracking. The escalation target: <em>partition a string so every substring is a palindrome; return all partitions.</em></p>
+<pre><code><span class="k">func</span> partition(_ s: <span class="k">String</span>) -&gt; [[<span class="k">String</span>]] {
+    <span class="k">let</span> ch = Array(s); <span class="k">var</span> res = [[<span class="k">String</span>]](), path = [<span class="k">String</span>]()
+    <span class="k">func</span> isPal(_ l: <span class="k">Int</span>, _ r: <span class="k">Int</span>) -&gt; <span class="k">Bool</span> {
+        <span class="k">var</span> l = l, r = r
+        <span class="k">while</span> l &lt; r { <span class="k">if</span> ch[l] != ch[r] { <span class="k">return false</span> }; l += 1; r -= 1 }
+        <span class="k">return true</span>
+    }
+    <span class="k">func</span> backtrack(_ start: <span class="k">Int</span>) {
+        <span class="k">if</span> start == ch.count { res.append(path); <span class="k">return</span> }
+        <span class="k">for</span> end <span class="k">in</span> start..&lt;ch.count <span class="k">where</span> isPal(start, end) {
+            path.append(<span class="k">String</span>(ch[start...end]))   <span class="c">// choose</span>
+            backtrack(end + 1)                       <span class="c">// explore</span>
+            path.removeLast()                        <span class="c">// un-choose</span>
+        }
+    }
+    backtrack(0)
+    <span class="k">return</span> res
+}</code></pre>
+        <p>Name the pattern out loud — "choose, explore, un-choose" — and offer the DP-precompute of the palindrome table as the optimization if asked.</p>
+      </div></details>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>File reading + parsing + sorting (practical, IDE with test cases, Google allowed)</summary><div class="ans">
+        <p>A senior candidate reported a practical round: read files, parse structured content, sort by criteria, in an online IDE with visible test cases. A staff candidate separately reported <strong>complex JSON parsing and filtering by multiple criteria</strong>. This style favors you: it's real engineering.</p>
+        <p class="albl">How to win it</p>
+        <ul>
+          <li>Model the record as a <code>struct</code> with <code>Codable</code> first — typed parsing beats string-hacking and reads as production quality.</li>
+          <li>Separate concerns visibly: <code>parse()</code> → <code>filter()</code> → <code>sort()</code> as pure functions; easy to test, easy to defend.</li>
+          <li>Handle the dirty cases without being asked: malformed lines (skip + count), missing fields (optionals with defaults), empty input, huge input (stream line-by-line rather than loading everything).</li>
+          <li>Composite sort: <code>sorted { ($0.a, $0.b) &lt; ($1.a, $1.b) }</code> via tuple comparison, or chained comparators — say why stability matters if there are ties.</li>
+        </ul>
+      </div></details>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>Threading design question</summary><div class="ans">
+        <p>Reported in a US Principal loop. The classic shape: design a thread-safe structure (bounded blocking queue / producer-consumer / a cache with concurrent reads). For a macOS role, answer twice: classic primitives, then Swift-native.</p>
+        <p class="albl">The layered answer</p>
+        <ul>
+          <li><strong>Classic:</strong> bounded buffer with a mutex + two condition variables (notFull/notEmpty); explain why <code>while</code> not <code>if</code> around the wait (spurious wakeups, recheck after re-acquire).</li>
+          <li><strong>GCD:</strong> serial queue confines state; <code>DispatchSemaphore</code> for capacity; concurrent queue + <code>.barrier</code> for a read-heavy cache.</li>
+          <li><strong>Modern Swift:</strong> an <code>actor</code> owning the buffer, <code>AsyncStream</code> for the producer-consumer relationship; call out actor reentrancy across <code>await</code> as the trap you'd guard.</li>
+        </ul>
+        <p>Then the Principal move: pick one and justify against requirements (contention level, cancellation, backpressure) instead of listing options forever.</p>
+      </div></details>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>Also seen: BFS-style problems, BST problems, sliding-window longest substring, merge two sorted arrays, majority element (Boyer-Moore), game-board design</summary><div class="ans">
+        <p>Drill each pattern once — they're standard. Priorities for your prep time, in order: <strong>two-pointer / binary-search variants</strong> (most reported), <strong>backtracking</strong> (the escalation target), <strong>BFS/tree traversals</strong>, <strong>sliding window</strong>, <strong>hash-map counting</strong>. Boyer-Moore majority vote is a 5-minute learn: keep a candidate + counter; increment on match, decrement on mismatch, replace at zero.</p>
+      </div></details>
+
+      <div class="box trap"><span class="lbl">Trap — your known pattern</span><p>Your Zscaler post-mortem flagged hedge-everything answers. In coding rounds this appears as narrating three approaches without committing. Fix: <strong>state the brute force in one sentence, commit to the optimal approach by name, then code it.</strong> "Brute force is O(n²) pairs; the right tool is binary search on the rotation point — writing that now."</p></div>
+      <div class="review"><input type="checkbox" id="c3"><label for="c3">Section 03 cleared</label></div>
+    </section>
+
+    <!-- 04 RATE LIMITER -->
+    <section id="ratelimiter">
+      <div class="secnum">04 / THE RECURRING ASSIGNMENT</div>
+      <h2>The rate limiter — Okta's favorite exercise</h2>
+      <p class="secsub">Reported as a take-home ("implement a rate limiter endpoint"), as a CodeSignal assessment, and defended in a code-walkthrough round. If any practical exercise comes, odds favor this one. Own it completely.</p>
+
+      <div class="box intel"><span class="lbl">Why Okta loves this problem</span><p>Rate limiting is core to their business: an identity provider is a giant authentication API that must survive credential-stuffing attacks and misbehaving clients while staying fair to legitimate tenants. Your solution gets judged as <em>infrastructure for an auth service</em>, not as a toy.</p></div>
+
+      <h3>Know all four algorithms and their trade-offs cold</h3>
+      <table class="tbl">
+        <tr><th>Algorithm</th><th>How</th><th>Pro</th><th>Con</th></tr>
+        <tr><td>Fixed window</td><td>Counter per window (e.g. 100/min), reset at boundary</td><td>Trivial, O(1) memory</td><td>Boundary burst: 200 requests straddling the reset</td></tr>
+        <tr><td>Sliding log</td><td>Store timestamp of every request; count within window</td><td>Perfectly accurate</td><td>O(requests) memory — unacceptable at scale</td></tr>
+        <tr><td>Sliding window counter</td><td>Weighted blend of current + previous window counts</td><td>Accurate enough, O(1) memory</td><td>Approximation (assumes even spread)</td></tr>
+        <tr><td>Token bucket</td><td>Bucket of capacity B refills at rate R; each request takes a token</td><td>Allows controlled bursts; industry default</td><td>Two parameters to tune</td></tr>
+      </table>
+      <p><strong>Default choice: token bucket</strong> — say why: legitimate clients are bursty (an app launch fires several calls at once); token bucket permits a burst up to capacity while enforcing the average rate. The lazy-refill trick means you store just two numbers per key and compute refill on access — no timers.</p>
+
+      <h3>A defensible Swift implementation</h3>
+<pre><code><span class="k">struct</span> Bucket { <span class="k">var</span> tokens: <span class="k">Double</span>; <span class="k">var</span> last: <span class="k">Date</span> }
+
+<span class="k">actor</span> RateLimiter {
+    <span class="k">private let</span> capacity: <span class="k">Double</span>       <span class="c">// max burst</span>
+    <span class="k">private let</span> refillPerSec: <span class="k">Double</span>   <span class="c">// sustained rate</span>
+    <span class="k">private var</span> buckets: [<span class="k">String</span>: Bucket] = [:]
+
+    <span class="k">init</span>(capacity: <span class="k">Double</span>, refillPerSec: <span class="k">Double</span>) {
+        <span class="k">self</span>.capacity = capacity; <span class="k">self</span>.refillPerSec = refillPerSec
+    }
+
+    <span class="k">func</span> allow(key: <span class="k">String</span>, now: <span class="k">Date</span> = <span class="k">Date</span>()) -&gt; <span class="k">Bool</span> {
+        <span class="k">var</span> b = buckets[key] ?? Bucket(tokens: capacity, last: now)
+        <span class="k">let</span> elapsed = now.timeIntervalSince(b.last)
+        b.tokens = min(capacity, b.tokens + elapsed * refillPerSec) <span class="c">// lazy refill</span>
+        b.last = now
+        <span class="k">let</span> allowed = b.tokens &gt;= 1
+        <span class="k">if</span> allowed { b.tokens -= 1 }
+        buckets[key] = b
+        <span class="k">return</span> allowed
+    }
+}</code></pre>
+      <p>Design points to volunteer in the walkthrough — these are what the round is really scoring:</p>
+      <ul>
+        <li><strong>Concurrency:</strong> the <code>actor</code> serializes access — no data race on the bucket map. (In a server language: mutex per shard, or Redis atomic ops.)</li>
+        <li><strong>Injecting <code>now</code></strong> makes it unit-testable without sleeping — write tests showing burst-then-block and refill-over-time.</li>
+        <li><strong>Memory:</strong> unbounded keys → add LRU eviction of idle buckets; state the bound.</li>
+        <li><strong>HTTP contract:</strong> respond <code>429 Too Many Requests</code> with <code>Retry-After</code> and rate-limit headers — clients need to back off intelligently.</li>
+        <li><strong>Distributed version (they will ask):</strong> local buckets don't work across N servers. Options: sticky routing per key; a Redis-backed bucket with atomic Lua script (correct, adds a network hop on the hot path); or local buckets with async sync (fast, approximate). State the trade and pick per requirement — auth endpoints usually justify the Redis hop.</li>
+        <li><strong>Fairness &amp; keying:</strong> per-user, per-tenant, per-IP, or layered (per-tenant cap + per-user cap under it) — for an identity provider, layered is the real answer.</li>
+        <li><strong>Fail-open or fail-closed</strong> if the limiter's store is down? For login endpoints: fail-open with alerting usually beats locking every customer out — but say it's a product decision and name both sides. Very Okta.</li>
+      </ul>
+      <div class="box win"><span class="lbl">Win condition</span><p>The walkthrough round is scoring whether you can defend choices under questioning. For every decision above, know the alternative you rejected and why. "Why token bucket over sliding window?" "Why an actor over a lock?" "What breaks at 10K RPS?" — have one-sentence answers ready.</p></div>
+      <div class="review"><input type="checkbox" id="c4"><label for="c4">Section 04 cleared</label></div>
+    </section>
+
+    <!-- 05 LLD -->
+    <section id="lld">
+      <div class="secnum">05 / LOW-LEVEL DESIGN</div>
+      <h2>LLD — the parking lot &amp; the patterns behind it</h2>
+      <p class="secsub">A candidate reported a multi-level parking-lot LLD conducted by a Principal engineer. LLD tests object modeling, SOLID, and pattern judgment — in your case, in Swift.</p>
+
+      <h3>Multi-level parking lot — the reported question, structured</h3>
+      <div class="box win"><span class="lbl">Win condition</span><p>LLD is won by <em>process</em>: requirements → entities → relationships → APIs → concurrency → extensibility. Don't jump to classes. Spend 5 minutes on requirements and state assumptions crisply.</p></div>
+      <ol>
+        <li><strong>Requirements (ask, then fix):</strong> vehicle types (bike/car/truck) with different spot sizes; multiple floors; ticket on entry, fee on exit; find-nearest-spot; multiple entry/exit gates (⇒ concurrency).</li>
+        <li><strong>Core entities:</strong> <code>ParkingLot</code> (singleton-ish coordinator), <code>Floor</code>, <code>Spot</code> (size, state), <code>Vehicle</code> hierarchy or enum, <code>Ticket</code>, <code>FeeCalculator</code> (protocol), <code>SpotAssignmentStrategy</code> (protocol).</li>
+        <li><strong>Pattern choices to name:</strong> <em>Strategy</em> for both spot assignment (nearest / cheapest / EV-priority) and pricing (hourly / flat / weekend) — swap without touching the lot; <em>Factory</em> for creating the right spot/fee objects per vehicle type; <em>Observer</em> for the display boards showing free counts per floor.</li>
+        <li><strong>Concurrency — the Principal differentiator:</strong> two gates must not assign the same spot. Own it: spot allocation is a critical section — an <code>actor</code> (or per-floor lock) owns free-spot state; allocation is atomic claim-then-return; explain why per-floor locking beats one global lock (contention) and what invariant the lock protects.</li>
+        <li><strong>Extensibility close:</strong> "adding EV charging spots touches the Spot enum and one strategy — nothing else" — demonstrating open/closed is the mic-drop.</li>
+      </ol>
+<pre><code><span class="k">protocol</span> SpotAssignmentStrategy {
+    <span class="k">func</span> findSpot(<span class="k">for</span> v: VehicleType, on floors: [Floor]) -&gt; Spot?
+}
+<span class="k">protocol</span> FeePolicy { <span class="k">func</span> fee(<span class="k">for</span> ticket: Ticket, exitAt: <span class="k">Date</span>) -&gt; <span class="k">Decimal</span> }
+
+<span class="k">actor</span> ParkingLot {                        <span class="c">// actor = gate concurrency solved</span>
+    <span class="k">private var</span> floors: [Floor]
+    <span class="k">private let</span> assign: SpotAssignmentStrategy
+    <span class="k">private let</span> pricing: FeePolicy
+    <span class="k">func</span> enter(_ v: Vehicle) -&gt; Ticket? { <span class="c">/* atomic claim */</span> }
+    <span class="k">func</span> exit(_ t: Ticket) -&gt; <span class="k">Decimal</span> { <span class="c">/* free spot, price */</span> }
+}</code></pre>
+
+      <h3>Other LLD prompts to have sketched (identity-flavored, likely for this team)</h3>
+      <ul>
+        <li><strong>Design an authenticator app's local model</strong> — accounts, enrolled factors, challenge queue, key references (Keychain/SE), state machine per challenge (received → displayed → approved/denied/expired).</li>
+        <li><strong>Design a policy engine</strong> — rules, conditions, evaluators; Strategy + Composite (AND/OR condition trees); explain deterministic evaluation order.</li>
+        <li><strong>Design a notification/alerting dispatcher</strong> — Observer, retry with backoff, dedupe.</li>
+      </ul>
+      <div class="review"><input type="checkbox" id="c5"><label for="c5">Section 05 cleared</label></div>
+    </section>
+
+    <!-- 06 SYSTEM DESIGN -->
+    <section id="sysdesign">
+      <div class="secnum">06 / SYSTEM DESIGN — THE BATTLEGROUND</div>
+      <h2>System design ×3 — full worked designs</h2>
+      <p class="secsub">A Bengaluru Principal loop reported three design rounds. Prepare three distinct designs deeply: the reported one (cross-domain SSO), the team-obvious one (device trust at fleet scale), and the adjacent one (push MFA). One framework, three applications.</p>
+
+      <h3>Your 5-step frame for every round</h3>
+      <ol>
+        <li><strong>Requirements &amp; scale</strong> (3–5 min): users/devices, RPS on the hot path, latency budget, availability target, security constraints. For Okta always ask: multi-tenant? What's the blast radius of failure?</li>
+        <li><strong>API &amp; data model</strong> (5 min): the 3–4 core endpoints and entities.</li>
+        <li><strong>High-level architecture</strong> (15 min): draw it; separate the latency-critical decision plane from the high-volume telemetry plane.</li>
+        <li><strong>Deep dives</strong> (15 min): follow the interviewer, but steer to your strengths — the client/agent side, crypto, caching, failure modes.</li>
+        <li><strong>Failure &amp; operations</strong> (10 min): what breaks, staged rollout, kill switch, observability. This step is where Principal is decided.</li>
+      </ol>
+
+      <h3>Design 1 — Cross-domain SSO <span style="font-family:'Fira Code';font-size:11px;color:var(--intel);">(REPORTED verbatim)</span></h3>
+      <p><strong>Problem:</strong> a user signs in once and is signed in across <code>app1.com</code>, <code>app2.com</code>, <code>app3.com</code> — different domains, so cookies don't cross. Design it.</p>
+      <ul>
+        <li><strong>Core insight to state first:</strong> cookies are domain-scoped, so cross-domain SSO requires a <em>central identity domain</em> (the IdP) that each app redirects to. The session lives at the IdP; apps hold their own short sessions derived from it.</li>
+        <li><strong>Flow (OIDC authorization code + PKCE):</strong> unauthenticated user at app1 → redirect to <code>idp.com/authorize</code> → IdP has no session → login (ideally phishing-resistant) → IdP sets <em>its own</em> session cookie → redirects back with a one-time code → app1's backend exchanges code for ID/access tokens → app1 establishes its local session. When the user hits app2, same redirect — but the IdP session cookie exists, so it's an instant silent redirect back with a new code. That silent hop <em>is</em> the SSO experience.</li>
+        <li><strong>Token validation at each app:</strong> verify JWT signature via the IdP's JWKS, check <code>iss</code>/<code>aud</code>/<code>exp</code>/<code>nonce</code>. Keys cached with rotation via <code>kid</code>.</li>
+        <li><strong>Single logout — raise it before they do:</strong> the hard part. Options: front-channel logout (iframe pings to each app — unreliable), back-channel logout (IdP calls each app's logout endpoint — reliable, needs registration), or short app-session TTLs + revocation checks. Recommend back-channel + short TTLs; be honest that SLO is never perfect.</li>
+        <li><strong>Scale &amp; availability:</strong> the IdP session store is the crown jewel — replicated in-memory store (Redis) with persistence; the authorize endpoint is read-heavy and cacheable except session checks; multi-region with session affinity or a replicated session layer. IdP down = nobody logs in anywhere: this is where "Always secure. Always on." becomes an engineering requirement — active-active regions, aggressive health-based failover.</li>
+        <li><strong>Security deep-dive ammo:</strong> why the code flow beats implicit (tokens never transit the browser URL), PKCE (code interception), <code>state</code> (CSRF), <code>nonce</code> (replay), exact redirect-URI allow-listing (open-redirect/token theft).</li>
+      </ul>
+
+      <h3>Design 2 — Device trust / FastPass-style auth for 10M endpoints <span style="font-family:'Fira Code';font-size:11px;color:var(--navy);">(LIKELY — it's the team's product)</span></h3>
+      <ul>
+        <li><strong>Enrollment:</strong> agent generates a P-256 key in the <strong>Secure Enclave</strong> (non-exportable); registers the public key with the backend bound to user+device; MDM-based <strong>managed device attestation</strong> proves genuine hardware — defeats cloned enrollments.</li>
+        <li><strong>Auth hot path (the latency-critical plane):</strong> app hits IdP → IdP issues a challenge → agent signs with the SE key (user presence if policy requires) → IdP verifies signature + checks device posture from a <em>hot cache</em> → decision. Budget the path: signature verify is sub-ms; the posture lookup must be a cache read, never a telemetry-store query.</li>
+        <li><strong>Posture/telemetry plane (high volume, not latency-critical):</strong> agents report posture on change + heartbeat with <strong>jitter</strong> (never synchronized); ingestion via queue (Kafka/SQS) absorbing spikes; stream processors update the posture store; decision cache invalidated on material change.</li>
+        <li><strong>Offline &amp; failure:</strong> agent caches last-known-good policy with a freshness window; device login (Desktop MFA) must define offline behavior explicitly — a laptop on a plane still needs to unlock. Fail-open vs fail-closed is <em>per-resource policy</em>, not an accident; revocation propagates via short decision TTLs + push-triggered recheck.</li>
+        <li><strong>Fleet safety:</strong> staged rollout of agent + policy, kill switch, a bad policy push must never brick a customer fleet — canary tenants first. This paragraph alone can win the round.</li>
+      </ul>
+      <div class="box you"><span class="lbl">Your unfair advantage</span><p>You have run this exact architecture at JumpCloud scale — millions of devices. In this round, drop real operational scars: thundering herds after OS updates, cache invalidation pain, agent upgrade rollbacks. Reported experience beats textbook diagrams at Principal level.</p></div>
+
+      <h3>Design 3 — Push-notification MFA (Okta Verify style) <span style="font-family:'Fira Code';font-size:11px;color:var(--navy);">(LIKELY — adjacent product)</span></h3>
+      <ul>
+        <li><strong>Flow:</strong> login attempt → challenge created (state machine: created → delivered → approved/denied/expired) → push via APNs/FCM → app fetches challenge details over authenticated channel (never trust push payload — it's a doorbell, not a courier) → user approves with <strong>number matching</strong> → device <em>signs</em> the approval with its enrolled key → backend verifies.</li>
+        <li><strong>Push unreliability — raise it yourself:</strong> APNs is best-effort; provide a <strong>pull fallback</strong> (app polls for outstanding challenges on open) — this mirrors how Okta's own SDK actually handles it.</li>
+        <li><strong>Security:</strong> push-fatigue attacks → number matching + rate-limit challenges per user + risk signals; approval must be a signature from the enrolled device key, not a bare "yes" API call.</li>
+        <li><strong>Scale:</strong> challenge store is short-TTL and huge-write — a TTL-native store; per-user challenge rate limiting (Section 04 reappears!); idempotent challenge creation on retries.</li>
+      </ul>
+      <div class="review"><input type="checkbox" id="c6"><label for="c6">Section 06 cleared</label></div>
+    </section>
+
+    <!-- 07 MACOS DOMAIN -->
+    <section id="macos">
+      <div class="secnum">07 / DOMAIN — THEIR ACTUAL PRODUCTS</div>
+      <h2>The macOS deep dive — speak to what this team ships</h2>
+      <p class="secsub">The Device Identity org ships Okta Verify (with FastPass), Okta Device Access (Desktop MFA + Platform SSO), and Device Assurance on macOS. Knowing how these work — and their engineering pain points — makes you sound like a teammate, not a candidate.</p>
+
+      <h3>Platform SSO — the center of gravity for macOS device identity</h3>
+      <p>Apple's Platform SSO framework lets an identity provider plug into the macOS login itself — linking the Okta account to the device and syncing the local password with the Okta password. Okta engineering has publicly discussed the framework's early limitations, and these make superb interview conversation:</p>
+      <ul>
+        <li><strong>Local-first verification gap:</strong> early Platform SSO verified the entered password against the <em>local</em> account first and only checked the IdP in the background — meaning an out-of-sync, non-IdP password could still unlock the machine. Understanding why that ordering matters (the IdP must be authoritative or device login isn't really IdP-gated) is exactly the security judgment this team exercises.</li>
+        <li><strong>FileVault boundary:</strong> FileVault unlock happens pre-boot, before any IdP is reachable — users unlock disk encryption with the local password first, then authenticate to the IdP. Any design you propose for "Okta at login" must respect that boundary and define offline behavior.</li>
+        <li><strong>Registration &amp; trust:</strong> Platform SSO registration binds the device to the IdP — combine with device attestation and only registered users can log in with valid Okta credentials.</li>
+      </ul>
+      <div class="box win"><span class="lbl">Win condition</span><p>When asked "how would you extend Okta's presence at the macOS login?", structure by trust boundary: pre-boot (FileVault — local only) → login window (Platform SSO / authorization plugin, network may be absent → cached verifier with freshness window) → post-login (Okta Verify agent, full IdP connectivity). Naming the offline case at each layer unprompted is the Staff/Principal signal.</p></div>
+
+      <h3>Desktop MFA — the engineering questions they live with</h3>
+      <ul>
+        <li>Where does the second factor come from at the login window (no browser)? Push to phone, TOTP, or on-device factors — each with an offline story.</li>
+        <li>Offline access: cached factor verification with a bounded number of offline unlocks — how do you make the cache tamper-resistant? (Answer: seal it to the Secure Enclave / Data Protection keybag.)</li>
+        <li>Failure posture: MFA service unreachable — lock everyone out (secure) or allow with local password (available)? Policy-driven per customer; know both arguments. "Always secure. Always on." is literally this trade-off.</li>
+      </ul>
+
+      <h3>FastPass &amp; Device Assurance — connect them to your work</h3>
+      <ul>
+        <li><strong>FastPass</strong> = device-bound, passwordless, phishing-resistant factor: an enrolled hardware-backed key (Secure Enclave on Mac) signs origin-bound challenges, with posture checked at auth time. Mechanically, this is the primitive you built at JumpCloud — say so.</li>
+        <li><strong>Device Assurance</strong> = posture policy (OS version, disk encryption, screen lock, jailbreak/root signals) evaluated as part of the access decision — your conditional-access work, productized.</li>
+      </ul>
+
+      <h3>Platform rapid-fire they can legitimately ask a macOS Principal</h3>
+      <details class="q"><summary><span class="tag lik">LIKELY</span>How would you architect the Okta Verify macOS app's process topology?</summary><div class="ans"><p>Privilege separation: a user-session UI app (menu bar/app), a per-user LaunchAgent for user-context work, a root LaunchDaemon only if a privileged operation truly requires it, and (for network/endpoint capabilities) System Extensions. XPC between them with code-signing requirement validation on every connection; the daemon exposes the narrowest possible protocol. Keys live in Secure Enclave/Keychain with access groups shared only across your signed team ID. Updates: staged rollout with a kill switch — a broken auth agent on the login path is a sev-0.</p></div></details>
+      <details class="q"><summary><span class="tag lik">LIKELY</span>An enterprise reports Okta Verify can't complete enrollment on some machines. Debug it.</summary><div class="ans"><p>Segment the fleet first (OS version? MDM vendor? network?). Then walk the chain: MDM profile delivered? System Extension / TCC approvals present (pushed by profile vs awaiting user consent)? Time skew breaking token validation? TLS interception by a corporate proxy breaking cert pinning — Okta itself documents that Verify traffic must not be SSL-inspected, so an inspecting proxy is a prime suspect. Keychain/SE errors on specific hardware? Unified logging with a support-bundle collector so IT can self-serve diagnostics — reference their Troubleshooter feature philosophy: enable self-diagnosis, reserve support for the hard cases.</p></div></details>
+      <details class="q"><summary><span class="tag lik">LIKELY</span>Where are the sharp edges of Swift on a long-running macOS daemon?</summary><div class="ans"><p>Memory discipline (bounded caches, no cycle leaks — Instruments generations in CI), actor reentrancy across await, QoS/priority inversion on the auth-critical path, launchd lifecycle (crash loops, throttling, on-demand vs keep-alive), and interop cost at C boundaries (ES framework is a C API — bridge carefully, respond within AUTH deadlines off the message thread).</p></div></details>
+      <div class="review"><input type="checkbox" id="c7"><label for="c7">Section 07 cleared</label></div>
+    </section>
+
+    <!-- 08 IAM BANK -->
+    <section id="iam">
+      <div class="secnum">08 / RAPID-FIRE</div>
+      <h2>The IAM question bank — Okta-flavored answers</h2>
+      <p class="secsub">Compiled from Okta-specific interview question banks and screening reports. These get asked as warm-ups and in screening rounds; answer in two sentences, offer depth if invited.</p>
+
+      <details class="q"><summary><span class="tag rep">REPORTED</span>What is SSO and why do organizations want it?</summary><div class="ans"><p>One authentication grants access to many applications: the user authenticates to a central identity provider, which asserts their identity to each app (SAML or OIDC). Wins: fewer passwords (less reuse/phishing surface), central policy and revocation, and lower helpdesk cost — credentials touch only the IdP, never each app.</p></div></details>
+      <details class="q"><summary><span class="tag rep">REPORTED</span>SAML vs OIDC — when each?</summary><div class="ans"><p>Same job (federated authentication), different eras. SAML: XML, browser-redirect assertions, entrenched in legacy enterprise apps. OIDC: JSON/JWT on OAuth 2.0 rails, friendlier to native and mobile apps and APIs. New builds → OIDC; enterprise integrations → support both, which is exactly what Okta does.</p></div></details>
+      <details class="q"><summary><span class="tag rep">REPORTED</span>Name MFA factor types; what makes a factor strong?</summary><div class="ans"><p>Knowledge (password/PIN), possession (phone, security key, enrolled device), inherence (biometric). Strength is really about <em>phishability</em>: SMS &lt; TOTP &lt; push-with-number-matching &lt; device-bound FIDO2/FastPass, which is phishing-resistant because the credential is origin-bound hardware crypto with nothing to type or relay.</p></div></details>
+      <details class="q"><summary><span class="tag rep">REPORTED</span>What is adaptive / risk-based authentication?</summary><div class="ans"><p>The auth requirement adapts to context: device trust, location, network, behavior anomalies. Low risk → seamless; elevated risk → step-up or deny. It's how you raise security without taxing every login — the balance Okta explicitly optimizes.</p></div></details>
+      <details class="q"><summary><span class="tag rep">REPORTED</span>How do you defend against MFA push-fatigue attacks?</summary><div class="ans"><p>Number matching (the approver must type the number shown at login — breaks blind approve), rate-limiting challenges per user, risk-signal gating on when push is even offered, monitoring for anomalous challenge volume, and migrating high-risk users to phishing-resistant factors (FIDO2/FastPass) where there is no approvable prompt at all.</p></div></details>
+      <details class="q"><summary><span class="tag rep">REPORTED</span>What is lifecycle management / SCIM, and why is JIT provisioning not enough for deprovisioning?</summary><div class="ans"><p>SCIM is the standard API for provisioning/deprovisioning users and groups into apps. JIT creates users at first login — but it's login-driven, so it can never <em>remove</em> access. Deprovisioning must be event-driven from the authoritative source (HR system → IdP → downstream apps), so a terminated employee is disabled within minutes regardless of login activity.</p></div></details>
+      <details class="q"><summary><span class="tag rep">REPORTED</span>What is Zero Trust, in one crisp answer?</summary><div class="ans"><p>No implicit trust from network location: every access request is verified against user identity, device trust, and context, continuously. Identity becomes the perimeter — which is why an identity company and a device-trust team sit at the center of it.</p></div></details>
+      <details class="q"><summary><span class="tag lik">LIKELY</span>OAuth flows in prod vs preview behave differently — how do you debug?</summary><div class="ans"><p>Diff the configs first: redirect URIs, client IDs, issuer/authorization-server URLs, PKCE settings, token lifetimes, scopes, grant types — environment drift explains most of it. Then verify the verifier/challenge handling and consent settings match. Boring, systematic, correct — that's the point of the question.</p></div></details>
+      <details class="q"><summary><span class="tag lik">LIKELY</span>Principle of Least Privilege; threat vs vulnerability (reported in an Okta screen)</summary><div class="ans"><p>PoLP: every principal gets the minimum access needed, for the minimum time — the design principle behind scoped tokens, JIT access, and zero standing privileges. A <em>vulnerability</em> is a weakness in a system; a <em>threat</em> is an actor/event that could exploit it; risk is the product of the two.</p></div></details>
+      <div class="review"><input type="checkbox" id="c8"><label for="c8">Section 08 cleared</label></div>
+    </section>
+
+    <!-- 09 BEHAVIORAL -->
+    <section id="behavioral">
+      <div class="secnum">09 / PEOPLE ROUNDS</div>
+      <h2>HM, Leadership, and Director rounds</h2>
+      <p class="secsub">Reported loops end with a managerial round (HLD + your projects) and a Director round (behavioral + broad tech). At Principal, these rounds decide the offer and the level.</p>
+
+      <h3>The 90-second pitch (recruiter + HM openers)</h3>
+      <div class="box you"><span class="lbl">Draft — tune the numbers to what you can defend</span><p>"I'm a Staff engineer with about a decade at the intersection of Apple-platform engineering and identity/endpoint security — Zoho, Citrix, now JumpCloud, where I tech-lead the Endpoint AI Governance team. I've shipped the macOS agent stack that runs on millions of devices: System Extensions, Endpoint Security framework, Secure-Enclave-backed device credentials, MDM attestation, conditional access. Okta's Device Identity org is building exactly the thing I've spent years on — turning the device into a trusted identity factor — and this role is where my depth compounds: setting technical direction for the macOS side while staying hands-on."</p></div>
+
+      <h3>Reported behavioral questions — with your story mapped</h3>
+      <table class="tbl">
+        <tr><th>Question (reported/likely)</th><th>Story to use</th><th>Value it maps to</th></tr>
+        <tr><td>Lead a team through a hard technical challenge</td><td>An agent architecture or migration you drove end-to-end</td><td>Build and own it</td></tr>
+        <tr><td>Tight deadline, urgency without quality loss</td><td>Deliberate scope cut → ship → harden after</td><td>Speed &amp; urgency</td></tr>
+        <tr><td>Mentored an engineer — outcome?</td><td>A specific engineer you leveled up, with the visible result</td><td>Build and own it</td></tr>
+        <tr><td>Influenced direction across teams you didn't own</td><td>Cross-team design adoption: doc + prototype + objection-by-objection 1:1s</td><td>Drive what's next</td></tr>
+        <tr><td>A failure and what you learned</td><td>Real miss → the systemic guardrail you installed so the class of failure can't recur</td><td>Build and own it</td></tr>
+        <tr><td>Difficult teammate / conflict</td><td>Disagree with data → align on the decision → commit fully</td><td>Love our customers</td></tr>
+        <tr><td>Impact on engineering culture</td><td>A review standard / CI guardrail / design ritual you authored that others now run</td><td>Always secure. Always on.</td></tr>
+        <tr><td>Thoughts on cloud security &amp; Okta's role</td><td>Identity as the control plane; device as the trust anchor; AI agents as the new principal class needing scoped identity</td><td>Drive what's next</td></tr>
+      </table>
+
+      <h3>Director-round posture</h3>
+      <ul>
+        <li><strong>Zoom out willingly.</strong> Directors probe strategy: "where does device identity go in 3 years?" Have a thesis — e.g., attestation becomes table stakes, passwordless becomes default, the interesting frontier is continuous trust (posture re-evaluated during a session, not just at login) and non-human/AI-agent identity. Hold it with conviction, invite debate.</li>
+        <li><strong>Connect tech to business.</strong> "Rigorous fleet-safe rollout" isn't engineering hygiene — it's why a Fortune-100 customer renews. Speak that translation.</li>
+        <li><strong>Commit first, caveat second.</strong> Your flagged pattern is hedging. In every answer: claim → evidence → trade-off. Never open with "it depends."</li>
+      </ul>
+
+      <h3>Questions to ask them (calibrated by round)</h3>
+      <ul>
+        <li><em>HM:</em> "What's the hardest unsolved problem on the macOS side right now — Platform SSO maturity, offline trust, attestation coverage?"</li>
+        <li><em>Design rounds:</em> "How do you stage agent rollouts across customer fleets today, and what's the kill-switch story?"</li>
+        <li><em>Director:</em> "The JD frames identity as the control layer for AI. What's the Device Identity org's role in securing agentic AI in the next year?"</li>
+      </ul>
+      <div class="review"><input type="checkbox" id="c9"><label for="c9">Section 09 cleared</label></div>
+    </section>
+
+    <!-- 10 RUN PLAN -->
+    <section id="run">
+      <div class="secnum">10 / EXECUTION</div>
+      <h2>Run plan &amp; process warnings</h2>
+      <p class="secsub">How to spend your prep hours based on where the reported loop actually applies pressure.</p>
+      <table class="tbl">
+        <tr><th>Priority</th><th>What</th><th>Why</th></tr>
+        <tr><td>P0</td><td>Section 06 — three system designs, whiteboarded aloud, twice each</td><td>A reported Principal loop was 50% system design</td></tr>
+        <tr><td>P0</td><td>Section 04 — rate limiter until you can defend every line</td><td>Recurring reported assignment + walkthrough round</td></tr>
+        <tr><td>P1</td><td>Section 03 patterns — binary search variants, backtracking, two-pointer, BFS, sliding window; 2/day in Swift</td><td>All reported questions fall in these five patterns</td></tr>
+        <tr><td>P1</td><td>Section 09 — write all 8 stories in STAR, rehearse commit-first delivery on recording</td><td>HM + Director rounds decide level; hedging is your known risk</td></tr>
+        <tr><td>P2</td><td>Sections 05, 07, 08 — one pass each, then revisit weak spots</td><td>Domain depth is your strength; keep it sharp, don't over-invest</td></tr>
+      </table>
+      <div class="box trap"><span class="lbl">Process warnings — from candidate reports</span>
+        <p><strong>Ghosting after late rounds is repeatedly reported</strong>, even after verbal positive signals. Do not pause other tracks on a verbal "offer coming." <strong>Some assessments are proctored CodeSignal</strong> — familiarize yourself with the editor beforehand. <strong>Interview experiences skew mixed</strong> (~36–43% positive across roles), so treat a cold interviewer as noise, not signal — several strong reports had at least one brusque round.</p></div>
+      <div class="box win"><span class="lbl">Final word</span>
+        <p>Your profile is not a stretch for this role — the JD's nice-to-haves are your core. The loop's pressure points (multiple design rounds, walkthrough defense, leadership scope) reward exactly one behavior: <strong>committed, structured, trade-off-explicit answers delivered from real operating experience.</strong> You have the experience. This document's job was to make sure nothing in the loop surprises you. Nothing now should.</p></div>
+      <div class="review"><input type="checkbox" id="c10"><label for="c10">All sections cleared — go win it</label></div>
+    </section>
+
+    <p style="margin-top:60px;color:var(--ink-faint);font-size:13px;font-family:'Fira Code';border-top:1px solid var(--line);padding-top:20px;">
+      Compiled July 2026 from public candidate reports (Glassdoor, LeetCode Discuss, Taro, interview guides) and Okta's public engineering materials. REPORTED = a real candidate faced it; LIKELY = inferred from the JD and product surface. Companion docs: the concept study guide + security-from-scratch primer.
+    </p>
+
+  </div>
+  </main>
+</div>
+
+<script>
+  const prog = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    prog.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  };
+  document.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+
+  const links = Array.from(document.querySelectorAll('#toc a'));
+  const sections = links.map(a => document.querySelector(a.getAttribute('href')));
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.getAttribute('id');
+        links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, {rootMargin: '-18% 0px -72% 0px', threshold: 0});
+  sections.forEach(s => s && spy.observe(s));
+
+  const sidebar = document.getElementById('sidebar');
+  const scrim = document.getElementById('scrim');
+  const burger = document.getElementById('burger');
+  const toggle = (open) => { sidebar.classList.toggle('open', open); scrim.classList.toggle('show', open); };
+  burger && burger.addEventListener('click', () => toggle(!sidebar.classList.contains('open')));
+  scrim && scrim.addEventListener('click', () => toggle(false));
+  links.forEach(l => l.addEventListener('click', () => toggle(false)));
+
+  const boxes = Array.from(document.querySelectorAll('.review input'));
+  const done = document.getElementById('done');
+  const recount = () => { done.textContent = boxes.filter(b => b.checked).length; };
+  boxes.forEach(b => b.addEventListener('change', recount));
+  recount();
+</script>
+</body>
+</html>

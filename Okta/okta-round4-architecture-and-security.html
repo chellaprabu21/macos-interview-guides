@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Round 4 — Architecture, Design &amp; Cybersecurity</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;--brand:#1c4f7c;--brandT:#e3edf5;--go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;--stop:#a03a2a;--stopT:#f9e7e2;--pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:var(--brand);z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:286px;flex:0 0 286px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#101620;color:#c5ccd7;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#848fa2;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#848fa2;margin:15px 4px 6px;border-top:1px solid #242b36;padding-top:12px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a8b0be;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#6c7789;min-width:20px}
+  nav a:hover{background:#19202b;color:#fff}nav a.active{background:var(--brand);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:850px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pur);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--brand)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.4px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .yo{border-left-color:var(--brand);background:var(--brandT)}.yo .l{color:var(--brand)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .tag{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.hot{background:var(--stopT);color:var(--stop)}
+  .tag.med{background:var(--brandT);color:var(--brand)}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.8px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.8px;color:var(--brand)}
+  .steps{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+  .stp{display:flex;gap:12px;background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .stp .n{font-family:'JetBrains Mono';font-weight:600;color:var(--brand);font-size:12.5px;min-width:26px}
+  .stp .t{font-size:14px}.stp .t b{font-family:'Sora';display:block;font-size:14.5px;margin-bottom:1px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Round 4 prep</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Round 4<span class="s">architecture · design ·<br>databases · cybersecurity</span></div>
+  <div class="ct">11 sections</div>
+  <nav id="toc">
+    <a href="#intel"><span class="n">01</span><span>Your interviewer ★</span></a>
+    <a href="#appledesign"><span class="n">02</span><span>Explaining Apple app design</span></a>
+    <a href="#perf"><span class="n">03</span><span>Performance &amp; scalability</span></a>
+    <a href="#db"><span class="n">04</span><span>Databases</span></a>
+    <a href="#rest"><span class="n">05</span><span>RESTful APIs</span></a>
+    <a href="#design"><span class="n">06</span><span>The design exercise</span></a>
+    <a href="#patterns"><span class="n">07</span><span>Patterns, frameworks, libraries</span></a>
+    <a href="#crypto"><span class="n">08</span><span>Cryptography ★</span></a>
+    <a href="#attacks"><span class="n">09</span><span>Common cyber attacks</span></a>
+    <a href="#appsec"><span class="n">10</span><span>AppSec: SQLi, XSS, CSRF</span></a>
+    <a href="#run"><span class="n">11</span><span>Run sheet</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Round 4 · Architecture · design patterns · Apple depth · cybersecurity aptitude</p>
+  <h1>He built Desktop MFA. He also ported Oracle to a Cray. Come prepared for range.</h1>
+  <p class="led">Francis Kelly is a Principal Engineer with 35 years of experience — full-stack, distributed systems, macOS and iOS, cybersecurity, and a startup he founded that served 1.5B recommendations a month. He personally developed Okta's macOS Desktop MFA and Desktop Password Sync. This round is broad by design, and the cybersecurity section is new and explicit.</p>
+</header>
+
+<section id="intel">
+  <div class="sn">01 / ★ READ FIRST</div>
+  <h2>Your interviewer</h2>
+  <p class="ss">The most senior person you'll meet in this loop. His background changes how you should answer.</p>
+
+  <h3>The career</h3>
+  <table class="tb">
+    <tr><th>Where</th><th>What it tells you</th></tr>
+    <tr><td><strong>Okta, Principal Engineer (2022–now)</strong></td><td>Device Access team — <strong>he personally developed macOS Desktop MFA and Desktop Password Sync.</strong> Currently focused on using AI to increase developer velocity.</td></tr>
+    <tr><td>Lookout, Principal SWE (2018–22)</td><td>iOS security stack for Lookout for Work, <em>plus</em> backend in Scala, Python, Java, Ruby. Self-described generalist.</td></tr>
+    <tr><td>Lookout, Staff SWE (2014–18)</td><td>Original backend member launching Mobile Endpoint Security. <strong>Led the query service powering App Risk. Designed the ETLs for Global Data visibility.</strong> Distributed systems and scalability.</td></tr>
+    <tr><td>Loomia, Co-founder/Chief Architect (2004–10)</td><td><strong>Processed 2B clicks/month, served ~1.5B recommendations.</strong> Raised $5M Series A. Customers: Audible, WSJ, Travelocity. Also prosecuted the patents and hired the team.</td></tr>
+    <tr><td>CurriculaWorks (2013–14)</td><td>Built a first-person shooter for the Office of Naval Research in C#/Unity.</td></tr>
+    <tr><td>Klamr (2012–13)</td><td>Recommendation engine on Mahout, MongoDB, PostgreSQL.</td></tr>
+    <tr><td><strong>Oracle (1990–92)</strong></td><td><strong>Ported the Oracle RDBMS v6 to Cray XMP/YMP supercomputers.</strong> This is why "good understanding of databases" is on your focus list.</td></tr>
+    <tr><td>CNRS / INRP, Paris (1993–95)</td><td>System administration on HP-UX; statistical analysis for a sociological study.</td></tr>
+    <tr><td>Education</td><td>Yale.</td></tr>
+  </table>
+
+  <div class="bx pu"><span class="l">What this means for your answers</span>
+    <p>Four consequences. <strong>(1) He is not a specialist</strong> — he's a genuine generalist who says "I love designing systems, but I also love to write code." He'll roam across layers, so be ready to move from a Swift detail to a database index to a threat model in the same conversation. <strong>(2) Databases are not a checkbox for him</strong> — he ported Oracle's engine to a supercomputer. Do not bluff on indexes, transactions, or query planning. <strong>(3) He has operated genuinely large scale</strong> — 2B clicks/month at Loomia. Your fleet-scale numbers will land, but so will vagueness. <strong>(4) He built the exact macOS products in question</strong>, so Desktop MFA architecture is home turf for him.</p></div>
+
+  <div class="bx st"><span class="l">The failure mode to avoid</span>
+    <p>With 35 years across databases, distributed systems, ML, gaming, and mobile security, he will very likely know more than you about any given tangent. <strong>Do not overreach.</strong> The winning posture is confident depth where you have it, and clean, curious acknowledgment where you don't: <em>"I haven't built that directly — my experience is X, and here's how I'd reason about it."</em> He has hired teams and prosecuted patents; he can spot padding instantly. Honesty plus reasoning beats a confident guess every time with this interviewer.</p></div>
+
+  <div class="bx yo"><span class="l">Your genuine common ground</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>macOS device-level security</strong> — he built Desktop MFA; you build the device-trust agent. Same trust boundaries, same offline problems.</li>
+      <li><strong>Mobile/endpoint security at Lookout</strong> — closest analogue to your JumpCloud work. Threat detection, device posture, telemetry.</li>
+      <li><strong>Backend generalism</strong> — he did Scala/Python/Java/Ruby; you have Go, Kafka, PostgreSQL, MongoDB, AWS. This is a real point of connection and most Apple candidates lack it.</li>
+      <li><strong>ETL and query services at scale</strong> — he designed the ETLs for Global Data visibility; you run telemetry pipelines for millions of endpoints. Strong shared vocabulary.</li>
+      <li><strong>AI for developer velocity</strong> — his current focus, and your team is literally called Endpoint AI Governance. Worth raising.</li>
+    </ul></div>
+
+  <div class="bx go"><span class="l">One question to ask him</span>
+    <p>"You've said you're looking at using AI to increase developer velocity — what's actually working, and where has it disappointed?" It's genuine, it's his current focus, and it opens a conversation where your AI-governance work is directly relevant.</p></div>
+</section>
+
+<section id="appledesign">
+  <div class="sn">02</div>
+  <h2>Explaining the design of Apple applications</h2>
+  <p class="ss">First focus area. He wants to hear you reason about structure — for a real macOS security product, not a to-do app.</p>
+
+  <h3>The architecture to be able to draw</h3>
+  <p>Use your own agent as the worked example. Be able to lay out the process topology and justify every split:</p>
+  <div class="steps">
+    <div class="stp"><span class="n">1</span><span class="t"><b>UI app (user session)</b>Menu bar / settings / enrollment. Unprivileged, sandboxed. Largest attack surface because it parses untrusted input.</span></div>
+    <div class="stp"><span class="n">2</span><span class="t"><b>LaunchAgent (per user)</b>User-context work, notifications, anything needing the user's keychain or session.</span></div>
+    <div class="stp"><span class="n">3</span><span class="t"><b>LaunchDaemon (root)</b>Policy, network, state, privileged operations. Small and boring by design.</span></div>
+    <div class="stp"><span class="n">4</span><span class="t"><b>System Extensions</b>Endpoint Security for process/file events; Network Extension for traffic. Signed, entitled, sandboxed.</span></div>
+    <div class="stp"><span class="n">5</span><span class="t"><b>XPC between all of them</b>Typed protocols, narrowest surface, peer validated by audit token against a code-signing requirement.</span></div>
+  </div>
+
+  <div class="bx go"><span class="l">The framing that lands</span>
+    <p>"I design these around <strong>trust boundaries first</strong>, then decide what code goes where. The UI is large and exposed, so it gets no privilege. The daemon has privilege, so it stays small and its interface is narrow — the client <em>requests</em>, the daemon <em>decides</em>. Every XPC method is a place where an attacker who owns the UI process tries to escalate, so I never expose anything that takes an arbitrary path or command."</p></div>
+
+  <h3>Layering inside the app</h3>
+  <p>Be ready on how you structure code within a process:</p>
+  <ul>
+    <li><strong>Modularisation via local SPM packages</strong> — a thin app/daemon shell over a core package. Logic is unit testable without launching anything, the compiler enforces dependency direction (Core can't import UI), and build times improve.</li>
+    <li><strong>MVVM for SwiftUI</strong> — logic in an observable model with injected dependencies, so the view is a pure function of state and the model is testable. AppKit interop via <code>NSHostingView</code> when adding SwiftUI incrementally.</li>
+    <li><strong>Protocol-oriented seams</strong> — depend on protocols so tests inject fakes and third-party libraries can be swapped in one file.</li>
+  </ul>
+
+  <div class="bx wn"><span class="l">He'll likely probe Desktop MFA specifically</span>
+    <p>He built it. Know the three environments and that any design must state which it operates in: <strong>pre-boot</strong> (FileVault — local password only, no network, no plugins), <strong>login window</strong> (authorization plugin mechanism, no user session, network may be unavailable), <strong>session</strong> (full capability). And know that <strong>login is just an authorization right</strong> — <code>system.login.console</code> — satisfied by an ordered chain of mechanisms in the authorization database, which is how a vendor inserts MFA. The privileged mechanism (authd, root, no UI) and non-privileged mechanism (SecurityAgent, UI, no root) communicate through the authorization context.</p></div>
+
+  <div class="bx st"><span class="l">The one line that proves you understand his product</span>
+    <p>"A bug in an authorization mechanism locks every user out of every Mac in the fleet, and there's no way in from the login window. That single fact drives everything — fail-open defaults, timeouts on every network call, a kill switch, staged rollout, and a recovery path."</p></div>
+</section>
+
+<section id="perf">
+  <div class="sn">03</div>
+  <h2>Performance &amp; scalability</h2>
+  <p class="ss">He ran 2B clicks/month. Be concrete, be numeric, and separate client-side performance from system-level scalability.</p>
+
+  <h3>Client-side performance (macOS/iOS)</h3>
+  <table class="tb">
+    <tr><th>Concern</th><th>What to say</th></tr>
+    <tr><td>Launch time</td><td>Defer non-critical work off the launch path; lazy-init subsystems; measure with signposts rather than guessing</td></tr>
+    <tr><td>Main thread</td><td>Never block it. Heavy work off-queue, results hopped back. Main Thread Checker in CI.</td></tr>
+    <tr><td>Memory in a daemon</td><td>Bounded caches, no accumulating observers, event queues with backpressure. Instruments Allocations with generation marks to see what survives.</td></tr>
+    <tr><td>CPU</td><td>Time Profiler; <code>os_signpost</code> to instrument your own intervals; don't optimise without a measurement.</td></tr>
+    <tr><td>Battery/thermal</td><td>QoS matched to user expectation; timer coalescing with generous leeway; avoid polling.</td></tr>
+    <tr><td>The ES hot path</td><td>AUTH events block the kernel under a deadline — verdicts come from an in-memory cache keyed on code identity; everything expensive is async and warms the cache.</td></tr>
+  </table>
+
+  <h3>System-level scalability — speak his language</h3>
+  <p>He designed a query service and ETLs at Lookout, and a recommender processing billions of events. Frame your fleet-scale work the same way:</p>
+  <div class="bx yo"><span class="l">Your scalability narrative</span>
+    <p>"Our agent telemetry is the same shape as an ETL problem. <strong>Reduce at the edge</strong> — kernel-side muting and in-agent aggregation, because events you never receive cost nothing. <strong>Discipline the transport</strong> — batched, compressed, jittered uploads with idempotency keys, because without jitter an OS update synchronises millions of agents into a thundering herd. <strong>Separate the planes</strong> — high-volume telemetry through Kafka partitioned by device ID, and a low-latency decision path that reads only a hot cache, never raw telemetry. <strong>Protect the fleet</strong> — staged rollout, kill switch, and agent-health metrics so a bad build is visible before customers call."</p></div>
+
+  <h3>Concepts to deploy by name</h3>
+  <ul>
+    <li><strong>Partitioning</strong> by key so per-key ordering holds and load spreads; <strong>hot-key skew</strong> as the first thing that breaks.</li>
+    <li><strong>Idempotency</strong> so retries are safe; <strong>at-least-once + idempotency</strong> rather than chasing exactly-once.</li>
+    <li><strong>Backpressure</strong> and load shedding — drop verbose telemetry first, never decisions.</li>
+    <li><strong>Caching</strong> and the Zipfian access pattern that makes it work.</li>
+    <li><strong>Push vs poll</strong> — you can't hold connections to millions of devices; wake-then-pull.</li>
+    <li><strong>Fail-open vs fail-closed</strong> as an explicit policy decision, not an accident.</li>
+  </ul>
+</section>
+
+<section id="db">
+  <div class="sn">04 / ★ DON'T BLUFF</div>
+  <h2>Databases</h2>
+  <p class="ss">He ported the Oracle RDBMS to a Cray. This is the section where a confident guess will be caught.</p>
+
+  <h3>Indexes — the fundamentals</h3>
+  <ul>
+    <li><strong>B-tree</strong> is the default: sorted structure, O(log n) lookup, supports range scans and ordering. <strong>Hash</strong> indexes are O(1) for equality but useless for ranges.</li>
+    <li><strong>Clustered vs non-clustered</strong>: a clustered index determines the physical row order (one per table); non-clustered is a separate structure pointing at rows.</li>
+    <li><strong>Composite index column order matters</strong> — an index on <code>(a, b)</code> serves queries filtering on <code>a</code>, or <code>a AND b</code>, but not <code>b</code> alone. This is the classic interview probe.</li>
+    <li><strong>Covering index</strong> — if the index contains every column the query needs, the engine never touches the table.</li>
+    <li><strong>The cost:</strong> indexes speed reads and slow writes (every insert updates every index) and consume space. Over-indexing is a real problem.</li>
+    <li><strong>Selectivity</strong> — an index on a low-cardinality column (a boolean) is usually worthless; the planner will table-scan anyway.</li>
+  </ul>
+
+  <h3>Transactions &amp; ACID</h3>
+  <table class="tb">
+    <tr><th>Property</th><th>Meaning</th></tr>
+    <tr><td>Atomicity</td><td>All or nothing — partial writes never persist</td></tr>
+    <tr><td>Consistency</td><td>Constraints hold before and after</td></tr>
+    <tr><td>Isolation</td><td>Concurrent transactions don't see each other's intermediate state</td></tr>
+    <tr><td>Durability</td><td>Committed data survives a crash (write-ahead log)</td></tr>
+  </table>
+  <p><strong>Isolation levels</strong> and the anomaly each prevents — know these in order:</p>
+  <table class="tb">
+    <tr><th>Level</th><th>Prevents</th><th>Still allows</th></tr>
+    <tr><td>Read uncommitted</td><td>—</td><td>Dirty reads</td></tr>
+    <tr><td>Read committed</td><td>Dirty reads</td><td>Non-repeatable reads</td></tr>
+    <tr><td>Repeatable read</td><td>Non-repeatable reads</td><td>Phantom reads</td></tr>
+    <tr><td>Serializable</td><td>Everything</td><td>— (at a concurrency cost)</td></tr>
+  </table>
+  <p>Know <strong>MVCC</strong> — how PostgreSQL gives readers a consistent snapshot without blocking writers, by keeping multiple row versions. And <strong>optimistic vs pessimistic locking</strong>: optimistic (version column, retry on conflict) suits low contention; pessimistic (<code>SELECT ... FOR UPDATE</code>) suits high contention.</p>
+
+  <h3>SQL vs NoSQL — have a real position</h3>
+  <div class="bx go"><span class="l">The answer</span>
+    <p>"I choose by access pattern, not by fashion. <strong>Relational</strong> when I need joins, multi-row transactions, and strong constraints — and PostgreSQL scales far further than people assume. <strong>Key-value or document</strong> when access is always by primary key and the shape varies — a URL shortener or a device-posture store is a perfect fit because there are no joins and the read path is a single-key lookup. Time-series stores for telemetry, where writes dominate and queries are windowed aggregates. In our agent backend we use PostgreSQL for relational policy data and a document store for telemetry, precisely because the access patterns are different."</p></div>
+
+  <h3>Scaling a database</h3>
+  <ul>
+    <li><strong>Read replicas</strong> for read-heavy load — but you inherit replication lag, so read-after-write needs care (read from primary, or use a session token).</li>
+    <li><strong>Sharding</strong> by key. The hard parts: choosing a shard key that avoids hot spots, cross-shard queries and joins, and resharding later. Say the shard key choice is the decision that matters.</li>
+    <li><strong>Connection pooling</strong> — databases die from connection exhaustion long before CPU.</li>
+    <li><strong>N+1 queries</strong> — the classic ORM performance bug; fix by batching or joining.</li>
+    <li><strong>EXPLAIN / query plans</strong> — say you'd read the plan rather than guess why a query is slow. Full table scan? Wrong index? Bad row estimate from stale statistics?</li>
+  </ul>
+
+  <div class="bx wn"><span class="l">If he goes deeper than you can</span>
+    <p>He may well ask about query planners, join algorithms (nested loop vs hash join vs merge join), or WAL internals. If you hit your limit, say so cleanly and pivot to reasoning: <em>"I've used EXPLAIN to diagnose plans and I understand the trade-offs at that level, but I haven't worked inside a query planner — you clearly have. What I'd do practically is…"</em> That's a far better answer than a confident approximation.</p></div>
+</section>
+
+<section id="rest">
+  <div class="sn">05</div>
+  <h2>RESTful APIs</h2>
+  <p class="ss">Listed explicitly. Know the semantics precisely, and the security posture.</p>
+
+  <h3>Core semantics</h3>
+  <table class="tb">
+    <tr><th>Method</th><th>Safe?</th><th>Idempotent?</th><th>Use</th></tr>
+    <tr><td>GET</td><td>Yes</td><td>Yes</td><td>Retrieve. Never mutates. Cacheable.</td></tr>
+    <tr><td>POST</td><td>No</td><td><strong>No</strong></td><td>Create, or non-idempotent actions</td></tr>
+    <tr><td>PUT</td><td>No</td><td><strong>Yes</strong></td><td>Full replace at a known URI</td></tr>
+    <tr><td>PATCH</td><td>No</td><td>Not necessarily</td><td>Partial update</td></tr>
+    <tr><td>DELETE</td><td>No</td><td>Yes</td><td>Remove</td></tr>
+  </table>
+  <p><strong>Idempotency is the concept to emphasise</strong> — it's why PUT is retry-safe and POST isn't, and why real APIs accept an <code>Idempotency-Key</code> header so a client that times out can retry a payment or a shorten-request without duplicating it. That connects directly to distributed-systems reliability.</p>
+
+  <h3>Status codes that matter</h3>
+  <ul>
+    <li><strong>200</strong> OK · <strong>201</strong> Created (with <code>Location</code>) · <strong>202</strong> Accepted (async) · <strong>204</strong> No Content</li>
+    <li><strong>301</strong> vs <strong>302</strong> — permanent is browser-cached forever (you lose analytics and revocation); temporary keeps control. This is the TinyURL question.</li>
+    <li><strong>400</strong> malformed · <strong>401</strong> unauthenticated · <strong>403</strong> authenticated but forbidden · <strong>404</strong> not found · <strong>409</strong> conflict · <strong>410</strong> gone (expired — semantically different from 404) · <strong>422</strong> validation failed · <strong>429</strong> rate limited (with <code>Retry-After</code>)</li>
+    <li><strong>5xx</strong> — your fault. Never leak stack traces in the body.</li>
+  </ul>
+
+  <h3>Design concerns</h3>
+  <ul>
+    <li><strong>Versioning</strong> — URI path (<code>/v1/</code>) is pragmatic and visible; header-based is purer. Pick one and be consistent. Never break an existing contract.</li>
+    <li><strong>Pagination</strong> — cursor-based beats offset for large sets: offset gets slower deeper in and skips rows when data shifts underneath.</li>
+    <li><strong>Filtering, sorting, sparse fieldsets</strong> as query parameters.</li>
+    <li><strong>ETags / conditional requests</strong> for caching and optimistic concurrency (<code>If-Match</code> to prevent lost updates).</li>
+    <li><strong>Rate limiting</strong> with <code>X-RateLimit-*</code> headers so clients self-regulate.</li>
+    <li><strong>REST vs GraphQL vs gRPC</strong> — REST for public/simple, GraphQL when clients need varied shapes (at the cost of query-complexity attacks), gRPC for internal service-to-service where you want typed contracts and streaming.</li>
+  </ul>
+
+  <div class="bx st"><span class="l">API security — say this unprompted</span>
+    <p>"Authentication and authorization are different checks and both have to happen on <strong>every</strong> request — a common vulnerability is authenticating the user then failing to verify they own the resource, which is broken object-level authorization. Never put secrets or PII in URLs, because they land in logs, proxies, and browser history. Validate and bound every input server-side, since client-side validation is a UX feature, not a control. And rate-limit by user and by IP, with the auth endpoints limited hardest."</p></div>
+</section>
+
+<section id="design">
+  <div class="sn">06</div>
+  <h2>The design exercise</h2>
+  <p class="ss">TinyURL is named again. Given his background, expect him to push on the data layer and the scale story harder than previous rounds.</p>
+
+  <h3>The six beats</h3>
+  <div class="steps">
+    <div class="stp"><span class="n">1</span><span class="t"><b>Clarify &amp; quantify</b>~100M new URLs/day, ~10B total, read:write around 100:1. Latency budget on redirect in the tens of ms. Custom aliases? Expiry? Analytics? Auth?</span></div>
+    <div class="stp"><span class="n">2</span><span class="t"><b>API</b><code>POST /shorten</code> → <code>201</code> with the short URL; <code>GET /{code}</code> → <code>302</code>. Say why 302 not 301. Return <code>410</code> for expired, distinct from <code>404</code>.</span></div>
+    <div class="stp"><span class="n">3</span><span class="t"><b>Code generation</b>Three strategies with trade-offs: hash-of-URL (deterministic, natural dedup, needs collision handling); counter + base62 (no collisions, but enumerable and needs distributed coordination); <strong>pre-generated key pool</strong> (unique random codes made in advance, servers take blocks — non-enumerable, no coordination on the hot path). Recommend the pool at scale.</span></div>
+    <div class="stp"><span class="n">4</span><span class="t"><b>Storage — go deep here for him</b>Access is always by primary key with no joins, so a key-value store fits: <code>code (PK) → longURL, createdAt, expiresAt, ownerID</code>. Shard by hash of code for even distribution. If relational, the index on <code>code</code> is the whole query plan — a covering index means never touching the heap.</span></div>
+    <div class="stp"><span class="n">5</span><span class="t"><b>Read path</b>Zipfian traffic: a small fraction of links get most hits. The redirect must be a <strong>cache read, not a DB read</strong>. LRU cache, CDN for the hottest, DB only on miss. Guard against cache-miss storms with request coalescing or staggered TTLs.</span></div>
+    <div class="stp"><span class="n">6</span><span class="t"><b>Failure, abuse, operations</b>Rate limiting (token bucket), malicious-URL scanning, TTL cleanup, hot-key shard skew, and analytics written <strong>asynchronously to a queue</strong> so the read path never inherits write latency.</span></div>
+  </div>
+
+  <div class="bx yo"><span class="l">The point that will resonate with him specifically</span>
+    <p>He designed ETLs and a query service at Lookout. Say: <em>"The click counter must not be a synchronous write on the redirect path — otherwise your read path inherits write latency and a database hiccup becomes a redirect outage. I'd emit an event to a queue and aggregate in a stream processor. That's the same pattern we use for agent telemetry: the hot path emits, the pipeline aggregates."</em></p></div>
+
+  <h3>Security additions he may specifically want</h3>
+  <p>Given the cybersecurity focus, be ready to extend TinyURL with security thinking: <strong>open-redirect abuse</strong> (a shortener is a phishing tool — you're laundering a malicious destination behind a trusted domain, so scan destinations and support takedown), <strong>enumeration</strong> (why sequential codes are a privacy failure), <strong>SSRF</strong> if you fetch the target for previews, and <strong>rate limiting</strong> to prevent bulk abuse.</p>
+</section>
+
+<section id="patterns">
+  <div class="sn">07</div>
+  <h2>Design patterns, frameworks, libraries</h2>
+  <p class="ss">Know each pattern's downside — that's what makes the answer senior rather than recited.</p>
+
+  <table class="tb">
+    <tr><th>Pattern</th><th>Use</th><th>Downside</th></tr>
+    <tr><td>Delegate</td><td>One-to-one callbacks; ubiquitous in Apple APIs</td><td>Must be <code>weak</code> or you leak; doesn't scale to many listeners</td></tr>
+    <tr><td>Observer</td><td>NotificationCenter, Combine, KVO</td><td>Implicit coupling; hard to trace flow; lifecycle bugs</td></tr>
+    <tr><td>Singleton</td><td><code>URLSession.shared</code>, a logger</td><td><strong>Kills testability</strong>; hides dependencies; global mutable state</td></tr>
+    <tr><td>Factory</td><td>Right handler per input type</td><td>Indirection for its own sake if there's only one type</td></tr>
+    <tr><td>Strategy</td><td>Swappable policy — retry, code generation, pricing</td><td>Over-abstraction when the policy never varies</td></tr>
+    <tr><td>Repository</td><td>Abstracts local vs remote data source</td><td>Extra layer when there's only one source</td></tr>
+    <tr><td>Dependency injection</td><td>Constructor injection for testability</td><td>Wiring complexity; avoid heavy DI frameworks on Apple platforms</td></tr>
+    <tr><td>Adapter</td><td>Wrapping a third-party API behind your protocol</td><td>Thin layers can obscure; worth it when swapping is plausible</td></tr>
+  </table>
+
+  <h3>Architecture position</h3>
+  <p>MVC is Apple's default and degrades into massive view controllers. MVVM moves presentation logic into a testable view model — the natural SwiftUI fit and the honest answer to "how do you test UI code." VIPER/Clean maximise separation at heavy boilerplate cost, justified only in large teams. <strong>Pick one and justify it for the codebase in question.</strong></p>
+
+  <h3>Third-party libraries — the security framing</h3>
+  <div class="bx go"><span class="l">The answer for a security company</span>
+    <p>"My bar: does it solve something genuinely hard I'd otherwise get wrong — crypto, parsing, compression — is it actively maintained, what's the transitive tree, is the licence compatible, and can I replace it. Anything Foundation covers adequately, I don't take. In a security agent it's sharper still: <strong>every dependency ships under my signature with my entitlements onto machines I don't own</strong>, so a compromised upstream package becomes a root-level compromise on a customer fleet. I pin versions, commit the resolved file, review update diffs rather than floating, and I'm especially wary of build-time plugins — that's arbitrary code running where the signing identity lives."</p></div>
+</section>
+
+<section id="crypto">
+  <div class="sn">08 / ★ EXPLICIT</div>
+  <h2>Cryptography</h2>
+  <p class="ss">Named with specific algorithms. He did cybersecurity work at Lookout and built MFA at Okta — expect precision.</p>
+
+  <h3>Symmetric vs asymmetric — the core answer</h3>
+  <div class="bx go"><span class="l">Say it this way</span>
+    <p>"<strong>Symmetric</strong> uses one shared key for both encryption and decryption — fast, suitable for bulk data, but it has the key-distribution problem: both parties need the same secret, and getting it to them securely is the hard part. <strong>Asymmetric</strong> uses a mathematically linked key pair: encrypt with the public key so only the private key holder can read, or sign with the private key so anyone can verify authorship. It solves key distribution and identity, but it's orders of magnitude slower and size-limited. So real systems combine them — asymmetric to authenticate and agree on a session key, then symmetric for the actual payload. That's exactly what TLS does."</p></div>
+
+  <h3>The algorithms named in your brief</h3>
+  <table class="tb">
+    <tr><th>Algorithm</th><th>Type</th><th>What to know</th></tr>
+    <tr><td><strong>AES</strong></td><td>Symmetric block</td><td>Current standard. 128/192/256-bit keys. Use <strong>AES-GCM</strong> — authenticated encryption (AEAD) giving confidentiality <em>and</em> integrity in one. Never ECB mode: identical plaintext blocks produce identical ciphertext, so patterns leak.</td></tr>
+    <tr><td><strong>3DES</strong></td><td>Symmetric block</td><td>Legacy. DES applied three times to extend the 56-bit key. <strong>Deprecated</strong> — 64-bit block size makes it vulnerable to birthday attacks (Sweet32), and it's slow. Say you'd only meet it in legacy systems.</td></tr>
+    <tr><td><strong>RSA</strong></td><td>Asymmetric</td><td>Security rests on the difficulty of factoring large semiprimes. Used for signing and key transport. Needs large keys (2048/4096-bit) and proper padding — <strong>OAEP</strong> for encryption, <strong>PSS</strong> for signatures. Textbook RSA without padding is broken.</td></tr>
+    <tr><td><strong>Diffie-Hellman</strong></td><td>Key exchange</td><td>Lets two parties derive a shared secret over a public channel without ever transmitting it — based on the discrete logarithm problem. <strong>ECDH</strong> is the elliptic-curve variant used today. <strong>Ephemeral DH (DHE/ECDHE) gives forward secrecy</strong>: a compromised long-term key can't decrypt past sessions because the session keys were ephemeral.</td></tr>
+    <tr><td><strong>ECC / P-256</strong></td><td>Asymmetric</td><td>Equivalent security to RSA with far smaller keys — which is why constrained hardware like the Secure Enclave uses it. ECDSA for signatures.</td></tr>
+    <tr><td><strong>SHA-256</strong></td><td>Hash</td><td>One-way, fixed-size digest, collision-resistant. For integrity and fingerprinting. <strong>MD5 and SHA-1 are broken</strong> for collision resistance.</td></tr>
+    <tr><td><strong>HMAC</strong></td><td>MAC</td><td>Hash plus a secret key — proves both integrity and authenticity. Not the same as a signature (symmetric, so no non-repudiation).</td></tr>
+    <tr><td><strong>bcrypt / scrypt / Argon2 / PBKDF2</strong></td><td>Password KDF</td><td>Deliberately <em>slow</em> and salted. Never hash passwords with plain SHA-256 — it's far too fast to brute-force against.</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">Distinctions he may test</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>Hashing is not encryption.</strong> Hashing is one-way with no key; encryption is reversible with a key. Mixing these up is the classic tell.</li>
+      <li><strong>Encoding is not encryption.</strong> Base64 provides no confidentiality whatsoever — it's a transport format.</li>
+      <li><strong>A signature is not a MAC.</strong> Signatures are asymmetric and give non-repudiation; HMAC is symmetric, so either party could have produced it.</li>
+      <li><strong>Salt vs pepper vs IV.</strong> Salt is per-password, stored alongside, defeats rainbow tables. Pepper is a global secret kept separately. An IV/nonce is per-message randomness for encryption — never reuse a nonce with GCM, it's catastrophic.</li>
+      <li><strong>Forward secrecy</strong> — why ephemeral key exchange matters.</li>
+    </ul></div>
+
+  <h3>Your differentiator — hardware-backed keys</h3>
+  <div class="bx yo"><span class="l">Take it here whenever you can</span>
+    <p>"The property I care most about in practice is <strong>non-exportability</strong>. A key in the Keychain is protected at rest, but to use it you load it into process memory — where a compromised process can exfiltrate it. A key generated in the <strong>Secure Enclave</strong> never leaves the chip; you can only ask the SEP to sign or decrypt, optionally gated on biometric user presence. That's what makes a credential genuinely device-bound, and it's the same primitive underneath FIDO2 platform authenticators and MDM device attestation."</p>
+    <p>He built Desktop MFA, so this is directly his problem space — and it's your strongest crypto ground.</p></div>
+</section>
+
+<section id="attacks">
+  <div class="sn">09 / EXPLICIT</div>
+  <h2>Common cyber attacks</h2>
+  <p class="ss">Five named. For each: what it is, how it works, and the concrete defence.</p>
+
+  <details class="q" open><summary><span class="tag hot">NAMED</span>Malware</summary><div class="bod">
+    <p><strong>What:</strong> software designed to harm or gain unauthorised access. Categories: <em>virus</em> (attaches to a host file), <em>worm</em> (self-propagating over a network), <em>trojan</em> (disguised as legitimate), <em>ransomware</em> (encrypts and extorts), <em>spyware/keylogger</em>, <em>rootkit</em> (hides at a privileged layer), <em>RAT</em> (remote access).</p>
+    <p class="lb">Defences</p>
+    <p>Code signing and notarization so unsigned code can't launch; least privilege so a compromise is contained; application allow-listing; behavioural detection rather than signatures alone; network egress control; and rapid patching.</p>
+    <p class="lb">Your angle</p>
+    <p>"This is what our agent does. The Endpoint Security framework gives me process-execution events with the binary's code-signing identity, so I can enforce deny-listing on exec, and file events let me spot ransomware behaviour — a process rapidly rewriting many files. The detection value is in <strong>correlation</strong>: an Office app spawning a shell that spawns curl to a rare domain is an incident; each event alone is noise."</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">NAMED</span>Phishing</summary><div class="bod">
+    <p><strong>What:</strong> tricking a human into surrendering credentials or approving an action. Variants: <em>spear phishing</em> (targeted), <em>whaling</em> (executives), <em>smishing/vishing</em> (SMS/voice), and <strong>adversary-in-the-middle</strong> — a proxy site that relays credentials and OTP codes to the real site in real time.</p>
+    <p class="lb">The defence that actually works</p>
+    <p>"User training helps at the margins but doesn't scale — the real fix is making credentials <strong>unphishable</strong>. FIDO2/WebAuthn binds the credential to the relying party's origin, so a look-alike domain cannot elicit a usable signature and there's nothing to relay. That's why the industry is converging on passkeys and device-bound factors. Secondary layers: DMARC/SPF/DKIM on email, and blocking at DNS resolution."</p>
+    <p class="lb">The nuance to add</p>
+    <p>"Note that most MFA is <em>still phishable</em> — SMS and TOTP are just typed secrets a relay can forward, and push-approve is vulnerable to MFA fatigue. Number matching helps; origin-bound crypto is the step change."</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">NAMED</span>Brute force</summary><div class="bod">
+    <p><strong>What:</strong> systematically trying credentials. Variants: pure brute force, <em>dictionary attack</em>, <strong>credential stuffing</strong> (reusing breached username/password pairs — by far the most common in practice), and <strong>password spraying</strong> (one common password against many accounts, which evades per-account lockout).</p>
+    <p class="lb">Defences</p>
+    <ul style="margin:6px 0 0">
+      <li><strong>Slow password hashing</strong> — bcrypt/Argon2 with a work factor, so offline cracking of a stolen database is expensive.</li>
+      <li><strong>Rate limiting</strong> and <strong>account lockout</strong> with exponential backoff.</li>
+      <li><strong>MFA</strong> — makes a correct password insufficient.</li>
+      <li><strong>Breached-password checks</strong> at registration, against credential stuffing.</li>
+      <li><strong>Detect spraying</strong> by monitoring failures <em>across</em> accounts, not just per account — per-account limits miss it entirely.</li>
+    </ul>
+    <p class="lb">The trade-off to volunteer</p>
+    <p>"Lockout is itself a denial-of-service vector — if I can lock any account by failing five times, I can deny service to your entire user base. So I'd key on IP-plus-account rather than account alone, and prefer progressive delays over hard locks. And responses must be identical for wrong-password and unknown-user, including timing, or lockout becomes a user-enumeration oracle."</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">NAMED</span>DDoS</summary><div class="bod">
+    <p><strong>What:</strong> overwhelming a service from many sources. Layers: <em>volumetric</em> (saturate bandwidth — UDP floods, DNS/NTP amplification), <em>protocol</em> (exhaust state — SYN floods), <em>application-layer</em> (expensive requests — the hardest to distinguish from real traffic).</p>
+    <p class="lb">Defences</p>
+    <p>Upstream scrubbing and CDN absorption; anycast to distribute; rate limiting and connection limits; SYN cookies; caching so requests never reach origin; autoscaling with a cost ceiling; and <strong>graceful degradation</strong> — shed non-essential features to keep the core alive.</p>
+    <p class="lb">Your angle</p>
+    <p>"There's also the self-inflicted version. Millions of agents that all wake at the same time after an OS update are a DDoS on your own backend — which is why every timer in our fleet carries jitter, and why ingestion is behind a queue that absorbs the spike rather than passing it to the database."</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">NAMED</span>Man in the middle</summary><div class="bod">
+    <p><strong>What:</strong> an attacker positioned between two parties, reading or modifying traffic. Vectors: rogue Wi-Fi, ARP spoofing, DNS poisoning, BGP hijack, or a malicious/compromised CA.</p>
+    <p class="lb">Defences</p>
+    <ul style="margin:6px 0 0">
+      <li><strong>TLS with proper certificate validation</strong> — the chain must verify to a trusted root, and the hostname must match. Never disable validation "to make it work."</li>
+      <li><strong>Certificate pinning</strong> for a controlled client like an agent — pin the CA or leaf so a rogue CA can't impersonate your backend. Say the operational cost: rotation must be planned, and pinning breaks under corporate TLS inspection.</li>
+      <li><strong>HSTS</strong> to prevent protocol downgrade; <strong>Certificate Transparency</strong> to detect mis-issued certificates.</li>
+      <li><strong>mTLS</strong> so the client authenticates too — the natural pattern for a device with a hardware-bound key.</li>
+      <li><strong>Forward secrecy</strong> (ECDHE) so recording traffic today and stealing the key later doesn't decrypt it.</li>
+    </ul>
+    <p class="lb">The nuance</p>
+    <p>"Enterprise TLS inspection is a sanctioned MITM — the org installs its own CA on managed devices. It's legitimate, but it means pinned agents break, which is why some products explicitly must be exempted from inspection."</p></div></details>
+</section>
+
+<section id="appsec">
+  <div class="sn">10 / EXPLICIT</div>
+  <h2>Application security — SQLi, XSS, CSRF, secure design</h2>
+  <p class="ss">Named individually. Know the mechanism, not just the acronym.</p>
+
+  <h3>SQL injection</h3>
+  <p><strong>Mechanism:</strong> user input is concatenated into a query, so the input becomes <em>code</em> rather than data.</p>
+<pre><code><span class="c">// ✗ Vulnerable — input becomes part of the query</span>
+<span class="k">let</span> sql = <span class="s">"SELECT * FROM users WHERE email = '\(email)'"</span>
+<span class="c">// email = "x' OR '1'='1"  →  returns every user</span>
+
+<span class="c">// ✓ Parameterised — input is always data, never code</span>
+<span class="k">let</span> sql = <span class="s">"SELECT * FROM users WHERE email = ?"</span>
+statement.bind(1, email)</code></pre>
+  <ul>
+    <li><strong>The fix is parameterised queries / prepared statements</strong>, full stop. Escaping by hand is fragile and gets bypassed.</li>
+    <li><strong>Defence in depth:</strong> least-privilege database accounts (the app doesn't need <code>DROP</code>), input validation as an additional layer, and an ORM used correctly (note that ORMs still allow raw fragments, which reintroduce the risk).</li>
+    <li><strong>Blind SQLi</strong> — the attacker infers data from boolean responses or timing even with no error output. Worth naming.</li>
+    <li><strong>Never expose raw database errors</strong> to clients; they hand the attacker a map.</li>
+  </ul>
+
+  <h3>Cross-site scripting (XSS)</h3>
+  <p><strong>Mechanism:</strong> attacker-controlled input is rendered into a page, so the browser executes it as script in the victim's origin — stealing session cookies, keylogging, or performing actions as the user.</p>
+  <table class="tb">
+    <tr><th>Type</th><th>How</th></tr>
+    <tr><td>Stored</td><td>Payload persisted server-side (a comment) and served to every viewer — the most damaging</td></tr>
+    <tr><td>Reflected</td><td>Payload in the request is echoed into the response — delivered via a crafted link</td></tr>
+    <tr><td>DOM-based</td><td>Client-side JavaScript writes untrusted data into the DOM; the server never sees it</td></tr>
+  </table>
+  <ul>
+    <li><strong>Fix:</strong> context-aware output encoding — HTML body, attribute, JavaScript, and URL contexts each need different escaping. Use the framework's escaping rather than hand-rolling.</li>
+    <li><strong>Content Security Policy</strong> as defence in depth — restricts where scripts may load from and can block inline script.</li>
+    <li><strong><code>HttpOnly</code> cookies</strong> so JavaScript can't read the session token; <code>Secure</code> so it's HTTPS-only.</li>
+    <li><strong>Avoid <code>innerHTML</code></strong> and equivalents; prefer text-setting APIs.</li>
+    <li><strong>The Apple angle:</strong> a <code>WKWebView</code> in a native app has the same exposure. Never inject unvalidated data into JavaScript, restrict the message handler surface, and be careful with <code>evaluateJavaScript</code> — a native-to-web bridge is an XSS pathway into your app's context.</li>
+  </ul>
+
+  <h3>Cross-site request forgery (CSRF)</h3>
+  <p><strong>Mechanism:</strong> a malicious site causes the victim's browser to issue an authenticated request to your site. It works because <strong>the browser attaches cookies automatically</strong> — the attacker doesn't need to read anything, only to trigger the action.</p>
+  <ul>
+    <li><strong>Anti-CSRF token</strong> — a per-session unpredictable value required on state-changing requests. The attacker can't read it due to same-origin policy.</li>
+    <li><strong><code>SameSite</code> cookies</strong> (<code>Lax</code> or <code>Strict</code>) so cookies aren't sent on cross-site requests — now the primary modern defence.</li>
+    <li><strong>Never use GET for state changes</strong> — a GET is triggerable by an image tag.</li>
+    <li><strong>Verify Origin/Referer</strong> as an additional check.</li>
+    <li><strong>Key distinction:</strong> XSS is an execution problem (attacker runs code in your origin); CSRF is an <em>authority</em> problem (attacker borrows the user's ambient credentials without reading anything). Note that <strong>token-based auth in headers is naturally CSRF-resistant</strong>, because the browser doesn't attach an <code>Authorization</code> header automatically — that's a good point to volunteer.</li>
+  </ul>
+
+  <h3>Secure coding practices</h3>
+  <ul>
+    <li><strong>Never trust input</strong> — validate on an allow-list basis at the trust boundary, server-side. Client-side validation is UX.</li>
+    <li><strong>Least privilege</strong> everywhere — processes, database accounts, tokens, entitlements.</li>
+    <li><strong>Fail securely</strong> — an error path should deny, not accidentally allow. Default deny.</li>
+    <li><strong>Don't roll your own crypto</strong> — use vetted libraries and standard modes.</li>
+    <li><strong>No secrets in source or logs</strong>; use the Keychain or a secrets manager; rotate.</li>
+    <li><strong>Constant-time comparison</strong> for secrets and tokens, or you leak them through timing.</li>
+    <li><strong>Bounds and integer overflow</strong> discipline, especially at C boundaries — directly relevant to the Endpoint Security C API you work with.</li>
+    <li><strong>Dependency hygiene</strong> — pin, audit, and treat every dependency as code you sign.</li>
+  </ul>
+
+  <h3>Secure design / shift left</h3>
+  <div class="bx go"><span class="l">The answer</span>
+    <p>"<strong>Shift left</strong> means security work moves earlier — into design and development rather than a penetration test before release, where every finding is expensive to fix. In practice: <strong>threat modelling at design time</strong> (STRIDE — spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege), security requirements written alongside functional ones, <strong>security review as part of code review</strong> rather than a separate gate, automated SAST and dependency scanning in CI, and secure defaults so the easy path is the safe one.</p>
+    <p>The design principles I hold to are least privilege, defence in depth, fail securely, complete mediation — check authorization on <em>every</em> access, not just the first — and minimising the attack surface. Concretely, that's why our agent splits an unprivileged UI from a small root daemon with a narrow XPC interface: the design itself limits what a compromise can reach, rather than relying on the code being bug-free."</p></div>
+
+  <div class="bx yo"><span class="l">Your credibility line</span>
+    <p>"I work on the enforcement side of this — the agent that detects and blocks. So I think about attacks from both directions: what an attacker does, and what telemetry would reveal it. Threat modelling is the same exercise, done before the code exists rather than after the incident."</p></div>
+</section>
+
+<section id="run">
+  <div class="sn">11 / RUN SHEET</div>
+  <h2>Priorities &amp; final preparation</h2>
+
+  <table class="tb">
+    <tr><th>P</th><th>What</th><th>Why</th></tr>
+    <tr><td>P0</td><td><strong>§08 cryptography</strong> — symmetric vs asymmetric, and the named algorithms</td><td>Explicitly listed with specific algorithms; least familiar territory for most Apple engineers</td></tr>
+    <tr><td>P0</td><td><strong>§09 + §10</strong> — the five attacks and SQLi/XSS/CSRF mechanisms</td><td>Named individually; he did cybersecurity at Lookout</td></tr>
+    <tr><td>P0</td><td><strong>§04 databases</strong> — indexes, transactions, isolation, sharding</td><td>He ported Oracle to a Cray. Do not bluff here.</td></tr>
+    <tr><td>P1</td><td><strong>§06 TinyURL</strong> — six beats, with the storage and cache layers deep</td><td>Named again; he'll push the data layer harder</td></tr>
+    <tr><td>P1</td><td><strong>§02 + §03</strong> — agent architecture and the scalability narrative</td><td>Your strongest ground; rehearse it as a story</td></tr>
+    <tr><td>P2</td><td><strong>§05 REST</strong> and <strong>§07 patterns</strong></td><td>You mostly have these; one pass to sharpen</td></tr>
+  </table>
+
+  <h3>The posture for this round</h3>
+  <div class="bx st"><span class="l">Say this to yourself before you join</span>
+    <p>He has 35 years of experience, founded a company, ported a database to a supercomputer, and built the products your team would own. <strong>You are not going to out-range him, and you don't need to.</strong> What you have that's genuinely yours: current, hands-on macOS endpoint-security engineering at fleet scale. Be specific and confident there, be honest and curious elsewhere. "I haven't built that — here's how I'd reason about it" is a strong answer to a Principal engineer. A confident approximation is not.</p></div>
+
+  <h3>Three things to volunteer at some point</h3>
+  <ol>
+    <li><strong>The Secure Enclave non-exportability point</strong> — it connects cryptography to his product and to your daily work in one move.</li>
+    <li><strong>Lockout as a DoS vector</strong> — it shows you think about security controls as attack surfaces themselves, which is exactly the aptitude they're testing.</li>
+    <li><strong>The trust-boundary framing for architecture</strong> — "I design around trust boundaries first, then decide what code goes where."</li>
+  </ol>
+
+  <h3>Questions to ask him</h3>
+  <ul>
+    <li>"You're looking at AI for developer velocity — what's actually worked, and where has it disappointed?" <em>(His current focus, and adjacent to your team's charter.)</em></li>
+    <li>"You built Desktop MFA — what was the hardest constraint, the login-window environment or the offline case?"</li>
+    <li>"Coming from Lookout's mobile endpoint security into Okta's device access — what transferred and what surprised you?"</li>
+    <li>"You've been a generalist across databases, distributed systems, and mobile. How does the Device Access team split that range across people?"</li>
+  </ul>
+
+  <div class="bx go"><span class="l">Final read</span>
+    <p>This round is the broadest of the loop and the cybersecurity section is genuinely new — so that's where your prep hours should go. But the underlying test is the same as always: can you reason clearly, commit to a position, name the trade-off, and be honest about the edges of what you know. With this interviewer, that last one matters more than in any previous round.</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Round 4 · architecture, design patterns, Apple depth, databases, REST, and cybersecurity aptitude · prepared against the stated focus areas and interviewer background.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

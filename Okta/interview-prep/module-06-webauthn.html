@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 06 - WebAuthn / FIDO2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 06 of 10</span>
+    <h1>WebAuthn / FIDO2 &amp; Phishing-Resistant Auth</h1>
+    <p>JumpCloud as WebAuthn Relying Party - registration, authentication, and WebAuthn-shaped push MFA.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-05-oauth-cap.html">← Module 05</a>
+    <a href="index.html">Hub</a>
+    <a href="module-07-apple-mdm.html">Module 07 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">WebAuthn (FIDO2) replaces passwords with public-key cryptography bound to authenticators (security keys, platform authenticators like Touch ID, passkeys). The Relying Party (JumpCloud auth) issues challenges; authenticators sign with private keys that never leave hardware. Okta FastPass leverages the same phishing-resistant properties in OIE policies.</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>jumpcloud-auth/docs/WEBAUTHN_API.md</code> - API surface</li>
+        <li><code>jumpcloud-auth/webauthn/webauthn.go</code> - RP config: RP ID, origin, <code>PreferNoAttestation</code></li>
+        <li><code>jumpcloud-auth/webauthn/registrar.go</code> - registration ceremony</li>
+        <li><code>jumpcloud-auth/webauthn/authentication.go</code> - authentication ceremony</li>
+        <li><code>jumpcloud-auth/docs/adrs/adr-004-webauthn-credentials.md</code> - hybrid Postgres + Mongo storage</li>
+        <li><code>jumpcloud-auth/docs/adrs/adr-008-using-webauthn-protocol-for-push-devices.md</code> - push MFA via WebAuthn-shaped protocol</li>
+        <li><code>jumpcloud-auth/services/webauthn_credentials.go</code> - gRPC service layer</li>
+      </ul>
+      <p>JumpCloud configures <code>go-webauthn/webauthn</code> with UV discouraged for broader compatibility and <code>PreferNoAttestation</code> to reduce privacy/metadata overhead while retaining phishing resistance via origin binding.</p>
+    </section>
+
+    <section>
+      <h2>Okta Parallel</h2>
+      <div class="card okta">
+        <p><strong>Okta FastPass</strong> is configured as a phishing-resistant, hardware-protected possession factor in OIE. Auth policies can require "Phishing resistant" + "Hardware protected" for sensitive apps. JumpCloud WebAuthn RP implements the server side of the same W3C ceremony; FastPass adds Okta Verify as the client authenticator with device registration in Universal Directory.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Registration Ceremony</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant User
+  participant Browser
+  participant Auth as jumpcloud-auth RP
+  participant Authn as Authenticator Touch ID or YubiKey
+  participant DB as Postgres plus Mongo
+
+  User->>Auth: Begin registration
+  Auth->>Auth: Generate challenge store session
+  Auth-->>Browser: PublicKeyCredentialCreationOptions
+  Browser->>Authn: navigator.credentials.create
+  Authn->>Authn: Generate key pair in SE or key
+  Authn-->>Browser: Attestation plus public key
+  Browser->>Auth: Submit credential
+  Auth->>Auth: Verify attestation and challenge
+  Auth->>DB: Store credential ID and public key
+  Auth-->>User: Registration complete
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Authentication Ceremony</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant User
+  participant Browser
+  participant Auth as jumpcloud-auth RP
+  participant Authn as Authenticator
+  participant DB as Credential Store
+
+  User->>Auth: Login with WebAuthn
+  Auth->>DB: Lookup credentials for user
+  Auth-->>Browser: PublicKeyCredentialRequestOptions
+  Browser->>Authn: navigator.credentials.get
+  Authn->>Authn: Sign challenge with private key
+  Authn-->>Browser: Assertion plus signature
+  Browser->>Auth: Submit assertion
+  Auth->>Auth: Verify signature origin and challenge
+  Auth->>Auth: Check sign counter for clone detection
+  Auth-->>User: Authenticated session
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>macOS Connection</h2>
+      <p>Platform SSO and Safari SSO extension (<code>jcagent-tray-ssoe</code>) use Apple's native authentication path. Touch ID integrates with platform authenticators - same hardware Okta leverages for Desktop Password Sync enrollment requiring Touch ID before FastPass setup on existing macOS accounts.</p>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">Why PreferNoAttestation?</div>
+        <div class="qa-a">Attestation reveals authenticator model/manufacturer - useful for enterprise policy but adds privacy and complexity. JumpCloud prioritizes phishing resistance (origin + challenge binding) over hardware provenance attestation. Okta similarly focuses on factor properties in policy rather than attestation metadata for most deployments.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What is sign counter clone detection?</div>
+        <div class="qa-a">Authenticator increments signature counter each auth. RP stores last value; if new counter ≤ stored, possible cloned credential - reject auth. Critical FIDO2 security property to mention in security-focused interviews.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">ADR-008 push MFA - why WebAuthn-shaped?</div>
+        <div class="qa-a">Mobile push devices aren't browsers but benefit from challenge-response signing semantics. Reusing WebAuthn protocol shape (QR enrollment, signed challenges) gives consistent security model across platform keys, security keys, and push - reduces one-off crypto protocols.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Hybrid Postgres + Mongo storage?</div>
+        <div class="qa-a">ADR-004: credential public keys and metadata in Postgres (auth's source of truth); Mongo holds pointer/reference for legacy integration. Tradeoff from incremental migration - know the why, not just the what.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>WebAuthn RP is server-side in jumpcloud-auth - macOS client integration for FastPass-like silent auth is JumpCloud Go/DURT, not WebAuthn directly.</li>
+          <li>Passkeys/synced credentials policy differs from device-bound keys - know when Okta requires hardware-protected vs allows synced passkeys.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-05-oauth-cap.html">← Module 05</a> · <a href="module-07-apple-mdm.html">Module 07 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

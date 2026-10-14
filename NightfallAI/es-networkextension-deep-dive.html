@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Endpoint Security + Network Extension — Deep Dive for AI Governance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ECEFF2;--panel:#FFFFFF;--ink:#0F1720;--muted:#5A6773;--rule:#C9D2DA;
+    --deny:#B32B3D;--allow:#16624F;--watch:#8A5A00;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --display:'Space Grotesk','IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{display:grid;grid-template-columns:262px minmax(0,1fr);max-width:1360px;margin:0 auto}
+  nav{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 18px 60px;border-right:1px solid var(--rule)}
+  nav .brand{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:-.02em;line-height:1.25}
+  nav .sub{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin:4px 0 20px}
+  nav .grp{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:600;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  nav a{display:block;font-family:var(--mono);font-size:11.5px;color:var(--muted);text-decoration:none;padding:4px 0 4px 10px;border-left:2px solid transparent;margin-left:-10px}
+  nav a:hover{color:var(--ink);border-left-color:var(--ink)}
+  nav a .n{opacity:.5;margin-right:7px}
+  main{padding:44px 46px 140px;min-width:0}
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:26px;margin-bottom:40px}
+  header.top h1{font-family:var(--display);font-size:36px;line-height:1.08;letter-spacing:-.03em;margin:0 0 12px}
+  header.top p{margin:0 0 10px;color:var(--muted);max-width:74ch}
+  .meta{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px}
+  section{margin-bottom:54px;scroll-margin-top:24px}
+  .part{border-top:2px solid var(--ink);padding-top:14px;margin:70px 0 34px}
+  .part .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .part h2{font-family:var(--display);font-size:32px;letter-spacing:-.025em;margin:2px 0 8px}
+  .part p{color:var(--muted);margin:0;max-width:74ch}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  h3.s{font-family:var(--display);font-size:24px;letter-spacing:-.02em;margin:0 0 6px;line-height:1.2}
+  h3.s + .lede{color:var(--muted);margin:0 0 22px;max-width:74ch}
+  h4{font-family:var(--display);font-size:17px;margin:28px 0 8px;letter-spacing:-.01em}
+  h5{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:20px 0 6px}
+  p{margin:0 0 12px}
+  ul,ol{margin:0 0 12px;padding-left:19px}
+  li{margin-bottom:5px}
+  code{font-family:var(--mono);font-size:.86em;background:#DEE4E9;padding:1px 5px;border-radius:3px;word-break:break-word}
+  pre{background:var(--ink);color:#E6EDF3;font-family:var(--mono);font-size:12.2px;line-height:1.6;padding:15px 17px;border-radius:4px;overflow-x:auto;margin:0 0 14px}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  pre .c{color:#7E93A5}
+  pre .k{color:#F0A868}
+  pre .s{color:#9FD5C4}
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:18px 20px;margin:0 0 16px}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;padding:2px 7px;border-radius:3px;text-transform:uppercase;vertical-align:2px}
+  .chip.allow{background:#DDEDE7;color:var(--allow)}
+  .chip.deny{background:#F6DDE0;color:var(--deny)}
+  .chip.watch{background:#F6EBD3;color:var(--watch)}
+  .verdict{border-left:3px solid var(--rule);padding:12px 0 12px 16px;margin:0 0 14px}
+  .verdict.allow{border-left-color:var(--allow)}
+  .verdict.deny{border-left-color:var(--deny)}
+  .verdict.watch{border-left-color:var(--watch)}
+  .verdict p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--rule);border-radius:5px;background:var(--panel);margin-bottom:10px;overflow:hidden}
+  details.q summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:12px;align-items:baseline}
+  details.q summary::-webkit-details-marker{display:none}
+  details.q summary::before{content:"▸";font-family:var(--mono);color:var(--muted);font-size:12px}
+  details.q[open] summary::before{content:"▾"}
+  details.q[open] summary{border-bottom:1px solid var(--rule);background:#F7F9FA}
+  details.q .body{padding:14px 16px 4px}
+  table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:13.6px;background:var(--panel)}
+  th,td{text-align:left;padding:8px 10px;border:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:#F3F6F8;font-weight:600}
+  td code{font-size:.9em}
+  .callout{background:var(--ink);color:#E6EDF3;border-radius:5px;padding:18px 20px;margin:0 0 18px}
+  .callout h5{color:#9FB1BF;margin-top:0}
+  .callout code{background:#26313B;color:#E6EDF3}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .say{font-family:var(--mono);font-size:13px;background:#F7F9FA;border:1px dashed var(--rule);padding:12px 14px;border-radius:4px;margin:0 0 12px}
+  .say::before{content:"IN THE ROOM →  ";color:var(--muted);font-size:10px;letter-spacing:.1em}
+  hr{border:none;border-top:1px solid var(--rule);margin:34px 0}
+  .footnote{font-size:13px;color:var(--muted)}
+  @media (max-width:900px){
+    .wrap{grid-template-columns:1fr}
+    nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--rule)}
+    main{padding:28px 20px 90px}
+    header.top h1{font-size:27px}
+    .grid2{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="brand">ES + NetworkExtension</div>
+  <div class="sub">Deep dive · AI governance</div>
+
+  <div class="grp">Part I · Endpoint Security</div>
+  <a href="#a1"><span class="n">1</span>Mental model</a>
+  <a href="#a2"><span class="n">2</span>Entitlements &amp; setup</a>
+  <a href="#a3"><span class="n">3</span>Your first client</a>
+  <a href="#a4"><span class="n">4</span>Anatomy of a message</a>
+  <a href="#a5"><span class="n">5</span>Event catalogue</a>
+  <a href="#a6"><span class="n">6</span>Responding to AUTH</a>
+  <a href="#a7"><span class="n">7</span>Deadlines &amp; async</a>
+  <a href="#a8"><span class="n">8</span>Muting &amp; caching</a>
+  <a href="#a9"><span class="n">9</span>Swift ↔ C interop</a>
+  <a href="#a10"><span class="n">10</span>Process identity</a>
+  <a href="#a11"><span class="n">11</span>Label cache</a>
+  <a href="#a12"><span class="n">12</span>Complete agent</a>
+  <a href="#a13"><span class="n">13</span>Debugging</a>
+
+  <div class="grp">Part II · NetworkExtension</div>
+  <a href="#b1"><span class="n">14</span>The provider zoo</a>
+  <a href="#b2"><span class="n">15</span>Entitlements &amp; config</a>
+  <a href="#b3"><span class="n">16</span>Content filter</a>
+  <a href="#b4"><span class="n">17</span>Flow attribution</a>
+  <a href="#b5"><span class="n">18</span>Transparent proxy</a>
+  <a href="#b6"><span class="n">19</span>TLS interception</a>
+  <a href="#b7"><span class="n">20</span>DNS proxy</a>
+  <a href="#b8"><span class="n">21</span>Limits &amp; failure</a>
+
+  <div class="grp">Part III · AI Governance</div>
+  <a href="#c1"><span class="n">22</span>Threat model</a>
+  <a href="#c2"><span class="n">23</span>Correlating ES + NE</a>
+  <a href="#c3"><span class="n">24</span>AI app inventory</a>
+  <a href="#c4"><span class="n">25</span>MCP observability</a>
+  <a href="#c5"><span class="n">26</span>Prompt DLP</a>
+  <a href="#c6"><span class="n">27</span>Enforcement matrix</a>
+
+  <div class="grp">Part IV · The room</div>
+  <a href="#d1"><span class="n">28</span>Question bank</a>
+  <a href="#d2"><span class="n">29</span>Whiteboard drills</a>
+  <a href="#d3"><span class="n">30</span>Traps</a>
+</nav>
+
+<main>
+<header class="top">
+  <div class="meta">Learning doc · built for the Nightfall macOS rounds</div>
+  <h1>Endpoint Security &amp;<br>NetworkExtension</h1>
+  <p>From first principles to a working agent, then bent toward the problem Nightfall actually has: governing what data leaves a Mac through an AI application. Read it as the engineer who is going to own this code.</p>
+  <p><strong>How to use it:</strong> read Part I properly once — it's the spine. Type the code in §12 into an Xcode project and run it; nothing here substitutes for watching your own <code>AUTH_OPEN</code> events scroll past. Part IV is the compression of everything into answers.</p>
+</header>
+
+<!-- ============================== PART I ============================== -->
+<div class="part">
+  <div class="k">Part I</div>
+  <h2>The Endpoint Security framework</h2>
+  <p>ES is the only supported way to see and stop syscall-level activity on modern macOS. Everything a DLP agent knows about files and processes comes from here.</p>
+</div>
+
+<!-- 1 -->
+<section id="a1">
+  <div class="eyebrow">§1</div>
+  <h3 class="s">Mental model — where ES actually sits</h3>
+  <p class="lede">Get this right and the API stops being a list of function names.</p>
+
+  <pre><code>  user process                 kernel                    your extension
+  ────────────                 ──────                    ──────────────
+  open("/x/secret.csv")
+        │
+        ├──── syscall ────────► vnode layer
+        │                          │
+        │                       MAC framework hook
+        │                          │
+        │                       ES kext (Apple's, in-kernel)
+        │                          │
+        │                          ├── builds es_message_t
+        │                          ├── sends to EVERY subscribed client ──►  your callback runs
+        │                          │                                          (userspace, root)
+        │                       THREAD IS BLOCKED HERE                        │
+        │                       waiting for every client's                    │
+        │                       es_respond_auth_result()  ◄──────────────────┘
+        │                          │
+        │                       AND of all verdicts (any DENY wins)
+        │                          │
+        ◄──── returns fd ──────────┘   (or EPERM)</code></pre>
+
+  <p>Four consequences fall straight out of that diagram, and they are the whole framework:</p>
+  <ol>
+    <li><strong>You are in the syscall path.</strong> A human is waiting on your code. Not "your service has a latency SLO" — the <code>open()</code> is literally blocked in the kernel until you answer. This is why every design decision in an ES client is about latency.</li>
+    <li><strong>You are not alone.</strong> CrowdStrike, Jamf, the customer's other agent — all get the same message and all must respond. Your p50 doesn't set user experience; the slowest client's p99 does. And any single DENY wins, so you can never assume your ALLOW means the operation happened.</li>
+    <li><strong>The kernel does not trust you to be fast.</strong> Hence <code>deadline</code>. Miss it and the kernel <em>kills your client</em> so the system can make forward progress. This is the single most important fact in Part I.</li>
+    <li><strong>ES is a notification bus, not a data source.</strong> It tells you an open happened. It does not tell you what's in the file. Content is your problem, and reading the file is a separate, TCC-gated, re-entrant, deadlock-prone act.</li>
+  </ol>
+
+  <h4>ES vs the world it replaced</h4>
+  <table>
+    <tr><th></th><th>KAuth / kexts (dead)</th><th>Endpoint Security</th></tr>
+    <tr><td>Runs in</td><td>Kernel — your bug is a panic</td><td>Userspace — your bug is a crash</td></tr>
+    <tr><td>Install</td><td>kextload, reduced security on Apple Silicon</td><td>System extension, MDM-approvable</td></tr>
+    <tr><td>Gate</td><td>Signing + user approval</td><td>Apple-granted entitlement + TCC FDA + root</td></tr>
+    <tr><td>Coverage</td><td>Whatever you could hook</td><td>Only what Apple exposes, versioned per release</td></tr>
+    <tr><td>Blocking</td><td>Yes</td><td>Yes — AUTH events</td></tr>
+  </table>
+  <p class="footnote">The trade you accepted: safety and supportability, in exchange for only ever seeing what Apple decides to show you. Every gap in Part III traces back to that trade.</p>
+</section>
+
+<!-- 2 -->
+<section id="a2">
+  <div class="eyebrow">§2</div>
+  <h3 class="s">Entitlements, TCC, and the three-lock door</h3>
+  <p class="lede">Before a single line runs, three independent locks must open. Knowing which error means which lock is the fastest way to sound like you've shipped this.</p>
+
+  <table>
+    <tr><th>Lock</th><th>How you open it</th><th>Failure code from <code>es_new_client</code></th></tr>
+    <tr><td><strong>Entitlement</strong><br><code>com.apple.developer.endpoint-security.client</code></td><td>Request from Apple (a real approval process — days to weeks, you must justify the product). Then it appears in your dev portal and can be added to the provisioning profile.</td><td><code>ES_NEW_CLIENT_RESULT_ERR_NOT_ENTITLED</code></td></tr>
+    <tr><td><strong>Full Disk Access</strong> (TCC)</td><td>User grants in System Settings → Privacy &amp; Security → Full Disk Access. At fleet scale: a PPPC configuration profile (<code>com.apple.TCC.configuration-profile-policy</code>) pushed by MDM, keyed on the code requirement.</td><td><code>ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED</code></td></tr>
+    <tr><td><strong>Root</strong></td><td>LaunchDaemon, or a system extension (which runs as root by design).</td><td><code>ES_NEW_CLIENT_RESULT_ERR_NOT_PRIVILEGED</code></td></tr>
+  </table>
+
+  <h5>Debug builds</h5>
+  <p>For local development you can skip the Apple entitlement request by using the <em>debug</em> entitlement <code>com.apple.developer.endpoint-security.client</code> with SIP partially disabled (<code>csrutil enable --without debug</code> era workflows), signing locally, and running from a dev machine. This is the standard "how do I even start" answer: <strong>you develop with SIP relaxed on a dedicated box, and ship with the real entitlement.</strong> If someone asks how a new hire gets productive on this codebase in week one — that's the answer, plus a spare Mac.</p>
+
+  <h5>Two ways to ship</h5>
+  <div class="grid2">
+    <div class="card">
+      <h5>System extension (modern, what you ship)</h5>
+      <ul style="margin-bottom:0">
+        <li>Container app must live in <code>/Applications</code>.</li>
+        <li><code>OSSystemExtensionRequest.activationRequest(forExtensionWithIdentifier:queue:)</code>.</li>
+        <li>MDM payload <code>com.apple.system-extension.install</code> pre-approves by team ID so no user click.</li>
+        <li>Survives app quit; managed by <code>systemextensionsctl</code>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h5>LaunchDaemon (legacy / internal tools)</h5>
+      <ul style="margin-bottom:0">
+        <li>Plist in <code>/Library/LaunchDaemons</code>, root, <code>RunAtLoad</code>.</li>
+        <li>Still needs FDA + entitlement.</li>
+        <li>Simpler to iterate on; not what a vendor ships in 2026.</li>
+        <li>Useful in interviews as "how I prototype".</li>
+      </ul>
+    </div>
+  </div>
+
+  <h5>The entitlements file, concretely</h5>
+  <pre><code>&lt;!-- ESAgent.entitlements --&gt;
+&lt;key&gt;com.apple.developer.endpoint-security.client&lt;/key&gt;&lt;true/&gt;
+
+&lt;!-- if the same extension also does network filtering --&gt;
+&lt;key&gt;com.apple.developer.networking.networkextension&lt;/key&gt;
+&lt;array&gt;
+  &lt;string&gt;content-filter-provider-systemextension&lt;/string&gt;
+  &lt;string&gt;app-proxy-provider-systemextension&lt;/string&gt;
+&lt;/array&gt;
+
+&lt;!-- system extension needs to declare its team --&gt;
+&lt;key&gt;com.apple.developer.system-extension.install&lt;/key&gt;&lt;true/&gt;</code></pre>
+  <div class="verdict watch">
+    <p><span class="chip watch">Interview trap</span> "Can one system extension be both an ES client and a NetworkExtension provider?" — Yes, and in practice teams often <em>split</em> them anyway: the NE provider has a tighter memory budget and a different crash blast radius, and you don't want a filter-data bug killing your ES client and losing file enforcement. Say that; it's a real architectural opinion.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="a3">
+  <div class="eyebrow">§3</div>
+  <h3 class="s">Your first client</h3>
+  <p class="lede">Twenty lines that do the whole thing. Everything after this is discipline.</p>
+
+  <pre><code><span class="k">import</span> EndpointSecurity
+<span class="k">import</span> Foundation
+
+<span class="k">final class</span> Sensor {
+    <span class="k">private var</span> client: OpaquePointer?
+    <span class="c">// A DEDICATED serial queue. Never the main queue. Never a shared queue.</span>
+    <span class="k">private let</span> esQueue = DispatchQueue(label: <span class="s">"ai.nf.es"</span>, qos: .userInteractive)
+
+    <span class="k">func</span> start() <span class="k">throws</span> {
+        <span class="k">var</span> c: OpaquePointer?
+        <span class="k">let</span> res = es_new_client(&c) { [<span class="k">weak self</span>] client, msg <span class="k">in</span>
+            <span class="c">// msg is ONLY valid inside this block unless you retain it.</span>
+            <span class="k">self</span>?.handle(client: client, msg: msg)
+        }
+
+        <span class="k">guard</span> res == ES_NEW_CLIENT_RESULT_SUCCESS, <span class="k">let</span> c else {
+            <span class="k">switch</span> res {
+            <span class="k">case</span> ES_NEW_CLIENT_RESULT_ERR_NOT_ENTITLED:  <span class="k">throw</span> Err.entitlement
+            <span class="k">case</span> ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED: <span class="k">throw</span> Err.fullDiskAccess
+            <span class="k">case</span> ES_NEW_CLIENT_RESULT_ERR_NOT_PRIVILEGED:<span class="k">throw</span> Err.notRoot
+            <span class="k">case</span> ES_NEW_CLIENT_RESULT_ERR_TOO_MANY_CLIENTS: <span class="k">throw</span> Err.tooManyClients
+            <span class="k">default</span>: <span class="k">throw</span> Err.internalError
+            }
+        }
+        client = c
+
+        <span class="c">// 1. Mute yourself FIRST. Before subscribing. Always.</span>
+        <span class="k">var</span> me = audit_token_t()
+        <span class="c">// (obtain own audit token — see §10)</span>
+        es_mute_process(c, &me)
+
+        <span class="c">// 2. Subscribe</span>
+        <span class="k">var</span> events: [es_event_type_t] = [
+            ES_EVENT_TYPE_AUTH_OPEN,
+            ES_EVENT_TYPE_AUTH_EXEC,
+            ES_EVENT_TYPE_NOTIFY_CLOSE,
+            ES_EVENT_TYPE_AUTH_RENAME,
+            ES_EVENT_TYPE_AUTH_COPYFILE,
+            ES_EVENT_TYPE_AUTH_CLONE,
+            ES_EVENT_TYPE_AUTH_MOUNT,
+            ES_EVENT_TYPE_NOTIFY_EXIT,
+        ]
+        <span class="k">guard</span> es_subscribe(c, &events, UInt32(events.count)) == ES_RETURN_SUCCESS
+        <span class="k">else</span> { <span class="k">throw</span> Err.subscribe }
+    }
+
+    <span class="k">func</span> stop() {
+        <span class="k">if let</span> c = client {
+            es_unsubscribe_all(c)
+            es_delete_client(c)          <span class="c">// tears down; pending AUTH auto-allow</span>
+        }
+    }
+}</code></pre>
+
+  <div class="callout">
+    <h5>The ordering detail nobody gets right</h5>
+    <p style="margin-bottom:0">Mute your own audit token <strong>before</strong> <code>es_subscribe</code>, not after. Between subscribe and mute there is a window where your own file I/O generates AUTH events that arrive on the queue you're currently blocking. That's a startup deadlock that only reproduces on a busy machine, which is to say: only at a customer. Saying this in an interview is worth more than reciting the whole event list.</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="a4">
+  <div class="eyebrow">§4</div>
+  <h3 class="s">Anatomy of <code>es_message_t</code></h3>
+  <p class="lede">Every field here answers an interview question.</p>
+
+  <pre><code><span class="k">struct</span> es_message_t {
+    version:        UInt32          <span class="c">// GROWS EVERY macOS RELEASE. Guard on it.</span>
+    time:           timespec        <span class="c">// wall clock — for audit records</span>
+    mach_time:      UInt64          <span class="c">// monotonic — for latency math</span>
+    deadline:       UInt64          <span class="c">// mach_absolute_time units. Respond BEFORE this.</span>
+    process:        UnsafeMutablePointer&lt;es_process_t&gt;   <span class="c">// the ACTOR</span>
+    seq_num:        UInt64          <span class="c">// per-event-type sequence — gap = you dropped</span>
+    action_type:    es_action_type_t <span class="c">// ES_ACTION_TYPE_AUTH | ES_ACTION_TYPE_NOTIFY</span>
+    action:         union { auth, notify }
+    event_type:     es_event_type_t
+    event:          union { open, exec, close, rename, ... }   <span class="c">// TAGGED BY event_type</span>
+    thread:         UnsafeMutablePointer&lt;es_thread_t&gt;?   <span class="c">// version 4+</span>
+    global_seq_num: UInt64          <span class="c">// across all types — the real drop detector</span>
+}</code></pre>
+
+  <table>
+    <tr><th>Field</th><th>Why it matters</th></tr>
+    <tr><td><code>version</code></td><td>The struct is versioned, and newer macOS adds fields to the end of sub-structs. If you read a v6 field on a v4 message you read garbage. Real clients do <code>if msg.pointee.version >= 4 { ... }</code>. This is the #1 source of "works on my Sonoma, crashes on their Ventura."</td></tr>
+    <tr><td><code>deadline</code></td><td>Not a constant. Varies by event type and system state. <strong>Always compute your budget from it</strong>, never from a hardcoded ms value. §7.</td></tr>
+    <tr><td><code>global_seq_num</code></td><td>Monotonic across all events. A gap means the kernel dropped messages because you were too slow — this is your <em>drop metric</em>, and a security product that silently drops events is lying to its customer. Export it.</td></tr>
+    <tr><td><code>process</code></td><td>The actor. Never the target. For <code>AUTH_EXEC</code> the <em>new</em> program is in <code>event.exec.target</code>, and <code>msg.process</code> is the parent doing the exec. Mixing these two up is the classic bug.</td></tr>
+    <tr><td><code>action_type</code></td><td>Branch on it before responding. Calling <code>es_respond_auth_result</code> on a NOTIFY message is an error; forgetting to respond to an AUTH is fatal.</td></tr>
+  </table>
+
+  <h4><code>es_process_t</code> — the identity record</h4>
+  <pre><code>audit_token:            audit_token_t     <span class="c">// THE identity. pid inside is racy; token is not.</span>
+ppid, original_ppid:    pid_t             <span class="c">// original_ppid survives reparenting to launchd</span>
+group_id, session_id:   pid_t
+codesigning_flags:      UInt32            <span class="c">// CS_VALID, CS_PLATFORM_BINARY, CS_HARD, CS_KILL…</span>
+is_platform_binary:     Bool              <span class="c">// shipped by Apple</span>
+is_es_client:           Bool              <span class="c">// another security agent — DO NOT block these</span>
+cdhash:                 (UInt8 × 20)      <span class="c">// exact binary identity</span>
+signing_id:             es_string_token_t <span class="c">// e.g. "com.google.Chrome"</span>
+team_id:                es_string_token_t <span class="c">// e.g. "EQHXZ8M8AV"</span>
+executable:             es_file_t*        <span class="c">// path + struct stat</span>
+tty:                    es_file_t*        <span class="c">// version 2+ — null for GUI apps, set for CLI</span>
+start_time:             timeval           <span class="c">// version 3+</span>
+responsible_audit_token:audit_token_t     <span class="c">// version 4+ — WHO IS REALLY RESPONSIBLE</span>
+parent_audit_token:     audit_token_t     <span class="c">// version 4+</span></code></pre>
+
+  <div class="verdict allow">
+    <p><span class="chip allow">Gold</span> <code>responsible_audit_token</code> is the field that separates people who read the docs from people who shipped. When Terminal launches <code>node</code>, or when an XPC service does work on behalf of an app, the <em>responsible</em> process is the one a human would blame. For AI governance this is decisive: an MCP server spawned by Claude Code has <code>responsible</code> = the IDE, not <code>launchd</code>. That's how you attribute an agent's file reads to the human who started the agent.</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="a5">
+  <div class="eyebrow">§5</div>
+  <h3 class="s">The event catalogue that matters</h3>
+  <p class="lede">There are ~80 event types. A DLP agent cares about maybe 15. Know these cold and admit you'd look the rest up.</p>
+
+  <h4>Process</h4>
+  <table>
+    <tr><th>Event</th><th>Payload</th><th>Use</th></tr>
+    <tr><td><code>AUTH_EXEC</code> / <code>NOTIFY_EXEC</code></td><td><code>es_event_exec_t</code>: <code>target: es_process_t*</code>, argv via <code>es_exec_arg_count()</code>/<code>es_exec_arg()</code>, env via <code>es_exec_env_count()</code>/<code>es_exec_env()</code>, <code>cwd</code> (v3), <code>script</code> (v2)</td><td><strong>The single most valuable event for AI governance.</strong> This is where you see <code>npx -y @modelcontextprotocol/server-filesystem ~</code> with its parent being Claude. §25.</td></tr>
+    <tr><td><code>NOTIFY_FORK</code></td><td><code>child: es_process_t*</code></td><td>Maintain the process tree so you can attribute a subtree to an agent runtime.</td></tr>
+    <tr><td><code>NOTIFY_EXIT</code></td><td><code>stat</code></td><td>Reap your tree cache. Without this you leak process records forever on a build machine.</td></tr>
+    <tr><td><code>AUTH_GET_TASK</code></td><td><code>target</code></td><td>Someone asking for another process's task port = injection attempt. Also: this is how you'd detect something trying to read <em>your</em> agent's memory.</td></tr>
+    <tr><td><code>NOTIFY_REMOTE_THREAD_CREATE</code></td><td><code>target</code>, <code>thread_state</code></td><td>Classic injection. Not DLP, but it's the answer to "what else would you watch".</td></tr>
+  </table>
+
+  <h4>File</h4>
+  <table>
+    <tr><th>Event</th><th>Payload</th><th>Use</th></tr>
+    <tr><td><code>AUTH_OPEN</code></td><td><code>fflag: Int32</code> (FREAD/FWRITE, fcntl.h style), <code>file: es_file_t*</code></td><td>The enforcement workhorse. Respond with <strong><code>es_respond_flags_result</code></strong> — you can allow read and strip write. See §6.</td></tr>
+    <tr><td><code>NOTIFY_CLOSE</code></td><td><code>modified: Bool</code>, <code>target: es_file_t*</code>, <code>was_mapped_writable</code> (v6)</td><td><strong>Your classification trigger.</strong> One event per completed mutation. This is where you scan, not on WRITE.</td></tr>
+    <tr><td><code>NOTIFY_WRITE</code></td><td><code>target</code></td><td>Fires per write(2). Will drown you. Subscribe only if you have a specific reason.</td></tr>
+    <tr><td><code>AUTH_RENAME</code></td><td><code>source</code>, <code>destination_type</code> (EXISTING_FILE / NEW_PATH), <code>destination</code></td><td>Movement. <code>mv secret.csv /Volumes/USB/</code>.</td></tr>
+    <tr><td><code>AUTH_COPYFILE</code></td><td><code>source</code>, <code>target_file</code>, <code>target_dir</code>, <code>target_name</code>, <code>mode</code>, <code>flags</code></td><td>Finder copies, <code>cp -c</code>. Not a read+write — if you only watch OPEN you miss it.</td></tr>
+    <tr><td><code>AUTH_CLONE</code></td><td><code>source</code>, <code>target_dir</code>, <code>target_name</code></td><td>APFS <code>clonefile()</code>. Copies a 5GB file with zero reads. The classic DLP blind spot.</td></tr>
+    <tr><td><code>AUTH_CREATE</code></td><td><code>destination_type</code> + <code>existing_file</code> or <code>{dir, filename, mode}</code></td><td>New file in a watched destination. Note the union — read <code>destination_type</code> first or you read the wrong branch.</td></tr>
+    <tr><td><code>AUTH_TRUNCATE</code>, <code>AUTH_UNLINK</code></td><td><code>target</code></td><td>Destruction. Ransomware and "cover your tracks" signals.</td></tr>
+    <tr><td><code>AUTH_MOUNT</code> / <code>NOTIFY_UNMOUNT</code></td><td><code>statfs*</code></td><td>Removable media. Grab <code>f_mntonname</code> <em>and</em> <code>f_fsid</code>/dev to key policy on device, not path.</td></tr>
+  </table>
+
+  <h4>System &amp; identity (newer, worth naming)</h4>
+  <table>
+    <tr><th>Event</th><th>Use</th></tr>
+    <tr><td><code>NOTIFY_XPC_CONNECT</code> (macOS 14+)</td><td>Which processes talk to which XPC services. Genuinely useful for agent behaviour mapping.</td></tr>
+    <tr><td><code>AUTH_UIPC_CONNECT</code></td><td>Unix-domain socket connects — local IPC that isn't XPC. Some AI runtimes use these.</td></tr>
+    <tr><td><code>NOTIFY_AUTHENTICATION</code>, <code>NOTIFY_SUDO</code>, <code>NOTIFY_SU</code>, <code>NOTIFY_OPENSSH_LOGIN</code>, <code>NOTIFY_LW_SESSION_LOGIN</code></td><td>Identity events. Directly adjacent to your JumpCloud device-trust work — a natural bridge to mention.</td></tr>
+    <tr><td><code>NOTIFY_GATEKEEPER_USER_OVERRIDE</code></td><td>User clicked "open anyway" on an unsigned binary. A strong insider-risk signal.</td></tr>
+    <tr><td><code>NOTIFY_PROFILE_ADD</code></td><td>Configuration profile installed — someone joining a rogue MDM, or your own profile landing.</td></tr>
+  </table>
+  <p class="footnote">Honest framing for the room: "I don't have all eighty memorised. I know the fifteen a DLP agent lives on, I know which ones are AUTH-capable, and I know that the enum grows every release so the subscription list is a config, not a constant."</p>
+</section>
+
+<!-- 6 -->
+<section id="a6">
+  <div class="eyebrow">§6</div>
+  <h3 class="s">Responding to AUTH — and the flags trick</h3>
+
+  <pre><code><span class="c">// Most AUTH events: binary verdict</span>
+es_respond_auth_result(client, msg, ES_AUTH_RESULT_ALLOW, <span class="k">true</span>)
+es_respond_auth_result(client, msg, ES_AUTH_RESULT_DENY,  <span class="k">false</span>)
+<span class="c">//                                                          ▲ cache</span>
+
+<span class="c">// AUTH_OPEN ONLY: return the SUBSET of flags you permit</span>
+es_respond_flags_result(client, msg, allowedFlags, <span class="k">false</span>)</code></pre>
+
+  <h4>The flags result, properly understood</h4>
+  <p><code>es_event_open_t.fflag</code> carries the requested access as fcntl-style flags (<code>FREAD</code>, <code>FWRITE</code>, …), not the <code>O_*</code> constants you'd pass to <code>open(2)</code>. You return a mask of what you're willing to permit:</p>
+  <pre><code><span class="k">let</span> requested = msg.pointee.event.open.fflag
+
+<span class="k">switch</span> verdict {
+<span class="k">case</span> .allow:
+    es_respond_flags_result(client, msg, UInt32(bitPattern: requested), <span class="k">true</span>)
+
+<span class="k">case</span> .readOnly:
+    <span class="c">// Let it read. Strip write. The app gets an fd, it just can't</span>
+    <span class="c">// mutate. Far lower blast radius than a hard failure.</span>
+    <span class="k">let</span> allowed = requested & ~(FWRITE | O_APPEND)
+    es_respond_flags_result(client, msg, UInt32(bitPattern: allowed), <span class="k">false</span>)
+
+<span class="k">case</span> .deny:
+    es_respond_flags_result(client, msg, 0, <span class="k">false</span>)   <span class="c">// open() fails</span>
+}</code></pre>
+
+  <div class="callout">
+    <h5>Why this is the most important primitive in DLP</h5>
+    <p>A hard DENY on <code>open()</code> makes applications crash in ways their developers never tested — a text editor that gets <code>EPERM</code> on a file it can see in a Finder dialog will do something stupid. Stripping <code>FWRITE</code> instead means the app opens the file, reads it fine, and fails on save with an error it <em>does</em> know how to handle. That's the difference between a DLP that customers keep and one they uninstall.</p>
+    <p style="margin-bottom:0"><strong>Say it like this:</strong> "The flags result is why I'd model policy as 'what access do you get' rather than 'yes/no'. Yes/no is a kernel-level API that produces application-level chaos."</p>
+  </div>
+
+  <h4>The <code>cache</code> argument — a footgun and a superpower</h4>
+  <ul>
+    <li><code>cache: true</code> tells the kernel to remember your verdict and <strong>stop delivering that event for that target</strong>. For <code>AUTH_EXEC</code> on a trusted binary this is enormous: you evaluate <code>/usr/bin/git</code> once instead of ten thousand times during a build.</li>
+    <li>The cost: <strong>you stop seeing it</strong>. Cached ALLOW means no visibility, which for a telemetry-selling product may be unacceptable. It's a per-event-type product decision, not a perf knob.</li>
+    <li><strong>Never cache a DENY</strong> that depends on mutable state (policy version, file label, time of day). You'll cache a decision made under an old policy and be unable to explain it.</li>
+    <li><code>es_clear_cache(client)</code> flushes. It's <em>global</em> — you flush everyone's cache, including other vendors' clients. Call it on policy update, and know that it's rate-limited by the kernel (<code>ES_CLEAR_CACHE_RESULT_ERR_THROTTLE</code>), so a policy that updates every 30 seconds is a design mistake.</li>
+  </ul>
+</section>
+
+<!-- 7 -->
+<section id="a7">
+  <div class="eyebrow">§7</div>
+  <h3 class="s">Deadlines, async, and the watchdog</h3>
+  <p class="lede">The whole discipline of ES engineering in one section.</p>
+
+  <h4>Reading the deadline correctly</h4>
+  <pre><code><span class="k">import</span> Darwin
+
+<span class="k">enum</span> MachClock {
+    <span class="k">static let</span> timebase: mach_timebase_info_data_t = {
+        <span class="k">var</span> t = mach_timebase_info_data_t()
+        mach_timebase_info(&t)
+        <span class="k">return</span> t
+    }()
+
+    <span class="k">static func</span> nanos(_ machTicks: UInt64) -&gt; UInt64 {
+        machTicks &* UInt64(timebase.numer) / UInt64(timebase.denom)
+    }
+
+    <span class="c">// How long do I have, right now, for this message?</span>
+    <span class="k">static func</span> budget(_ msg: UnsafePointer&lt;es_message_t&gt;) -&gt; TimeInterval {
+        <span class="k">let</span> now = mach_absolute_time()
+        <span class="k">let</span> dl  = msg.pointee.deadline
+        <span class="k">guard</span> dl &gt; now <span class="k">else</span> { <span class="k">return</span> 0 }
+        <span class="k">return</span> Double(nanos(dl - now)) / 1_000_000_000
+    }
+}</code></pre>
+  <p><strong>Do not hardcode a millisecond value.</strong> Apple has changed deadlines between releases and they differ per event type. Every real client computes the remaining budget from the message. Saying this in a room full of people who've been burned by it is a strong move.</p>
+
+  <h4>The async pattern, with the retain that everyone forgets</h4>
+  <pre><code><span class="k">private func</span> handle(client: OpaquePointer, msg: UnsafePointer&lt;es_message_t&gt;) {
+    <span class="k">guard</span> msg.pointee.action_type == ES_ACTION_TYPE_AUTH <span class="k">else</span> {
+        handleNotify(msg)      <span class="c">// no response needed; still copy anything you keep</span>
+        <span class="k">return</span>
+    }
+
+    <span class="c">// FAST PATH: cache hit → respond inline, no hop, no allocation.</span>
+    <span class="k">if let</span> verdict = policyCache.lookupFast(msg) {
+        respond(client, msg, verdict)
+        <span class="k">return</span>
+    }
+
+    <span class="c">// SLOW PATH: we must leave this callback. Retain or the memory dies.</span>
+    es_retain_message(msg)
+
+    <span class="k">let</span> budget = MachClock.budget(msg)
+    <span class="k">let</span> responded = Atomic&lt;Bool&gt;(<span class="k">false</span>)
+
+    <span class="c">// WATCHDOG: we choose our own timeout at a FRACTION of the deadline,</span>
+    <span class="c">// so the kernel never has to choose for us.</span>
+    workQueue.asyncAfter(deadline: .now() + budget * 0.5) {
+        <span class="k">if</span> responded.compareExchange(expected: <span class="k">false</span>, desired: <span class="k">true</span>) {
+            self.metrics.watchdogFired += 1
+            self.respond(client, msg, .failOpen)   <span class="c">// ALLOW. Always allow on timeout.</span>
+            es_release_message(msg)
+        }
+    }
+
+    workQueue.async {
+        <span class="k">let</span> v = self.policy.evaluate(msg)          <span class="c">// may touch the label store</span>
+        <span class="k">if</span> responded.compareExchange(expected: <span class="k">false</span>, desired: <span class="k">true</span>) {
+            self.respond(client, msg, v)
+            es_release_message(msg)
+        }
+    }
+}</code></pre>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">The rule</span> <strong>Nothing on the callback queue may block.</strong> No mutex another queue can hold. No XPC round trip. No <code>read()</code>. No network. No regex over file content. No <code>NSLog</code>. The callback queue does one thing: look up a precomputed answer, or hand off and get out.</p>
+  </div>
+
+  <h4>What "fail open" means and why it's not cowardice</h4>
+  <p>When the watchdog fires you ALLOW. This feels wrong to security people, so have the argument ready:</p>
+  <ul>
+    <li>If you DENY on timeout, an overloaded agent turns into a machine that randomly refuses file access. Every app breaks at once. On a 10,000-Mac fleet you've just caused a company-wide outage from a perf regression.</li>
+    <li>If you don't respond at all, the kernel kills your client — you lose <em>all</em> enforcement anyway, plus you're now in a restart loop re-flooding yourself.</li>
+    <li>So: allow, count it, export the metric, and if the rate crosses a threshold, self-demote to notify-only and alert the backend. You degrade to monitoring instead of dying or breaking the machine.</li>
+    <li>Strict mode (fail-closed) exists as an opt-in for the handful of customers who genuinely prefer an outage to a leak. That's a customer decision, not yours.</li>
+  </ul>
+  <div class="say">"Fail-open isn't a security compromise, it's the recognition that on an endpoint your availability failure is a bigger business risk than the leak you're preventing — and that a dead client enforces nothing anyway. What makes it defensible is the telemetry: every fail-open is counted and reported, so the customer knows exactly what wasn't covered."</div>
+</section>
+
+<!-- 8 -->
+<section id="a8">
+  <div class="eyebrow">§8</div>
+  <h3 class="s">Muting — how you survive a real machine</h3>
+  <p class="lede">Muting is not an optimisation. On a machine running Xcode it is the difference between a working agent and a brick.</p>
+
+  <table>
+    <tr><th>API</th><th>What it does</th></tr>
+    <tr><td><code>es_mute_process(client, &token)</code></td><td>Silence an actor by audit token. Your own agent, your helpers, your scanner. <strong>Do this first.</strong></td></tr>
+    <tr><td><code>es_mute_process_events(client, &token, events, n)</code></td><td>Silence an actor for <em>specific</em> events only. Mute your scanner's opens without going blind to its execs.</td></tr>
+    <tr><td><code>es_mute_path(client, path, type)</code></td><td><code>ES_MUTE_PATH_TYPE_LITERAL</code> / <code>_PREFIX</code> — mute by <em>actor's executable path</em>. <code>_TARGET_LITERAL</code> / <code>_TARGET_PREFIX</code> — mute by the <em>file being touched</em>. Both matter and people confuse them constantly.</td></tr>
+    <tr><td><code>es_mute_path_events(client, path, type, events, n)</code></td><td>Path muting scoped to event types.</td></tr>
+    <tr><td><code>es_invert_muting(client, type)</code></td><td>Flips the semantics: the mute set becomes the <em>only</em> set you watch. Types: <code>ES_MUTE_INVERSION_TYPE_PROCESS</code>, <code>_PATH</code>, <code>_TARGET_PATH</code>.</td></tr>
+    <tr><td><code>es_muted_processes_events()</code> / <code>es_muted_paths_events()</code></td><td>Read back what you've muted. Essential for diagnostics — "why am I not seeing events" is answered here 90% of the time.</td></tr>
+  </table>
+
+  <h4>Inverted muting is the DLP superpower</h4>
+  <p>Normal muting is a denylist: watch everything, silence the noise. That's an infinite game — every new tool a developer installs is new noise. <strong>Inverted target-path muting</strong> flips it: name the 200 sensitive directories you care about, invert, and the kernel delivers only those. Your event rate drops by three orders of magnitude and your deadline problem largely evaporates.</p>
+  <pre><code><span class="c">// Watch ONLY these targets. Everything else never reaches userspace.</span>
+es_invert_muting(client, ES_MUTE_INVERSION_TYPE_TARGET_PATH)
+es_mute_path(client, <span class="s">"/Users/*/Documents/Finance"</span>, ES_MUTE_PATH_TYPE_TARGET_PREFIX)
+es_mute_path(client, <span class="s">"/Users/*/Downloads"</span>,          ES_MUTE_PATH_TYPE_TARGET_PREFIX)</code></pre>
+  <p><strong>The trade to state out loud:</strong> inverted muting is precise and cheap, but it means your coverage is exactly as good as your path list. A user who saves the customer list to <code>~/Desktop/tmp</code> is invisible. So real products run a hybrid: inverted muting for the AUTH/enforcement path (narrow, fast, blocking), and a broader denylist-muted NOTIFY subscription for discovery and lineage. <em>Two subscription strategies for two jobs.</em> That's a Staff-level answer.</p>
+
+  <h5>The mute list every macOS agent ends up with</h5>
+  <ul>
+    <li>Self + helpers + scanner subprocesses (audit token).</li>
+    <li><code>~/Library/Caches</code>, <code>~/Library/Developer/Xcode/DerivedData</code>, <code>/private/var/folders</code>, <code>node_modules</code>, Spotlight's <code>/.Spotlight-V100</code>, Time Machine.</li>
+    <li>Platform binaries you'd never police — but be careful: <code>cp</code>, <code>mv</code>, <code>rsync</code>, <code>curl</code> and <code>osascript</code> are all platform binaries and all are exfil tools. <strong>"is_platform_binary → mute" is a bug, not a rule.</strong> That distinction is a great thing to volunteer.</li>
+    <li>Other ES clients (<code>is_es_client</code>) — never block another security agent; you'll deadlock the machine between two vendors, and it's happened in the wild.</li>
+  </ul>
+</section>
+
+<!-- 9 -->
+<section id="a9">
+  <div class="eyebrow">§9</div>
+  <h3 class="s">Swift ↔ C interop — where the real bugs live</h3>
+  <p class="lede">ES is a C API with manual memory management, consumed from a language with ARC. That seam is where the crashes are.</p>
+
+  <h5>1. Strings are not strings</h5>
+  <pre><code><span class="c">// es_string_token_t { length: size_t, data: UnsafePointer&lt;CChar>! }</span>
+<span class="c">// NOT null-terminated-safe to assume, and NOT valid after the callback.</span>
+<span class="k">extension</span> es_string_token_t {
+    <span class="k">var</span> string: String {
+        <span class="k">guard</span> length &gt; 0, <span class="k">let</span> data <span class="k">else</span> { <span class="k">return</span> <span class="s">""</span> }
+        <span class="k">return</span> String(bytes: UnsafeRawBufferPointer(start: data, count: length),
+                      encoding: .utf8) ?? <span class="s">""</span>
+    }
+}
+<span class="c">// This COPIES. That's the point — the token's memory dies with the message.</span></code></pre>
+
+  <h5>2. cdhash is a 20-byte C tuple, which Swift imports as an actual tuple</h5>
+  <pre><code><span class="k">extension</span> es_process_t {
+    <span class="k">var</span> cdHashHex: String {
+        <span class="k">var</span> h = cdhash   <span class="c">// (UInt8, UInt8, … × 20) — yes, really</span>
+        <span class="k">return withUnsafeBytes</span>(of: &h) { buf <span class="k">in</span>
+            buf.map { String(format: <span class="s">"%02x"</span>, $0) }.joined()
+        }
+    }
+}</code></pre>
+
+  <h5>3. argv requires the accessor functions, not pointer arithmetic</h5>
+  <pre><code><span class="k">func</span> argv(_ exec: <span class="k">inout</span> es_event_exec_t) -&gt; [String] {
+    <span class="k">let</span> n = es_exec_arg_count(&exec)
+    <span class="k">return</span> (0..&lt;n).map { es_exec_arg(&exec, $0).string }
+}
+<span class="c">// Same shape for es_exec_env_count/es_exec_env — env is where API keys live,</span>
+<span class="c">// which is exactly why MCP server configs are interesting (§25) and also why</span>
+<span class="c">// you must NEVER log env verbatim into your audit pipeline.</span></code></pre>
+
+  <h5>4. Ownership at the boundary — wrap it</h5>
+  <pre><code><span class="c">// The bug: capturing msg in an escaping closure without retaining.</span>
+<span class="c">// Reproduces only under load. Costs you a week.</span>
+<span class="k">final class</span> RetainedMessage {
+    <span class="k">let</span> ptr: UnsafePointer&lt;es_message_t&gt;
+    <span class="k">init</span>(_ p: UnsafePointer&lt;es_message_t&gt;) { ptr = p; es_retain_message(p) }
+    <span class="k">deinit</span> { es_release_message(ptr) }
+}
+<span class="c">// Now ARC owns the lifetime and the failure mode is impossible by construction.</span></code></pre>
+
+  <h5>5. Version guards, everywhere</h5>
+  <pre><code><span class="k">if</span> msg.pointee.version &gt;= 4 {
+    <span class="k">let</span> responsible = msg.pointee.process.pointee.responsible_audit_token
+    ...
+}
+<span class="c">// Compile against the newest SDK; guard at runtime on version, not on</span>
+<span class="c">// #available alone — the struct version is a per-MESSAGE fact.</span></code></pre>
+
+  <div class="say">"The genre of bug I'd warn a new hire about isn't the ES logic, it's the seam. es_message_t is C memory with a manual retain, and Swift closures make it trivially easy to capture something that's already been freed. I'd wrap the message in a small RAII type at the boundary on day one so nobody in the codebase ever touches es_retain_message by hand."</div>
+</section>
+
+<!-- 10 -->
+<section id="a10">
+  <div class="eyebrow">§10</div>
+  <h3 class="s">Process identity — the question people fail</h3>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">Wrong</span> pid, process name, executable path. All three are attacker-controlled or racy. <strong>pid reuse</strong>: the process exits between your check and your action, the pid is recycled, you authorise the wrong program. Path: copy any binary to <code>/tmp/Chrome</code>. Name: <code>argv[0]</code> is a lie by design.</p>
+  </div>
+  <div class="verdict allow">
+    <p><span class="chip allow">Right</span> <strong>cdhash</strong> = this exact binary. <strong>team_id + signing_id</strong> = any build from this vendor with this identifier. <strong>codesigning_flags &amp; CS_VALID</strong> = the signature is intact right now. <strong>audit_token</strong> = the process instance, unforgeable, no reuse race.</p>
+  </div>
+
+  <h4>Policy identity, in order of strictness</h4>
+  <pre><code><span class="k">struct</span> Actor: Hashable {
+    <span class="k">let</span> cdHash: String        <span class="c">// pin exact build (brittle: breaks every update)</span>
+    <span class="k">let</span> teamID: String        <span class="c">// pin vendor (right default for "allow Chrome")</span>
+    <span class="k">let</span> signingID: String     <span class="c">// pin identifier within vendor</span>
+    <span class="k">let</span> isPlatform: Bool
+    <span class="k">let</span> csValid: Bool
+}
+
+<span class="k">func</span> actor(from p: UnsafePointer&lt;es_process_t&gt;) -&gt; Actor {
+    Actor(cdHash: p.pointee.cdHashHex,
+          teamID: p.pointee.team_id.string,
+          signingID: p.pointee.signing_id.string,
+          isPlatform: p.pointee.is_platform_binary,
+          csValid: p.pointee.codesigning_flags & UInt32(CS_VALID) != 0)
+}</code></pre>
+
+  <h4>The unsolved case — and you must name it</h4>
+  <p>Every AI agent runtime defeats binary identity. <code>node</code> is <code>node</code>. <code>python3</code> is <code>python3</code>. Every MCP server on the machine has the identical cdhash, team ID, and signing ID, because they're all the same interpreter. Code-signature identity — the entire foundation of macOS app policy — <strong>collapses</strong> the moment the thing you want to police is a script.</p>
+  <p>So you fall back to a composite identity:</p>
+  <ul>
+    <li>interpreter cdhash (weak, but tells you it's really node and not a renamed binary)</li>
+    <li><strong>+ argv</strong> (the script path, the package name, the args) — from <code>AUTH_EXEC</code></li>
+    <li><strong>+ the script file's own hash</strong> — you have <code>es_event_exec_t.script</code> for shebang'd scripts, and for <code>node foo.js</code> you resolve argv[1] and hash it</li>
+    <li><strong>+ the responsible process</strong> (v4 <code>responsible_audit_token</code>) — Claude Code vs Terminal vs cron is a huge signal</li>
+    <li><strong>+ the process subtree</strong> — you maintain the tree from FORK/EXEC/EXIT and inherit policy down it</li>
+  </ul>
+  <div class="say">"Identity for scripts is genuinely unsolved on macOS, and I'd rather say that than pretend. The composite I'd use is interpreter + argv + script hash + responsible process + subtree inheritance. It's weaker than a cdhash and an attacker who controls argv can play games with it — so I'd treat it as a governance control for well-meaning users, not a security boundary against a determined insider. Those are different products and conflating them is how DLP gets a bad name."</div>
+
+  <h4>Getting your own audit token (for self-muting)</h4>
+  <pre><code><span class="k">func</span> selfAuditToken() -&gt; audit_token_t? {
+    <span class="k">var</span> token = audit_token_t()
+    <span class="k">var</span> size  = mach_msg_type_number_t(MemoryLayout&lt;audit_token_t&gt;.size / MemoryLayout&lt;natural_t&gt;.size)
+    <span class="k">let</span> kr = <span class="k">withUnsafeMutablePointer</span>(to: &token) {
+        $0.<span class="k">withMemoryRebound</span>(to: integer_t.self, capacity: Int(size)) {
+            task_info(mach_task_self_, task_flavor_t(TASK_AUDIT_TOKEN), $0, &size)
+        }
+    }
+    <span class="k">return</span> kr == KERN_SUCCESS ? token : <span class="k">nil</span>
+}</code></pre>
+</section>
+
+<!-- 11 -->
+<section id="a11">
+  <div class="eyebrow">§11</div>
+  <h3 class="s">The label cache — how classification and enforcement coexist</h3>
+  <p class="lede">This is the central architectural idea of endpoint DLP. If you only take one design away, take this.</p>
+
+  <div class="callout">
+    <h5>The impossibility</h5>
+    <p style="margin-bottom:0">You cannot classify a file inside an AUTH deadline. Reading the file requires I/O (which you can't do on the callback queue), and scanning it requires CPU you don't have. Yet enforcement <em>must</em> happen at AUTH time, because that's the only moment you can stop anything. <strong>Resolution: decouple in time.</strong> Classify asynchronously, cache the label, and make the AUTH path a hash lookup.</p>
+  </div>
+
+  <pre><code>   NOTIFY_CLOSE(modified: true)          AUTH_OPEN / AUTH_COPYFILE
+             │                                     │
+             ▼                                     ▼
+      [ classify queue ]                    [ ES callback queue ]
+      read 4KB prefix                       labelCache[key] → O(1)
+      regex + entropy                              │
+      maybe escalate to ML                    respond in µs
+             │                                     │
+             ▼                                     │
+      labelCache[(dev,inode,gen)] = .restricted ◄──┘
+                                    (populated BEFORE the next open)</code></pre>
+
+  <pre><code><span class="k">struct</span> FileKey: Hashable {
+    <span class="k">let</span> dev: dev_t          <span class="c">// which volume — this is also your USB check</span>
+    <span class="k">let</span> ino: ino_t
+    <span class="k">let</span> gen: UInt32         <span class="c">// APFS generation — defeats inode reuse</span>
+    <span class="k">let</span> size: off_t         <span class="c">// cheap change detector</span>
+    <span class="k">let</span> mtime: timespec
+
+    <span class="k">init</span>(_ f: UnsafePointer&lt;es_file_t&gt;) {
+        <span class="k">let</span> st = f.pointee.stat
+        dev = st.st_dev; ino = st.st_ino; gen = st.st_gen
+        size = st.st_size; mtime = st.st_mtimespec
+    }
+}
+
+<span class="k">final class</span> LabelCache {
+    <span class="k">private var</span> map: [FileKey: Label] = [:]        <span class="c">// bounded LRU in reality</span>
+    <span class="k">private var</span> epoch: UInt64 = 0                  <span class="c">// policy version</span>
+    <span class="k">private let</span> lock = os_unfair_lock_s()          <span class="c">// NOT a DispatchQueue —</span>
+                                                   <span class="c">// you cannot afford a hop here</span>
+    <span class="k">func</span> lookup(_ k: FileKey) -&gt; Label? { ... }
+
+    <span class="c">// Policy changed? Don't walk the map. Bump the epoch;</span>
+    <span class="c">// every entry is now stale by construction. O(1) invalidation.</span>
+    <span class="k">func</span> invalidateAll() { epoch &+= 1 }
+}</code></pre>
+
+  <h4>The three questions an interviewer will ask about this</h4>
+  <ol>
+    <li><strong>"What if the label is missing at AUTH time?"</strong> — Cold-start reality. Options: (a) fail-open + log + queue for classification, (b) block-and-scan with a hard sub-deadline timeout, (c) a coarse pre-filter (path is in a sensitive tree → treat as restricted until proven otherwise). Ship (a) by default with (c) for the highest-severity paths, and let the customer opt into (b). <em>Give all three and pick.</em></li>
+    <li><strong>"Inode reuse?"</strong> — <code>st_gen</code> where available, plus size+mtime as a composite. On APFS the generation counter is the right answer; be honest that it isn't populated on every filesystem, and that's why you carry the composite.</li>
+    <li><strong>"Memory?"</strong> — Bounded LRU with a hard cap and an eviction metric. A build machine touches millions of files; an unbounded cache is an OOM in an extension that must never die. Evictions cause cache misses cause fail-opens — so eviction rate is a security metric, not a perf metric. That framing is the one that lands.</li>
+  </ol>
+</section>
+
+<!-- 12 -->
+<section id="a12">
+  <div class="eyebrow">§12</div>
+  <h3 class="s">The complete agent skeleton</h3>
+  <p class="lede">Type this. Run it. Everything above becomes real in about an hour.</p>
+
+  <pre><code><span class="k">import</span> EndpointSecurity
+<span class="k">import</span> Foundation
+<span class="k">import</span> os.log
+
+<span class="k">final class</span> DLPSensor {
+
+    <span class="c">// ── State ────────────────────────────────────────────────</span>
+    <span class="k">private var</span> client: OpaquePointer?
+    <span class="k">private let</span> esQueue    = DispatchQueue(label: <span class="s">"es.callback"</span>, qos: .userInteractive)
+    <span class="k">private let</span> workQueue  = DispatchQueue(label: <span class="s">"es.work"</span>,
+                                          qos: .userInitiated, attributes: .concurrent)
+    <span class="k">private let</span> scanQueue  = DispatchQueue(label: <span class="s">"es.scan"</span>, qos: .utility)
+    <span class="k">private let</span> labels     = LabelCache()
+    <span class="k">private var</span> policy     = PolicySnapshot.empty   <span class="c">// immutable; swapped atomically</span>
+    <span class="k">private let</span> log = OSLog(subsystem: <span class="s">"ai.nf.sensor"</span>, category: <span class="s">"es"</span>)
+    <span class="k">private let</span> metrics = Metrics()
+    <span class="k">private var</span> mode: Mode = .enforce             <span class="c">// .enforce | .monitor  (self-demote)</span>
+
+    <span class="c">// ── Lifecycle ────────────────────────────────────────────</span>
+    <span class="k">func</span> start() <span class="k">throws</span> {
+        <span class="k">var</span> c: OpaquePointer?
+        <span class="k">let</span> r = es_new_client(&c) { [<span class="k">unowned self</span>] cl, m <span class="k">in</span> self.dispatch(cl, m) }
+        <span class="k">guard</span> r == ES_NEW_CLIENT_RESULT_SUCCESS, <span class="k">let</span> c <span class="k">else</span> { <span class="k">throw</span> Err(r) }
+        client = c
+
+        <span class="c">// 1 — self-mute BEFORE subscribe (§3)</span>
+        <span class="k">if var</span> me = selfAuditToken() { es_mute_process(c, &me) }
+
+        <span class="c">// 2 — kill the noise before it reaches us</span>
+        <span class="k">for</span> p <span class="k">in</span> [<span class="s">"/private/var/folders"</span>, <span class="s">"/System/Volumes/Data/.Spotlight-V100"</span>] {
+            es_mute_path(c, p, ES_MUTE_PATH_TYPE_TARGET_PREFIX)
+        }
+
+        <span class="c">// 3 — subscribe</span>
+        <span class="k">var</span> ev: [es_event_type_t] = [
+            ES_EVENT_TYPE_AUTH_OPEN,       ES_EVENT_TYPE_AUTH_COPYFILE,
+            ES_EVENT_TYPE_AUTH_CLONE,      ES_EVENT_TYPE_AUTH_RENAME,
+            ES_EVENT_TYPE_AUTH_EXEC,       ES_EVENT_TYPE_AUTH_MOUNT,
+            ES_EVENT_TYPE_NOTIFY_CLOSE,    ES_EVENT_TYPE_NOTIFY_FORK,
+            ES_EVENT_TYPE_NOTIFY_EXIT,
+        ]
+        <span class="k">guard</span> es_subscribe(c, &ev, UInt32(ev.count)) == ES_RETURN_SUCCESS
+        <span class="k">else</span> { <span class="k">throw</span> Err.subscribe }
+        os_log(<span class="s">"sensor up, %d events"</span>, log: log, type: .info, ev.count)
+    }
+
+    <span class="c">// ── Dispatch ─────────────────────────────────────────────</span>
+    <span class="k">private func</span> dispatch(_ c: OpaquePointer, _ m: UnsafePointer&lt;es_message_t&gt;) {
+        metrics.observe(seq: m.pointee.global_seq_num)   <span class="c">// gap ⇒ we dropped</span>
+
+        <span class="k">if</span> m.pointee.action_type == ES_ACTION_TYPE_NOTIFY {
+            <span class="k">switch</span> m.pointee.event_type {
+            <span class="k">case</span> ES_EVENT_TYPE_NOTIFY_CLOSE:
+                <span class="k">let</span> e = m.pointee.event.close
+                <span class="k">if</span> e.modified {
+                    <span class="k">let</span> key = FileKey(e.target)
+                    <span class="k">let</span> path = e.target.pointee.path.string     <span class="c">// COPY now</span>
+                    scanQueue.async { self.classify(path, key) }  <span class="c">// off-path</span>
+                }
+            <span class="k">case</span> ES_EVENT_TYPE_NOTIFY_FORK: tree.onFork(m)
+            <span class="k">case</span> ES_EVENT_TYPE_NOTIFY_EXIT: tree.onExit(m)
+            <span class="k">default</span>: <span class="k">break</span>
+            }
+            <span class="k">return</span>
+        }
+
+        <span class="c">// ── AUTH from here. A thread is blocked. Move. ──</span>
+        <span class="k">guard</span> mode == .enforce <span class="k">else</span> { allow(c, m); <span class="k">return</span> }
+
+        <span class="k">switch</span> m.pointee.event_type {
+        <span class="k">case</span> ES_EVENT_TYPE_AUTH_OPEN:     authOpen(c, m)
+        <span class="k">case</span> ES_EVENT_TYPE_AUTH_EXEC:     authExec(c, m)
+        <span class="k">case</span> ES_EVENT_TYPE_AUTH_COPYFILE,
+             ES_EVENT_TYPE_AUTH_CLONE,
+             ES_EVENT_TYPE_AUTH_RENAME:   authMove(c, m)
+        <span class="k">case</span> ES_EVENT_TYPE_AUTH_MOUNT:    authMount(c, m)
+        <span class="k">default</span>:                          allow(c, m)
+        }
+    }
+
+    <span class="c">// ── AUTH_OPEN: the hot path ──────────────────────────────</span>
+    <span class="k">private func</span> authOpen(_ c: OpaquePointer, _ m: UnsafePointer&lt;es_message_t&gt;) {
+        <span class="k">let</span> ev = m.pointee.event.open
+        <span class="k">let</span> requested = ev.fflag
+
+        <span class="c">// Reads are never a DLP violation on their own — allow + cache.</span>
+        <span class="k">guard</span> requested & FWRITE != 0 <span class="k">else</span> {
+            es_respond_flags_result(c, m, UInt32(bitPattern: requested), <span class="k">true</span>)
+            <span class="k">return</span>
+        }
+
+        <span class="k">let</span> key = FileKey(ev.file)
+        <span class="k">let</span> actor = actor(from: m.pointee.process)
+
+        <span class="c">// O(1). No I/O. No allocation we can avoid. No lock anyone else holds.</span>
+        <span class="k">let</span> verdict = policy.evaluate(actor: actor,
+                                      target: key,
+                                      label: labels.lookup(key),
+                                      volume: volumes.classify(key.dev))
+
+        <span class="k">switch</span> verdict {
+        <span class="k">case</span> .allow:
+            es_respond_flags_result(c, m, UInt32(bitPattern: requested), <span class="k">true</span>)
+        <span class="k">case</span> .readOnly:
+            es_respond_flags_result(c, m, UInt32(bitPattern: requested & ~FWRITE), <span class="k">false</span>)
+        <span class="k">case</span> .deny:
+            es_respond_flags_result(c, m, 0, <span class="k">false</span>)
+            audit(m, .blocked)                       <span class="c">// async, AFTER responding</span>
+        <span class="k">case</span> .unknown:
+            <span class="c">// no label yet → fail open, classify, count it</span>
+            es_respond_flags_result(c, m, UInt32(bitPattern: requested), <span class="k">false</span>)
+            metrics.unlabelledAllow += 1
+            <span class="k">let</span> path = ev.file.pointee.path.string
+            scanQueue.async { self.classify(path, key) }
+        }
+    }
+
+    <span class="c">// ── AUTH_EXEC: where AI governance starts (Part III) ─────</span>
+    <span class="k">private func</span> authExec(_ c: OpaquePointer, _ m: UnsafePointer&lt;es_message_t&gt;) {
+        <span class="k">var</span> ev = m.pointee.event.exec
+        <span class="k">let</span> target = ev.target.pointee
+        <span class="k">let</span> args   = argv(&ev)
+        <span class="k">let</span> parent = m.pointee.process.pointee
+        <span class="k">let</span> responsible = m.pointee.version &gt;= 4
+            ? m.pointee.process.pointee.responsible_audit_token : <span class="k">nil</span>
+
+        <span class="k">if let</span> mcp = MCPClassifier.identify(exe: target.executable.pointee.path.string,
+                                           argv: args,
+                                           parent: parent,
+                                           responsible: responsible) {
+            workQueue.async { self.recordMCPLaunch(mcp) }        <span class="c">// inventory</span>
+            <span class="k">if</span> policy.blocks(mcp) {
+                es_respond_auth_result(c, m, ES_AUTH_RESULT_DENY, <span class="k">false</span>)
+                <span class="k">return</span>
+            }
+        }
+        es_respond_auth_result(c, m, ES_AUTH_RESULT_ALLOW, <span class="k">true</span>)   <span class="c">// cache: exec is hot</span>
+    }
+
+    <span class="k">private func</span> allow(_ c: OpaquePointer, _ m: UnsafePointer&lt;es_message_t&gt;) {
+        <span class="k">if</span> m.pointee.event_type == ES_EVENT_TYPE_AUTH_OPEN {
+            es_respond_flags_result(c, m, UInt32(bitPattern: m.pointee.event.open.fflag), <span class="k">false</span>)
+        } <span class="k">else</span> {
+            es_respond_auth_result(c, m, ES_AUTH_RESULT_ALLOW, <span class="k">false</span>)
+        }
+    }
+}</code></pre>
+
+  <div class="verdict watch">
+    <p><span class="chip watch">Read the shape, not the syntax</span> Notice what's <em>not</em> in the hot path: no I/O, no string formatting, no logging, no XPC, no allocation of anything unbounded. The whole design exists to make <code>authOpen</code> a hash lookup and a syscall. Every other decision in the file is downstream of that constraint. If you can articulate <em>that</em> in the interview, the specific API names barely matter.</p>
+  </div>
+</section>
+
+<!-- 13 -->
+<section id="a13">
+  <div class="eyebrow">§13</div>
+  <h3 class="s">Debugging &amp; production reality</h3>
+  <div class="grid2">
+    <div class="card">
+      <h5>Tools</h5>
+      <ul style="margin-bottom:0">
+        <li><code>systemextensionsctl list</code> — is it even loaded?</li>
+        <li><code>systemextensionsctl developer on</code> — dev box only, SIP relaxed</li>
+        <li><code>log stream --predicate 'subsystem == "ai.nf.sensor"' --level debug</code></li>
+        <li><code>log collect --last 10m</code> for a customer's <code>.logarchive</code></li>
+        <li><code>fs_usage -w -f filesys</code> — find who's generating the storm</li>
+        <li><code>spindump</code> / <code>sample</code> — hangs</li>
+        <li>Instruments: System Trace, Time Profiler, <code>os_signpost</code> around the auth path</li>
+        <li>Crash logs: <code>/Library/Logs/DiagnosticReports</code> (root's, not the user's)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h5>The metrics that are non-negotiable</h5>
+      <ul style="margin-bottom:0">
+        <li><code>respond_latency / deadline</code> histogram, per event type</li>
+        <li><code>global_seq_num</code> gap count = dropped events</li>
+        <li>watchdog fires (fail-opens)</li>
+        <li>unlabelled-allow count</li>
+        <li>cache hit rate, eviction rate</li>
+        <li>queue depth high-water</li>
+        <li>policy version in effect</li>
+        <li>TCC grant status, mode (enforce/monitor)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>Testing an ES client without going insane</h4>
+  <ul>
+    <li><strong>Abstract the framework.</strong> Your policy engine should take a plain Swift struct, not an <code>UnsafePointer&lt;es_message_t&gt;</code>. Then 90% of your logic is unit-testable with no root, no entitlement, no VM.</li>
+    <li><strong>VM matrix</strong> per macOS version, because event semantics and struct versions differ. This is why the CI story for an endpoint agent is genuinely hard and worth mentioning.</li>
+    <li><strong>Load generators:</strong> run an Xcode build, a <code>git clone</code> of a huge repo, a Spotlight reindex. Your agent's real adversary is a developer, not malware.</li>
+    <li><strong>Chaos:</strong> deliberately stall the work queue and assert you fail open and self-demote rather than get killed.</li>
+  </ul>
+
+  <div class="callout">
+    <h5>The war story shape to prepare</h5>
+    <p style="margin-bottom:0">Take a real JumpCloud incident and tell it in this shape, in 40 seconds: <em>"Symptom on the fleet → the metric that pointed at it → the tool that confirmed it → the fix → what I changed so it couldn't recur."</em> Have three: one perf, one deployment/TCC, one OS-version break. The last line — "what I changed so it couldn't recur" — is what makes it a Staff answer instead of a debugging anecdote.</p>
+  </div>
+</section>
+
+<!-- ============================== PART II ============================== -->
+<div class="part">
+  <div class="k">Part II</div>
+  <h2>NetworkExtension</h2>
+  <p>ES's coverage stops at the socket. Everything that actually leaves the machine — every prompt, every upload, every API call to an AI provider — lives here.</p>
+</div>
+
+<!-- 14 -->
+<section id="b1">
+  <div class="eyebrow">§14</div>
+  <h3 class="s">The provider zoo — pick the right one</h3>
+  <p class="lede">Six providers, and the whole interview is knowing which one answers which question.</p>
+
+  <table>
+    <tr><th>Provider</th><th>Sees</th><th>Can block?</th><th>Sees plaintext?</th><th>Use for</th></tr>
+    <tr><td><code>NEFilterDataProvider</code></td><td>TCP/UDP flows with app attribution</td><td><strong>Yes</strong> — allow/drop per flow</td><td>No (TLS is ciphertext)</td><td>Domain/app policy, discovery, blocking unsanctioned AI endpoints</td></tr>
+    <tr><td><code>NEFilterPacketProvider</code> (11+)</td><td>Raw packets, IP layer</td><td>Yes — allow/drop/delay</td><td>No</td><td>Rarely. Below the app-attribution layer, so you lose the "who".</td></tr>
+    <tr><td><code>NETransparentProxyProvider</code> (11+)</td><td>Whole TCP/UDP flows you terminate locally</td><td>Yes</td><td><strong>Yes, if you MITM</strong></td><td>Content DLP on uploads and prompts. The heavy hammer.</td></tr>
+    <tr><td><code>NEAppProxyProvider</code></td><td>Flows from managed apps</td><td>Yes</td><td>Yes</td><td>Per-app VPN. Mostly an MDM/iOS story.</td></tr>
+    <tr><td><code>NEDNSProxyProvider</code></td><td>Every DNS query, with app attribution</td><td>Yes (fail the resolve)</td><td>n/a</td><td>Cheap shadow-AI discovery. Defeated by DoH.</td></tr>
+    <tr><td><code>NEPacketTunnelProvider</code></td><td>All traffic via a tunnel</td><td>Yes</td><td>At your endpoint</td><td>Full VPN posture. Not a DLP tool per se.</td></tr>
+  </table>
+
+  <div class="callout">
+    <h5>The decision, said cleanly</h5>
+    <p style="margin-bottom:0"><strong>Filter for policy, proxy for content.</strong> If the question is "may this app talk to this host" — <code>NEFilterDataProvider</code>, cheap, safe, no TLS fight. If the question is "what is in the body of this POST" — you need a transparent proxy and a corporate CA, and you've just signed up for owning every TLS edge case on the platform. Most products start with the filter and add the proxy only for the specific hosts that justify it. Say that ordering; it's what a shipped product looks like.</p>
+  </div>
+</section>
+
+<!-- 15 -->
+<section id="b2">
+  <div class="eyebrow">§15</div>
+  <h3 class="s">Entitlements, activation, configuration</h3>
+
+  <h5>Entitlements</h5>
+  <pre><code>&lt;key&gt;com.apple.developer.networking.networkextension&lt;/key&gt;
+&lt;array&gt;
+  &lt;string&gt;content-filter-provider-systemextension&lt;/string&gt;   <span class="c">&lt;!-- NEFilterDataProvider --&gt;</span>
+  &lt;string&gt;app-proxy-provider-systemextension&lt;/string&gt;        <span class="c">&lt;!-- NETransparentProxyProvider --&gt;</span>
+  &lt;string&gt;dns-proxy-systemextension&lt;/string&gt;                 <span class="c">&lt;!-- NEDNSProxyProvider --&gt;</span>
+&lt;/array&gt;</code></pre>
+  <p>Note the <code>-systemextension</code> suffix: the bare values (<code>content-filter-provider</code>) are the older appex form. Knowing there are two families is a small tell that you've actually shipped one.</p>
+
+  <h5>Info.plist of the extension</h5>
+  <pre><code>&lt;key&gt;NetworkExtension&lt;/key&gt;
+&lt;dict&gt;
+  &lt;key&gt;NEProviderClasses&lt;/key&gt;
+  &lt;dict&gt;
+    &lt;key&gt;com.apple.networkextension.filter-data&lt;/key&gt;
+    &lt;string&gt;$(PRODUCT_MODULE_NAME).FilterDataProvider&lt;/string&gt;
+    &lt;key&gt;com.apple.networkextension.filter-control&lt;/key&gt;
+    &lt;string&gt;$(PRODUCT_MODULE_NAME).FilterControlProvider&lt;/string&gt;
+  &lt;/dict&gt;
+&lt;/dict&gt;</code></pre>
+
+  <h5>Turning it on (from the container app)</h5>
+  <pre><code><span class="c">// 1. Activate the system extension</span>
+<span class="k">let</span> req = OSSystemExtensionRequest.activationRequest(
+    forExtensionWithIdentifier: <span class="s">"ai.nf.agent.netext"</span>, queue: .main)
+req.delegate = <span class="k">self</span>
+OSSystemExtensionManager.shared.submitRequest(req)
+
+<span class="c">// 2. THEN configure the filter (only works after activation)</span>
+NEFilterManager.shared().loadFromPreferences { err <span class="k">in</span>
+    <span class="k">let</span> cfg = NEFilterProviderConfiguration()
+    cfg.filterSockets   = <span class="k">true</span>
+    cfg.filterPackets   = <span class="k">false</span>
+    cfg.filterBrowsers  = <span class="k">false</span>       <span class="c">// iOS-era; sockets is what you want on macOS</span>
+    NEFilterManager.shared().providerConfiguration = cfg
+    NEFilterManager.shared().isEnabled = <span class="k">true</span>
+    NEFilterManager.shared().saveToPreferences { err <span class="k">in</span> ... }
+}</code></pre>
+
+  <h5>The MDM payloads (the part that decides whether this ships)</h5>
+  <table>
+    <tr><th>Payload</th><th>Kills which prompt</th></tr>
+    <tr><td><code>com.apple.system-extension.install</code></td><td>"System extension blocked" — pre-approve by team ID</td></tr>
+    <tr><td><code>com.apple.webcontent-filter</code></td><td>"…would like to filter network content" — for content filters</td></tr>
+    <tr><td><code>com.apple.vpn.managed</code> (with the right VPNSubType)</td><td>"…would like to add VPN configurations" — for transparent/app proxies</td></tr>
+    <tr><td><code>com.apple.TCC.configuration-profile-policy</code></td><td>Full Disk Access, Screen Recording, Accessibility — the PPPC payload</td></tr>
+  </table>
+  <div class="say">"On an unmanaged Mac this product is four consent dialogs and a support ticket. On a managed fleet it's four MDM payloads and zero clicks. That's why the deployment story isn't a footnote for an endpoint agent — it's a feature, and it's usually the thing that decides whether a customer's rollout succeeds or stalls at 40%."</div>
+</section>
+
+<!-- 16 -->
+<section id="b3">
+  <div class="eyebrow">§16</div>
+  <h3 class="s">The content filter, in code</h3>
+
+  <h5>The two-provider split</h5>
+  <p>A content filter is <em>two</em> extensions working together, and this design confuses everyone the first time:</p>
+  <ul>
+    <li><strong>Data provider</strong> — in the fast path. Sees every flow. Memory-constrained, must be quick, cannot do network I/O of its own.</li>
+    <li><strong>Control provider</strong> — the slow path. When the data provider returns <code>.needRules()</code>, the flow is parked and the control provider is asked; it <em>can</em> do expensive things (ask your backend, ask your daemon over XPC) and then supplies a rule.</li>
+  </ul>
+  <p>That's the same decoupling as §11: <strong>fast path looks up, slow path decides.</strong> Point out the symmetry with the ES deadline design and you sound like someone with a coherent model of the platform rather than two memorised APIs.</p>
+
+  <pre><code><span class="k">import</span> NetworkExtension
+
+<span class="k">final class</span> FilterDataProvider: NEFilterDataProvider {
+
+    <span class="k">override func</span> startFilter(completionHandler: @escaping (Error?) -&gt; Void) {
+        <span class="c">// Pre-filter in the kernel so most flows never reach us at all.</span>
+        <span class="k">let</span> rules = AIEndpoints.all.map { host <span class="k">in</span>
+            NEFilterRule(networkRule: NENetworkRule(remoteNetwork: nil,
+                                                    remotePrefix: 0,
+                                                    localNetwork: nil,
+                                                    localPrefix: 0,
+                                                    protocol: .TCP,
+                                                    direction: .outbound),
+                         action: .filterData)
+        }
+        <span class="k">let</span> settings = NEFilterSettings(rules: rules, defaultAction: .allow)
+        apply(settings) { _ <span class="k">in</span> completionHandler(nil) }
+    }
+
+    <span class="k">override func</span> handleNewFlow(_ flow: NEFilterFlow) -&gt; NEFilterNewFlowVerdict {
+        <span class="k">guard let</span> socket = flow <span class="k">as</span>? NEFilterSocketFlow <span class="k">else</span> { <span class="k">return</span> .allow() }
+
+        <span class="c">// WHO — see §17. This is the whole value of the filter over a proxy.</span>
+        <span class="k">let</span> appID = flow.sourceAppIdentifier ?? <span class="s">"&lt;unknown&gt;"</span>
+        <span class="k">let</span> host  = socket.remoteHostname
+                 ?? (socket.remoteEndpoint <span class="k">as</span>? NWHostEndpoint)?.hostname
+                 ?? <span class="s">""</span>
+
+        <span class="k">switch</span> policy.classify(app: appID, host: host) {
+        <span class="k">case</span> .allowSilently:
+            <span class="k">return</span> .allow()
+
+        <span class="k">case</span> .blockUnsanctionedAI:
+            report(.blocked(app: appID, host: host))
+            <span class="k">return</span> .drop()
+
+        <span class="k">case</span> .observeAI:
+            <span class="c">// Peek at the head of the stream. We get ciphertext for TLS,</span>
+            <span class="c">// but we get the ClientHello — and SNI is in there in the clear</span>
+            <span class="c">// unless ECH is in play.</span>
+            <span class="k">return</span> .filterDataVerdict(withFilterInbound: <span class="k">false</span>, peekInboundBytes: 0,
+                                       filterOutbound: <span class="k">true</span>,  peekOutboundBytes: 2048)
+
+        <span class="k">case</span> .needsBackendDecision:
+            <span class="c">// Park it. The control provider gets asked. Costs latency —</span>
+            <span class="c">// use sparingly or you make the network feel broken.</span>
+            <span class="k">return</span> .needRules()
+        }
+    }
+
+    <span class="k">override func</span> handleOutboundData(from flow: NEFilterFlow,
+                                     readBytesStartOffset offset: Int,
+                                     readBytes bytes: Data) -&gt; NEFilterDataVerdict {
+        <span class="c">// TLS ⇒ this is ciphertext. The ONLY useful thing here is the</span>
+        <span class="c">// ClientHello SNI at offset 0. Say this — it's the honest limit.</span>
+        <span class="k">if</span> offset == 0, <span class="k">let</span> sni = TLS.parseSNI(bytes) {
+            report(.aiEndpointContacted(app: flow.sourceAppIdentifier, sni: sni))
+            <span class="k">if</span> policy.blocksHost(sni) { <span class="k">return</span> .drop() }
+        }
+        <span class="k">return</span> .allow()      <span class="c">// stop inspecting; let it run at full speed</span>
+    }
+}</code></pre>
+
+  <h5>The verdicts, and what each costs</h5>
+  <table>
+    <tr><th>Verdict</th><th>Meaning</th><th>Cost</th></tr>
+    <tr><td><code>.allow()</code></td><td>Done. You never see this flow again.</td><td>Free. The default for 99% of flows.</td></tr>
+    <tr><td><code>.drop()</code></td><td>Connection dies. App sees a network error.</td><td>The app's error handling is not your friend. Some apps retry forever.</td></tr>
+    <tr><td><code>.filterDataVerdict(...)</code></td><td>Stream me the first N bytes.</td><td>Every byte goes through your process. Real latency and memory. Peek small.</td></tr>
+    <tr><td><code>.needRules()</code></td><td>Park; ask the control provider.</td><td>The flow stalls until the control provider answers. This is a user-visible hang if you're slow.</td></tr>
+    <tr><td><code>.pause()</code> (macOS 11+)</td><td>Hold without a control round trip; resume later.</td><td>Useful when you need an async local decision. Same hang risk.</td></tr>
+  </table>
+</section>
+
+<!-- 17 -->
+<section id="b4">
+  <div class="eyebrow">§17</div>
+  <h3 class="s">Flow attribution — the "who" that makes it DLP</h3>
+  <p class="lede">A network appliance sees an IP. Your extension sees a process. That difference is the entire reason the endpoint agent exists.</p>
+
+  <pre><code><span class="k">override func</span> handleNewFlow(_ flow: NEFilterFlow) -&gt; NEFilterNewFlowVerdict {
+
+    <span class="c">// The easy one — a signing-identifier-ish string. Convenient, but it's</span>
+    <span class="c">// just a string, and unsigned/renamed binaries make it unreliable alone.</span>
+    <span class="k">let</span> appID = flow.sourceAppIdentifier
+
+    <span class="c">// The real one (macOS): the peer's audit token.</span>
+    <span class="k">if let</span> tokenData = flow.sourceAppAuditToken, tokenData.count == MemoryLayout&lt;audit_token_t&gt;.size {
+        <span class="k">var</span> token = audit_token_t()
+        _ = <span class="k">withUnsafeMutableBytes</span>(of: &token) { tokenData.copyBytes(to: $0) }
+
+        <span class="c">// (a) validate the code signature from the token — §18 in Part I terms</span>
+        <span class="k">let</span> identity = CodeIdentity.validate(auditToken: token)
+
+        <span class="c">// (b) THE MOVE: this token is the SAME identity ES gave you.</span>
+        <span class="c">//     Join the network flow to the process record, the process tree,</span>
+        <span class="c">//     and the files that process has been reading. That's lineage.</span>
+        <span class="k">let</span> proc = processTree.lookup(auditToken: token)
+        <span class="k">let</span> recentSensitiveReads = proc?.recentReads(where: { $0.label == .restricted })
+
+        <span class="k">if let</span> reads = recentSensitiveReads, !reads.isEmpty,
+           policy.isUnsanctionedAI(flow) {
+            <span class="c">// "This process read the customer list 4 seconds ago and is now</span>
+            <span class="c">//  opening a TLS connection to an unsanctioned model endpoint."</span>
+            <span class="k">return</span> .drop()
+        }
+    }
+    <span class="k">return</span> .allow()
+}</code></pre>
+
+  <div class="callout">
+    <h5>This is the answer to "why do you need both ES and NetworkExtension?"</h5>
+    <p style="margin-bottom:0">Not "files and network". <strong>Because the audit token is the join key.</strong> ES gives you what a process <em>read</em>; NE gives you where that process is <em>sending</em>. The audit token lets you join them into a single causal story — read customer list → connect to unsanctioned AI host — and <em>that story</em> is the product. It's what Nightfall calls data lineage, and it's the thing a network-only vendor and a file-only vendor both structurally cannot do.</p>
+  </div>
+  <p class="footnote">Caveats to volunteer: <code>sourceAppAuditToken</code> isn't always populated (kernel-originated traffic, some system daemons, and flows from processes that have already exited by the time you look). Attribution is best-effort and you design for the unattributed tail rather than pretending it doesn't exist.</p>
+</section>
+
+<!-- 18 -->
+<section id="b5">
+  <div class="eyebrow">§18</div>
+  <h3 class="s">Transparent proxy — when you need the bytes</h3>
+
+  <pre><code><span class="k">final class</span> AIProxyProvider: NETransparentProxyProvider {
+
+    <span class="k">override func</span> startProxy(options: [String: Any]?,
+                            completionHandler: @escaping (Error?) -&gt; Void) {
+        <span class="k">let</span> settings = NETransparentProxyNetworkSettings(tunnelRemoteAddress: <span class="s">"127.0.0.1"</span>)
+
+        <span class="c">// SCOPE IT. Do not proxy the internet. Proxy the AI endpoints and</span>
+        <span class="c">// nothing else — everything you include is latency you own and a</span>
+        <span class="c">// TLS edge case you inherit.</span>
+        settings.includedNetworkRules = AIEndpoints.hosts.map { host <span class="k">in</span>
+            NENetworkRule(remoteNetwork: NWHostEndpoint(hostname: host, port: <span class="s">"443"</span>),
+                          remotePrefix: 0, localNetwork: nil, localPrefix: 0,
+                          protocol: .TCP, direction: .outbound)
+        }
+        setTunnelNetworkSettings(settings) { completionHandler($0) }
+    }
+
+    <span class="k">override func</span> handleNewFlow(_ flow: NEAppProxyFlow) -&gt; Bool {
+        <span class="k">guard let</span> tcp = flow <span class="k">as</span>? NEAppProxyTCPFlow <span class="k">else</span> { <span class="k">return false</span> }  <span class="c">// false = don't handle</span>
+        <span class="k">let</span> remote = tcp.remoteEndpoint <span class="k">as</span>? NWHostEndpoint
+
+        tcp.open(withLocalEndpoint: nil) { err <span class="k">in</span>
+            <span class="k">guard</span> err == nil <span class="k">else</span> { <span class="k">return</span> }
+            <span class="c">// Now: terminate TLS locally with a cert we mint from the corporate</span>
+            <span class="c">// CA, read the plaintext, classify it, and re-originate upstream</span>
+            <span class="c">// with a real TLS session of our own.</span>
+            self.pump(tcp, to: remote)
+        }
+        <span class="k">return true</span>
+    }
+
+    <span class="k">private func</span> pump(_ flow: NEAppProxyTCPFlow, to remote: NWHostEndpoint?) {
+        flow.readData { data, err <span class="k">in</span>
+            <span class="k">guard let</span> data, !data.isEmpty, err == nil <span class="k">else</span> { flow.closeReadWithError(err); <span class="k">return</span> }
+
+            <span class="c">// data here is PLAINTEXT after our TLS termination.</span>
+            <span class="c">// This is where prompt DLP actually happens.</span>
+            <span class="k">if let</span> body = HTTP.body(data), <span class="k">let</span> finding = self.classifier.scan(body) {
+                <span class="k">if</span> self.policy.blocks(finding) {
+                    flow.write(HTTP.forbidden(reason: finding)) { _ <span class="k">in</span> flow.closeWriteWithError(nil) }
+                    self.report(finding)
+                    <span class="k">return</span>
+                }
+            }
+            self.upstream.send(data)
+            self.pump(flow, to: remote)      <span class="c">// keep reading</span>
+        }
+    }
+}</code></pre>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">Say the costs out loud</span> A transparent proxy means you own: TLS versions, ALPN and HTTP/2 (and QUIC, which you'll probably have to block outright to force TCP fallback — <em>that's a real technique, name it</em>), certificate pinning (which breaks hard and silently for apps that pin), Apple's own services bypassing you, and every connection on the machine's latency. You will be blamed for every network problem the customer has for the next year. It's the right tool for a small, named set of high-value hosts and the wrong tool for everything.</p>
+  </div>
+</section>
+
+<!-- 19 -->
+<section id="b6">
+  <div class="eyebrow">§19</div>
+  <h3 class="s">TLS interception, honestly</h3>
+  <ol>
+    <li><strong>The CA.</strong> Generate a corporate root, push it to the System keychain as trusted via an MDM certificate payload. Without MDM this is a non-starter — another reason the deployment story is the product story.</li>
+    <li><strong>Mint on the fly.</strong> On each intercepted flow, generate a leaf for the SNI hostname, signed by your CA, and present it. Cache the leaves; key generation is expensive.</li>
+    <li><strong>Re-originate upstream</strong> with a real TLS session and validate the real chain properly. If you don't, you've downgraded every user's security to your bug count.</li>
+    <li><strong>Pinning defeats you.</strong> Apps that pin — many native clients, some SDKs — will simply fail. Your only options are: exclude them from the proxy (and lose visibility), or break them (and lose the customer). There is no third option. State this plainly; it's the mark of someone who's done it.</li>
+    <li><strong>Certificate Transparency &amp; ECH.</strong> Encrypted Client Hello removes SNI from the clear, which erodes even the cheap filter-level visibility over time. Worth naming as the trend that makes endpoint-side interception <em>more</em> necessary, not less — a nice forward-looking point in an interview.</li>
+  </ol>
+  <div class="say">"My honest position on MITM: it's a capability you build for a specific, small allowlist of destinations where the content genuinely matters — the AI endpoints, the file-sharing hosts — and never as a default posture. Every host you add is a support burden forever. And I'd argue the better path for the sanctioned providers isn't MITM at all, it's the provider-side compliance API, because you get the same content without fighting TLS and without owning the customer's network reliability."</div>
+</section>
+
+<!-- 20 -->
+<section id="b7">
+  <div class="eyebrow">§20</div>
+  <h3 class="s">DNS proxy — the cheap discovery play</h3>
+  <pre><code><span class="k">final class</span> DNSProvider: NEDNSProxyProvider {
+    <span class="k">override func</span> handleNewFlow(_ flow: NEAppProxyFlow) -&gt; Bool {
+        <span class="k">guard let</span> udp = flow <span class="k">as</span>? NEAppProxyUDPFlow <span class="k">else</span> { <span class="k">return false</span> }
+        <span class="k">let</span> appID = flow.metaData.sourceAppSigningIdentifier
+
+        udp.readDatagrams { datagrams, endpoints, err <span class="k">in</span>
+            <span class="k">for</span> d <span class="k">in</span> datagrams ?? [] {
+                <span class="k">if let</span> q = DNS.question(d), AIEndpoints.matches(q) {
+                    <span class="c">// "Which app on this Mac just resolved api.anthropic.com?"</span>
+                    <span class="c">// One line of telemetry, enormous inventory value, ~zero cost.</span>
+                    self.report(.aiDNS(app: appID, host: q))
+                }
+            }
+            self.forward(datagrams, endpoints, flow: udp)
+        }
+        <span class="k">return true</span>
+    }
+}</code></pre>
+  <p><strong>The honest limitation, which you volunteer before being asked:</strong> DoH and DoT bypass this completely. Chrome and Firefox default to encrypted DNS; so does a growing share of native software. So a DNS proxy is a good, cheap <em>discovery</em> signal for the long tail of naive clients, and worthless as a control. Build it in an afternoon, treat its coverage as partial, never sell it as enforcement.</p>
+</section>
+
+<!-- 21 -->
+<section id="b8">
+  <div class="eyebrow">§21</div>
+  <h3 class="s">Limits &amp; failure modes</h3>
+  <ul>
+    <li><strong>Memory.</strong> A filter data provider is a long-lived, memory-constrained process — on iOS the content filter budget is famously tiny, and while macOS is more generous, the design assumption is identical: <strong>never buffer a flow.</strong> Peek a bounded prefix, decide, get out. A provider that OOMs takes the customer's network with it.</li>
+    <li><strong>Fail-open, again.</strong> If your provider crashes, what happens to the network? Test it. The answer should be "traffic flows"; if the answer is "the Mac loses the internet", you have a company-ending bug in an auto-updating product.</li>
+    <li><strong>Ordering.</strong> Multiple filters can be installed. You are not the only one. Same lesson as ES.</li>
+    <li><strong>Apple bypasses.</strong> Some Apple traffic is exempt from filtering by design. Your coverage claim must account for it rather than pretend.</li>
+    <li><strong>The extension can be killed and restarted</strong> under memory pressure; hold no state you can't rebuild, and never hold state in the provider that policy depends on — that belongs in the daemon, reachable over XPC.</li>
+    <li><strong>Debugging:</strong> <code>log stream --predicate 'subsystem BEGINSWITH "com.apple.networkextension"'</code>, plus your own subsystem; <code>nettop</code>, <code>tcpdump</code> on <code>utun</code> interfaces for proxies, and Console for provider start failures — which are usually entitlement or profile problems, not code problems.</li>
+  </ul>
+</section>
+
+<!-- ============================== PART III ============================== -->
+<div class="part">
+  <div class="k">Part III</div>
+  <h2>Bending both at AI governance</h2>
+  <p>Everything above, aimed at the actual question: what data is leaving this Mac through an AI tool, who sent it, and can we stop it?</p>
+</div>
+
+<!-- 22 -->
+<section id="c1">
+  <div class="eyebrow">§22</div>
+  <h3 class="s">The threat model — five channels, five sensors</h3>
+  <table>
+    <tr><th>Channel</th><th>What it looks like on the box</th><th>Sensor</th><th>Can you block?</th></tr>
+    <tr><td><strong>Web AI app</strong><br>chat.openai.com, claude.ai in Chrome</td><td>Browser process, TLS to a known host; the prompt is typed or pasted into a text box</td><td>Browser extension (precise, pre-TLS) + NEFilterDataProvider (universal, host-level)</td><td>Yes — extension blocks the paste/submit; filter blocks the host</td></tr>
+    <tr><td><strong>Native AI app</strong><br>Claude desktop, Cursor</td><td>Signed app, TLS to provider API</td><td>NE filter for host/app policy; transparent proxy for content (if it doesn't pin)</td><td>Host: yes. Content: only via MITM.</td></tr>
+    <tr><td><strong>CLI / IDE agent</strong><br>Claude Code, aider, a Python script with an API key</td><td><code>ES AUTH_EXEC</code>: node/python, argv, parent = Terminal or the IDE; then TLS out; then <em>lots</em> of file reads</td><td>ES (exec + file reads + tree) joined to NE (the flow) by audit token</td><td>Yes — deny the exec, or deny the sensitive reads by that subtree</td></tr>
+    <tr><td><strong>Local MCP server</strong><br><code>npx @modelcontextprotocol/server-*</code></td><td>Child process of the AI runtime, <strong>stdio pipes</strong> — no socket, no DNS, no network at all</td><td>ES exec + argv + config file watch + the child's own file/network behaviour</td><td>Exec: yes. Pipe contents: <strong>no</strong> — see below.</td></tr>
+    <tr><td><strong>Remote MCP server</strong></td><td>HTTP/SSE from the runtime</td><td>NE filter, attributed to the runtime's audit token</td><td>Yes</td></tr>
+  </table>
+
+  <div class="callout">
+    <h5>The sentence that wins this section</h5>
+    <p style="margin-bottom:0">"An MCP server talking stdio to Claude Code never creates a socket, never resolves a name, never crosses a network boundary. There is <strong>no</strong> gateway, proxy, CASB or firewall on earth that can see it. The endpoint is not <em>a</em> place to observe this — it's <strong>the only</strong> place. That's the entire argument for this product, and it's why the sensor is the company's moat rather than a feature."</p>
+  </div>
+</section>
+
+<!-- 23 -->
+<section id="c2">
+  <div class="eyebrow">§23</div>
+  <h3 class="s">Correlating ES + NE — the join</h3>
+  <pre><code>┌──────────────── System extension (root) ────────────────────────┐
+│                                                                 │
+│  ES client ──► ProcessTree                                      │
+│     │            key: audit_token_t                             │
+│     │            { pid, cdhash, team, argv, ppid,               │
+│     │              responsible_token, children[],               │
+│     │              recentReads: RingBuffer<(FileKey, Label)> }  │
+│     │                          ▲                                │
+│     │  NOTIFY_CLOSE ──► classify ──► LabelCache                 │
+│     │                                                           │
+│  NE provider ──► flow.sourceAppAuditToken ─────────┘            │
+│                       │                                         │
+│                       ▼                                         │
+│              tree.lookup(token)                                 │
+│                       │                                         │
+│         "this process read 3 restricted files in the last 10s   │
+│          and is now opening TLS to an unsanctioned model host"  │
+│                       │                                         │
+│                       ▼                                         │
+│                  verdict + lineage event                        │
+└─────────────────────────────────────────────────────────────────┘</code></pre>
+
+  <p>Three implementation notes that show you've thought past the diagram:</p>
+  <ul>
+    <li><strong>If ES and NE are separate extensions</strong> (which they often should be — §2), the tree lives in one of them and the other queries it over XPC. That XPC call is on the NE fast path, so it must be non-blocking with a cached fallback: park the flow with <code>.pause()</code>, ask, resume. Or replicate a read-only snapshot of the tree into the NE provider and accept staleness.</li>
+    <li><strong>The ring buffer is bounded</strong> — last N reads or last T seconds per process. Unbounded lineage on a build machine is an OOM in a memory-constrained provider.</li>
+    <li><strong>Inherit down the subtree.</strong> Claude Code spawns node, node spawns an MCP server, the MCP server reads the repo. The read belongs to the <em>agent session</em>, not to a random node process. That's what <code>NOTIFY_FORK</code> + <code>responsible_audit_token</code> buy you, and it's the thing that makes agentic attribution possible at all.</li>
+  </ul>
+</section>
+
+<!-- 24 -->
+<section id="c3">
+  <div class="eyebrow">§24</div>
+  <h3 class="s">AI application inventory</h3>
+  <p class="lede">Before you govern anything you have to know what's on the machine. This is the v1 that ships in a month.</p>
+  <ol>
+    <li><strong>Installed:</strong> enumerate <code>/Applications</code> + user apps, match bundle IDs and team IDs against a curated catalogue of AI apps. Cheap, static, incomplete.</li>
+    <li><strong>Executed:</strong> <code>ES NOTIFY_EXEC</code> — you see everything that actually runs, including the CLI tools an installed-apps scan will never find. Match on cdhash/team, and on argv for interpreted tools.</li>
+    <li><strong>Resolved:</strong> DNS proxy — who looked up which provider. Partial (DoH), free.</li>
+    <li><strong>Connected:</strong> NE filter, SNI + app attribution. The most reliable signal for native apps.</li>
+    <li><strong>Configured:</strong> watch the config files — <code>~/.claude.json</code>, <code>claude_desktop_config.json</code>, <code>.cursor/</code>, <code>.mcp.json</code>, shell rc files exporting <code>ANTHROPIC_API_KEY</code>/<code>OPENAI_API_KEY</code>. This finds intent before behaviour.</li>
+  </ol>
+  <p><strong>The insight to voice:</strong> these five sources disagree, and the disagreements <em>are</em> the interesting findings. An app that's installed but never runs is noise. A binary that runs and connects but isn't in your catalogue is <strong>shadow AI</strong> — the actual thing the customer is buying. Design the inventory as a reconciliation across sources, not as a list.</p>
+</section>
+
+<!-- 25 -->
+<section id="c4">
+  <div class="eyebrow">§25</div>
+  <h3 class="s">MCP observability — the flagship</h3>
+
+  <h5>What an MCP launch looks like through ES</h5>
+  <pre><code>ES_EVENT_TYPE_AUTH_EXEC
+  msg.process            → node (the Claude Code runtime)   ← the ACTOR
+  event.exec.target      → /usr/local/bin/node              ← the NEW program
+  event.exec argv        → ["npx","-y","@modelcontextprotocol/server-filesystem",
+                            "/Users/chella/work"]           ← THE PAYLOAD
+  event.exec env         → ["GITHUB_TOKEN=ghp_…"]           ← the risk
+  event.exec.cwd         → /Users/chella/work/repo
+  msg.process.responsible_audit_token → Claude Code          ← THE HUMAN'S INTENT
+  msg.process.tty        → non-null ⇒ launched from a terminal, not a GUI app</code></pre>
+
+  <pre><code><span class="k">enum</span> MCPClassifier {
+    <span class="k">static let</span> runtimes: Set&lt;String&gt; = [<span class="s">"com.anthropic.claude"</span>, <span class="s">"com.todesktop.230313mzl4w4u92"</span> <span class="c">/*Cursor*/</span>,
+                                        <span class="s">"com.microsoft.VSCode"</span>]
+
+    <span class="k">static func</span> identify(exe: String, argv: [String],
+                         parent: es_process_t, responsible: audit_token_t?) -&gt; MCPLaunch? {
+        <span class="c">// 1. Is the parent (or the responsible process) an AI runtime?</span>
+        <span class="k">let</span> parentID = parent.signing_id.string
+        <span class="k">let</span> respID   = responsible.flatMap { CodeIdentity.signingID(for: $0) }
+        <span class="k">guard</span> runtimes.contains(parentID) || runtimes.contains(respID ?? <span class="s">""</span>)
+        <span class="k">else</span> { <span class="k">return nil</span> }
+
+        <span class="c">// 2. Does the argv look like an MCP server?</span>
+        <span class="k">let</span> joined = argv.joined(separator: <span class="s">" "</span>)
+        <span class="k">guard</span> joined.contains(<span class="s">"modelcontextprotocol"</span>)
+           || joined.contains(<span class="s">"mcp-server"</span>)
+           || argv.first == <span class="s">"uvx"</span>
+           || knownServers.contains(where: joined.contains)
+        <span class="k">else</span> { <span class="k">return nil</span> }
+
+        <span class="c">// 3. Extract the CAPABILITY — this is the risk, not the name</span>
+        <span class="k">return</span> MCPLaunch(
+            package:  extractPackage(argv),
+            scopes:   extractPaths(argv),          <span class="c">// "/Users/chella/work" ⇒ read scope</span>
+            secrets:  detectSecretsInEnv(parent),  <span class="c">// count them; NEVER log values</span>
+            runtime:  parentID,
+            user:     ...,
+            risk:     score(package:scopes:secrets:)
+        )
+    }
+}</code></pre>
+
+  <h5>Config drift — the other half, and the one that's in their marketing</h5>
+  <pre><code><span class="c">// Watch, hash, diff. FSEvents, or ES NOTIFY_CLOSE with inverted target-path</span>
+<span class="c">// muting on exactly these paths — which is cheaper and gives you the actor.</span>
+<span class="k">let</span> watched = [
+  <span class="s">"~/Library/Application Support/Claude/claude_desktop_config.json"</span>,
+  <span class="s">"~/.claude.json"</span>,
+  <span class="s">"~/.cursor/mcp.json"</span>,
+  <span class="s">"**/.mcp.json"</span>,                 <span class="c">// per-repo — this one is the sneaky one</span>
+  <span class="s">"~/Library/Application Support/Code/User/settings.json"</span>,
+]
+<span class="c">// Each change → parse → diff against last known → emit:</span>
+<span class="c">//   { user, device, added: [server], removed: [], scopes, secretsPresent: Bool,</span>
+<span class="c">//     actor: who wrote the file, ts }</span>
+<span class="c">// That timeline IS "mcp.json config changes over time" from their product page.</span></code></pre>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">The boundary — state it before they ask</span> You <strong>cannot</strong> read the stdio pipe contents between the runtime and the MCP server. Reading another process's pipe requires a task port (SIP + hardened runtime say no) or injection (hardened runtime says no, and it'd be an unsupportable nightmare across every version of node). So the honest architecture is: <strong>inventory + declared scope + observed behaviour</strong> — what server ran, with what capability, spawned by whom, and what that process subsequently read and connected to. You infer the risk from the capability and the behaviour, not from the message content. If someone claims full stdio content visibility, ask them how — either you learn something genuinely new or you've found the edge of the claim.</p>
+  </div>
+
+  <h5>Enforcement options, ranked</h5>
+  <ol>
+    <li><strong>Deny the exec</strong> (<code>AUTH_EXEC</code> → DENY) for unsanctioned servers. Clean, early, and the user gets a comprehensible failure.</li>
+    <li><strong>Allow the exec, police the subtree</strong> — let it run, but <code>AUTH_OPEN</code>-deny that process subtree's reads of restricted files. Better UX, more surgical, and it's the only option when the same package is fine in one repo and not another.</li>
+    <li><strong>Allow, observe, alert</strong> — v1. Given they're in early preview, this is what they have, and saying "I'd ship monitor-first and earn the right to block" matches both their product reality and good sense.</li>
+  </ol>
+</section>
+
+<!-- 26 -->
+<section id="c5">
+  <div class="eyebrow">§26</div>
+  <h3 class="s">Prompt DLP — three paths, ranked honestly</h3>
+  <table>
+    <tr><th>Path</th><th>Gets you</th><th>Costs</th><th>Verdict</th></tr>
+    <tr><td><strong>Browser extension</strong></td><td>The literal prompt text, pre-encryption, with the destination URL and the paste event. Perfect fidelity.</td><td>Only browsers you support. Users can disable it unless it's MDM-forced. Doesn't exist for native apps.</td><td><span class="chip allow">Ship first</span> ~80% of real usage is a browser.</td></tr>
+    <tr><td><strong>Transparent proxy + corporate CA</strong></td><td>The request body for native apps and CLIs that don't pin.</td><td>Pinning breaks. QUIC must be blocked to force TCP. You own the network's reliability forever.</td><td><span class="chip watch">Narrow scope</span> Only for a named host list where the content genuinely matters.</td></tr>
+    <tr><td><strong>Provider compliance API</strong></td><td>The sanctioned traffic, from the provider's own audit stream, with no TLS fight at all.</td><td>Only sanctioned/enterprise deployments. Doesn't see shadow usage.</td><td><span class="chip allow">The smart play</span> This is Nightfall's Claude Compliance API integration. Covers the sanctioned centre; the endpoint covers the unsanctioned tail.</td></tr>
+  </table>
+  <div class="say">"I'd frame it as centre and tail. The provider API covers the sanctioned centre cheaply and reliably. The endpoint's job is the tail — the shadow app, the CLI with a personal API key, the MCP server nobody declared. Those are exactly the cases a compliance API can't see and a proxy can't reach, and they're where the actual risk lives. That division tells you where to spend engineering."</div>
+</section>
+
+<!-- 27 -->
+<section id="c6">
+  <div class="eyebrow">§27</div>
+  <h3 class="s">Enforcement matrix — the one-page answer</h3>
+  <table>
+    <tr><th>You want to stop…</th><th>Hook</th><th>Mechanism</th><th>Fail mode</th></tr>
+    <tr><td>Sensitive file read by an AI agent</td><td>ES</td><td><code>AUTH_OPEN</code> → deny, or strip FWRITE; scoped to the agent's process subtree</td><td>Fail open, log, count</td></tr>
+    <tr><td>Unsanctioned MCP server running</td><td>ES</td><td><code>AUTH_EXEC</code> → deny on argv/package match</td><td>Allow + alert</td></tr>
+    <tr><td>Sensitive file → USB</td><td>ES</td><td><code>AUTH_COPYFILE</code>/<code>CLONE</code>/<code>RENAME</code>/<code>OPEN</code>, target <code>st_dev</code> ∈ removable set</td><td>Allow + alert</td></tr>
+    <tr><td>Native app → unsanctioned model host</td><td>NE</td><td><code>NEFilterDataProvider</code> → <code>.drop()</code> on SNI + app identity</td><td>Allow (never break the network)</td></tr>
+    <tr><td>Secrets in a prompt (web)</td><td>Browser ext</td><td>Intercept paste/submit, classify, block + coach</td><td>Allow + log</td></tr>
+    <tr><td>Secrets in a prompt (native)</td><td>NE</td><td>Transparent proxy, MITM, body scan, 403</td><td>Bypass proxy (allow)</td></tr>
+    <tr><td>Paste of a customer list into an AI box</td><td>Agent (LaunchAgent)</td><td>Pasteboard changeCount + frontmost app + classify + redact</td><td>Allow + log</td></tr>
+    <tr><td>Screenshot of a restricted app</td><td>Agent</td><td>ScreenCaptureKit-side controls + policy; forensic capture on trigger</td><td>Log only</td></tr>
+  </table>
+  <p class="footnote">Every row fails open. Say that explicitly when you present it — it's the through-line, and an interviewer who's operated a fleet will nod.</p>
+</section>
+
+<!-- ============================== PART IV ============================== -->
+<div class="part">
+  <div class="k">Part IV</div>
+  <h2>The room</h2>
+  <p>Compression. If you can answer these without notes, you're ready.</p>
+</div>
+
+<!-- 28 -->
+<section id="d1">
+  <div class="eyebrow">§28</div>
+  <h3 class="s">Question bank</h3>
+
+  <details class="q"><summary>Why can't you just scan the file inside the AUTH callback?</summary><div class="body"><p>Because a thread is blocked in the kernel and the deadline is not yours to choose. File I/O on the callback queue is unbounded latency, it needs TCC, and reading the file generates the very AUTH_OPEN you're currently handling unless you've muted yourself — that's a self-deadlock. So classification is decoupled in time: label on <code>NOTIFY_CLOSE(modified)</code>, cache by (dev, inode, generation), and make the AUTH path an O(1) lookup with a watchdog that fails open at half the deadline.</p></div></details>
+
+  <details class="q"><summary>Difference between es_respond_auth_result and es_respond_flags_result?</summary><div class="body"><p>Flags result is <code>AUTH_OPEN</code>-only and lets you return the subset of fcntl flags you permit — so you can allow read and strip write on the same open. That matters because a hard DENY makes apps fail in untested code paths, whereas a read-only fd makes them fail at save with an error they know how to show. Everything else is the binary auth result. Both take a cache flag; caching an ALLOW makes you blind to that target, caching a DENY freezes a decision made under a policy version that may change.</p></div></details>
+
+  <details class="q"><summary>Walk me through detecting an MCP server launch.</summary><div class="body"><p><code>AUTH_EXEC</code>. Check whether <code>msg.process</code> — or better, <code>responsible_audit_token</code> at message version ≥ 4 — is an AI runtime by signing ID. Pull argv with <code>es_exec_arg_count</code>/<code>es_exec_arg</code>; match on <code>modelcontextprotocol</code>, <code>mcp-server</code>, <code>uvx</code>, or a known-package list. Extract the capability from argv — the filesystem root it's given, the DB it's pointed at — because the risk is the scope, not the name. Count secrets in env but never log their values. Cross-reference against the declared config in <code>claude_desktop_config.json</code> / <code>.mcp.json</code>: a server that runs but isn't declared is your highest-signal finding. And be upfront that the stdio traffic itself is unreadable — this is inventory and capability, not content interception.</p></div></details>
+
+  <details class="q"><summary>How do you attribute a network flow to a process?</summary><div class="body"><p><code>NEFilterFlow.sourceAppAuditToken</code>, then validate the code signature from that token — never trust <code>sourceAppIdentifier</code> alone, it's a string. The real payoff is that the audit token is the same key ES gives you, so you join the flow to the process record, its tree, and its recent file reads. That join is what produces lineage: "read the customer list four seconds ago, now opening TLS to an unsanctioned model endpoint." A network vendor can't do it and a file-only vendor can't do it. Caveat: the token isn't always populated, so you design for an unattributed tail.</p></div></details>
+
+  <details class="q"><summary>Your extension needs a backend decision on a flow. What do you do?</summary><div class="body"><p>Ideally nothing — the fast path should have a cached answer. If I genuinely must, <code>.needRules()</code> parks the flow and asks the control provider, which can do the expensive thing; or <code>.pause()</code> and resume from a local async lookup. Both are user-visible hangs if slow, so they're a last resort with a hard timeout and a fail-open default. It's structurally the same problem as the ES deadline: fast path looks up, slow path decides, and the timeout is yours to choose so the system never chooses for you.</p></div></details>
+
+  <details class="q"><summary>Why not just MITM everything?</summary><div class="body"><p>Because you inherit every TLS edge case on the platform and you get blamed for every network problem the customer has. Pinned apps break with no workaround. QUIC forces you to block UDP/443 to fall back to TCP. Apple's own traffic bypasses you anyway. And for the sanctioned providers you don't need it — the provider's compliance API gives you the same content with none of the fight. So: MITM a small named host list where the content genuinely matters, filter for everything else, and use the provider API for the sanctioned centre.</p></div></details>
+
+  <details class="q"><summary>ES or NetworkExtension — which would you build first for AI governance?</summary><div class="body"><p>ES, and not because it's my comfort zone. Inventory precedes control, and <code>AUTH_EXEC</code> plus config watching gives you the complete picture of what AI tooling exists on the fleet — including the CLI and MCP surface that no network sensor can see at all — in weeks, monitor-only, with near-zero risk of breaking anything. That's a shippable product on its own and it's what earns you the right to enforce later. The network side is where enforcement and prompt content live, and it's a much bigger blast radius, so it comes second and scoped narrowly.</p></div></details>
+
+  <details class="q"><summary>What's the hardest bug you'd expect in this codebase?</summary><div class="body"><p>The Swift/C seam under load: an <code>es_message_t</code> captured in an escaping closure without <code>es_retain_message</code>, use-after-free that only fires when the work queue is deep enough to outlive the callback. Second: struct-version bugs that only show up on the one macOS version you didn't test. Third — and worst because it isn't a crash — a mute that's slightly too broad, so you silently stop seeing a class of event and your coverage claim becomes false with nothing in the logs. That last one is why I'd want <code>es_muted_paths_events()</code> readback exported as telemetry, not just used in debugging.</p></div></details>
+</section>
+
+<!-- 29 -->
+<section id="d2">
+  <div class="eyebrow">§29</div>
+  <h3 class="s">Whiteboard drills</h3>
+  <p class="lede">Do these out loud, timed, before the round. Each is 20–25 minutes.</p>
+  <ol>
+    <li><strong>"Design an agent that stops source code going into ChatGPT."</strong> — Clarify (web only? native? CLI? monitor or block?) → three channels, three sensors → label store → paste path → network path → what you can't cover (native app with pinning) → rollout (monitor → shadow → enforce).</li>
+    <li><strong>"Inventory every MCP server across a 10,000-Mac fleet."</strong> — exec + config + reconciliation → the disagreement is the finding → risk = capability not name → backend schema → the stdio boundary, stated up front.</li>
+    <li><strong>"Your agent adds 300ms to every file open. Debug it."</strong> — metrics first (which event type, cache hit rate, queue depth) → fs_usage to find the generator → mute strategy → then, and only then, optimise code. And: why did a human tell you before your telemetry did?</li>
+    <li><strong>"Block a CLI tool from reading ~/Documents/Finance."</strong> — the identity problem (node is node) → composite identity → subtree inheritance → inverted target-path muting for cheapness → AUTH_OPEN with flags result → what an attacker who controls argv does to your control.</li>
+    <li><strong>"Add Linux support."</strong> — fanotify <code>FAN_OPEN_PERM</code> is the ES-AUTH analogue, and not responding hangs the caller instead of killing you — worse failure mode. eBPF LSM for richer context where the kernel allows it. Abstract the event source, keep the policy engine identical. Be honest that macOS is your depth.</li>
+  </ol>
+</section>
+
+<!-- 30 -->
+<section id="d3">
+  <div class="eyebrow">§30</div>
+  <h3 class="s">Traps</h3>
+  <div class="verdict deny">
+    <p><span class="chip deny">Don't</span> Claim ES can see clipboard, network, or pipe contents. It can't, and the person across the table built this at CrowdStrike and FireEye.</p>
+  </div>
+  <div class="verdict deny">
+    <p><span class="chip deny">Don't</span> Say "we'd just hook it" or reach for injection. SIP and the hardened runtime ended that era, and reaching for it marks you as someone whose macOS knowledge stopped in 2018.</p>
+  </div>
+  <div class="verdict deny">
+    <p><span class="chip deny">Don't</span> Mute all platform binaries. <code>cp</code>, <code>curl</code>, <code>rsync</code>, <code>osascript</code>, <code>ditto</code> are platform binaries and they're the exfil toolkit. Volunteer this — it's a nice inversion of an obvious-sounding rule.</p>
+  </div>
+  <div class="verdict deny">
+    <p><span class="chip deny">Don't</span> Hedge. "It depends on the requirements, there are trade-offs" is the register that cost you the Zscaler round. Commit to a design, then name its weakness yourself. Naming your own design's blind spot before the interviewer does is the strongest move available in this format.</p>
+  </div>
+  <div class="verdict allow">
+    <p><span class="chip allow">Do</span> Say "I haven't shipped that; here's how I'd reason about it" when it's true. Against an interviewer who has shipped it, an honest boundary plus correct reasoning beats a confident claim that collapses on the second follow-up. Every single time.</p>
+  </div>
+</section>
+
+<hr>
+<p class="footnote">Written for macOS 13–15 era APIs. The ES event enum, <code>es_message_t</code> versions, and NetworkExtension behaviours change every release — verify anything version-specific against current Apple documentation and headers (<code>/Library/Developer/CommandLineTools/SDKs/…/EndpointSecurity/</code>) before quoting exact semantics in the room. Code here is illustrative skeleton, not compile-tested production code: type it, run it, break it. The knowledge you can defend is the knowledge you've watched fail.</p>
+</main>
+</div>
+</body>
+</html>

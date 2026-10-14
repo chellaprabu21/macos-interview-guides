@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI for Developer Velocity — techniques &amp; realities</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;
+  --ai:#3d4d8f;--aiT:#e8eaf6;
+  --go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;
+  --stop:#a03a2a;--stopT:#f9e7e2;
+  --pur:#6b3fa0;--purT:#eee7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--ai),var(--pur));z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:282px;flex:0 0 282px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#12141f;color:#c8cbdb;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#868ca8;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#868ca8;margin:15px 4px 6px;border-top:1px solid #262a3a;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#61668a;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a8adc4;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#6d7391;min-width:20px}
+  nav a:hover{background:#1d2030;color:#fff}nav a.active{background:var(--ai);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:846px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ai);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--ai)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.3px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .ab{border-left-color:var(--ai);background:var(--aiT)}.ab .l{color:var(--ai)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.7px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.7px;color:var(--ai)}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.a{border-color:var(--ai);background:var(--aiT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .nd.p{border-color:var(--pur);background:var(--purT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tier{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+  .tcard{flex:1;min-width:210px;border:1px solid var(--lineS);border-radius:10px;padding:12px 14px;background:var(--surf)}
+  .tcard .n{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+  .tcard .t{font-family:'Sora';font-weight:700;font-size:14.5px;margin-bottom:5px}
+  .tcard p{font-size:13.3px;margin:0;color:var(--soft)}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">AI &amp; dev velocity</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">AI for Developer<br>Velocity<span class="s">techniques, evidence,<br>and honest limits</span></div>
+  <div class="ct">12 sections</div>
+  <nav id="toc">
+    <div class="grp">Framing</div>
+    <a href="#frame"><span class="n">01</span><span>What velocity means ★</span></a>
+    <a href="#where"><span class="n">02</span><span>Where time actually goes</span></a>
+    <div class="grp">Techniques</div>
+    <a href="#inline"><span class="n">03</span><span>Inline assistance</span></a>
+    <a href="#agentic"><span class="n">04</span><span>Agentic workflows</span></a>
+    <a href="#context"><span class="n">05</span><span>Context engineering ★</span></a>
+    <a href="#review"><span class="n">06</span><span>Review &amp; quality gates</span></a>
+    <a href="#tests"><span class="n">07</span><span>Tests, migrations, debt</span></a>
+    <a href="#beyond"><span class="n">08</span><span>Beyond writing code</span></a>
+    <div class="grp">Making it real</div>
+    <a href="#measure"><span class="n">09</span><span>Measuring it ★</span></a>
+    <a href="#failure"><span class="n">10</span><span>How it goes wrong</span></a>
+    <a href="#security"><span class="n">11</span><span>The security angle ★</span></a>
+    <a href="#talk"><span class="n">12</span><span>Discussing it with him</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">His current focus · and adjacent to your team's charter</p>
+  <h1>AI for developer velocity — what actually works.</h1>
+  <p class="led">Not a tools list. This is about where engineering time genuinely goes, which of it AI can compress, how you'd know whether it worked, and the failure modes that make teams slower. Section 11 connects it to security, which is where your two worlds meet.</p>
+</header>
+
+<!-- 01 -->
+<section id="frame">
+  <div class="sn">01 / ★</div>
+  <h2>What "velocity" actually means</h2>
+  <p class="ss">Get this wrong and every subsequent decision optimises the wrong thing.</p>
+
+  <div class="bx st"><span class="l">The trap</span>
+    <p>Velocity is not lines of code, commits, or PRs merged. AI can inflate all three enormously while making the organisation <strong>slower</strong> — more code to review, more surface to maintain, more subtle bugs to chase later. Output is not throughput.</p></div>
+
+  <h3>The definition worth using</h3>
+  <p><strong>Velocity is how quickly a validated idea reaches production safely.</strong> That's a pipeline, and AI can compress some stages far more than others:</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd"><b>understand</b>the problem<br>and the code</div><span class="ar">→</span>
+      <div class="nd a"><b>write</b>the change</div><span class="ar">→</span>
+      <div class="nd"><b>verify</b>tests, review</div><span class="ar">→</span>
+      <div class="nd"><b>ship</b>CI, rollout</div><span class="ar">→</span>
+      <div class="nd"><b>operate</b>debug, respond</div>
+    </div>
+    <div class="cap">Most tooling targets "write" — which is often the shortest stage.</div>
+  </div>
+
+  <div class="bx wn"><span class="l">The counter-intuitive point</span>
+    <p>For a senior engineer on a mature codebase, <strong>typing was never the bottleneck.</strong> Understanding the system, deciding what to change, and getting it reviewed dominate. So a tool that doubles typing speed moves a small fraction of the total — while a tool that halves the time to <em>understand</em> an unfamiliar subsystem moves a much larger one. That's why the highest-leverage uses are often comprehension and review, not generation.</p></div>
+
+  <h3>The framing to open with</h3>
+  <div class="bx go"><span class="l">Say this</span>
+    <p>"I'd start by asking what's actually slow. On most teams it isn't typing — it's understanding unfamiliar code, waiting for review, debugging production issues, and the long tail of migrations nobody wants to do. AI helps unevenly across those, and the mistake is optimising the visible stage rather than the slow one."</p></div>
+</section>
+
+<!-- 02 -->
+<section id="where">
+  <div class="sn">02</div>
+  <h2>Where engineering time actually goes</h2>
+  <p class="ss">Match technique to bottleneck, rather than applying tools uniformly.</p>
+
+  <table class="tb">
+    <tr><th>Activity</th><th>Typical share</th><th>AI leverage</th></tr>
+    <tr><td><strong>Understanding code</strong></td><td>Large — the dominant cost in mature systems</td><td><strong>Very high</strong> — explain, trace, map dependencies, summarise history</td></tr>
+    <tr><td>Writing new code</td><td>Moderate</td><td>High for boilerplate, moderate for novel logic</td></tr>
+    <tr><td><strong>Debugging</strong></td><td>Large and highly variable</td><td><strong>High</strong> — hypothesis generation, log correlation, stack-trace triage</td></tr>
+    <tr><td><strong>Waiting for review</strong></td><td>Often the biggest single delay</td><td>High — pre-review catches trivia so humans discuss design</td></tr>
+    <tr><td>Writing tests</td><td>Moderate, often skipped</td><td><strong>Very high</strong> — the least controversial, highest-value use</td></tr>
+    <tr><td>Migrations &amp; refactors</td><td>Deferred indefinitely</td><td>Very high — mechanical, repetitive, well-specified</td></tr>
+    <tr><td>Documentation</td><td>Perpetually stale</td><td>High — but freshness matters more than volume</td></tr>
+    <tr><td>Environment &amp; build issues</td><td>Underestimated</td><td>Moderate — error diagnosis, config generation</td></tr>
+    <tr><td>Design decisions</td><td>Small in hours, huge in impact</td><td><strong>Low</strong> — and this is where you want humans thinking</td></tr>
+  </table>
+
+  <div class="bx ab"><span class="l">The two rows to emphasise</span>
+    <p><strong>Understanding code</strong> and <strong>waiting for review</strong> are usually the largest costs and the least discussed. A tool that makes an unfamiliar 200k-line codebase navigable, or that removes the trivial-comment round trip from review, moves more total time than a faster autocomplete ever will.</p></div>
+</section>
+
+<!-- 03 -->
+<section id="inline">
+  <div class="sn">03</div>
+  <h2>Technique 1 — inline assistance</h2>
+  <p class="ss">The baseline. Real gains, but the smallest of the techniques here.</p>
+
+  <h3>What it covers</h3>
+  <ul>
+    <li><strong>Completion</strong> — multi-line suggestions as you type</li>
+    <li><strong>Transform selection</strong> — "extract this into a function," "convert to async/await," "add error handling"</li>
+    <li><strong>Explain this</strong> — what does this regex / this bit-twiddling / this legacy function do</li>
+    <li><strong>Inline chat</strong> — questions scoped to the file you're in</li>
+  </ul>
+
+  <h3>Where it genuinely helps</h3>
+  <table class="tb">
+    <tr><th>Strong</th><th>Weak</th></tr>
+    <tr><td>Boilerplate — <code>Codable</code> conformances, protocol stubs, mock objects</td><td>Novel algorithms with subtle invariants</td></tr>
+    <tr><td>Repetitive patterns the file already establishes</td><td>Anything requiring cross-file architectural context</td></tr>
+    <tr><td>Unfamiliar API syntax you'd otherwise look up</td><td>Security-sensitive code where a plausible-looking mistake is costly</td></tr>
+    <tr><td>Test fixtures and parameterised cases</td><td>Concurrency — a suggestion can look right and race</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The honest assessment</span>
+    <p>Published studies show real but modest gains, concentrated in <strong>less experienced developers</strong> and <strong>unfamiliar territory</strong>. For a Staff engineer in a codebase they know well, inline completion is a convenience, not a transformation. Saying that plainly is more credible than quoting a vendor's percentage.</p></div>
+
+  <div class="bx st"><span class="l">The hidden cost</span>
+    <p><strong>Review load shifts, it doesn't disappear.</strong> Generated code still has to be read, understood, and owned. A developer who accepts suggestions without fully understanding them has moved work from writing to debugging — and debugging is more expensive. The discipline is: <em>if I couldn't have written it, I shouldn't merge it.</em></p></div>
+</section>
+
+<!-- 04 -->
+<section id="agentic">
+  <div class="sn">04</div>
+  <h2>Technique 2 — agentic workflows</h2>
+  <p class="ss">The bigger shift: the model reads the repo, runs commands, iterates on failures.</p>
+
+  <h3>What changes</h3>
+  <p>Inline assistance operates on the file you're looking at. An agent operates on <strong>the repository</strong> — it can search, read many files, run the build, run tests, read the failures, and try again. That closes a feedback loop, which is qualitatively different from generating text.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd a" style="min-width:440px"><b>1 · explore</b>search the repo, read relevant files, build a picture</div>
+      <div class="nd" style="min-width:440px"><b>2 · plan</b>propose an approach — reviewable <em>before</em> code exists</div>
+      <div class="nd" style="min-width:440px"><b>3 · implement</b>make the change across files</div>
+      <div class="nd g" style="min-width:440px"><b>4 · verify</b>run build and tests, read failures, iterate</div>
+      <div class="nd p" style="min-width:440px"><b>5 · present</b>a diff with reasoning, for human review</div>
+    </div>
+    <div class="cap">Step 4 is what makes this different — the agent can tell whether it was wrong.</div>
+  </div>
+
+  <h3>Where it works best</h3>
+  <div class="tier">
+    <div class="tcard"><div class="n">high value</div><div class="t">Well-specified, verifiable</div>
+      <p>Bug with a failing test · dependency upgrade · mechanical migration · adding a case to an existing pattern. The success criterion is machine-checkable.</p></div>
+    <div class="tcard"><div class="n">moderate</div><div class="t">Bounded features</div>
+      <p>A new endpoint following existing conventions. Works when the codebase has strong patterns to imitate.</p></div>
+    <div class="tcard"><div class="n">low value</div><div class="t">Design-heavy or novel</div>
+      <p>Architecture, security-critical logic, performance work needing profiling judgment. The bottleneck is deciding, not typing.</p></div>
+  </div>
+
+  <div class="bx go"><span class="l">The principle that predicts success</span>
+    <p><strong>Agentic work succeeds in proportion to how machine-verifiable "done" is.</strong> A failing test is a perfect specification — the agent knows when it's finished. "Make this faster" or "improve the architecture" has no such signal, and that's exactly where results get unreliable.</p>
+    <p style="margin-top:8px">A useful consequence: <strong>investing in your test suite is investing in AI leverage.</strong> Teams with strong tests get far more from agents than teams without, which is a nice argument for something you wanted anyway.</p></div>
+
+  <h3>The practical patterns</h3>
+  <ul>
+    <li><strong>Plan first, then execute</strong> — review the approach before any code is written. Catching a wrong direction at the plan stage costs a minute; catching it in a 40-file diff costs an hour.</li>
+    <li><strong>Small scoped tasks</strong> beat large vague ones. "Add rate limiting to this endpoint following the pattern in X" works; "improve our API" doesn't.</li>
+    <li><strong>Parallel exploration</strong> — run several approaches to a hard problem and compare, which is cheap in a way it never was with humans.</li>
+    <li><strong>Sandboxed execution</strong> — agents that run commands need a container, not your laptop with production credentials in the environment.</li>
+  </ul>
+</section>
+
+<!-- 05 -->
+<section id="context">
+  <div class="sn">05 / ★</div>
+  <h2>Technique 3 — context engineering</h2>
+  <p class="ss">The highest-leverage and least-discussed technique. It's the difference between a generic assistant and one that knows your system.</p>
+
+  <div class="bx ab"><span class="l">The core insight</span>
+    <p>Model quality is roughly the same for everyone. <strong>Context quality is not.</strong> The organisations getting real value are the ones that invested in making their conventions, architecture, and institutional knowledge available to the model — not the ones with a better subscription.</p></div>
+
+  <h3>The layers of context</h3>
+  <table class="tb">
+    <tr><th>Layer</th><th>What it provides</th></tr>
+    <tr><td><strong>Repo conventions file</strong></td><td>A committed document stating architecture, patterns, "we use X not Y," testing approach, and the things reviewers always ask for. Cheapest, highest-return investment available.</td></tr>
+    <tr><td><strong>Codebase indexing</strong></td><td>Semantic search so the model finds relevant code rather than guessing from filenames</td></tr>
+    <tr><td><strong>Internal docs &amp; ADRs</strong></td><td>Why decisions were made — the context that's otherwise only in senior engineers' heads</td></tr>
+    <tr><td><strong>Issue &amp; PR history</strong></td><td>What's been tried, what broke, what got reverted and why</td></tr>
+    <tr><td><strong>Runtime signals</strong></td><td>Logs, traces, metrics — essential for debugging assistance to be grounded rather than speculative</td></tr>
+    <tr><td><strong>Internal tool access</strong></td><td>Via MCP or equivalent: issue tracker, CI, observability, feature flags — so the model can look things up rather than assume</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The single best investment</span>
+    <p>A <strong>conventions file in the repo</strong>. It costs an afternoon, applies to every interaction afterwards, and encodes exactly the things reviewers repeat: "use the injected clock, never <code>Date()</code>," "logic goes in the core package, not the daemon," "every new dependency needs an ADR." That's institutional knowledge made machine-readable — and it improves human onboarding at the same time.</p></div>
+
+  <div class="bx wn"><span class="l">The subtle failure — context rot</span>
+    <p>Stale context is worse than none, because it's confidently wrong. A conventions file describing an architecture you migrated away from will actively steer people wrong. Treat it as code: review it in PRs, and update it when the pattern changes. Otherwise it decays exactly like documentation always has.</p></div>
+</section>
+
+<!-- 06 -->
+<section id="review">
+  <div class="sn">06</div>
+  <h2>Technique 4 — review and quality gates</h2>
+  <p class="ss">Often the highest-leverage place to apply AI, because review latency is frequently the biggest single delay.</p>
+
+  <h3>The problem with human review</h3>
+  <p>Review serves two purposes that get tangled: <strong>catching mistakes</strong> and <strong>transferring design judgment</strong>. The first is mechanical and repetitive; the second is why senior engineers should be in the loop. In practice the first crowds out the second — reviewers spend attention on naming, missing tests, and style, then rubber-stamp the architecture because they're tired.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd r" style="min-width:440px"><b>before</b>author waits hours or days · reviewer spends effort on trivia · design discussion happens last, if at all</div>
+      <span class="ar">↓</span>
+      <div class="nd g" style="min-width:440px"><b>after</b>automated pass catches trivia immediately · author fixes before a human looks · human attention goes to design</div>
+    </div>
+    <div class="cap">The win is reallocating human attention, not replacing the human.</div>
+  </div>
+
+  <h3>What automated review does well</h3>
+  <ul>
+    <li><strong>Convention adherence</strong> — the things your team says every time</li>
+    <li><strong>Missing test coverage</strong> for new branches</li>
+    <li><strong>Error paths</strong> unhandled, force-unwraps, ignored return values</li>
+    <li><strong>Security patterns</strong> — string concatenation into queries, disabled certificate validation, secrets in code</li>
+    <li><strong>Consistency</strong> with adjacent code the reviewer might not have open</li>
+    <li><strong>PR summarisation</strong> for large diffs, so the reviewer starts oriented</li>
+  </ul>
+
+  <h3>What it doesn't do</h3>
+  <ul>
+    <li>Judge whether the <strong>approach</strong> is right</li>
+    <li>Know the organisational context — the deprecation coming next quarter</li>
+    <li>Weigh trade-offs that depend on business priorities</li>
+    <li>Notice the thing that <em>isn't</em> in the diff but should be</li>
+  </ul>
+
+  <div class="bx st"><span class="l">The failure mode to design against</span>
+    <p><strong>Noisy automated review destroys itself.</strong> If half the comments are irrelevant, developers learn to dismiss all of them — including the one real finding. Precision matters far more than recall here. Start with a narrow, high-confidence rule set and expand only when the signal-to-noise holds.</p></div>
+</section>
+
+<!-- 07 -->
+<section id="tests">
+  <div class="sn">07</div>
+  <h2>Technique 5 — tests, migrations &amp; debt</h2>
+  <p class="ss">The least glamorous applications, and probably the highest actual return.</p>
+
+  <h3>Tests — the strongest use case</h3>
+  <p>Test writing is well-specified, repetitive, verifiable, and chronically under-done because it's tedious. That combination is close to ideal.</p>
+  <ul>
+    <li><strong>Characterisation tests for legacy code</strong> — generate tests capturing current behaviour <em>before</em> refactoring, which is exactly the work nobody does and everybody needs.</li>
+    <li><strong>Edge-case enumeration</strong> — "what am I not testing?" is a question models are genuinely good at.</li>
+    <li><strong>Parameterised cases</strong> from a description of the input space.</li>
+    <li><strong>Test data and fixtures</strong>, including realistic malformed inputs.</li>
+  </ul>
+  <div class="bx wn"><span class="l">The caveat</span>
+    <p>A generated test that asserts current behaviour <strong>locks in bugs</strong> as well as intent. Characterisation tests are for detecting change, not for validating correctness — and someone has to review whether the captured behaviour is actually desirable. Say that distinction; it shows you've thought past the demo.</p></div>
+
+  <h3>Migrations — mechanical and endless</h3>
+  <p>The work that's individually trivial and collectively enormous: a deprecated API across 400 call sites, Objective-C to Swift, XCTest to Swift Testing, completion handlers to async/await, a logging framework swap.</p>
+  <p>Historically you either wrote a script (brittle, edge cases everywhere) or did it by hand over months. Agentic tooling handles the long tail of "this call site is slightly different" that defeats mechanical rewriting — <strong>which is precisely why these migrations stall</strong>.</p>
+
+  <h3>The debt this unlocks</h3>
+  <table class="tb">
+    <tr><th>Work</th><th>Why it never happened before</th></tr>
+    <tr><td>Test coverage on legacy modules</td><td>Nobody wants to spend a sprint on it</td></tr>
+    <tr><td>Deprecated API cleanup</td><td>Individually trivial, collectively weeks</td></tr>
+    <tr><td>Consistent error handling</td><td>Touches everything, benefits nothing visibly</td></tr>
+    <tr><td>Documentation refresh</td><td>Stale the moment it's written</td></tr>
+    <tr><td>Dependency upgrades</td><td>Boring until it's a CVE</td></tr>
+  </table>
+  <div class="bx go"><span class="l">The reframe worth offering</span>
+    <p>"The most interesting effect isn't doing existing work faster — it's that <strong>work which was never economically viable becomes viable</strong>. Nobody was going to spend three weeks adding characterisation tests to a legacy module. If that becomes two days, it happens, and the compounding benefit is larger than the direct time saved."</p></div>
+</section>
+
+<!-- 08 -->
+<section id="beyond">
+  <div class="sn">08</div>
+  <h2>Technique 6 — beyond writing code</h2>
+  <p class="ss">Several of these have better return than code generation and get discussed far less.</p>
+
+  <table class="tb">
+    <tr><th>Application</th><th>Why it works</th></tr>
+    <tr><td><strong>Codebase comprehension</strong></td><td>"How does authentication flow through this system?" Onboarding to an unfamiliar 200k-line codebase is a genuine multi-week cost, and this compresses it substantially.</td></tr>
+    <tr><td><strong>Incident triage</strong></td><td>Correlate logs, traces and recent deploys; generate hypotheses ranked by plausibility. During an incident the bottleneck is <em>where to look</em>, and breadth is exactly what a model offers.</td></tr>
+    <tr><td><strong>Failure-mode brainstorming</strong></td><td>"What could go wrong with this design?" Not authoritative, but excellent at surfacing the case nobody in the room considered.</td></tr>
+    <tr><td><strong>Threat modelling assistance</strong></td><td>Walk STRIDE across a data-flow diagram. Structured, checklist-driven, and usually skipped for lack of time.</td></tr>
+    <tr><td><strong>Flaky-test diagnosis</strong></td><td>Correlate failures across runs to find the shared factor — tedious pattern-matching humans do badly.</td></tr>
+    <tr><td><strong>Build &amp; CI diagnosis</strong></td><td>Obscure linker and toolchain errors have known causes buried in forums. High-frustration, low-skill work.</td></tr>
+    <tr><td><strong>Commit and PR summaries</strong></td><td>Better change descriptions with no author effort, which improves review speed and archaeology later.</td></tr>
+    <tr><td><strong>Log and error analysis at scale</strong></td><td>Clustering and summarising crash reports across a fleet — directly relevant to your world.</td></tr>
+  </table>
+
+  <div class="bx ab"><span class="l">The one to lead with</span>
+    <p><strong>Codebase comprehension.</strong> It's the largest hidden cost in mature organisations, it's what makes engineers slow in their first months on a team, and it's the stage where a model's ability to read enormous amounts of code quickly is a genuine structural advantage rather than a marginal speedup.</p></div>
+</section>
+
+<!-- 09 -->
+<section id="measure">
+  <div class="sn">09 / ★</div>
+  <h2>Measuring whether it worked</h2>
+  <p class="ss">The question that separates a serious programme from enthusiasm — and the one he's most likely to have opinions about.</p>
+
+  <div class="bx st"><span class="l">Metrics that mislead</span>
+    <table class="tb" style="margin-top:8px">
+      <tr><th>Metric</th><th>Why it's wrong</th></tr>
+      <tr><td>Lines of code</td><td>More code is a liability, not an achievement</td></tr>
+      <tr><td>Suggestion acceptance rate</td><td>Measures the tool's agreeableness, not value delivered</td></tr>
+      <tr><td>PRs merged</td><td>Smaller PRs inflate it with no change in output</td></tr>
+      <tr><td>Self-reported time saved</td><td>Systematically overestimated; people remember the wins</td></tr>
+      <tr><td>Tool usage / seats active</td><td>Adoption isn't impact</td></tr>
+    </table></div>
+
+  <h3>Metrics worth tracking</h3>
+  <table class="tb">
+    <tr><th>Metric</th><th>What it captures</th></tr>
+    <tr><td><strong>Cycle time</strong> (first commit → production)</td><td>The end-to-end pipeline, which is what velocity actually means</td></tr>
+    <tr><td><strong>Review latency</strong></td><td>Often the largest single delay; direct target of §06</td></tr>
+    <tr><td><strong>Change failure rate</strong></td><td><strong>The guardrail.</strong> If speed rises and this rises with it, you've bought nothing.</td></tr>
+    <tr><td><strong>Time to restore</strong></td><td>Whether AI-assisted debugging is real</td></tr>
+    <tr><td><strong>Time to first meaningful PR</strong> for new joiners</td><td>The clearest signal that comprehension assistance works</td></tr>
+    <tr><td><strong>Test coverage trend</strong></td><td>Whether the "unlocked debt work" is actually happening</td></tr>
+    <tr><td><strong>Escaped defect rate</strong></td><td>The slow-moving quality signal that matters most</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The framing that will land</span>
+    <p>"I'd measure with <strong>DORA-style outcome metrics, always paired</strong>: cycle time and review latency for speed, change failure rate and escaped defects as the guardrail. Speed without the guardrail is meaningless — you can always ship faster by testing less. And I'd be sceptical of self-reported time saved; people remember the win and forget the twenty minutes debugging a plausible-looking suggestion."</p></div>
+
+  <div class="bx wn"><span class="l">The honest measurement problem</span>
+    <p>Attribution is genuinely hard. Cycle time moves for many reasons — team changes, project mix, seasonality. A clean A/B is impractical and arguably unethical if you believe the tool helps. So the realistic approach is <strong>directional metrics plus qualitative signal</strong>, and being honest that you're building a case rather than proving causation. Saying that is more credible than claiming a precise percentage.</p></div>
+</section>
+
+<!-- 10 -->
+<section id="failure">
+  <div class="sn">10</div>
+  <h2>How it goes wrong</h2>
+  <p class="ss">Naming the failure modes is what makes you sound like someone who's done this rather than read about it.</p>
+
+  <table class="tb">
+    <tr><th>Failure</th><th>Mechanism</th><th>Mitigation</th></tr>
+    <tr><td><strong>Review debt</strong></td><td>Generation outpaces review capacity; PRs get rubber-stamped</td><td>Cap PR size; automated pre-review; treat review as the real constraint</td></tr>
+    <tr><td><strong>Plausible-but-wrong</strong></td><td>Output looks idiomatic and is subtly incorrect — harder to spot than obviously broken code</td><td>Verification loops; strong tests; the "could I have written this?" rule</td></tr>
+    <tr><td><strong>Comprehension decay</strong></td><td>Nobody understands the code they shipped; debugging later is far more expensive</td><td>Ownership norms — you merge it, you own it, you can explain it</td></tr>
+    <tr><td><strong>Convention drift</strong></td><td>Generated code follows generic patterns, not yours; codebase fragments</td><td>Conventions file; automated review on adherence</td></tr>
+    <tr><td><strong>Context rot</strong></td><td>Stale guidance actively misleads</td><td>Version the context; review it in PRs</td></tr>
+    <tr><td><strong>Over-application</strong></td><td>Used for design and architecture where judgment is the point</td><td>Explicit norms about where it's appropriate</td></tr>
+    <tr><td><strong>Skill atrophy</strong></td><td>Juniors don't build debugging intuition because they never struggle</td><td>Deliberate practice; encourage understanding before accepting</td></tr>
+    <tr><td><strong>Security regressions</strong></td><td>Generated code reproduces insecure patterns from training data</td><td>See §11 — this is the one your background speaks to</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The one to name first</span>
+    <p><strong>Review becomes the bottleneck.</strong> If you double code production and review capacity is unchanged, you haven't sped up delivery — you've built a queue, and queues degrade quality because reviewers under load approve rather than engage. Any serious velocity programme has to address review capacity at the same time as generation, or it makes things worse.</p></div>
+</section>
+
+<!-- 11 -->
+<section id="security">
+  <div class="sn">11 / ★ YOUR GROUND</div>
+  <h2>The security angle</h2>
+  <p class="ss">Where your Endpoint AI Governance work and his velocity work genuinely meet — and the most valuable thing you can contribute to this conversation.</p>
+
+  <h3>The risks, concretely</h3>
+  <table class="tb">
+    <tr><th>Risk</th><th>Detail</th></tr>
+    <tr><td><strong>Insecure patterns reproduced</strong></td><td>Trained on public code, which contains a lot of string-concatenated SQL, disabled certificate validation, and weak crypto defaults. Plausible-looking and wrong.</td></tr>
+    <tr><td><strong>Secrets leaving the boundary</strong></td><td>Developers paste config, logs, and credentials into prompts. This is a data-exfiltration path that didn't exist before.</td></tr>
+    <tr><td><strong>Proprietary code in prompts</strong></td><td>Where does it go, is it retained, is it used for training? A real procurement question, not a theoretical one.</td></tr>
+    <tr><td><strong>Prompt injection via repo content</strong></td><td>An agent reading files can encounter instructions embedded in a README, a dependency, or an issue comment. Untrusted content becoming instructions is a genuine new attack surface.</td></tr>
+    <tr><td><strong>Hallucinated dependencies</strong></td><td>A model suggests a package that doesn't exist; an attacker registers that name. <strong>Slopsquatting</strong> — a supply-chain attack created by the tooling itself.</td></tr>
+    <tr><td><strong>Agent permissions</strong></td><td>An agent that runs commands has whatever access the developer has. On a machine with production credentials, that's a very large blast radius.</td></tr>
+    <tr><td><strong>Licence contamination</strong></td><td>Generated code resembling GPL sources in a proprietary product</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The one that's genuinely new</span>
+    <p><strong>Prompt injection through repository content.</strong> An agent that reads files, issues, and dependency documentation is processing untrusted input as potential instructions. A malicious dependency's README could contain text directing the agent to exfiltrate environment variables or modify unrelated code. This is a novel attack surface with no mature defence, and naming it demonstrates you're thinking about the system rather than the feature.</p></div>
+
+  <h3>Governance that doesn't destroy the benefit</h3>
+  <ul>
+    <li><strong>Sandboxed execution</strong> — agents run in containers with scoped credentials, never on a laptop holding production access.</li>
+    <li><strong>Secrets scanning on prompts</strong>, not just on commits — the leak happens earlier now.</li>
+    <li><strong>Dependency verification</strong> — every suggested package checked against a registry before install, which kills slopsquatting.</li>
+    <li><strong>Security-focused automated review</strong> on all code, with generated code getting no lighter treatment.</li>
+    <li><strong>Data-residency clarity</strong> — enterprise agreements about retention and training, documented for audit.</li>
+    <li><strong>Audit trail</strong> — what the agent read, what it ran, what it changed. Non-negotiable for a security product's codebase.</li>
+    <li><strong>Human approval for irreversible actions</strong> — an agent may propose a migration; a human runs it against production.</li>
+  </ul>
+
+  <div class="bx ab"><span class="l">The framing that positions you</span>
+    <p>"My team works on endpoint AI governance, so I see this from the other side: the same properties that make agents useful — reading broadly, executing commands, acting autonomously — are exactly the properties that make them a governance problem. An agent with repo access and shell execution has a blast radius comparable to a compromised developer account, and the industry is deploying them faster than it's instrumenting them.</p>
+    <p style="margin-top:8px">The two questions I'd want answered before scaling: <strong>what can it reach</strong>, and <strong>what does it leave behind</strong>. Sandboxing bounds the first, audit trails address the second. Neither slows anyone down, and without them you can't answer an auditor asking who changed what."</p></div>
+
+  <div class="bx go"><span class="l">Why this is your best contribution to the conversation</span>
+    <p>He's optimising for velocity. You bring the governance perspective he needs but may not have prioritised — and you bring it as an enabler rather than a blocker. That's a peer contribution, and it's genuinely your domain rather than something you've read up on.</p></div>
+</section>
+
+<!-- 12 -->
+<section id="talk">
+  <div class="sn">12</div>
+  <h2>Discussing it with him</h2>
+  <p class="ss">His stated current focus. Aim for a real exchange rather than a survey of tools.</p>
+
+  <div class="bx go"><span class="l">The question to lead with</span>
+    <p>"You mentioned you're working on developer velocity through AI — <strong>what's actually worked, and where has it disappointed?</strong> I'm curious partly because my team does endpoint AI governance, so I see the risk side, and partly because I'd expect the wins to be in less obvious places than code generation."</p>
+    <p style="margin-top:8px">It's his current focus, it invites a genuine answer including the disappointments, and it flags your relevant experience without claiming his.</p></div>
+
+  <h3>Positions worth having</h3>
+  <ol>
+    <li><strong>Velocity isn't typing speed.</strong> "For a senior engineer on a mature codebase, understanding the system and waiting for review dominate. So the leverage is in comprehension and review, not autocomplete."</li>
+    <li><strong>Verifiability predicts success.</strong> "Agentic work succeeds in proportion to how machine-checkable 'done' is. A failing test is a perfect spec. 'Improve the architecture' isn't — which is why investing in tests is investing in AI leverage."</li>
+    <li><strong>Context beats model choice.</strong> "Everyone has similar models. The differentiator is whether your conventions, architecture decisions, and institutional knowledge are available to it. A conventions file in the repo is the cheapest high-return thing available."</li>
+    <li><strong>Review is the bottleneck that appears.</strong> "Double generation without addressing review capacity and you've built a queue. Queues degrade quality, because reviewers under load approve rather than engage."</li>
+    <li><strong>Measure with paired metrics.</strong> "Cycle time and review latency for speed, change failure rate as the guardrail. And I'd distrust self-reported time saved."</li>
+    <li><strong>The governance angle.</strong> "The properties that make agents useful are the ones that make them a governance problem. Sandbox what they reach; audit what they leave behind."</li>
+  </ol>
+
+  <h3>Follow-up questions if it opens up</h3>
+  <details class="q"><summary>On measurement</summary><div class="bod">
+    <p>"How are you measuring it? I'd expect that to be the hard part — cycle time moves for lots of reasons, and self-reported time saved is systematically optimistic. Did you find a metric you actually trusted?"</p>
+    <p class="lb">Why it works</p><p>Measurement is the genuinely difficult part of this problem, and anyone doing it seriously will have wrestled with it.</p></div></details>
+
+  <details class="q"><summary>On where the wins landed</summary><div class="bod">
+    <p>"Did the gains land where you expected? My guess would be that code generation was the smallest win and comprehension or review was the biggest — but I'd be curious if it played out differently."</p></div></details>
+
+  <details class="q"><summary>On agents in a security codebase</summary><div class="bod">
+    <p>"How do you think about agentic tooling in a codebase this sensitive? An agent with repo access and shell execution has a meaningful blast radius, and I'd imagine an identity company has a higher bar than most."</p>
+    <p class="lb">Why it works</p><p>It's a real tension in his specific context, and it's your domain — so it's a peer question rather than a curious one.</p></div></details>
+
+  <details class="q"><summary>On the review bottleneck</summary><div class="bod">
+    <p>"Did review capacity become the constraint? That's the failure mode I'd worry about most — you double generation, review stays the same, and quality quietly degrades because reviewers under load approve rather than engage."</p></div></details>
+
+  <div class="bx wn"><span class="l">The posture</span>
+    <p>Be genuinely curious rather than performing expertise. He's actively working on this and will know more about what worked at Okta specifically than you can infer. Your value here is the <strong>governance and risk perspective</strong> plus the fact that you've clearly thought about the problem structurally — not a tool recommendation.</p></div>
+
+  <div class="bx ab"><span class="l">The line that ties both your worlds together</span>
+    <p>"There's a symmetry I find interesting: you're using AI to move faster, and my team is working out how organisations stay in control when AI is doing things on endpoints. Same underlying question from opposite ends — <strong>how much autonomy do you grant, and what do you instrument so you can answer for it afterwards.</strong>"</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  AI for developer velocity · where time goes → techniques → context engineering → measurement → failure modes → governance.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=[].slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

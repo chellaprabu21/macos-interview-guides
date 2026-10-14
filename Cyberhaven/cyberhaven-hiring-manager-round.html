@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyberhaven — Hiring Manager Round · Aristide Fattori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EBEEF1;
+    --card:#FFFFFF;
+    --ink:#0F1419;
+    --muted:#5C6672;
+    --line:#D6DBE1;
+    --probe:#1F4E9C;      /* instrument blue */
+    --probe-soft:#E2EAF6;
+    --strength:#276B4E;   /* verified green */
+    --risk:#B0600A;       /* amber signal */
+    --risk-bg:#FBF2E5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    font-size:15.5px;line-height:1.58;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:44px 22px 90px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  /* ── header ─────────────────────────────── */
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--probe);
+    font-weight:500;margin-bottom:12px;
+  }
+  h1{
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+    font-size:clamp(29px,5.2vw,45px);line-height:1.04;letter-spacing:-.02em;
+  }
+  .dek{color:var(--muted);font-size:16px;margin-top:12px;max-width:60ch}
+
+  /* ── loop strip (signature) ─────────────── */
+  .loop{
+    margin-top:30px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;
+  }
+  .loop-head{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);padding:9px 16px;
+    border-bottom:1px solid var(--line);background:#F7F8FA;
+  }
+  .stage{
+    display:grid;grid-template-columns:30px 1fr auto;gap:14px;align-items:center;
+    padding:11px 16px;border-bottom:1px solid var(--line);font-size:14px;
+  }
+  .stage:last-child{border-bottom:none}
+  .stage .n{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)}
+  .stage.done{color:var(--muted)}
+  .stage.done .name{text-decoration:line-through;text-decoration-thickness:1px}
+  .stage.now{background:var(--probe-soft)}
+  .stage.now .name{font-weight:600}
+  .stage .name{font-weight:500}
+  .stage .tag{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
+    white-space:nowrap;
+  }
+  .stage.now .tag{color:var(--probe);font-weight:600}
+
+  /* ── sections ───────────────────────────── */
+  section{margin-top:52px}
+  h2{
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:700;
+    font-size:24px;letter-spacing:-.015em;line-height:1.2;
+  }
+  h2 .num{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+    color:var(--probe);margin-right:10px;vertical-align:2px;
+  }
+  .sub{color:var(--muted);font-size:14.5px;margin:6px 0 18px}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:11px;padding:20px 22px;margin-bottom:14px;
+  }
+  h3{font-size:15.5px;font-weight:600;margin-bottom:8px}
+  h3 .mono{font-size:12px;color:var(--probe);margin-right:8px;font-weight:500}
+  ul{list-style:none}
+  ul.tick li{padding-left:20px;position:relative;margin-bottom:9px}
+  ul.tick li:last-child{margin-bottom:0}
+  ul.tick li::before{content:"›";position:absolute;left:2px;color:var(--probe);font-weight:700}
+  b{font-weight:600}
+  code{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    background:#EEF1F5;padding:1px 5px;border-radius:4px;
+  }
+
+  /* dossier */
+  .dossier{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;
+    background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden;
+  }
+  .fact{padding:15px 18px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .fact:nth-child(2n){border-right:none}
+  .fact .k{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px;
+  }
+  .fact .v{font-size:14px;line-height:1.45}
+
+  /* pitch */
+  .pitch{
+    background:var(--card);border-left:3px solid var(--probe);
+    border-radius:0 11px 11px 0;padding:22px 24px;font-size:16px;line-height:1.68;
+  }
+  .pitch em{font-style:normal;background:var(--probe-soft);padding:0 4px;border-radius:3px}
+
+  /* probe blocks */
+  .probe-item{
+    background:var(--card);border:1px solid var(--line);border-radius:11px;
+    margin-bottom:12px;overflow:hidden;
+  }
+  .probe-q{
+    padding:14px 18px;font-weight:600;font-size:15px;
+    border-bottom:1px solid var(--line);background:#F7F8FA;
+  }
+  .probe-q .mono{color:var(--probe);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;display:block;margin-bottom:4px;font-weight:500}
+  .probe-a{padding:15px 18px}
+  .probe-a p{margin-bottom:9px}
+  .probe-a p:last-child{margin-bottom:0}
+  .probe-a ul.tick li{margin-bottom:7px}
+
+  .callout{
+    background:var(--risk-bg);border:1px solid #EFDCBE;border-left:3px solid var(--risk);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin-top:12px;
+  }
+  .callout b{color:var(--risk)}
+  .win{
+    background:#EAF3EE;border:1px solid #C9E0D3;border-left:3px solid var(--strength);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin-top:12px;
+  }
+  .win b{color:var(--strength)}
+
+  footer{
+    margin-top:56px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px;font-family:'IBM Plex Mono',monospace;
+  }
+  @media(max-width:600px){
+    .dossier{grid-template-columns:1fr}
+    .fact{border-right:none}
+    .stage{grid-template-columns:24px 1fr;gap:10px}
+    .stage .tag{grid-column:2;font-size:10.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Cyberhaven · Senior SWE, macOS Endpoint</div>
+    <h1>Hiring Manager Round<br>Aristide Fattori</h1>
+    <p class="dek">He is not a generalist manager. He is an OS-security researcher with a PhD in hardware-assisted virtualization for malware analysis, an ex-penetration tester, a Defcon CTF finalist, and Cyberhaven's employee from January 2016 — he built the thing he now manages. Prepare for a technical conversation disguised as a fit call.</p>
+
+    <div class="loop">
+      <div class="loop-head">Interview loop</div>
+      <div class="stage done"><span class="n">01</span><span class="name">Recruiter screen — Aisha Ansari</span><span class="tag">cleared</span></div>
+      <div class="stage now"><span class="n">02</span><span class="name">Hiring manager — Aristide Fattori</span><span class="tag">← you are here</span></div>
+      <div class="stage"><span class="n">03</span><span class="name">Coding, two panelists</span><span class="tag">90 min</span></div>
+      <div class="stage"><span class="n">04</span><span class="name">System design</span><span class="tag">60 min · flagged hard</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>Read the man before you read the role</h2>
+    <p class="sub">Everything in this round should be calibrated to who is sitting across from you.</p>
+
+    <div class="dossier">
+      <div class="fact"><span class="k">Tenure</span><span class="v">At Cyberhaven since Jan 2016 — engineer for 7.5 years, then EM, now Senior EM. He wrote the early sensor. He will know if you are bluffing.</span></div>
+      <div class="fact"><span class="k">Background</span><span class="v">PhD, Università degli Studi di Milano — hardware-assisted virtualization applied to malware analysis and forensics. Visiting researcher at UCSB seclab.</span></div>
+      <div class="fact"><span class="k">Offensive security</span><span class="v">Ex-pen tester at Emaze. CTF player — two Defcon Finals, incl. with Shellphish. He thinks in attacker terms by default.</span></div>
+      <div class="fact"><span class="k">Scope</span><span class="v">He hires for macOS, Linux endpoint, and the browser extension. He owns the whole endpoint org, not just Mac.</span></div>
+      <div class="fact"><span class="k">Based in</span><span class="v">Switzerland — CET. Your evening-IST availability is directly his problem to solve. Say it unprompted.</span></div>
+      <div class="fact"><span class="k">Company moment</span><span class="v">Unicorn, 2,251% revenue growth 2021–24, Deloitte Fast 500. Just launched a unified AI &amp; data security platform. Hiring hard.</span></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>What this changes about how you talk</h3>
+      <ul class="tick">
+        <li><b>No abstraction, no marketing verbs.</b> "Enforced zero-trust posture" means nothing to him. "We hold a Secure Enclave key, sign a nonce, and the IdP gates the token exchange on the attestation" means something.</li>
+        <li><b>Name the API, the failure mode, the fix.</b> He is fluent in the exact frameworks in your résumé. Depth is rewarded; a smooth summary is not.</li>
+        <li><b>Think like the attacker at least once.</b> Volunteer one "here's how I'd tamper with this agent, and here's what we did about it." That is his native language and almost no candidate does it.</li>
+        <li><b>Do not compete with him on kernel research.</b> He wins that. Compete on what he needs and doesn't have: someone who has shipped and operated a macOS agent on millions of live endpoints without breaking them.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Your opening, rebuilt for him</h2>
+    <p class="sub">Different from the recruiter version. Denser, more specific, ~75 seconds. Then stop and let him drive.</p>
+    <div class="pitch">
+      "Ten years on Apple platforms, all of it on security products. Right now I'm Staff at JumpCloud, tech-leading Endpoint AI Governance — I own client-side pieces of a macOS agent running on a fleet in the millions, built on System Extensions and the Endpoint Security framework. The work I care about is the part your JD is really about: <em>staying in the critical path of every process and file event without ever being the reason a user's machine feels slow or a save fails.</em> I've done the device-trust side deeply — Secure Enclave-backed credentials, certificate auth, MDM attestation — and the perf side with Instruments on concurrency and memory. What's new to me, and why I want this, is data lineage. Provenance on the endpoint is a much harder problem than posture, and it's the one place where an agent's design decisions actually decide whether the product works."
+    </div>
+    <div class="win"><b>Why this lands:</b> it claims exactly what you have, names the one thing you don't (lineage/DLP), and frames the gap as the reason you're interested rather than a hole. He is an early engineer — intellectual honesty about a hard problem reads as senior, not weak.</div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>The hook nobody else in his pipeline has</h2>
+    <p class="sub">Use this once, deliberately, when he asks why Cyberhaven.</p>
+    <div class="card">
+      <p style="margin-bottom:10px">Cyberhaven's CEO is publicly betting the company on the <b>agentic enterprise</b> — securing human→AI and AI→AI data flows, where you can't tell whether the entity moving data is a person or an agent. Their team is openly hiring to "build the security layer for agentic enterprises."</p>
+      <p>Your current title is literally <b>Tech Lead, Endpoint AI Governance</b>. You built an LLM-based AI command builder that generates admin scripts — you have already had to think about what happens when a model, not a human, initiates a privileged action on an endpoint.</p>
+      <div class="win"><b>Say something like:</b> "The thing that made me reply to the recruiter was your positioning on agentic workflows. My team's charter at JumpCloud is endpoint AI governance — I've spent the last year on the question of what an agent is allowed to do on a managed Mac and how you prove it. You're asking the same question from the data side. That's the same problem from the other end, and I'd rather work on it where the sensor is the product."</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>Where he will actually probe</h2>
+    <p class="sub">An HM round with this person is a depth test on four axes. Have a real answer, with a real story, for each.</p>
+
+    <div class="probe-item">
+      <div class="probe-q"><span class="mono">Axis 1 · Endpoint Security framework</span>How deep is your ESF experience, really?</div>
+      <div class="probe-a">
+        <p>Get concrete fast. The vocabulary that proves you've shipped it:</p>
+        <ul class="tick">
+          <li><b>AUTH vs NOTIFY.</b> AUTH events block the syscall and must be answered before a deadline via <code>es_respond_auth_result</code>. Miss the deadline and the system kills your client — and on a fleet that's a support incident, not a bug.</li>
+          <li><b>Never do work in the ES callback.</b> Retain the message (<code>es_retain_message</code>), hand it to your own queue, respond fast. Bounded queue, explicit drop policy for NOTIFY, never for AUTH.</li>
+          <li><b>Muting is the performance strategy.</b> <code>es_mute_path</code> / <code>es_mute_process</code> — and muting yourself, or your own writes generate events that generate writes.</li>
+          <li><b>Deployment reality:</b> the <code>endpoint-security.client</code> entitlement needs Apple approval, TCC/Full Disk Access, System Extension activation, and MDM to approve silently at fleet scale. You've lived this — most candidates have only read about it.</li>
+          <li><b>Message versioning</b> differs across macOS releases; parsing has to be version-aware or you break on the next OS beta.</li>
+        </ul>
+        <div class="callout"><b>Honest positioning:</b> your ESF work has been in service of device trust and conditional access, not content inspection. Don't inflate it. Say: "My ESF surface has been process and file events for posture and trust decisions, not DLP classification — the framework mechanics and the fleet-scale operational problems transfer directly; the lineage modelling is what I'd be learning."</div>
+      </div>
+    </div>
+
+    <div class="probe-item">
+      <div class="probe-q"><span class="mono">Axis 2 · Performance</span>Hundreds of thousands of events with no user-visible impact — how?</div>
+      <div class="probe-a">
+        <p>This is the heart of the JD. Structure your answer as: <b>measure → reduce → absorb → prove.</b></p>
+        <ul class="tick">
+          <li><b>Measure:</b> <code>os_signpost</code> around event handling, track p99 AUTH response latency as an explicit SLO. Instruments Time Profiler and System Trace, not guesswork.</li>
+          <li><b>Reduce:</b> mute aggressively at the kernel boundary — the cheapest event is one you never receive. Cache process metadata keyed by pid + pidversion so you're not re-resolving signing info per event.</li>
+          <li><b>Absorb:</b> lock-free or single-writer ring buffer, backpressure, disk spooling with a hard cap, batched and compressed upload. Degrade by sampling, never by blocking.</li>
+          <li><b>Prove:</b> a perf regression gate in CI, plus fleet telemetry on CPU, memory, and event-drop rate — because a 2% CPU regression on a million endpoints is a customer escalation.</li>
+        </ul>
+        <div class="win"><b>Your story to tell here:</b> the TURN relay work — 26 regions, tuned against live WebRTC statistics to cut RTT and jitter. It shows you optimize against production telemetry rather than a local benchmark. Then pivot to an Instruments story about a concurrency or leak bug in the agent, because that's the closer analogue.</div>
+      </div>
+    </div>
+
+    <div class="probe-item">
+      <div class="probe-q"><span class="mono">Axis 3 · Reliability</span>"Code that never impacts the end-user experience" — what does that mean to you?</div>
+      <div class="probe-a">
+        <ul class="tick">
+          <li><b>Fail-open by default in the data path.</b> A DLP sensor that hangs a save dialog is worse than a sensor that missed an event. Have an opinion on where fail-closed is justified and where it isn't — he will have one.</li>
+          <li><b>Watchdog + self-healing:</b> if the extension wedges, something must notice and recycle it without a user reboot.</li>
+          <li><b>Staged rollout and a kill switch</b> reachable from the backend. Never ship an agent update to a whole fleet at once.</li>
+          <li><b>OS beta pipeline:</b> every macOS major release can change ESF behaviour. Testing against betas isn't optional at this layer.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="probe-item">
+      <div class="probe-q"><span class="mono">Axis 4 · Hardening</span>Your software processes untrusted data and talks to a backend. How do you not become the attack surface?</div>
+      <div class="probe-a">
+        <p>This is his home turf. Bring one crisp, specific answer and you will be memorable:</p>
+        <ul class="tick">
+          <li><b>XPC peer validation by audit token, not PID.</b> PIDs get reused — validating by PID is a classic race. Validate the client's code signature against a requirement (Team ID + signing ID) using the audit token. If you say only one hardening thing, say this one.</li>
+          <li><b>Treat backend responses as hostile:</b> strict, bounded parsing; no dynamic behaviour driven by server payloads; fuzz the parser.</li>
+          <li><b>Credentials in the Secure Enclave/Keychain</b>, never on disk; TLS with pinning where the threat model warrants it.</li>
+          <li><b>Anti-tamper:</b> System Extension removal gated by MDM, hardened runtime, notarization, and a story for what happens when a determined local admin tries to disable the sensor.</li>
+        </ul>
+        <div class="win"><b>Volunteer the attacker view once:</b> "If I were attacking this agent, I'd go after the XPC boundary between the app and the extension before I'd go after the sensor logic." He's a CTF finalist. That sentence will register.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Have an opinion on data lineage on macOS</h2>
+    <p class="sub">You may get asked "how would you build this?" as a warm-up for the design round. Don't be caught flat.</p>
+    <div class="card">
+      <p style="margin-bottom:10px">The sketch — a <b>provenance graph</b> of processes, files, and destinations, built by correlating event streams:</p>
+      <ul class="tick">
+        <li><b>Process identity from exec events</b> — ppid, responsible pid, signing ID, Team ID, cdhash. That's how you know Chrome-the-browser from a renamed binary.</li>
+        <li><b>File writes</b> from close-with-modified, plus rename, clone, and copy events, to link a source file to a derived file.</li>
+        <li><b>Egress attribution</b> via Network Extension content filtering, which attributes flows to processes — which is exactly why Cyberhaven also has a browser extension team, since in-browser uploads are opaque at the socket layer.</li>
+        <li><b>The awkward channels:</b> clipboard (no notification API — you poll <code>changeCount</code>), screenshots, AirDrop, removable media, print. Naming these shows you've actually thought about coverage rather than the happy path.</li>
+      </ul>
+      <div class="callout"><b>Frame it as a question, not a lecture:</b> "That's roughly how I'd approach it — I'd be curious how much of the lineage graph you resolve on the endpoint versus in the backend." Curiosity about his architecture beats performing expertise on a product you haven't seen.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>Ask him these</h2>
+    <p class="sub">He is an engineer who became a manager. Ask engineering questions, not culture questions.</p>
+    <div class="card">
+      <ul class="tick">
+        <li>"How much of the lineage graph is resolved on the endpoint versus server-side? Where's the line?"</li>
+        <li>"What's your CPU and memory budget for the sensor, and how do you enforce it in CI?"</li>
+        <li>"How do you handle macOS major releases — how much rework does each one cost the ESF code?"</li>
+        <li>"How do the macOS, Linux, and browser-extension teams share design? Is there a common event model across platforms?"</li>
+        <li>"What does the agentic-AI push mean concretely for the endpoint roadmap over the next year?"</li>
+        <li>"What would make you say this hire went really well twelve months in?"</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>The two honest risks</h2>
+    <div class="card">
+      <h3><span class="mono">RISK 1</span>You are Staff; the role is Senior</h3>
+      <p>The hiring manager — not the recruiter — is the person who can actually flex scope. If leveling wasn't resolved in the screen, raise it here, late in the call and without drama: "I'm currently Staff and tech-leading a team. I'm not precious about the title, but I want to make sure the scope of this role is a step forward rather than sideways — how do you see it?" Then listen. If the answer is "it's an IC role with real architecture ownership at an early stage," that's a genuine yes.</p>
+    </div>
+    <div class="card">
+      <h3><span class="mono">RISK 2</span>Adjacent domain, not the same domain</h3>
+      <p>Device trust, remote access, and conditional access are neighbours of DLP, not DLP. He will notice. The move is to say it before he asks and immediately convert it: the transferable core is fleet-scale macOS agent engineering, ESF mechanics, concurrency, perf discipline, and secure client design — all of which take years to acquire. Domain knowledge of lineage takes months. Make that trade explicit; it's a true argument and a strong one.</p>
+      <div class="callout"><b>Your standing failure mode:</b> hedging and over-qualifying. Commit to the claim first, then add the caveat in a second sentence. Not "I've done some work with ESF, though mostly around…" — instead "Yes, I work in ESF daily. My surface has been process and file events for trust decisions rather than content classification."</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">08</span>Look ahead: what rounds 3 and 4 will be</h2>
+    <p class="sub">Don't prep these now — but knowing the shape lets you ask him the right question at the end of this call.</p>
+    <div class="card">
+      <ul class="tick">
+        <li><b>Coding, 90 min, two panelists.</b> Long enough that it isn't a puzzle — expect a build-something-real problem with follow-up extensions, likely Swift or C++. Practise writing clean, testable code while narrating, and be sharp on concurrency primitives.</li>
+        <li><b>System design, 60 min, flagged hard.</b> Almost certainly the sensor itself or the pipeline behind it: ingest a firehose of endpoint events, survive offline, dedup, apply backpressure, ship to a backend, build and query a lineage graph. This is the round that decides the offer.</li>
+        <li><b>Close this call by asking:</b> "What should I focus on for the design round — is it endpoint-side architecture or the backend pipeline?" Hiring managers answer that question honestly, and it's worth more than a week of blind prep.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Cyberhaven · round 02 of 04 · prepared 26 Jul 2026</footer>
+</div>
+</body>
+</html>

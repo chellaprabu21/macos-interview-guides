@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seven-Day Plan — Cyberhaven Coding Round</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EBEEF1; --card:#FFFFFF; --ink:#0F1419; --muted:#5C6672;
+    --line:#D6DBE1; --probe:#1F4E9C; --probe-soft:#E2EAF6;
+    --strength:#276B4E; --risk:#B0600A; --risk-bg:#FBF2E5;
+    --code-bg:#101720; --code-ink:#D5DDE8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15.5px;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:44px 22px 90px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--probe);font-weight:500;margin-bottom:12px}
+  h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+    font-size:clamp(28px,5vw,44px);line-height:1.05;letter-spacing:-.02em}
+  .dek{color:var(--muted);font-size:16px;margin-top:12px;max-width:68ch}
+
+  .toc{margin-top:28px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px 20px}
+  .toc-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;counter-reset:t;columns:2;column-gap:28px}
+  .toc li{counter-increment:t;font-size:14px;margin-bottom:6px;break-inside:avoid}
+  .toc li::before{content:counter(t,decimal-leading-zero);font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--probe);margin-right:9px}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--probe)}
+
+  section{margin-top:52px;scroll-margin-top:20px}
+  h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:25px;
+    letter-spacing:-.015em;line-height:1.18}
+  h2 .num{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+    color:var(--probe);margin-right:10px;vertical-align:2px}
+  .sub{color:var(--muted);font-size:14.5px;margin:6px 0 18px;max-width:72ch}
+  h3{font-size:16.5px;font-weight:600;margin:24px 0 9px}
+  h3:first-child{margin-top:0}
+  h4{font-size:14px;font-weight:600;margin:16px 0 7px;color:var(--probe);
+    font-family:'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase}
+  p{margin-bottom:11px}
+  p:last-child{margin-bottom:0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:20px 22px;margin-bottom:14px}
+  ul{list-style:none}
+  ul.tick li{padding-left:20px;position:relative;margin-bottom:9px}
+  ul.tick li:last-child{margin-bottom:0}
+  ul.tick li::before{content:"›";position:absolute;left:2px;color:var(--probe);font-weight:700}
+  b{font-weight:600}
+  code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:#EAEEF3;
+    padding:1px 5px;border-radius:4px;color:#243447}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+    padding:16px 18px;overflow-x:auto;margin:12px 0 14px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55}
+  pre .c{color:#7C8B9E}
+  pre .k{color:#7FB3FF}
+  pre .s{color:#8FD6A9}
+  pre .b{color:#F08A8A;font-weight:600}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:12px 0 14px;
+    font-size:13.5px}
+  th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  th{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;background:#F6F8FA}
+  td.mono,th.mono{font-family:'IBM Plex Mono',monospace;font-size:12px}
+
+  .callout{background:var(--risk-bg);border:1px solid #EFDCBE;border-left:3px solid var(--risk);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .callout b{color:var(--risk)}
+  .win{background:#EAF3EE;border:1px solid #C9E0D3;border-left:3px solid var(--strength);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .win b{color:var(--strength)}
+  .key{background:var(--probe-soft);border:1px solid #C6D6EC;border-left:3px solid var(--probe);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .key b{color:var(--probe)}
+
+  /* day blocks */
+  .day{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    margin-bottom:18px;overflow:hidden}
+  .day-h{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:baseline;
+    padding:15px 20px;background:#F6F8FA;border-bottom:1px solid var(--line)}
+  .day-h .d{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--probe);font-weight:600}
+  .day-h .t{font-weight:700;font-size:17px;font-family:'Bricolage Grotesque',sans-serif}
+  .day-h .hrs{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);
+    white-space:nowrap}
+  .day-b{padding:18px 20px}
+  .block{margin-bottom:16px}
+  .block:last-child{margin-bottom:0}
+  .block .lbl{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .say{background:#F4F7FB;border-radius:8px;padding:11px 14px;font-size:14px;
+    font-style:italic;border-left:2px solid var(--probe)}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px;font-family:'IBM Plex Mono',monospace}
+  @media(max-width:640px){
+    .toc ol{columns:1} pre{font-size:11px} table{font-size:12.5px}
+    .day-h{grid-template-columns:1fr;gap:4px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Cyberhaven · round 03 · seven-day plan</div>
+  <h1>One week to the coding round</h1>
+  <p class="dek">Built for someone with ten years of Apple-platform work, not a Swift beginner — so the language section is a fast sweep for gaps, and the hours go into building things under a clock. Roughly 22 hours across seven days, with a three-day cut-down at the end if the week compresses.</p>
+
+  <nav class="toc">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s0">How to use this &amp; setup</a></li>
+      <li><a href="#s1">Day 1 · Swift sweep</a></li>
+      <li><a href="#s2">Day 2 · JSON parser</a></li>
+      <li><a href="#s3">Day 3 · LLD and architecture</a></li>
+      <li><a href="#s4">Day 4 · Log parser and scale-out</a></li>
+      <li><a href="#s5">Day 5 · Concurrency and optimization</a></li>
+      <li><a href="#s6">Day 6 · Timed mocks</a></li>
+      <li><a href="#s7">Day 7 · Repair and rehearse</a></li>
+      <li><a href="#api">The Swift API reference</a></li>
+      <li><a href="#traps">Traps that cost interviews</a></li>
+      <li><a href="#cut">If you only get three days</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ── 00 ── -->
+<section id="s0">
+  <h2><span class="num">00</span>How to use this, and tonight's setup</h2>
+
+  <div class="card">
+    <h3>The shape of the week</h3>
+    <table>
+      <tr><th>Day</th><th>Focus</th><th>Hours</th></tr>
+      <tr><td class="mono">1</td><td>Swift language + standard library sweep</td><td class="mono">2.5</td></tr>
+      <tr><td class="mono">2</td><td>JSON parser, built slowly and understood</td><td class="mono">3</td></tr>
+      <tr><td class="mono">3</td><td>LLD: version control system, protocols, injection</td><td class="mono">3</td></tr>
+      <tr><td class="mono">4</td><td>Log parser, streaming, distributed scale-out</td><td class="mono">3</td></tr>
+      <tr><td class="mono">5</td><td>Concurrency + optimization drills</td><td class="mono">2.5</td></tr>
+      <tr><td class="mono">6</td><td>Two timed 90-minute mocks + review</td><td class="mono">5</td></tr>
+      <tr><td class="mono">7</td><td>Weak-spot repair, rapid-fire, verbal rehearsal</td><td class="mono">3</td></tr>
+    </table>
+    <p style="margin-top:10px">Align days 6 and 7 with your weekend if you can — day 6 is the heaviest and the most valuable.</p>
+  </div>
+
+  <div class="card">
+    <h3>Do this tonight — 30 minutes</h3>
+    <p><b>1 · Build a scratch package you can reuse all week.</b> Not a playground; playgrounds are slow and can't run tests.</p>
+<pre>mkdir cyberhaven-prep &amp;&amp; cd cyberhaven-prep
+swift package init --type library --name Prep
+<span class="c"># Sources/Prep/*.swift  and  Tests/PrepTests/*.swift</span>
+swift build &amp;&amp; swift test          <span class="c"># confirm the loop works before you need it</span>
+open Package.swift                  <span class="c"># opens in Xcode if you prefer that</span></pre>
+    <p>Make one folder per problem inside <code>Sources/Prep/</code>. You'll re-run these all week and want the test target ready without ceremony.</p>
+
+    <p style="margin-top:12px"><b>2 · Ask what the environment is.</b> A short message to Aisha:</p>
+    <div class="say">"Two quick logistics questions for the coding round — will it be language-agnostic machine coding or Swift-specific, and what editor should I expect (shared browser editor, or my own Xcode over screen share)?"</div>
+    <div class="callout" style="margin-top:12px"><b>Why this matters more than it sounds.</b> Some browser coding platforms run Swift on Linux, where parts of Foundation behave differently and Xcode's autocomplete isn't there. If it's a browser editor, spend some of day 6 practising without autocomplete — typing <code>String(decoding:as:)</code> from memory is a different skill from picking it off a dropdown.</div>
+  </div>
+
+  <div class="key"><b>One rule for the whole week:</b> every build session ends with the code compiling and at least three tests passing. Reading about a JSON parser and writing one are not the same activity, and only the second one shows up in the interview.</div>
+</section>
+
+<!-- ── DAY 1 ── -->
+<section id="s1">
+  <h2><span class="num">01</span>Day 1 · Swift sweep</h2>
+  <p class="sub">You've written Swift for years. This day is not learning — it's finding the four or five things you'd fumble if asked to justify them out loud, and refreshing the standard library surface you'll type under pressure.</p>
+
+  <div class="day">
+    <div class="day-h"><span class="d">Day 1</span><span class="t">Language + standard library</span><span class="hrs">2.5 hrs</span></div>
+    <div class="day-b">
+
+      <div class="block">
+        <div class="lbl">Read — 45 min</div>
+        <p>Work through <a href="#api">the API reference</a> in this document, section by section. Don't memorise; mark anything you couldn't have typed from memory. Those marks are your real study list.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Build — 60 min · warm-up katas</div>
+        <p>Small, fast, all in the test target. The point is fluency with the standard library, not difficulty.</p>
+<pre><span class="c">// 1. Word frequency, top K by count then alphabetically.</span>
+<span class="k">func</span> topWords(_ text: String, k: Int) -&gt; [(String, Int)]
+
+<span class="c">// 2. Group log lines by level. Practise Dictionary(grouping:by:).</span>
+<span class="k">func</span> groupByLevel(_ lines: [String]) -&gt; [String: [String]]
+
+<span class="c">// 3. Merge overlapping intervals. Classic, and it appears everywhere.</span>
+<span class="k">func</span> merge(_ intervals: [(Int, Int)]) -&gt; [(Int, Int)]
+
+<span class="c">// 4. Parse "key=value; key2=value2" into a dictionary, tolerating junk.</span>
+<span class="k">func</span> parseFields(_ s: Substring) -&gt; [String: String]
+
+<span class="c">// 5. Custom Sequence: iterate lines from a big string WITHOUT splitting</span>
+<span class="c">//    the whole thing into an array. Direct rehearsal for the log parser.</span>
+<span class="k">struct</span> LineIterator: Sequence, IteratorProtocol { … }</pre>
+        <p style="margin-top:8px">Number 5 matters most — it forces you through <code>Sequence</code>/<code>IteratorProtocol</code> and <code>Substring</code>, both of which show up in the log-parser problem.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Drill — 30 min</div>
+        <ul class="tick">
+          <li>Write an <code>enum</code> with associated values plus a recursive <code>indirect</code> case, and pattern-match it exhaustively. This is the JSON value model.</li>
+          <li>Write a typed error enum with context, and both <code>throws</code> and <code>Result</code> versions of the same function. Know when you'd pick each.</li>
+          <li>Write a protocol with an <code>associatedtype</code>, and a generic function constrained to it.</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Say out loud — 15 min</div>
+        <div class="say">"Structs for data, final classes for services. Protocols at the I/O boundary so tests can inject fakes — that's the reason, not architectural purity."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DAY 2 ── -->
+<section id="s2">
+  <h2><span class="num">02</span>Day 2 · JSON parser</h2>
+  <p class="sub">The highest-probability single problem, and the best training exercise regardless — it exercises data modelling, error design, edge cases, untrusted input and testing in one build.</p>
+
+  <div class="day">
+    <div class="day-h"><span class="d">Day 2</span><span class="t">Build the parser, slowly</span><span class="hrs">3 hrs</span></div>
+    <div class="day-b">
+      <div class="block">
+        <div class="lbl">Build — 2 hrs · no time pressure, understand every decision</div>
+        <p>Work from the revised prep document's Problem A, but <b>type it, don't copy it.</b> Order matters — build in the order you'd build it in the interview:</p>
+        <table>
+          <tr><th>Step</th><th>What</th></tr>
+          <tr><td class="mono">1</td><td><code>JSONValue</code> indirect enum + <code>JSONError</code> with kind and byte offset.</td></tr>
+          <tr><td class="mono">2</td><td><code>JSONLimits</code> — depth, size, duplicate-key policy. <b>Before any parsing code.</b></td></tr>
+          <tr><td class="mono">3</td><td>Scaffold: byte array, cursor, <code>peek()</code>, <code>skipWhitespace()</code>, <code>err()</code>.</td></tr>
+          <tr><td class="mono">4</td><td><code>parseValue()</code> dispatch on first byte, with the depth guard.</td></tr>
+          <tr><td class="mono">5</td><td>Literals (<code>true</code>/<code>false</code>/<code>null</code>) — easiest, gets something running.</td></tr>
+          <tr><td class="mono">6</td><td>Strings with full escapes including <code>\uXXXX</code> and surrogate pairs.</td></tr>
+          <tr><td class="mono">7</td><td>Numbers with the illegal forms rejected.</td></tr>
+          <tr><td class="mono">8</td><td>Arrays, then objects. Trailing-comma and trailing-data rejection.</td></tr>
+        </table>
+        <div class="callout"><b>Do not skip surrogate pairs.</b> It's the one part everyone hand-waves, it's genuinely fiddly, and getting it right in practice means you can mention it confidently in the room even if you don't implement it there.</div>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Test — 45 min</div>
+        <p>Write the five tiers from the revised doc's §10. Minimum bar before you stop:</p>
+<pre><span class="k">func</span> testNestedObject()          <span class="c">// happy path</span>
+<span class="k">func</span> testEmptyObjectAndArray()   <span class="c">// boundaries</span>
+<span class="k">func</span> testTruncatedInput()        <span class="c">// assert the SPECIFIC error + offset</span>
+<span class="k">func</span> testTrailingComma()
+<span class="k">func</span> testLeadingZeroRejected()
+<span class="k">func</span> testDepthBombRejected()     <span class="c">// String(repeating: "[", count: 10_000)</span>
+<span class="k">func</span> testDuplicateKeyRejected()
+<span class="k">func</span> testSurrogatePair()         <span class="c">// "\uD83D\uDE00" == "😀"</span>
+<span class="k">func</span> testInvalidUTF8()
+<span class="k">func</span> testRoundTrip()             <span class="c">// if you also wrote a serialiser</span></pre>
+        <p>Assert error <em>kind and offset</em>, not just that something threw. Precise error tests are themselves a signal.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Say out loud — 15 min</div>
+        <div class="say">"Since this parses untrusted input, I'll bound depth and size before writing any parsing code. Recursive descent on deeply nested input is a stack-overflow DoS, and duplicate-key handling that differs between parsers is how filter-bypass bugs happen."</div>
+        <p style="margin-top:8px">Say it until it's one fluid sentence. For a manager with a penetration-testing background, this is the highest-value thirty seconds in the round.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DAY 3 ── -->
+<section id="s3">
+  <h2><span class="num">03</span>Day 3 · LLD and architecture</h2>
+  <p class="sub">The reported LLD round asks for a prototypal version control system, graded on class structure, tests and edge cases. This day is about designing boundaries fast and defending them.</p>
+
+  <div class="day">
+    <div class="day-h"><span class="d">Day 3</span><span class="t">Version control system</span><span class="hrs">3 hrs</span></div>
+    <div class="day-b">
+      <div class="block">
+        <div class="lbl">Design on paper — 40 min</div>
+        <p>Before any code: draw the object model and the protocol boundaries from memory. Target ten minutes to produce <code>ObjectID</code>, <code>GitObject</code>, <code>TreeEntry</code>, <code>Commit</code>, plus <code>ObjectStore</code>, <code>RefStore</code>, <code>FileSystem</code> and the <code>Repository</code> API. Do it three times until it flows.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Build — 100 min</div>
+        <p>Implement a working subset, in memory only:</p>
+        <ul class="tick">
+          <li><code>InMemoryObjectStore</code> with SHA-256 content addressing (<code>import CryptoKit</code>, <code>SHA256.hash(data:)</code>).</li>
+          <li><code>InMemoryFileSystem</code> — a dictionary of path to Data. This <em>is</em> your test double.</li>
+          <li><code>Index</code> with <code>stage</code> and <code>buildTree</code>, handling nested directories.</li>
+          <li><code>Repository.add</code>, <code>.commit</code>, <code>.log</code>. Stop there.</li>
+        </ul>
+        <div class="win"><b>The point of this day isn't a working VCS.</b> It's building the reflex of starting from protocol boundaries with injected dependencies, so that in the room your first ten minutes produce a shape a panelist can approve.</div>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Drill — 25 min</div>
+        <p>Write out the edge-case table from memory — empty commit, initial commit with zero parents, detached HEAD as an enum, file deletion, nested directories, checkout with uncommitted changes, merge base via lowest common ancestor. Getting these out loud <em>before</em> being asked is a large part of the grade.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Say out loud — 15 min</div>
+        <div class="say">"Content addressing gives me deduplication and integrity for free — identical content stored once, and corruption is detectable because the object no longer hashes to its name. Tree entries are sorted so serialisation is deterministic."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DAY 4 ── -->
+<section id="s4">
+  <h2><span class="num">04</span>Day 4 · Log parser and scale-out</h2>
+  <p class="sub">Double-counted effort: this is a likely coding problem <em>and</em> half of your system-design round.</p>
+
+  <div class="day">
+    <div class="day-h"><span class="d">Day 4</span><span class="t">Streaming pipeline</span><span class="hrs">3 hrs</span></div>
+    <div class="day-b">
+      <div class="block">
+        <div class="lbl">Build — 100 min</div>
+        <ul class="tick">
+          <li><code>LogRecord</code>, <code>Level: Comparable</code>, <code>LineParser</code> protocol, two conforming parsers (syslog-ish and JSON-lines — the second reuses day 2's work).</li>
+          <li>Streaming <code>LineSource</code> using your day-1 iterator. Never load the file whole; say why.</li>
+          <li><code>LogPipeline</code> with filters, a malformed-line counter, and pluggable aggregators.</li>
+          <li>Two aggregators: <code>CountByLevel</code>, and <code>TopKSources</code> using a bounded min-heap — O(n log k), not a full sort.</li>
+          <li>A tumbling-window aggregator (errors per minute) so you've handled time bucketing once.</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Drill — 40 min · the scale-out</div>
+        <p>Draw the distributed diagram from the revised doc four times, from memory, out loud, in under five minutes each: agents → spool → ingest → partitioned log → stream workers → hot index + cold store → query. Each pass, force yourself to name partitioning key, delivery guarantee, backpressure, late data, retention tiers, and cardinality.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Say out loud — 20 min</div>
+        <div class="say">"Structurally this is the same problem as shipping endpoint telemetry off a million Macs — bounded local spool, batching with backoff, partitioned ingest, tiered retention. The agent must never block the host and never grow unbounded."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DAY 5 ── -->
+<section id="s5">
+  <h2><span class="num">05</span>Day 5 · Concurrency and optimization</h2>
+  <p class="sub">Secondary for the main round but the answer to the optimization challenge, and the most likely extension question on an endpoint team.</p>
+
+  <div class="day">
+    <div class="day-h"><span class="d">Day 5</span><span class="t">Concurrency + perf drills</span><span class="hrs">2.5 hrs</span></div>
+    <div class="day-b">
+      <div class="block">
+        <div class="lbl">Build — 70 min</div>
+        <ul class="tick">
+          <li><code>UnfairLock</code> wrapper from memory. Then explain out loud why <code>var lock = os_unfair_lock()</code> as a stored property is undefined behaviour.</li>
+          <li><code>BoundedQueue</code> — ring buffer, drop policy, drop counter, bulk drain. From memory, twice.</li>
+          <li>Take day 4's <code>LogPipeline</code> and <b>make it thread-safe</b>: multiple producer threads, one drain. Then write the invariant test: <code>enqueued == drained + dropped</code>.</li>
+          <li>Run that test under Thread Sanitizer: <code>swift test -Xswiftc -sanitize=thread</code>. Watch it catch something.</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Drill — 45 min · optimization reps</div>
+        <p>Write the slow version, then fix it, six times. Speed matters more than novelty here:</p>
+<pre>1. Three sequential awaits          → async let / task group
+2. Nested loop over two arrays      → Set or Dictionary lookup
+3. Call inside a loop (N+1)         → batch or preload into a map
+4. Invariant work inside a loop     → hoist out
+5. String += in a loop              → reserveCapacity, build once
+6. Repeated linear scan             → build an index once</pre>
+        <p>For number 1, rehearse the three caveats: check the dependency graph, decide the failure semantics, bound the fan-out.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Say out loud — 15 min</div>
+        <div class="say">"Structured concurrency above the ingest boundary — the cancellation and isolation guarantees are worth a lot in a long-lived daemon. But no actor in a deadline-bound callback path: an actor hop is a suspension with unbounded queuing latency, and that path answers to the kernel."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DAY 6 ── -->
+<section id="s6">
+  <h2><span class="num">06</span>Day 6 · Timed mocks</h2>
+  <p class="sub">The highest-value day by a wide margin. Everything before this was input; this is the first time you produce under the actual constraint.</p>
+
+  <div class="day">
+    <div class="day-h"><span class="d">Day 6</span><span class="t">Two full-length mocks</span><span class="hrs">5 hrs</span></div>
+    <div class="day-b">
+      <div class="block">
+        <div class="lbl">Mock 1 — 90 min, cold, timed</div>
+        <p><b>Prompt:</b> "Write a JSON parser." Blank file. Timer visible. <b>Talk out loud the whole time</b> — record yourself on your phone if nobody's available to sit in.</p>
+        <p>Hit the checkpoints from the revised doc: scope by minute 7, types and protocols by 15, running happy path by 55, edge cases by 70, tests by 85.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Review — 45 min</div>
+        <p>Play the recording back. Score yourself honestly on five things:</p>
+        <table>
+          <tr><th>Check</th><th>Pass looks like</th></tr>
+          <tr><td>Did you scope before coding?</td><td>An explicit cut, agreed aloud, in the first seven minutes.</td></tr>
+          <tr><td>Did you write types before bodies?</td><td>A reviewable shape existed by minute 15.</td></tr>
+          <tr><td>Did you narrate trade-offs?</td><td>At least four "I'm doing X rather than Y because Z."</td></tr>
+          <tr><td>Did you hedge?</td><td>Count "I think", "maybe", "I'm not sure". More than three is a problem.</td></tr>
+          <tr><td>Did tests exist at the end?</td><td>Compiling and passing, written unprompted.</td></tr>
+        </table>
+        <div class="callout"><b>Watch the hedge count specifically.</b> It's your known pattern and it's the one thing on this list you can fix by noticing it.</div>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Mock 2 — 90 min, cold, timed</div>
+        <p><b>Prompt:</b> "Build a basic version control system — init, add, commit, log, branch." Different muscle: heavier on design, lighter on algorithms. Same rules, same recording.</p>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Review — 30 min</div>
+        <p>Same scorecard. Write down the three specific things that went worst across both mocks. Those three are your entire day-7 agenda.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DAY 7 ── -->
+<section id="s7">
+  <h2><span class="num">07</span>Day 7 · Repair and rehearse</h2>
+  <p class="sub">Light day. Fix what the mocks exposed, warm the verbal material, stop early.</p>
+
+  <div class="day">
+    <div class="day-h"><span class="d">Day 7</span><span class="t">Targeted repair</span><span class="hrs">3 hrs</span></div>
+    <div class="day-b">
+      <div class="block">
+        <div class="lbl">Repair — 90 min</div>
+        <p>Only the three weaknesses from day 6. If string escapes cost you twenty minutes, rewrite just <code>parseString</code> three times. If you never got to tests, practise writing the test file first. Do not start anything new today.</p>
+      </div>
+      <div class="block">
+        <div class="lbl">Rapid-fire — 30 min</div>
+        <p>Cover the answers in the revised doc's §12 and speak each one. Anything you stumble on, write out once by hand.</p>
+      </div>
+      <div class="block">
+        <div class="lbl">Rehearse — 30 min</div>
+        <p>The four set pieces, spoken, twice each: the untrusted-input limits line, content addressing, the concurrency opinion, the telemetry-pipeline parallel. These are the sentences that make you sound like the team's colleague rather than a candidate.</p>
+      </div>
+      <div class="block">
+        <div class="lbl">Prepare the room — 30 min</div>
+        <ul class="tick">
+          <li>Xcode open, package building, tests green, before the call starts.</li>
+          <li>Screen-share tested. Font size up — panelists reading 11pt over a video call is a real friction you can remove.</li>
+          <li>Notifications off, Do Not Disturb on, second monitor cleared.</li>
+          <li>Water, paper, pen. Some problems are faster drawn than typed.</li>
+        </ul>
+      </div>
+      <div class="key"><b>Stop by early evening.</b> Ninety minutes of live problem-solving with two engineers is an endurance task. Being rested outperforms one more hour of drilling, and this is one of the few pieces of interview advice that is unambiguously true.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ API REFERENCE ══ -->
+<section id="api">
+  <h2><span class="num">08</span>The Swift API reference</h2>
+  <p class="sub">What you'll actually reach for in these problems. Read it once on day 1, mark the gaps, skim it the morning of.</p>
+
+  <h4>Collections — the workhorses</h4>
+<pre><span class="c">// ARRAY</span>
+a.reserveCapacity(n)              <span class="c">// before a known-size fill — always</span>
+a.append(contentsOf:)             a.removeAll(keepingCapacity: <span class="k">true</span>)
+a.first(where:)  a.firstIndex(where:)  a.contains(where:)  a.allSatisfy { }
+a.prefix(n)  a.suffix(n)  a.dropFirst()  a.dropLast()      <span class="c">// return slices</span>
+a.sorted { $0.x &lt; $1.x }          a.max(by:)  a.min(by:)
+a.reduce(into: [:]) { acc, x <span class="k">in</span> … }   <span class="c">// `into:` avoids a copy per step</span>
+a.enumerated()  zip(a, b)  a.indices  a.reversed()
+a.split(whereSeparator:)          a.partition(by:)
+ContiguousArray&lt;T&gt;                <span class="c">// no ObjC bridging — hot paths</span>
+
+<span class="c">// DICTIONARY</span>
+d[key, <span class="k">default</span>: 0] += 1                       <span class="c">// the counting idiom</span>
+Dictionary(grouping: items, by: \.level)      <span class="c">// instant bucketing</span>
+d.merge(other) { current, _ <span class="k">in</span> current }
+d.mapValues { }   d.compactMapValues { }
+Dictionary(uniqueKeysWithValues: pairs)       <span class="c">// traps on duplicates — beware</span>
+d.updateValue(v, forKey: k)                   <span class="c">// returns the OLD value</span>
+
+<span class="c">// SET</span>
+s.insert(x)      <span class="c">// returns (inserted: Bool, memberAfterInsert: T)</span>
+s.union / .intersection / .subtracting / .isSubset(of:) / .symmetricDifference</pre>
+
+  <h4>Strings — where most parser bugs live</h4>
+<pre>text.split(separator: "\n", omittingEmptySubsequences: <span class="k">false</span>)  <span class="c">// → [Substring]</span>
+text.utf8            <span class="c">// UTF8View — bytes. Use this for parsing.</span>
+text.unicodeScalars  <span class="c">// code points</span>
+text.count           <span class="c">// GRAPHEME clusters — O(n), not byte length!</span>
+Array(text.utf8)     <span class="c">// materialise bytes once, index with Int</span>
+
+String(decoding: bytes, as: UTF8.self)   <span class="c">// length-bounded, safe</span>
+String(cString: ptr)                     <span class="c">// requires NUL termination — DANGEROUS on tokens</span>
+UInt8(ascii: "{")                        <span class="c">// byte literal, compile-time</span>
+
+text.hasPrefix / .hasSuffix / .lowercased()
+text.trimmingCharacters(in: .whitespacesAndNewlines)   <span class="c">// Foundation</span>
+text.components(separatedBy: ",")                      <span class="c">// Foundation → [String]</span>
+text.replacingOccurrences(of:with:)                    <span class="c">// Foundation</span>
+
+<span class="c">// Index arithmetic — String indices are opaque, not Int.</span>
+<span class="k">let</span> i = text.index(text.startIndex, offsetBy: 5)
+text[i...]  text[..&lt;i]  text.distance(from:to:)</pre>
+  <div class="callout"><b>The Substring trap.</b> A <code>Substring</code> keeps its parent String's entire storage alive. Slicing one line out of a 500&nbsp;MB log and storing it retains all 500&nbsp;MB. Convert to <code>String</code> when you keep it; stay on <code>Substring</code> when you're just passing through. This is a genuine memory bug and a great thing to mention unprompted.</div>
+
+  <h4>Numerics</h4>
+<pre>x &amp;+ y   x &amp;- y   x &amp;* y            <span class="c">// wrapping — for counters that run for months</span>
+x.addingReportingOverflow(y)        <span class="c">// (partialValue, overflow)</span>
+Int("42", radix: 16)                Double("1.5e3")     <span class="c">// both Optional</span>
+Int(exactly: someDouble)            <span class="c">// nil if lossy</span>
+min / max / abs / x.clamped(to:)    <span class="c">// clamped isn't stdlib — write it</span>
+Int.max  Int.min  Double.infinity  .nan  .isFinite</pre>
+
+  <h4>Errors and Result</h4>
+<pre><span class="k">enum</span> ParseError: Error { <span class="k">case</span> unexpected(UInt8, at: Int) }
+
+<span class="k">func</span> f() <span class="k">throws</span> -&gt; T          <span class="k">try</span> f()   <span class="k">try</span>? f()   <span class="k">try!</span> f()
+<span class="k">func</span> g&lt;T&gt;(_ b: () <span class="k">throws</span> -&gt; T) <span class="k">rethrows</span>     <span class="c">// throws only if the closure does</span>
+
+<span class="k">let</span> r: Result&lt;T, E&gt; = .success(v)
+r.map { }  r.mapError { }  r.flatMap { }  <span class="k">try</span> r.get()
+Result { <span class="k">try</span> risky() }              <span class="c">// wrap a throwing call</span>
+
+<span class="k">defer</span> { cleanup() }                  <span class="c">// reverse order, every exit path</span></pre>
+
+  <h4>Protocols, generics, conformances</h4>
+<pre><span class="k">protocol</span> Store { <span class="k">associatedtype</span> Item; <span class="k">func</span> put(_ i: Item) <span class="k">throws</span> }
+<span class="k">func</span> use&lt;S: Store&gt;(_ s: S) <span class="k">where</span> S.Item: Hashable { }
+
+<span class="k">some</span> Collection      <span class="c">// opaque: one concrete type, static dispatch, no box</span>
+<span class="k">any</span> Collection       <span class="c">// existential: heterogeneous, witness table, may box</span>
+
+<span class="c">// Free synthesis when all members conform:</span>
+Equatable · Hashable · Comparable (declare &lt;) · Codable · CaseIterable
+CustomStringConvertible  <span class="c">// var description — makes debugging output readable</span></pre>
+
+  <h4>Foundation — know these exist</h4>
+<pre>Data(bytes) · data.base64EncodedString() · Data(contentsOf: url)
+<span class="c">// Data slices do NOT reindex from 0 — data[5...] starts at index 5. Real bug source.</span>
+
+Date() · Date(timeIntervalSince1970:) · ISO8601DateFormatter()
+<span class="c">// DateFormatter construction is EXPENSIVE — create once, reuse. Say this if it comes up.</span>
+
+FileManager.default.contents(atPath:) / .fileExists / .enumerator(atPath:)
+FileHandle · URL(fileURLWithPath:) · UUID()
+
+<span class="k">import</span> CryptoKit
+SHA256.hash(data: d).compactMap { String(format: "%02x", $0) }.joined()
+
+<span class="c">// Regex, macOS 13+</span>
+<span class="k">let</span> re = <span class="s">/(\d+)-(\w+)/</span>
+<span class="k">if let</span> m = line.firstMatch(of: re) { <span class="k">let</span> (_, num, word) = m.output }
+<span class="c">// Older: NSRegularExpression — verbose, and NSRange↔Range conversion is a trap.</span>
+
+<span class="c">// JSON — you MUST NOT use these if asked to write a parser, but know them:</span>
+JSONDecoder().decode(T.self, from: data)   JSONSerialization.jsonObject(with:)</pre>
+  <div class="win"><b>If given a JSON problem, open with:</b> "In production I'd use <code>JSONDecoder</code> — I assume you want the parser itself?" Five seconds, confirms scope, and shows you know the ecosystem rather than reinventing by default.</div>
+
+  <h4>Concurrency</h4>
+<pre><span class="c">// GCD</span>
+<span class="k">let</span> q = DispatchQueue(label: "x")                       <span class="c">// serial by default</span>
+DispatchQueue(label: "y", attributes: .concurrent)
+q.async { }   q.sync { }   q.async(flags: .barrier) { }  <span class="c">// barrier = writer</span>
+q.asyncAfter(deadline: .now() + .milliseconds(50)) { }
+DispatchGroup · DispatchSemaphore · DispatchSource.makeTimerSource
+
+<span class="c">// Structured concurrency</span>
+<span class="k">async let</span> a = f();  <span class="k">async let</span> b = g();  <span class="k">let</span> (x, y) = <span class="k">try await</span> (a, b)
+
+<span class="k">try await withThrowingTaskGroup</span>(of: T.self) { g <span class="k">in</span>
+    <span class="k">for</span> item <span class="k">in</span> items { g.addTask { <span class="k">try await</span> work(item) } }
+    <span class="k">for try await</span> r <span class="k">in</span> g { collect(r) }
+}
+Task { }  ·  Task.detached { }  ·  Task.isCancelled  ·  <span class="k">try await</span> Task.sleep(for: .seconds(1))
+
+<span class="k">actor</span> Cache { <span class="k">var</span> items: [K: V] = [:] }    <span class="c">// isolated; reentrant at every await</span>
+@MainActor  ·  nonisolated  ·  Sendable  ·  @unchecked Sendable
+
+<span class="c">// AsyncStream — bridge a callback API into async, WITH backpressure</span>
+<span class="k">let</span> (s, c) = AsyncStream&lt;E&gt;.makeStream(bufferingPolicy: .bufferingNewest(1024))
+c.yield(e)   <span class="c">// returns .enqueued / .dropped / .terminated — check it</span>
+
+<span class="c">// Bridge a completion handler to async</span>
+<span class="k">try await withCheckedThrowingContinuation</span> { cont <span class="k">in</span>
+    legacyAPI { result, error <span class="k">in</span>
+        <span class="k">if let</span> error { cont.resume(throwing: error) } <span class="k">else</span> { cont.resume(returning: result!) }
+    }   <span class="c">// resume EXACTLY once — twice traps, zero leaks the task forever</span>
+}
+
+<span class="c">// Locks</span>
+os_unfair_lock  ·  OSAllocatedUnfairLock (macOS 13+)  ·  NSLock  ·  pthread_mutex_t</pre>
+
+  <h4>Testing</h4>
+<pre><span class="k">import</span> XCTest
+XCTAssertEqual(a, b)   XCTAssertTrue / False / Nil / NotNil
+<span class="k">let</span> v = <span class="k">try</span> XCTUnwrap(optional)
+XCTAssertThrowsError(<span class="k">try</span> f()) { e <span class="k">in</span> XCTAssertEqual(e <span class="k">as?</span> MyError, .expected) }
+XCTAssertNoThrow(<span class="k">try</span> f())
+measure { … }                       <span class="c">// baseline perf test</span>
+<span class="k">func</span> testAsync() <span class="k">async throws</span> { … }
+
+<span class="c">// swift-testing (newer) — worth recognising if their repo uses it</span>
+@Test <span class="k">func</span> parsesNested() <span class="k">throws</span> { #expect(<span class="k">try</span> parse("{}") == .object([:])) }
+
+<span class="c">// Sanitizers</span>
+swift test -Xswiftc -sanitize=thread     <span class="c">// data races</span>
+swift test -Xswiftc -sanitize=address    <span class="c">// memory errors</span></pre>
+
+  <h4>Performance and low-level</h4>
+<pre>MemoryLayout&lt;T&gt;.size / .stride / .alignment    <span class="c">// allocate with STRIDE</span>
+bytes.withUnsafeBufferPointer { p <span class="k">in</span> … }      <span class="c">// pointer valid ONLY inside</span>
+UnsafeMutablePointer&lt;T&gt;.allocate(capacity:) · .initialize(to:) · .deallocate()
+Unmanaged&lt;T&gt;.passUnretained(x).toOpaque()      <span class="c">// C callback context</span>
+@inline(__always) · @inlinable · <span class="k">final</span> · @frozen
+autoreleasepool { }                            <span class="c">// tight loops touching ObjC</span></pre>
+</section>
+
+<!-- ══ TRAPS ══ -->
+<section id="traps">
+  <h2><span class="num">09</span>Traps that cost interviews</h2>
+  <div class="card">
+    <table>
+      <tr><th>Trap</th><th>What actually happens</th></tr>
+      <tr><td><code>text.count</code> for byte length</td><td>Counts grapheme clusters in O(n). Wrong answer <em>and</em> slow. Use <code>text.utf8.count</code>.</td></tr>
+      <tr><td>Storing a <code>Substring</code></td><td>Retains the whole parent string's storage.</td></tr>
+      <tr><td><code>Data</code> slice indices</td><td><code>data[5...]</code> still starts at index 5, not 0. Off-by-everything bugs.</td></tr>
+      <tr><td><code>String(cString:)</code> on a length-delimited buffer</td><td>Over-reads past the end. In a security product this is the bug.</td></tr>
+      <tr><td><code>var lock = os_unfair_lock()</code> as a property</td><td>Undefined behaviour — exclusivity may hand you a copy. Threads lock different memory and it appears to work.</td></tr>
+      <tr><td><code>lazy var</code> from two threads</td><td>Not thread-safe. Global and static <code>let</code> are.</td></tr>
+      <tr><td>Concurrent queue + <code>async</code> mutation</td><td>Multiple writers into a Dictionary. Non-deterministic crashes.</td></tr>
+      <tr><td><code>DispatchSemaphore</code> inside async code</td><td>Blocks a cooperative-pool thread; can deadlock the runtime.</td></tr>
+      <tr><td>Calling an injected closure while holding a lock</td><td>Reentrancy deadlock. Swap state out under the lock, call out after.</td></tr>
+      <tr><td><code>Date()</code> for elapsed time</td><td>Wall clock jumps on NTP and sleep/wake. Use <code>CLOCK_MONOTONIC_RAW</code>.</td></tr>
+      <tr><td>Creating a <code>DateFormatter</code> per line</td><td>Extremely expensive. Create once, reuse.</td></tr>
+      <tr><td>Escaping a <code>withUnsafeBytes</code> pointer</td><td>Compiles, then corrupts. Valid only inside the closure.</td></tr>
+      <tr><td><code>Dictionary(uniqueKeysWithValues:)</code> on real data</td><td>Traps on duplicate keys. Use <code>init(_:uniquingKeysWith:)</code>.</td></tr>
+      <tr><td>Resuming a continuation twice</td><td>Traps. Never resuming leaks the task forever.</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ══ CUT DOWN ══ -->
+<section id="cut">
+  <h2><span class="num">10</span>If you only get three days</h2>
+  <div class="card">
+    <p>Work is unpredictable and you tech-lead a team. If the week collapses, this is the irreducible core:</p>
+    <table>
+      <tr><th>Day</th><th>Do only this</th><th>Hours</th></tr>
+      <tr><td class="mono">A</td><td>Build the JSON parser end to end with ten tests. Nothing else.</td><td class="mono">3</td></tr>
+      <tr><td class="mono">B</td><td>One timed 90-minute mock — JSON parser, cold, recorded. Then review against the five-point scorecard.</td><td class="mono">2.5</td></tr>
+      <tr><td class="mono">C</td><td>Design the VCS on paper three times; drill the optimization reps; speak the four set pieces; skim the API reference and the trap table.</td><td class="mono">2.5</td></tr>
+    </table>
+    <div class="key"><b>If you get one evening only:</b> the timed mock. Producing under a clock while talking is the skill being tested, and it's the only one you cannot acquire by reading.</div>
+  </div>
+
+  <div class="card">
+    <h3>What you can safely skip all week</h3>
+    <ul class="tick">
+      <li>LeetCode grinding. One medium may appear in a screen; the loop isn't decided there.</li>
+      <li>SwiftUI, Combine, UIKit. Zero relevance to every reported problem and to the role.</li>
+      <li>Memorising Endpoint Security event names — save that for the design round, where product knowledge genuinely pays.</li>
+      <li>Reading more about parsers. You've read enough. Build one.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Cyberhaven · round 03 · seven-day plan · 26 Jul 2026</footer>
+</div>
+</body>
+</html>

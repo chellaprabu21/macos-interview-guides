@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concurrency & IPC in Swift — From Scratch, for Interviews</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a20; --panel2:#1c2028; --ink:#e2e5ea; --dim:#9aa0ab;
+    --blue:#6cb2eb; --teal:#57cbb0; --amber:#e6b673; --red:#e07a86; --green:#a3cf8a; --purple:#c99ee0; --orange:#e8956b;
+    --line:#282d36; --code-bg:#0c0e12;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:flex}
+  nav{width:284px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{padding:0 22px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  nav .brand span{font:600 11px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  nav .brand b{display:block;color:var(--orange);font-size:15px;margin-top:4px;font-weight:600}
+  nav a{display:block;padding:7px 22px;color:var(--dim);font-size:13.5px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none;border-left-color:var(--orange)}
+  nav a .num{color:#565c66;font:600 11px var(--mono);margin-right:8px}
+
+  main{flex:1;min-width:0;max-width:820px;padding:44px 52px 140px;margin:0 auto}
+  header.hero{margin-bottom:12px}
+  .crumb{font:600 12px var(--mono);color:var(--orange);letter-spacing:.12em;text-transform:uppercase}
+  h1{font-size:32px;line-height:1.2;margin:12px 0 10px;font-weight:700;letter-spacing:-.02em}
+  .hero p{color:var(--dim);font-size:16px;max-width:62ch}
+
+  h2{font-size:15px;font-family:var(--mono);color:var(--amber);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+  .chapter{border-top:1px solid var(--line);margin-top:60px;padding-top:40px}
+  .chapter-title{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+  .chapter-tag{color:var(--dim);font-size:15px;margin-bottom:8px}
+  h3{font-size:19px;margin:38px 0 8px;font-weight:650;letter-spacing:-.01em}
+  h4{font-size:15px;margin:22px 0 4px;color:var(--teal);font-family:var(--mono);font-weight:600}
+  p{margin:12px 0} strong{color:#fff;font-weight:650}
+  .lead{font-size:17px;color:var(--ink)}
+  ul,ol{margin:12px 0;padding-left:24px} li{margin:7px 0}
+
+  code{font:13.5px var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1.5px 6px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font:13px/1.6 var(--mono);color:#cbd0d8;margin:16px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  pre.ascii{color:#8b93a1;line-height:1.4}
+  .c{color:#5c6470}.k{color:#c99ee0}.s{color:#a3cf8a}.f{color:#6cb2eb}.t{color:#57cbb0}.n{color:#e6b673}.str{color:#a3cf8a}
+
+  .plain{background:linear-gradient(180deg,#1a1e26,#171a20);border:1px solid var(--line);border-radius:12px;padding:4px 20px;margin:18px 0}
+  .plain .tag{font:600 11px var(--mono);color:var(--orange);letter-spacing:.08em;text-transform:uppercase;display:block;margin-top:14px}
+
+  .qa{border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden;background:var(--panel)}
+  .qa .q{padding:14px 18px;font-weight:600;font-size:15.5px;background:var(--panel2);cursor:pointer;list-style:none;position:relative;padding-left:46px}
+  .qa .q::before{content:'Q';position:absolute;left:18px;top:14px;color:var(--bg);background:var(--blue);width:20px;height:20px;border-radius:5px;font:700 12px var(--mono);text-align:center;line-height:20px}
+  .qa .q::after{content:'+';position:absolute;right:18px;color:var(--dim);font-size:18px}
+  .qa[open] .q::after{content:'\2212'}
+  .qa .a{padding:4px 18px 16px;font-size:14.5px;border-top:1px solid var(--line)}
+  .qa .a .model{color:var(--dim);font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-top:12px}
+
+  .note{border-left:3px solid var(--amber);padding:2px 16px;margin:16px 0;font-size:14.5px}
+  .note.gotcha{border-left-color:var(--red)} .note.agent{border-left-color:var(--teal)}
+  .note b:first-child{display:block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+  .note b{color:var(--amber)} .note.gotcha b{color:var(--red)} .note.agent b{color:var(--teal)}
+
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600;font-size:13px}
+  .pill{display:inline-block;font:600 11px var(--mono);padding:2px 9px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);margin-right:6px}
+  @media(max-width:900px){nav{display:none}main{padding:28px 20px 90px}}
+  @media print{nav{display:none}body{background:#fff;color:#111}.qa{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand"><span>Concurrency &amp; IPC · Swift-first</span><b>Threads, async/await, XPC, sockets</b></div>
+  <a href="#how-to"><span class="num">00</span>How to read this</a>
+  <a href="#basics"><span class="num">01</span>The core problem: shared state</a>
+  <a href="#locks"><span class="num">02</span>Locks &amp; the tools to fix it</a>
+  <a href="#gcd"><span class="num">03</span>GCD / Dispatch</a>
+  <a href="#swift-conc"><span class="num">04</span>Swift Concurrency (async/await, actors)</a>
+  <a href="#ipc"><span class="num">05</span>IPC + Unix domain sockets</a>
+  <a href="#xpc"><span class="num">06</span>XPC</a>
+  <a href="#map"><span class="num">07</span>Putting it together</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">JD requirement · multi-threading, concurrency &amp; IPC (Unix sockets, XPC)</div>
+  <h1>Concurrency &amp; IPC in Swift, From Scratch</h1>
+  <p>Everything behind that JD line — why concurrency is hard, the Swift tools that tame it (GCD, async/await, actors, <code>Sendable</code>), and the two IPC mechanisms named: Unix domain sockets and XPC. Plain-English first, then interview depth.</p>
+</header>
+
+<section id="how-to" style="margin-top:40px">
+<h2>Read me first</h2>
+<p class="lead">Same four beats per topic as the frameworks guide: <strong>one-sentence version → why it exists → how it works → in the interview</strong> (answers in commit-first-then-caveat style).</p>
+<p>The build order matters. We start with the <em>one problem</em> all of concurrency is trying to solve — shared mutable state — because every tool after that (locks, queues, actors) is just a different answer to it. Then IPC, which is concurrency between <em>separate processes</em> instead of threads.</p>
+<div class="note"><b>Swift-first, but honest about the boundary</b>Your day-to-day answers should be Swift: GCD and Swift Concurrency. But a macOS daemon lives at a boundary where C and POSIX still show up — sockets are a C API, ES/Network callbacks arrive on C threads, and XPC has both a Swift face (<code>NSXPCConnection</code>) and a C face. I'll keep Swift central and drop to C only where it genuinely lives. Naming that boundary is itself a senior signal.</div>
+</section>
+
+
+<!-- ================= 01 basics ================= -->
+<section class="chapter" id="basics">
+<h2>Topic 01</h2>
+<div class="chapter-title">The core problem: shared mutable state</div>
+<div class="chapter-tag">Understand this one thing and every tool afterward makes sense as "a way to avoid it."</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>Concurrency is running multiple things at once; the entire difficulty is that when two of them touch the same piece of memory and at least one is writing, the result is unpredictable — a <strong>data race</strong>.</p>
+</div>
+
+<h3>Why it's hard — the picture</h3>
+<p>A <strong>thread</strong> is an independent line of execution with its own stack, but sharing all the heap memory of its process. Two threads, one shared counter, both doing <code>count += 1</code>:</p>
+<pre class="ascii">
+ count += 1  is really THREE steps:   read count → add 1 → write count
+
+ Thread A          Thread B           count
+ read (0)                              0
+                   read (0)            0     ← both read the same old value
+ add → 1                               0
+                   add → 1             0
+ write 1                               1
+                   write 1             1     ← two increments, but count is 1, not 2
+</pre>
+<p>That lost update is a <strong>race condition</strong>. And it's worse than "sometimes wrong numbers": in Swift and C, a data race on most types is <strong>undefined behavior</strong> — the program is allowed to crash or corrupt memory, because the compiler and CPU reorder and cache operations assuming no other thread interferes. This is <em>why</em> Swift 6 added compile-time data-race checking: the whole language is now organized around proving races can't happen.</p>
+
+<h4>The three failure modes you must be able to name</h4>
+<table>
+<tr><td><strong>Race condition</strong></td><td>Two threads touch shared state unsynchronized; result depends on timing. (The counter above.)</td></tr>
+<tr><td><strong>Deadlock</strong></td><td>Two threads each wait for a resource the other holds; both freeze forever.</td></tr>
+<tr><td><strong>Priority inversion</strong></td><td>A high-priority thread waits on a low-priority thread that never gets scheduled — the high-priority work stalls.</td></tr>
+</table>
+
+<h4>The two ways out (the whole field, in two lines)</h4>
+<ul>
+<li><strong>Don't share:</strong> give each thread its own copy. Swift's value types (structs) make this natural — hand another task a struct and there's no shared memory to race on.</li>
+<li><strong>Serialize access:</strong> if you must share, make sure only one thread touches it at a time — a lock, a serial queue, or an actor. Every synchronization tool is a flavor of this.</li>
+</ul>
+
+<div class="note agent"><b>Why a daemon feels this acutely</b>Your agent has callbacks arriving from many sources at once — ES events on one thread, network flows on another, timers, XPC requests — all wanting to touch shared state like a config cache or an event queue. Getting this wrong is exactly the "complex concurrency issue" your resume says you've debugged with Instruments. Have one such story ready: the symptom, the tool, the fix.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">What's the difference between a race condition and a data race?</summary>
+<div class="a">
+<p><strong>Commit:</strong> A data race is the specific low-level case — two threads access the same memory concurrently, at least one writing, with no synchronization — and it's undefined behavior. A race condition is the broader idea: any bug where correctness depends on timing or ordering, even if each individual access is safe.</p>
+<p><strong>Nuance:</strong> you can have a race condition without a data race — e.g. two properly-locked operations that are individually safe but wrong when interleaved (check-then-act on a value that changed in between). So fixing data races with locks isn't automatically enough; you sometimes need the whole compound operation to be atomic. In Swift, actors and value semantics eliminate a lot of data races structurally, which is the modern answer.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why are value types (structs) relevant to concurrency in Swift?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Because they're copied on assignment, so passing a struct to another thread hands over an independent copy — there's no shared mutable state, and therefore no data race by construction. It's the "don't share" strategy baked into the type system.</p>
+<p><strong>Nuance:</strong> arrays/strings/dictionaries are structs with copy-on-write, so the copy is cheap until someone mutates. This is why a good pattern for an agent is to snapshot config or telemetry as an immutable struct and hand that to workers, rather than sharing a mutable object behind a lock.</p>
+</div></details>
+</section>
+<!-- ================= 02 locks ================= -->
+<section class="chapter" id="locks">
+<h2>Topic 02</h2>
+<div class="chapter-title">Locks &amp; the tools that serialize access</div>
+<div class="chapter-tag">If you must share, only one thread at a time. Here are the tools, cheapest concept to richest.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>A lock is a "talking stick": only the thread holding it may touch the protected data; everyone else waits their turn. Swift gives you several, from a raw low-level lock up to actors that do the locking for you.</p>
+</div>
+
+<h3>The tools, and when each fits</h3>
+
+<h4>1 · <code>os_unfair_lock</code> — the low-level mutex</h4>
+<p>The modern primitive lock on Apple platforms. A thread <em>acquires</em> it, does its short critical work, <em>releases</em> it; a second thread trying to acquire while it's held is put to sleep by the kernel until it's free.</p>
+<pre><code><span class="k">final class</span> <span class="t">Counter</span> {
+    <span class="k">private var</span> lock = os_unfair_lock()
+    <span class="k">private var</span> value = <span class="n">0</span>
+    <span class="k">func</span> <span class="f">increment</span>() {
+        os_unfair_lock_lock(&amp;lock)
+        value += <span class="n">1</span>              <span class="c">// critical section: exactly one thread here at a time</span>
+        os_unfair_lock_unlock(&amp;lock)
+    }
+}</code></pre>
+<p>The name "unfair" means it doesn't guarantee first-come-first-served ordering — a deliberate performance choice. In modern Swift you'd often use the newer <code>Mutex</code> type from the <strong>Synchronization</strong> framework, which wraps this safely and holds the protected value <em>inside</em> the lock so you can't forget to lock. Worth mentioning as the current best practice.</p>
+
+<div class="note gotcha"><b>Never say OSSpinLock</b>The old <code>OSSpinLock</code> is deprecated and dangerous: it <em>spins</em> (busy-waits, burning CPU) and causes priority inversion — a low-priority thread holding it can be starved forever while a high-priority thread spins. <code>os_unfair_lock</code> fixed this by telling the kernel who owns it so the owner can be boosted. Knowing this specific history is a strong signal.</div>
+
+<h4>2 · The serial queue as a lock — the GCD way</h4>
+<p>A <strong>serial dispatch queue</strong> runs its work one item at a time, in order. That <em>is</em> mutual exclusion: route all access to shared state through one serial queue and it can never be touched concurrently. This was the idiomatic pre-async Swift pattern.</p>
+<pre><code><span class="k">private let</span> queue = DispatchQueue(label: <span class="str">"com.corp.agent.state"</span>)
+<span class="k">func</span> <span class="f">read</span>() -> Config { queue.sync { config } }           <span class="c">// serialized read</span>
+<span class="k">func</span> <span class="f">update</span>(_ c: Config) { queue.async { config = c } }    <span class="c">// serialized write</span></code></pre>
+
+<h4>3 · Reader-writer with a concurrent queue + barrier</h4>
+<p>When reads vastly outnumber writes (like a config cache), you want many readers at once but exclusive writes. A concurrent queue with a <strong>barrier</strong> on writes gives exactly that: reads run in parallel; a barrier write waits for in-flight reads to finish, runs alone, then lets reads resume.</p>
+
+<h4>4 · The actor — Swift's built-in answer (covered fully in Topic 04)</h4>
+<p>An <strong>actor</strong> is a type that automatically serializes access to its own mutable state — the compiler enforces that you can only touch it through <code>await</code>, one caller at a time. It's a serial queue and a lock rolled into the language, with compile-time safety. For new Swift code this is usually the right choice, and we'll go deep on it shortly.</p>
+
+<h3>Deadlock — how it happens and how to prevent it</h3>
+<p>The classic: thread 1 locks A then wants B; thread 2 locks B then wants A. Neither releases; both wait forever.</p>
+<pre class="ascii">
+ Thread 1: hold A ──wants──▶ B          Fix: everyone acquires locks in the SAME
+ Thread 2: hold B ──wants──▶ A                global order (always A before B).
+                                              A cycle in "who waits for whom" = deadlock.
+</pre>
+<p><strong>The #1 real macOS deadlock</strong> is simpler and worth stating outright: calling <code>DispatchQueue.sync</code> targeting the queue you're <em>already running on</em>. You block waiting for the queue to be free, but you're the one occupying it — instant self-deadlock.</p>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">How would you make a shared config cache thread-safe in Swift?</summary>
+<div class="a">
+<p><strong>Commit:</strong> For new code, I'd make it an <code>actor</code> — access is automatically serialized and the compiler guarantees no data race. If I'm in a GCD codebase, I'd route all access through a serial dispatch queue, or use a concurrent queue with a barrier on writes since a config cache is read-heavy.</p>
+<p><strong>Nuance:</strong> if it's a single value and hot, a plain <code>os_unfair_lock</code> or the newer <code>Mutex</code> type is lowest-overhead. The choice is really about read/write ratio and whether I'm in async code: actor for async and safety, barrier-queue for read-heavy, raw lock for a tiny hot path.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Explain a deadlock you could cause with GCD, and how to avoid it.</summary>
+<div class="a">
+<p><strong>Commit:</strong> The most common one is calling <code>.sync</code> on the queue you're currently executing on — you block waiting for that queue, but you're what's occupying it, so it can never free up. Avoid it by never calling <code>sync</code> back onto your current queue, and preferring <code>async</code> for anything reentrant.</p>
+<p><strong>Nuance:</strong> the general form is circular waiting between multiple locks, which I prevent with a consistent global lock-acquisition order. Swift Concurrency helps here because actors avoid manual locking entirely, though you can still deadlock if you block a thread waiting on an actor from the same cooperative pool — which is why you don't mix blocking waits into async code.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why is os_unfair_lock preferred over a spinlock?</summary>
+<div class="a">
+<p><strong>Commit:</strong> A spinlock busy-waits — it burns the CPU in a loop while waiting — and worse, it causes priority inversion: if a low-priority thread holds it and a high-priority thread spins on it, the holder may never get scheduled to release it. <code>os_unfair_lock</code> sleeps the waiter and records the owner so the kernel can priority-boost it.</p>
+<p><strong>Nuance:</strong> spinlocks are only ever appropriate for extremely short critical sections where sleeping costs more than spinning, and even then Apple deprecated <code>OSSpinLock</code> for the inversion problem. On Apple platforms the safe default is <code>os_unfair_lock</code> or the <code>Mutex</code> wrapper.</p>
+</div></details>
+</section>
+
+
+<!-- ================= 03 GCD ================= -->
+<section class="chapter" id="gcd">
+<h2>Topic 03</h2>
+<div class="chapter-title">GCD / Grand Central Dispatch</div>
+<div class="chapter-tag">The workhorse before async/await — still everywhere in system code, and still asked about.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>GCD lets you hand blocks of work to <strong>queues</strong> instead of managing threads yourself; a shared pool of threads underneath picks up the work, keeping roughly one thread busy per CPU core.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>Creating and managing threads by hand is error-prone and wasteful — spawn too many and they thrash the CPU with context switches. GCD flips it: <em>you</em> describe units of work and which queue they belong to; the system owns the threads and reuses them. You stop thinking about threads and start thinking about queues.</p>
+
+<h3>How it actually works</h3>
+
+<h4>Serial vs concurrent queues</h4>
+<table>
+<tr><th>Queue type</th><th>Behavior</th><th>Use for</th></tr>
+<tr><td><strong>Serial</strong></td><td>One task at a time, in order</td><td>Protecting shared state (it's a lock); ordered work</td></tr>
+<tr><td><strong>Concurrent</strong></td><td>Many tasks at once</td><td>Independent parallel work (e.g. process N files)</td></tr>
+<tr><td><strong>Main</strong></td><td>Serial, on the main thread</td><td>UI updates only</td></tr>
+</table>
+
+<h4>sync vs async — the distinction people fumble</h4>
+<ul>
+<li><code>async</code> — "run this later, I'm not waiting." Returns immediately.</li>
+<li><code>sync</code> — "run this and block me until it's done." (This is what self-deadlocks if you target your own queue.)</li>
+</ul>
+<p><strong>Serial vs concurrent</strong> is about the <em>queue</em> (how many at once). <strong>sync vs async</strong> is about the <em>caller</em> (do I wait?). They're independent choices — a frequent point of confusion worth stating cleanly.</p>
+
+<h4>QoS — quality of service (and priority inversion again)</h4>
+<p>You tag work with a priority class — <code>.userInteractive</code>, <code>.userInitiated</code>, <code>.utility</code>, <code>.background</code> — so the system schedules important work first and defers background work (saving battery). If high-priority work waits on lower-priority work, GCD <strong>priority-boosts</strong> the lower work to prevent inversion.</p>
+
+<h4>DispatchSource — the daemon's event backbone</h4>
+<p>A <code>DispatchSource</code> turns low-level kernel events into queue callbacks: a timer firing, a signal arriving, a file descriptor becoming readable, or a monitored process exiting. This is how a daemon reacts to the world without a thread blocking in a read loop — you'll see it wrapping sockets and file watches.</p>
+
+<h4>Groups &amp; semaphores</h4>
+<p><code>DispatchGroup</code> — "run N tasks, notify me when all finish" (fan-out/fan-in). <code>DispatchSemaphore</code> — a counter gating access to a limited resource, or a bridge to make async work look synchronous. Both are legacy patterns that async/await often replaces more cleanly.</p>
+
+<div class="note gotcha"><b>Thread explosion</b>If you dump lots of blocking work onto a concurrent queue and each block waits on I/O, GCD keeps spinning up new threads to stay busy — you can exhaust the thread limit and stall the whole app. The fix historically was limiting concurrency (semaphore) or a serial queue; the modern fix is Swift Concurrency's cooperative pool, which caps threads deliberately. Mentioning this shows you've hit real GCD limits.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">Serial vs concurrent queue, and sync vs async — aren't those the same thing?</summary>
+<div class="a">
+<p><strong>Commit:</strong> No — they're independent axes. Serial vs concurrent is a property of the queue: how many tasks run at once. Sync vs async is a property of the call: whether the caller blocks until the work finishes. You can submit sync to a concurrent queue or async to a serial queue; any combination is valid.</p>
+<p><strong>Nuance:</strong> the common useful pairings are async-to-concurrent for parallel background work, and sync-to-serial when you need a value back from state protected by that serial queue. The dangerous combination is sync onto your own current queue, which deadlocks.</p>
+</div></details>
+
+<details class="qa"><summary class="q">How does a daemon watch a socket or a file for activity with GCD?</summary>
+<div class="a">
+<p><strong>Commit:</strong> With a <code>DispatchSource</code> — specifically a read source on the file descriptor. Instead of a thread blocking in a <code>read()</code> loop, the source fires a callback on my queue whenever the descriptor has data, so one queue can multiplex many descriptors with no dedicated blocked threads.</p>
+<p><strong>Nuance:</strong> dispatch sources also handle timers, Unix signals, and process-exit events, which makes them the natural event backbone for a daemon. It's the same efficiency idea as <code>kqueue</code> underneath — GCD is exposing kernel event notification as queue callbacks.</p>
+</div></details>
+</section>
+
+<!-- ================= 04 Swift Concurrency ================= -->
+<section class="chapter" id="swift-conc">
+<h2>Topic 04 · The centerpiece</h2>
+<div class="chapter-title">Swift Concurrency: async/await &amp; actors</div>
+<div class="chapter-tag">The modern model. Since you're Swift-first, this is where you should be strongest.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>Swift Concurrency lets you write asynchronous code that <em>reads</em> like normal top-to-bottom code (<code>async/await</code>), organizes it into a tree of cancellable <strong>tasks</strong>, and protects shared state with <strong>actors</strong> — with the compiler checking for data races at build time.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>The old world was callbacks and completion handlers: nested, hard to read, easy to forget an error path, and with no help from the compiler about threading. Swift Concurrency replaces all of it with three connected ideas — <code>async/await</code> for readability, structured tasks for lifetime and cancellation, and actors for safe shared state — unified by the <code>Sendable</code> type system that makes data races a <em>compile error</em> rather than a 2am crash.</p>
+
+<h3>How it actually works</h3>
+
+<h4>1 · async / await — suspension, not blocking</h4>
+<p>An <code>async</code> function can <strong>suspend</strong> at an <code>await</code> — pause, free its thread to do other work, and resume later when the awaited thing is ready. This is the crucial distinction from blocking:</p>
+<pre class="ascii">
+ BLOCKING (old):   thread sits idle, held hostage, while waiting for I/O
+ SUSPENDING (new): at `await`, the function steps aside and RELEASES the thread;
+                   the thread runs other tasks; your function resumes when ready
+</pre>
+<pre><code><span class="k">func</span> <span class="f">loadPosture</span>() <span class="k">async throws</span> -> Posture {
+    <span class="k">let</span> device = <span class="k">try await</span> readDeviceState()   <span class="c">// suspends here; thread is freed</span>
+    <span class="k">let</span> signed  = <span class="k">try await</span> sign(device)        <span class="c">// suspends again</span>
+    <span class="k">return</span> Posture(device, signed)          <span class="c">// reads like sync code, runs async</span>
+}</code></pre>
+
+<h4>2 · Structured concurrency — tasks form a tree</h4>
+<p>A <code>Task</code> is a unit of async work. "Structured" means child tasks are tied to their parent's scope: the parent can't finish until its children do, and <strong>cancelling a parent cancels the whole subtree</strong>. This solves the old problem of orphaned background work that outlives what started it.</p>
+<pre><code><span class="c">// Run three checks in parallel, all cancelled together if the parent is</span>
+<span class="k">try await withThrowingTaskGroup</span>(of: Signal.<span class="k">self</span>) { group <span class="k">in</span>
+    group.addTask { <span class="k">try await</span> checkDisk() }
+    group.addTask { <span class="k">try await</span> checkNetwork() }
+    group.addTask { <span class="k">try await</span> checkCerts() }
+    <span class="k">for try await</span> signal <span class="k">in</span> group { collect(signal) }
+}</code></pre>
+<p>Cancellation is <em>cooperative</em>: a cancelled task isn't force-killed; it keeps running until it checks <code>Task.isCancelled</code> or hits a cancellation-aware <code>await</code>. So long-running work must check for cancellation to be responsive — a common interview follow-up.</p>
+
+<h4>3 · Actors — the safe-shared-state primitive</h4>
+<p class="lead">This is the concept to nail. An <strong>actor</strong> is like a class, but the compiler guarantees only one task touches its mutable state at a time.</p>
+<pre><code><span class="k">actor</span> <span class="t">VerdictCache</span> {
+    <span class="k">private var</span> cache: [String: Verdict] = [:]
+    <span class="k">func</span> <span class="f">verdict</span>(for hash: String) -> Verdict? { cache[hash] }   <span class="c">// serialized</span>
+    <span class="k">func</span> <span class="f">store</span>(_ v: Verdict, for hash: String) { cache[hash] = v } <span class="c">// serialized</span>
+}
+<span class="c">// Callers must await — the await is where serialization happens:</span>
+<span class="k">let</span> v = <span class="k">await</span> cache.verdict(for: h)</code></pre>
+<p>The actor is doing internally what you'd do manually with a serial queue — but the compiler <em>enforces</em> it: you literally cannot access <code>cache</code> from outside without going through <code>await</code>, so a whole class of data-race bugs becomes impossible to write.</p>
+
+<div class="note gotcha"><b>Actor reentrancy — the classic senior trap</b>Actors are <em>reentrant</em>: when an actor method hits an <code>await</code> and suspends, the actor is free to run <em>other</em> calls in the meantime. So state you read before an <code>await</code> may have changed after it. The rule: never assume your actor's state is unchanged across an <code>await</code> — re-check invariants afterward. This is the #1 "gotcha" question about actors; knowing it marks you as someone who's actually used them.</div>
+
+<h4>4 · MainActor</h4>
+<p><code>@MainActor</code> is a special global actor meaning "this runs on the main thread." You annotate UI code with it and the compiler guarantees main-thread execution — replacing manual <code>DispatchQueue.main.async</code> and its easy-to-forget mistakes.</p>
+
+<h4>5 · Sendable — the type system that makes it safe</h4>
+<p><code>Sendable</code> is a protocol marking types that are <strong>safe to pass between concurrency domains</strong> (between tasks/actors). Value types are automatically Sendable; a mutable class is not, because sharing it would allow a race. The compiler checks this at every boundary — <em>this</em> is Swift 6's data-race safety. A <code>@Sendable</code> closure similarly can't capture unsafe mutable state. When you can't prove safety but know it's fine, <code>@unchecked Sendable</code> is your explicit "trust me" escape hatch — use sparingly and say so.</p>
+
+<h4>6 · Bridging old callbacks into async — continuations</h4>
+<p>Real systems have C and Objective-C callback APIs (ES completion handlers, socket callbacks). You wrap them into async with a <strong>continuation</strong>: it suspends the async function and hands you a token to resume it when the callback fires.</p>
+<pre><code><span class="k">func</span> <span class="f">connect</span>() <span class="k">async throws</span> -> Session {
+    <span class="k">try await withCheckedThrowingContinuation</span> { cont <span class="k">in</span>
+        legacyConnect { session, error <span class="k">in</span>          <span class="c">// old callback API</span>
+            <span class="k">if let</span> error { cont.resume(throwing: error) }
+            <span class="k">else</span> { cont.resume(returning: session!) }  <span class="c">// resume EXACTLY once</span>
+        }
+    }
+}</code></pre>
+<p>Rule: resume the continuation <strong>exactly once</strong> — zero times leaks the task forever; twice crashes. The "checked" variant traps if you get it wrong, which is why you use it during development.</p>
+
+<div class="note agent"><b>The Swift-first agent story</b>"At the boundary I bridge C callbacks — ES messages, socket readiness — into async with continuations; above that boundary I use actors to protect the shared verdict cache and event buffer, so the compiler proves there's no data race; and I keep the ES handler itself off the cooperative pool because it has a hard deadline and I must never block a pool thread." That single answer shows you understand where each model belongs — which is the whole point of being Swift-first on a systems team.</div>
+
+<div class="note gotcha"><b>Never block the cooperative pool</b>Swift Concurrency runs async work on a small pool sized to your cores. If you do a blocking call (a synchronous socket read, a semaphore wait, <code>sleep</code>) inside async code, you starve that pool and can hang the app — the modern version of GCD thread explosion. Blocking/syscall work belongs on a dedicated thread or GCD queue, bridged in via continuation. Saying this preempts a favorite follow-up.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">What's the difference between suspending and blocking?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Blocking holds a thread hostage — the thread sits idle doing nothing while it waits. Suspending, at an <code>await</code>, releases the thread back to the pool to run other work, and resumes your function later. Same waiting from your code's view, completely different cost to the system.</p>
+<p><strong>Nuance:</strong> that's exactly why you must never do a blocking call inside async code — it defeats the model by tying up a pooled thread that suspension was designed to free, and can deadlock the whole cooperative pool. Blocking work gets pushed to a dedicated thread and bridged back with a continuation.</p>
+</div></details>
+
+<details class="qa"><summary class="q">How does an actor prevent data races, and what's the catch?</summary>
+<div class="a">
+<p><strong>Commit:</strong> An actor serializes all access to its mutable state — the compiler forces every external access to go through <code>await</code>, so only one task is inside the actor's state at a time. It's a serial queue plus a lock, enforced at compile time.</p>
+<p><strong>Nuance:</strong> the catch is reentrancy — when an actor method suspends at an <code>await</code>, the actor can run other calls meanwhile, so state can change across that suspension point. You can't assume anything you read before an <code>await</code> is still true after it; you re-validate. That's the subtle bug actors don't save you from.</p>
+</div></details>
+
+<details class="qa"><summary class="q">You have an old C API with a completion callback. How do you use it from async Swift?</summary>
+<div class="a">
+<p><strong>Commit:</strong> I wrap it in a continuation — <code>withCheckedThrowingContinuation</code> — which suspends the async function and gives me a token I resume from inside the callback, returning the value or throwing the error. That turns a callback API into a clean <code>await</code>.</p>
+<p><strong>Nuance:</strong> the one hard rule is resuming exactly once — never zero (the task leaks forever) and never twice (it crashes). I use the checked variant in development because it traps on misuse. This is exactly how I'd bring an Endpoint Security or socket callback into structured Swift concurrency.</p>
+</div></details>
+
+<details class="qa"><summary class="q">What is Sendable and why did Swift add it?</summary>
+<div class="a">
+<p><strong>Commit:</strong> <code>Sendable</code> marks types that are safe to move between concurrency domains — tasks and actors. The compiler checks that only Sendable things cross those boundaries, which turns data races from a runtime mystery into a compile-time error. Value types are Sendable automatically; mutable reference types aren't.</p>
+<p><strong>Nuance:</strong> it's the foundation of Swift 6's complete concurrency checking. When I have a type I know is safe but can't be proven — say a class guarded internally by a lock — I mark it <code>@unchecked Sendable</code> and take responsibility for that guarantee, which is an explicit, greppable decision rather than a silent assumption.</p>
+</div></details>
+
+<details class="qa"><summary class="q">async/await vs GCD — when would you still reach for GCD?</summary>
+<div class="a">
+<p><strong>Commit:</strong> For new application logic I default to async/await and actors — safer and more readable. I reach for GCD when I'm at the low-level systems boundary: <code>DispatchSource</code> for file-descriptor, signal, and timer events, or a dedicated serial queue for work that must not touch the cooperative pool, like a hard-deadline ES handler or blocking socket I/O.</p>
+<p><strong>Nuance:</strong> they interoperate — I bridge GCD/callback work into async with continuations. So it's not either/or; it's async/await for the structured, cancellable business logic and GCD for the kernel-event plumbing underneath.</p>
+</div></details>
+</section>
+
+<!-- ================= 05 IPC + Unix sockets ================= -->
+<section class="chapter" id="ipc">
+<h2>Topic 05</h2>
+<div class="chapter-title">IPC &amp; Unix domain sockets</div>
+<div class="chapter-tag">Concurrency between separate processes. First the fundamentals, then the socket the JD names.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>IPC (inter-process communication) is how two <em>separate processes</em> — which don't share memory — talk to each other. A <strong>Unix domain socket</strong> is one of the main ways: a fast, local, bidirectional pipe between processes on the same machine, addressed by a filesystem path.</p>
+</div>
+
+<h3>Why it exists — and why an agent needs it</h3>
+<p>Threads share memory; processes don't — each has its own isolated address space (that isolation is a security and stability feature). So processes need an explicit channel to communicate. An endpoint agent is <em>naturally</em> multi-process: a privileged root daemon does the sensitive work, a System Extension hosts the ES/NE code, and a menu-bar app talks to the user. These pieces must exchange messages — that's IPC.</p>
+
+<h4>The macOS IPC menu (know the landscape)</h4>
+<table>
+<tr><th>Mechanism</th><th>Best for</th></tr>
+<tr><td><strong>XPC</strong></td><td>Apple-native process talking to Apple-native process — the default on macOS (Topic 06)</td></tr>
+<tr><td><strong>Unix domain sockets</strong></td><td>Local IPC, especially when one end is portable C/C++ or non-Apple — the JD names this</td></tr>
+<tr><td><strong>Mach ports</strong></td><td>The low-level primitive XPC is built on; rarely used directly</td></tr>
+<tr><td>Pipes, shared memory, files</td><td>Simple streams, bulk data, persistence</td></tr>
+</table>
+
+<h3>Unix domain sockets, from scratch</h3>
+<p>They use the <em>same</em> socket API as network sockets (<code>socket</code>, <code>bind</code>, <code>listen</code>, <code>accept</code>, <code>read</code>, <code>write</code>) but with the <code>AF_UNIX</code> family and a filesystem path instead of an IP address and port. Because they never touch the network stack, they're faster than a localhost TCP connection and can't be reached from off-machine.</p>
+<pre class="ascii">
+ SERVER                              CLIENT
+ socket(AF_UNIX)                     socket(AF_UNIX)
+ bind("/var/run/agent.sock")         connect("/var/run/agent.sock")
+ listen()                                 │
+ accept() ◀───────────────────────────────┘   now a bidirectional byte stream
+ read()/write() ◀──────────────────────▶ write()/read()
+</pre>
+
+<h4>Two things you must handle — and interviewers check for</h4>
+<ul>
+<li><strong>Message framing.</strong> A stream socket is a river of bytes with <em>no message boundaries</em> — two <code>write</code>s can arrive as one <code>read</code>, or split across reads. So you impose your own frames: the standard trick is a <strong>length prefix</strong> — write a 4-byte length, then the payload; the reader reads 4 bytes, then exactly that many. Cap the max length so a bad/hostile peer can't make you allocate gigabytes.</li>
+<li><strong>Peer identity.</strong> Since any local process could connect, you check who's on the other end: <code>getpeereid</code> gives the peer's user/group ID, and <code>LOCAL_PEERCRED</code> gives more. For real security you verify the peer's <em>code signature</em> (the Security.framework technique) — trusting the connection because your team signed the peer, not because of its path or PID.</li>
+</ul>
+
+<div class="note agent"><b>Why a portable-core team likes UDS</b>Omnissa's DEX agent has a cross-platform C++ core. Unix domain sockets are the natural IPC there because they're <em>not</em> Apple-specific — the same socket code works on Linux. XPC would lock that boundary to Apple. So the honest, senior answer to "XPC or sockets?" is: XPC when both ends are Apple-native and I want launchd lifecycle and typed messages; Unix sockets when a portable C/C++ core or non-Apple tool needs in. You run both at JumpCloud — say which carries what.</div>
+
+<h3>Reading a socket the Swift way</h3>
+<p>You don't sit a thread in a blocking <code>read</code> loop. You make the descriptor non-blocking and attach a <code>DispatchSource</code> read source (Topic 03) — it calls you back on a queue when bytes are ready, so one queue handles many connections. Above that, you can expose the whole thing as an <code>AsyncStream</code> of decoded messages so the rest of your Swift code just does <code>for await message in connection</code>.</p>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">You're sending messages over a Unix domain socket and they're arriving merged or split. Why, and how do you fix it?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Because a stream socket doesn't preserve message boundaries — it's a byte stream, so the kernel is free to coalesce or split your writes. The fix is application-level framing: I prefix each message with its length, typically a 4-byte header, so the reader reads the length then exactly that many bytes to reconstruct one message.</p>
+<p><strong>Nuance:</strong> I cap the maximum frame size so a malformed or hostile length can't make me allocate unbounded memory, and I add a small version field in the header so the daemon and client can be upgraded independently — which is a real concern at fleet scale where the two halves update at different times.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Any local process can connect to your socket. How do you make sure only your app does?</summary>
+<div class="a">
+<p><strong>Commit:</strong> I verify the peer's code signature. From the connection I get the peer's identity and build a <code>SecCode</code>, then check it against a requirement pinning my Team ID and signing identifier — so only a binary my team signed is accepted.</p>
+<p><strong>Nuance:</strong> peer credentials like <code>getpeereid</code> tell me the uid, which is a start, but uid alone is spoofable in the sense that any process of that user could connect — the signature check is what actually establishes trust. This is the same identity principle as XPC connection validation; I apply it regardless of transport.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Would you use a Unix socket or localhost TCP for local IPC?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Unix domain socket. It's faster because it skips the entire TCP/IP stack, and it's inherently local — nothing off-machine can reach it, so there's no accidental network exposure. TCP on localhost adds protocol overhead and an attack surface for no benefit here.</p>
+<p><strong>Nuance:</strong> the one case for localhost TCP is if a component genuinely can't do Unix sockets or needs to be relocatable across machines later — but for a same-machine daemon-to-helper channel, Unix sockets are the right default.</p>
+</div></details>
+</section>
+
+
+<!-- ================= 06 XPC ================= -->
+<section class="chapter" id="xpc">
+<h2>Topic 06</h2>
+<div class="chapter-title">XPC</div>
+<div class="chapter-tag">Apple's own IPC — the default for Mac-native processes, with a clean Swift face.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>XPC is macOS's built-in, secure IPC: you call methods on an object that actually lives in <em>another process</em>, as if it were local, with the system managing launching, crash-recovery, and message serialization for you.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>Sockets give you a raw byte pipe — you build framing, serialization, and lifecycle yourself. XPC gives you all of that for free <em>when both ends are Apple-native</em>: you define a protocol, call methods on a proxy, and the system handles marshaling arguments, launching the other side on demand, and restarting it if it crashes. It's built on Mach ports and integrated with <strong>launchd</strong> (the system's service manager), which is where the lifecycle magic comes from.</p>
+
+<h3>How it actually works</h3>
+
+<h4>The shape of it in Swift (NSXPCConnection)</h4>
+<p>You share a <code>@objc</code> protocol between both processes describing what can be called. The client gets a proxy; calls on it execute in the server process.</p>
+<pre><code><span class="c">// Shared protocol (both processes have this)</span>
+<span class="k">@objc protocol</span> <span class="t">AgentControl</span> {
+    <span class="k">func</span> <span class="f">currentPosture</span>(reply: <span class="k">@escaping</span> (Posture) -> Void)
+}
+
+<span class="c">// Client side</span>
+<span class="k">let</span> conn = NSXPCConnection(machServiceName: <span class="str">"com.corp.agentd"</span>, options: .privileged)
+conn.remoteObjectInterface = NSXPCInterface(with: AgentControl.<span class="k">self</span>)
+conn.resume()
+<span class="k">let</span> proxy = conn.remoteObjectProxy <span class="k">as</span>? AgentControl
+proxy?.currentPosture { posture <span class="k">in</span> use(posture) }   <span class="c">// runs in the daemon, replies back</span></code></pre>
+
+<h4>launchd lifecycle — why XPC services "just start"</h4>
+<p>You register the daemon with launchd (via a plist declaring its <code>MachServices</code> name, or modern <code>SMAppService</code>). Then: the daemon <strong>starts on demand</strong> when the first message arrives, and launchd <strong>relaunches it</strong> if it crashes — you never manage its process yourself. This on-demand + crash-recovery behavior is XPC's headline advantage over rolling your own socket server.</p>
+
+<h4>The security question — asked in every agent interview</h4>
+<p>An XPC listener must <strong>not trust connections by default</strong>. In the accept handler you validate the caller by its <em>code signature</em>, using the connection's audit token:</p>
+<pre><code><span class="k">func</span> <span class="f">listener</span>(_ l: NSXPCListener,
+              shouldAcceptNewConnection c: NSXPCConnection) -> Bool {
+    <span class="c">// Take c.auditToken → build a SecCode → SecCodeCheckValidity against</span>
+    <span class="c">// a requirement pinning YOUR Team ID + signing identifier.</span>
+    <span class="k">return</span> verifyCodeSignature(auditToken: c.auditToken)   <span class="c">// reject if not ours</span>
+}</code></pre>
+<p>Why the audit token and not the PID: PIDs get reused, so a check on PID alone can be defeated by a process that inherits a recycled PID. The audit token includes a pid-version that distinguishes a dead process from its replacement, and it's kernel-verified — you can't forge it. This ties straight back to Security.framework and is <em>the</em> XPC senior signal.</p>
+
+<h4>Connection lifecycle handlers</h4>
+<p>Set an <code>invalidationHandler</code> (connection permanently dead — clean up) and an <code>interruptionHandler</code> (server crashed but connection can be re-established — reconnect logic). Handling these is what makes an agent resilient when its helper restarts.</p>
+
+<div class="note gotcha"><b>Validate every input, it's a trust boundary</b>Even after signature-checking the peer, treat every argument arriving over XPC as untrusted input — define narrow protocol methods, bound sizes, and never assume the caller is well-behaved. An IPC endpoint in a privileged daemon is an attack surface; the interviewer wants to hear you think of it that way.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">How do you secure an XPC connection?</summary>
+<div class="a">
+<p><strong>Commit:</strong> In the listener's <code>shouldAcceptNewConnection</code>, I verify the connecting process's code signature. I take the connection's audit token, build a <code>SecCode</code> from it, and check it against a requirement that pins my Team ID and signing identifier — rejecting anything my team didn't sign.</p>
+<p><strong>Nuance:</strong> I use the audit token rather than the PID because PIDs are reused and thus spoofable; the token is kernel-verified and carries a pid-version. And I still validate every argument on every method — signature-checking the peer establishes who it is, but a privileged daemon treats all IPC input as untrusted regardless.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why choose XPC over a Unix socket, and when would you not?</summary>
+<div class="a">
+<p><strong>Commit:</strong> XPC when both ends are Apple-native — it hands me typed method calls, argument marshaling, and launchd-managed lifecycle: on-demand launch and automatic crash relaunch, none of which I'd get from a raw socket. It's the macOS default for a reason.</p>
+<p><strong>Nuance:</strong> I'd choose Unix domain sockets when one end is a portable C/C++ core or a non-Apple tool, because XPC ties me to Apple frameworks — a cross-platform agent core can't speak XPC but speaks sockets everywhere. So it's a boundary decision: XPC for the Mac-native pieces, sockets where portability or a foreign runtime is involved.</p>
+</div></details>
+
+<details class="qa"><summary class="q">How does an XPC daemon start, and what happens if it crashes?</summary>
+<div class="a">
+<p><strong>Commit:</strong> launchd manages it. I register the service with launchd declaring its Mach service name, and it starts on demand — the daemon isn't running until the first client message arrives, at which point launchd launches it. If it crashes, launchd relaunches it under the same name.</p>
+<p><strong>Nuance:</strong> on the client side I handle the interruption and invalidation handlers so I reconnect cleanly after a restart. That on-demand and self-healing lifecycle is exactly why XPC beats a hand-rolled socket server for Apple-native components — I'm not writing my own supervision.</p>
+</div></details>
+</section>
+
+
+<!-- ================= 07 map ================= -->
+<section class="chapter" id="map">
+<h2>Putting it together</h2>
+<div class="chapter-title">The whole picture in one agent</div>
+<div class="chapter-tag">Sketch this and you can answer almost any concurrency-or-IPC design question.</div>
+
+<pre class="ascii">
+ ┌─────────────────────────────┐        ┌─────────────────────────────┐
+ │  System Extension (ES/NE)   │        │  Menu-bar app (per-user)    │
+ │  ES callback on C thread    │        │  @MainActor UI              │
+ │    │ continuation           │        └──────────────┬──────────────┘
+ │    ▼                        │            XPC (Apple-native,        
+ │  async pipeline → actor     │            signature-checked)         
+ │  (VerdictCache, EventBuffer)│                       │               
+ └──────────────┬──────────────┘                       ▼               
+        Unix domain socket              ┌─────────────────────────────┐
+        (portable C++ core)  ──────────▶│  Root LaunchDaemon (agentd) │
+                                        │  actors for shared state    │
+                                        │  DispatchSource for sockets │
+                                        │  structured tasks for work  │
+                                        └─────────────────────────────┘
+
+ WITHIN a process → threads, protected by actors / queues / locks
+ BETWEEN processes → IPC: XPC for Apple-native, Unix sockets for portable/foreign
+</pre>
+
+<h3>The through-lines interviewers reward</h3>
+<ul>
+<li><strong>One problem, many tools.</strong> Everything — locks, serial queues, actors — exists to serialize access to shared mutable state. Lead with that and each tool is just a point on a spectrum from manual (locks) to compiler-enforced (actors).</li>
+<li><strong>Suspend, don't block.</strong> The modern model frees threads at <code>await</code> instead of holding them. The cardinal sin — blocking the cooperative pool — is where most Swift-concurrency follow-ups go.</li>
+<li><strong>Identity is the same across IPC transports.</strong> Whether XPC or a Unix socket, you authenticate the peer by verifying its code signature via the audit token — the Security.framework link. One idea, both transports.</li>
+<li><strong>Right tool per layer.</strong> C/GCD at the kernel-event boundary (deadlines, sockets, DispatchSource), Swift Concurrency for structured business logic above it, bridged by continuations. Showing you know <em>where each belongs</em> is the senior signal for a Swift-first systems role.</li>
+</ul>
+
+<h3>A 3-day drill</h3>
+<table>
+<tr><th>Day</th><th>Focus</th><th>Ready when…</th></tr>
+<tr><td>1</td><td>Topics 01–03: the shared-state problem, locks, GCD. Explain data race vs race condition, and serial-vs-concurrent vs sync-vs-async, out loud.</td><td>You can cause and prevent a GCD deadlock from memory.</td></tr>
+<tr><td>2</td><td>Topic 04: async/await, actors, Sendable, continuations. Write the actor cache and the continuation bridge by hand.</td><td>You can explain suspend-vs-block and actor reentrancy without notes.</td></tr>
+<tr><td>3</td><td>Topics 05–06: Unix sockets (framing + peer verification) and XPC (launchd lifecycle + signature check). Sketch the agent map.</td><td>You can defend "XPC vs sockets" both ways and secure either.</td></tr>
+</table>
+
+<div class="note"><b>If you blank under pressure</b>Reconstruct from the one principle: <em>concurrency is about protecting shared mutable state; IPC is concurrency across processes that don't share memory at all.</em> Ask yourself "who's sharing what, and how do I make access one-at-a-time or copy-instead-of-share" — and the right tool falls out.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Securing the Desktop — design decisions &amp; trade-offs</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;
+  --sec:#7a2f4a;--secT:#f7e8ee;      /* security side */
+  --avl:#1c5f7c;--avlT:#e3f0f5;      /* availability side */
+  --go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;
+  --stop:#a03a2a;--stopT:#f9e7e2;
+  --pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--sec),var(--avl));z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:284px;flex:0 0 284px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#171014;color:#d5c8cf;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#a3868f;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#a3868f;margin:15px 4px 6px;border-top:1px solid #382a31;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#6d5760;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#bfa8b1;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#8a6b76;min-width:20px}
+  nav a:hover{background:#2c1f26;color:#fff}nav a.active{background:var(--sec);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:848px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sec);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--sec)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.3px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .yo{border-left-color:var(--avl);background:var(--avlT)}.yo .l{color:var(--avl)}
+  .bx p:last-child{margin-bottom:0}
+  /* decision block */
+  .dec{border:1px solid var(--lineS);border-radius:12px;margin:20px 0;background:var(--surf);overflow:hidden}
+  .dec .hd{padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surf2)}
+  .dec .hd .q{font-family:'Sora';font-weight:700;font-size:16px}
+  .dec .hd .t{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+  .two{display:flex;gap:0;flex-wrap:wrap}
+  .side{flex:1;min-width:250px;padding:14px 16px}
+  .side.a{background:var(--secT);border-right:1px solid var(--line)}
+  .side.b{background:var(--avlT)}
+  .side .t{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+  .side.a .t{color:var(--sec)}.side.b .t{color:var(--avl)}
+  .side p{font-size:14px;margin:0 0 8px}
+  .side ul{font-size:13.6px;margin:0;padding-left:18px}
+  .side li{margin:3px 0}
+  .verdict{padding:13px 16px;border-top:1px solid var(--line);background:var(--goT)}
+  .verdict .t{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--go);font-weight:600;margin-bottom:4px}
+  .verdict p{font-size:14.4px;margin:0}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.7px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.7px;color:var(--sec)}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.a{border-color:var(--avl);background:var(--avlT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .nd.p{border-color:var(--pur);background:var(--purT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}.side.a{border-right:none;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Desktop MFA trade-offs</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Securing the Desktop<span class="s">every design decision,<br>both sides argued</span></div>
+  <div class="ct">14 sections · 16 decisions</div>
+  <nav id="toc">
+    <div class="grp">Frame</div>
+    <a href="#threat"><span class="n">01</span><span>The threat model ★</span></a>
+    <a href="#tension"><span class="n">02</span><span>The central tension</span></a>
+    <div class="grp">Where to hook</div>
+    <a href="#where"><span class="n">03</span><span>Which layer to gate</span></a>
+    <a href="#mech"><span class="n">04</span><span>Plugin vs Platform SSO</span></a>
+    <a href="#scope"><span class="n">05</span><span>What to gate</span></a>
+    <div class="grp">The factor</div>
+    <a href="#factor"><span class="n">06</span><span>Choosing the factor</span></a>
+    <a href="#binding"><span class="n">07</span><span>Device binding</span></a>
+    <a href="#offline"><span class="n">08</span><span>The offline problem ★</span></a>
+    <div class="grp">Failure</div>
+    <a href="#failmode"><span class="n">09</span><span>Fail open vs closed ★</span></a>
+    <a href="#lockout"><span class="n">10</span><span>Lockout &amp; recovery</span></a>
+    <a href="#trust"><span class="n">11</span><span>Trusting the local machine</span></a>
+    <div class="grp">Operating it</div>
+    <a href="#rollout"><span class="n">12</span><span>Rollout &amp; blast radius</span></a>
+    <a href="#residual"><span class="n">13</span><span>What remains unsolved</span></a>
+    <a href="#talk"><span class="n">14</span><span>How to discuss this ★</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Design decisions · every fork argued from both sides</p>
+  <h1>Desktop MFA is a sequence of trade-offs, not a feature.</h1>
+  <p class="led">Every meaningful decision in this product pits security against availability, and the interesting engineering is in where you draw each line — and whether you make it configurable. This document walks sixteen of those decisions, argues both sides, and lands on a position for each.</p>
+</header>
+
+<!-- 01 -->
+<section id="threat">
+  <div class="sn">01 / ★ START HERE</div>
+  <h2>The threat model</h2>
+  <p class="ss">You can't evaluate a trade-off without knowing which attacker you're defending against. Every decision later refers back to this.</p>
+
+  <h3>The attackers, in order of realism</h3>
+  <table class="tb">
+    <tr><th>Attacker</th><th>Capability</th><th>Does desktop MFA stop them?</th></tr>
+    <tr><td><strong>Phished credential</strong></td><td>Has a valid password obtained remotely; no physical access</td><td><strong>Yes</strong> — this is the primary case. Password alone is insufficient.</td></tr>
+    <tr><td><strong>Credential stuffing</strong></td><td>Password reused from another breach</td><td><strong>Yes</strong> — same reason</td></tr>
+    <tr><td><strong>Opportunistic thief</strong></td><td>Stole the laptop; no password</td><td>Partly — FileVault does the heavy lifting; MFA adds a second gate</td></tr>
+    <tr><td><strong>Insider / shoulder surfer</strong></td><td>Observed the password, physical access</td><td><strong>Yes</strong> — needs the second factor too</td></tr>
+    <tr><td><strong>Targeted thief with the password</strong></td><td>Physical device + known password</td><td><strong>Yes, if the factor is device-bound</strong> and not on the same device</td></tr>
+    <tr><td><strong>Malware already running as the user</strong></td><td>Code execution in the session</td><td><strong>No</strong> — they're already past login. Different control needed.</td></tr>
+    <tr><td><strong>Attacker with root on the machine</strong></td><td>Can modify the agent, the auth DB, disk state</td><td><strong>No, and be honest about it</strong> — see §11</td></tr>
+    <tr><td><strong>Evil maid / firmware</strong></td><td>Physical access, offline, repeatedly</td><td>No — that's Secure Boot and FileVault's territory</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The honest scope statement</span>
+    <p>"Desktop MFA defends the <strong>credential-compromise case</strong>: an attacker who has obtained a valid password by phishing, reuse, or observation, and now wants a session on a corporate Mac. It raises the bar meaningfully there. It does <em>not</em> defend against an attacker who already has code execution on the machine, and it can't — once you're root on the endpoint you're inside the trust boundary the product depends on. Being precise about that scope is what makes the product defensible rather than security theatre."</p></div>
+
+  <div class="bx pu"><span class="l">Why the desktop specifically</span>
+    <p>Cloud apps got MFA years ago. The Mac often didn't — so it became the soft entry point: a session on the endpoint yields cached credentials, keychain contents, session tokens on disk, SSH keys, and a trusted network position. <strong>Closing the desktop gap is closing the last unauthenticated door into an otherwise MFA-protected estate.</strong> That's the product thesis in one sentence.</p></div>
+</section>
+
+<!-- 02 -->
+<section id="tension">
+  <div class="sn">02</div>
+  <h2>The central tension</h2>
+  <p class="ss">One trade-off underlies all the others. Name it early and every later decision has a frame.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd r" style="min-width:250px"><b>maximum security</b>every login verified against the IdP in real time · deny if anything is unavailable · no offline path · no bypass</div>
+      <span class="ar">⟷</span>
+      <div class="nd a" style="min-width:250px"><b>maximum availability</b>the user can always reach their machine · works on a plane · never locked out by an outage</div>
+    </div>
+    <div class="cap">These are genuinely opposed. Every decision in this document picks a point on this line.</div>
+  </div>
+
+  <div class="bx st"><span class="l">Why it's sharper here than almost anywhere else</span>
+    <p>In a web application, a failed auth means the user retries or calls support <em>from another device</em>. At the login window there is no other device and no other channel — <strong>the thing that's broken is the thing you'd use to fix it</strong>. A false deny doesn't degrade the experience; it removes the user's access to their computer entirely, possibly while they're travelling. That asymmetry is why this product's defaults lean further toward availability than a security engineer's instinct would suggest.</p></div>
+
+  <h3>The costs on each side, stated plainly</h3>
+  <table class="tb">
+    <tr><th>Erring toward security</th><th>Erring toward availability</th></tr>
+    <tr><td>A network blip locks out a fleet</td><td>An attacker waits for, or induces, network unavailability</td></tr>
+    <tr><td>Travelling users can't work</td><td>Offline verification is weaker than online</td></tr>
+    <tr><td>Support cost and user revolt</td><td>A gap an auditor will find</td></tr>
+    <tr><td>Admins disable the product entirely — <strong>net security worse</strong></td><td>Coverage claimed exceeds coverage delivered</td></tr>
+  </table>
+  <div class="bx wn"><span class="l">The failure mode nobody plans for</span>
+    <p>Ship it too strict and the customer <strong>turns it off</strong>. A control that gets disabled provides zero security, while one that's slightly weaker but stays enabled provides real security to the whole fleet. That's the argument for configurable posture rather than a single opinionated default — and it's a genuinely product-minded point to make.</p></div>
+</section>
+
+<!-- 03 -->
+<section id="where">
+  <div class="sn">03</div>
+  <h2>Decision 1 — which layer to gate</h2>
+  <p class="ss">There are three moments where you could intervene. Only one is actually available.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd r"><b>pre-boot</b>FileVault unlock<br>no code can run<br><strong>unavailable</strong></div>
+      <span class="ar">→</span>
+      <div class="nd a"><b>login window</b>authorization chain<br><strong>where you hook</strong></div>
+      <span class="ar">→</span>
+      <div class="nd g"><b>session</b>already logged in<br><strong>too late</strong></div>
+    </div>
+    <div class="cap">The choice is made for you by the platform — but understanding why matters.</div>
+  </div>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Gate at FileVault, at the login window, or after session start?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Argument for earliest possible</div>
+        <ul>
+          <li>Pre-boot is the true first gate — before it, the disk is encrypted and nothing runs</li>
+          <li>Anything later means the attacker has already got the volume unlocked</li>
+        </ul></div>
+      <div class="side b"><div class="t">Why it isn't possible</div>
+        <ul>
+          <li>Pre-boot is a minimal EFI/recoveryOS environment — no macOS, no daemons, no network, no third-party code</li>
+          <li>Apple provides no extension point there, and shouldn't</li>
+          <li>Post-session is far too late: the keychain is unlocked and credentials are live</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>The login window is the only viable hook, via the authorization database. Accept it — and then handle the consequence honestly: <strong>FileVault has already happened by the time you get control</strong>, and with pass-through enabled the login window may not appear at all.</p></div>
+  </div>
+
+  <div class="bx st"><span class="l">The FileVault pass-through gap — a real weakness to name</span>
+    <p>With FileVault enabled, macOS commonly passes the pre-boot credentials through to complete login automatically, so a naive MFA plugin never runs. Three responses: <strong>(a)</strong> disable pass-through so the login window always appears — costs an extra prompt, gains actual enforcement; <strong>(b)</strong> also gate screensaver unlock, so the machine is protected on every subsequent unlock even if initial login was bypassed; <strong>(c)</strong> accept and document the gap, on the basis that FileVault protects data at rest and MFA protects session establishment — different threat models.</p>
+    <p style="margin-top:8px">Most products do (a) plus (b). Volunteering this gap unprompted is one of the strongest signals you understand the product rather than the datasheet.</p></div>
+</section>
+
+<!-- 04 -->
+<section id="mech">
+  <div class="sn">04</div>
+  <h2>Decision 2 — plugin or Platform SSO</h2>
+  <p class="ss">Two mechanisms for the same hook point, with very different risk profiles.</p>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Authorization plugin, or Apple's Platform SSO extension?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Authorization plugin</div>
+        <ul>
+          <li>Works across every supported macOS version</li>
+          <li>Full control over the mechanism chain and the user experience</li>
+          <li>Proven — it's how this class of product has always worked</li>
+          <li><strong>But:</strong> you're modifying system authorization policy, and a bug locks out the fleet</li>
+          <li><strong>But:</strong> Apple could constrain it; you're not on a supported path</li>
+        </ul></div>
+      <div class="side b"><div class="t">Platform SSO</div>
+        <ul>
+          <li>Apple-sanctioned and actively developed</li>
+          <li>The OS mediates, so the blast radius of a bug is much smaller</li>
+          <li>Better integration with FileVault and account linking over time</li>
+          <li><strong>But:</strong> newer macOS only — real fleets run several versions</li>
+          <li><strong>But:</strong> bounded by what Apple exposes; early versions had genuine gaps</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>Support <strong>both</strong>, and carry the complexity. Platform SSO where the OS allows it, the plugin path where it doesn't, with a shared core so policy and crypto aren't duplicated. The interesting engineering question isn't which is better — it's <em>how you run two code paths through one product without doubling your test matrix</em>, and when you're allowed to drop the older one.</p></div>
+  </div>
+
+  <div class="bx go"><span class="l">A good question to ask him</span>
+    <p>"Where are you on Platform SSO versus the plugin path — and how do you decide when the fleet has caught up enough to drop the older one?" It's a genuine engineering-strategy question at exactly his level, and it shows you know the platform is moving.</p></div>
+</section>
+
+<!-- 05 -->
+<section id="scope">
+  <div class="sn">05</div>
+  <h2>Decision 3 — what to gate, and how often</h2>
+  <p class="ss">Login is obvious. Everything after it is a judgment call.</p>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Gate screensaver unlock as well as initial login?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Yes — gate both</div>
+        <ul>
+          <li>Initial login may be bypassed via FileVault pass-through; the screensaver is your enforcement point</li>
+          <li>A laptop left unattended is the realistic physical-access scenario</li>
+          <li>A machine that stays logged in for weeks would otherwise be verified once, ever</li>
+        </ul></div>
+      <div class="side b"><div class="t">No — or sparingly</div>
+        <ul>
+          <li>People unlock their machine dozens of times a day</li>
+          <li>MFA on every unlock trains users to approve reflexively — which is exactly what push fatigue exploits</li>
+          <li>Friction is the mechanism by which security controls get disabled</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>Gate both, but with a <strong>re-verification interval</strong> rather than every unlock: MFA at login and then at most once every N hours on unlock, configurable. That preserves enforcement without conditioning users to approve prompts mindlessly — which is a security argument for less friction, not just a UX one.</p></div>
+  </div>
+
+  <div class="bx wn"><span class="l">The counter-intuitive point worth making</span>
+    <p><strong>Excessive prompting is a security regression, not just a UX cost.</strong> A user who approves twenty prompts a day stops reading them, and the twenty-first — the attacker's — gets approved too. So the interval isn't a concession to convenience; it's a defence against exactly the fatigue attack that number matching exists to counter.</p></div>
+
+  <h3>Other scope decisions</h3>
+  <table class="tb">
+    <tr><th>Surface</th><th>Consideration</th></tr>
+    <tr><td>Fast user switching</td><td>Same right family — gate it, or you've left a door open</td></tr>
+    <tr><td><code>sudo</code> / privilege elevation</td><td>Separate right. Arguably higher value than login, but very high friction</td></tr>
+    <tr><td>Remote login (SSH, ARD)</td><td>Different path entirely — doesn't go through the login window. Needs its own control, and forgetting it is a real gap</td></tr>
+    <tr><td>Unenrolled users</td><td>Grace period with prompting, or hard deny? This decides whether rollout is smooth or an incident</td></tr>
+    <tr><td>Local admin / break-glass accounts</td><td>Exempt them — or you have no way in when things break. But then document and monitor them, because they're now the weakest path</td></tr>
+  </table>
+</section>
+
+<!-- 06 -->
+<section id="factor">
+  <div class="sn">06</div>
+  <h2>Decision 4 — which second factor</h2>
+  <p class="ss">Not all factors are equal, and the login-window environment rules some out.</p>
+
+  <table class="tb">
+    <tr><th>Factor</th><th>Phishable?</th><th>Works offline?</th><th>Verdict at the login window</th></tr>
+    <tr><td>SMS OTP</td><td>Yes + SIM swap</td><td>No (needs cell)</td><td>No. Weakest common factor.</td></tr>
+    <tr><td>TOTP app</td><td>Yes — relay</td><td><strong>Yes</strong></td><td>Viable, and the usual offline fallback</td></tr>
+    <tr><td>Push approve</td><td>Yes — fatigue</td><td>No</td><td>Only with number matching</td></tr>
+    <tr><td>Push + number match</td><td>Much harder</td><td>No</td><td>Good online default</td></tr>
+    <tr><td>Security key (FIDO2)</td><td><strong>No</strong></td><td>Crypto yes, RP no</td><td>Strongest, but needs a local relying party — see below</td></tr>
+    <tr><td>Platform authenticator</td><td><strong>No</strong></td><td>Same caveat</td><td>Strong, but on the same device being unlocked</td></tr>
+  </table>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Can the second factor live on the same device you're unlocking?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">No — it must be separate</div>
+        <ul>
+          <li>Two factors on one device is arguably one factor: whoever holds the Mac holds both</li>
+          <li>A thief with the laptop and the password shouldn't also have the factor</li>
+          <li>"Something you have" should mean a <em>different</em> thing you have</li>
+        </ul></div>
+      <div class="side b"><div class="t">Same device is acceptable</div>
+        <ul>
+          <li>A Secure Enclave key plus Touch ID is genuinely two factors: possession of the device <em>and</em> a biometric</li>
+          <li>Requiring a phone means a user without their phone can't work</li>
+          <li>It's phishing-resistant and requires no network — both real gains</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>It depends on the threat. Against <strong>remote credential compromise</strong> — the primary case — a same-device hardware factor is genuinely effective, because the attacker doesn't have the device. Against <strong>device theft with a known password</strong>, it's much weaker. So: same-device hardware factor as the default for its usability and phishing resistance, with a separate-device factor available for high-assurance tenants. And say which threat each configuration actually addresses rather than claiming both.</p></div>
+  </div>
+
+  <div class="bx st"><span class="l">The precise phrasing that shows depth</span>
+    <p>"MFA strength isn't about how many factors — it's about <strong>phishability</strong> and <strong>independence</strong>. Adding a second phishable factor stops opportunistic attackers but not a real-time relay. Adding a second factor on the same physical device stops remote attackers but not a thief. Those are two different axes, and a product should be explicit about where each configuration sits on both."</p></div>
+</section>
+
+<!-- 07 -->
+<section id="binding">
+  <div class="sn">07</div>
+  <h2>Decision 5 — how the credential is bound</h2>
+  <p class="ss">Where the secret lives determines what a compromise gets you.</p>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Shared secret in the keychain, or a non-exportable Secure Enclave key?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Secure Enclave key</div>
+        <ul>
+          <li><strong>Non-exportable</strong> — never enters application-processor memory, so even root can't extract it</li>
+          <li>Cloning the disk gives the attacker nothing usable</li>
+          <li>Can require user presence (Touch ID) per operation</li>
+          <li><strong>But:</strong> can't be backed up or migrated — device replacement means re-enrollment</li>
+          <li><strong>But:</strong> limited to supported algorithms (P-256)</li>
+        </ul></div>
+      <div class="side b"><div class="t">Keychain-stored secret</div>
+        <ul>
+          <li>Portable, backupable, algorithm-flexible</li>
+          <li>Simpler recovery when hardware is replaced</li>
+          <li><strong>But:</strong> to <em>use</em> it you load it into process memory, where a compromised process can read it</li>
+          <li><strong>But:</strong> a copied secret works anywhere — the credential isn't device-bound at all</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>Secure Enclave for the device credential, unambiguously. Non-exportability is the whole point of a device-bound factor: <strong>there is nothing to steal, only operations to request while policy allows.</strong> Handle device replacement through re-enrollment rather than key portability — that's a feature, not a limitation.</p></div>
+  </div>
+
+  <div class="bx go"><span class="l">Your strongest sentence in this whole area</span>
+    <p>"The property I care most about is <strong>non-exportability</strong>. A keychain item is protected at rest, but using it means loading it into memory where a compromised process can exfiltrate it. A Secure Enclave key never enters the application processor at all — you can only ask the SEP to sign, optionally gated on user presence. That's what makes the credential genuinely device-bound, and it's the same primitive underneath FIDO2 platform authenticators and MDM attestation."</p></div>
+</section>
+
+<!-- 08 -->
+<section id="offline">
+  <div class="sn">08 / ★</div>
+  <h2>Decision 6 — the offline problem</h2>
+  <p class="ss">The hardest trade-off in the product, and where most answers fall apart.</p>
+
+  <div class="bx st"><span class="l">The situation</span>
+    <p>A user is on a plane. No network. They must log into their laptop. You cannot reach the IdP, cannot check current policy, cannot see whether the account was disabled an hour ago, and cannot log the event centrally in real time. What do you do?</p></div>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">What happens when the IdP is unreachable at the login window?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Deny — fail closed</div>
+        <ul>
+          <li>The security guarantee holds unconditionally</li>
+          <li>No weaker offline path for an attacker to force by jamming or unplugging</li>
+          <li>Auditable and simple to reason about</li>
+          <li><strong>But:</strong> an ISP outage locks out an entire office</li>
+          <li><strong>But:</strong> travelling users simply cannot work</li>
+          <li><strong>But:</strong> an attacker can <em>induce</em> the condition — so it's also a DoS lever</li>
+        </ul></div>
+      <div class="side b"><div class="t">Allow — fail open</div>
+        <ul>
+          <li>Users are never locked out of their own machines</li>
+          <li>Availability preserved through outages you don't control</li>
+          <li><strong>But:</strong> an attacker just disconnects the network to bypass MFA entirely</li>
+          <li><strong>But:</strong> your control is trivially defeated by pulling a cable</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>Neither. <strong>Cached offline verification</strong> is the third option and the right one — a locally verifiable factor, sealed to the hardware, with bounded uses and a freshness window. It preserves a real second factor offline while bounding how long that weaker mode can be exploited.</p></div>
+  </div>
+
+  <h3>How the offline path is bounded</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd p" style="min-width:470px"><b>sealed to hardware</b>the offline secret is wrapped by a Secure Enclave key — copying the disk to another machine yields nothing usable</div>
+      <div class="nd a" style="min-width:470px"><b>bounded use count</b>N offline logins before an online check-in is required — limits how long a stolen laptop stays usable</div>
+      <div class="nd a" style="min-width:470px"><b>freshness window</b>the verifier expires after X days without contact, forcing reconnection</div>
+      <div class="nd" style="min-width:470px"><b>tamper-resistant counters</b>attempt counts and use counts sealed alongside the secret, so editing a file doesn't grant more attempts</div>
+      <div class="nd" style="min-width:470px"><b>local rate limiting</b>escalating delay, persisted across reboot — offline brute force would otherwise be unlimited</div>
+      <div class="nd g" style="min-width:470px"><b>reconciliation</b>offline uses reported on reconnect, so there's an audit trail and anomalies are visible</div>
+    </div>
+    <div class="cap">Each control bounds a specific weakness of the offline mode.</div>
+  </div>
+
+  <div class="bx wn"><span class="l">The honest admission to make</span>
+    <p>"Offline verification is <strong>strictly weaker</strong> than online, and I'd say so rather than pretend otherwise. Online you get live policy, revocation, risk signals, and real-time audit. Offline you're checking against a pre-shared secret with none of that — you can't know the account was disabled this morning. So the design <em>bounds the exposure</em> rather than claiming equivalence. An organisation that can't accept that gap can configure fail-closed, and accept that a user with no network can't log in."</p></div>
+
+  <h3>The clock problem — a subtle one worth raising</h3>
+  <p>TOTP-style offline verification depends on time, and <strong>an attacker with root can change the system clock</strong>. Rolling it back could replay a previously valid code or defeat a freshness window. Mitigations: prefer counter-based over time-based where possible, seal a monotonic high-water mark alongside the counter so time can only move forward from the agent's perspective, and treat a large backwards clock jump as a security event. It's a small detail that signals you've thought past the happy path.</p>
+
+  <div class="bx pu"><span class="l">Why FIDO2 doesn't simply solve offline</span>
+    <p>A natural question — "why not just use a security key?" The hardware can perform the crypto offline, but the <strong>relying party</strong> that issued the challenge and verifies the assertion is unreachable. You'd need the local daemon to act as a relying party with a pre-provisioned public key and a locally generated challenge — workable, but that means local policy, local replay protection, and no live revocation. The same trade-off in different clothing. Reasoning through that rather than hand-waving is a strong answer.</p></div>
+</section>
+
+<!-- 09 -->
+<section id="failmode">
+  <div class="sn">09 / ★</div>
+  <h2>Decision 7 — fail open or fail closed</h2>
+  <p class="ss">Distinct from the offline question: this is about <em>your own component</em> failing.</p>
+
+  <div class="bx st"><span class="l">The scenario</span>
+    <p>The daemon has crashed. Or XPC is unavailable. Or the mechanism hit an internal error it doesn't recognise. The user is at the login window, waiting. Your code has to vote allow or deny with no information.</p></div>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">When your own agent is broken, do you allow or deny?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Fail closed — deny</div>
+        <ul>
+          <li>Standard secure-design principle: fail securely, default deny</li>
+          <li>An attacker can't bypass by inducing a crash</li>
+          <li>The guarantee never silently disappears</li>
+          <li><strong>But:</strong> a bug in <em>your</em> code locks every user out of every Mac with no way in</li>
+          <li><strong>But:</strong> the recovery channel may itself be broken</li>
+        </ul></div>
+      <div class="side b"><div class="t">Fail open — allow</div>
+        <ul>
+          <li>A bug degrades to the pre-existing password-only state, not to an outage</li>
+          <li>The fleet remains reachable, so you can ship a fix</li>
+          <li>Users still needed a valid password — you haven't opened the door, only stopped adding a lock</li>
+          <li><strong>But:</strong> crash the agent and the control is gone</li>
+          <li><strong>But:</strong> silent degradation is worse than visible failure if nobody notices</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p><strong>Fail open by default, loudly, with the posture configurable.</strong> This is the one place where standard secure-design instinct is arguably wrong, and being able to justify that inversion is the strongest thing you can say about this product.</p></div>
+  </div>
+
+  <div class="bx go"><span class="l">The justification — say it exactly like this</span>
+    <p>"Normally I'd fail closed without hesitation. Here I'd default to fail <em>open</em>, and I can defend that. The failure isn't 'authentication was denied' — it's 'my agent is broken.' Failing closed in that state means <strong>a bug in my code locks every user out of every Mac in the fleet, with no way in from the login window and no channel to fix it</strong>. The blast radius of a false deny is categorically worse than the blast radius of a temporary reversion to password-only — the user still needed a valid password, so I haven't opened a door, I've stopped adding a second lock.</p>
+    <p style="margin-top:8px">But fail-open must be <strong>loud</strong>: every instance emits telemetry, and the fail-open rate is the single most important metric on the dashboard. Silent degradation is the real danger. And high-assurance tenants can configure fail-closed, provided they've genuinely accepted what that means."</p></div>
+
+  <div class="bx wn"><span class="l">The distinction that must never blur</span>
+    <p><strong>"The IdP said no" and "I couldn't reach the IdP" are different outcomes and must be handled by different code paths.</strong> Conflating an authentication <em>denial</em> with an <em>error</em> is a real and common bug — it either locks out legitimate users when a service hiccups, or lets attackers through when a denial is misread as an error. Two distinct enums, two distinct policies.</p></div>
+
+  <h3>Where fail-open must never apply</h3>
+  <ul>
+    <li>A <strong>positive denial from the IdP</strong> — account disabled, factor revoked, policy violated. That's an answer, not a failure.</li>
+    <li><strong>A user with no enrolled factor</strong>, once the grace period has expired. That's a policy state, not an error.</li>
+    <li><strong>An expired offline verifier</strong> beyond its freshness window — the bound existing is the point.</li>
+    <li><strong>Signature verification failure</strong> on a policy or kill-switch payload — that's a potential attack, not a glitch.</li>
+  </ul>
+</section>
+
+<!-- 10 -->
+<section id="lockout">
+  <div class="sn">10</div>
+  <h2>Decision 8 — lockout and recovery</h2>
+  <p class="ss">Every security control that can deny is also a denial-of-service primitive.</p>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Lock the account after N failed factor attempts?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Yes — lock</div>
+        <ul>
+          <li>Offline brute force is otherwise unlimited — the attacker has the device and infinite time</li>
+          <li>A short OTP has a small search space; without a limit it falls quickly</li>
+        </ul></div>
+      <div class="side b"><div class="t">No — or only softly</div>
+        <ul>
+          <li><strong>Lockout is itself an attack:</strong> deliberately fail five times and deny the user their machine</li>
+          <li>At the login window there's no self-service recovery channel</li>
+          <li>A locked-out travelling user is completely stranded</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p><strong>Escalating delays, not hard locks.</strong> A delay that doubles with each failure makes brute force infeasible within any useful timeframe while never permanently denying a legitimate user — they just wait. Hard locks only after an extreme threshold, and always with a working recovery path.</p></div>
+  </div>
+
+  <div class="bx st"><span class="l">The line most likely to land at an identity company</span>
+    <p>"<strong>Lockout is itself a denial-of-service vector.</strong> If failing five times locks an account, an attacker with brief physical access — or just a grudge — can deny someone their machine. So I'd use escalating delays rather than hard locks, key the counter on more than just the account where possible, and make sure every lockout state has a recovery path that doesn't depend on the thing that's failing."</p></div>
+
+  <h3>Recovery paths, ranked</h3>
+  <table class="tb">
+    <tr><th>Path</th><th>Works offline?</th><th>Trade-off</th></tr>
+    <tr><td><strong>Recovery codes</strong></td><td><strong>Yes</strong></td><td>Primary mechanism. But they're a bearer secret the user must store — and often stores badly. Single-use, verified against a sealed local hash.</td></tr>
+    <tr><td>Admin bypass code</td><td>Yes</td><td>Requires reaching the helpdesk by another channel — realistic. But the helpdesk becomes a social-engineering target, so it needs its own verification.</td></tr>
+    <tr><td>MDM kill switch</td><td>No — needs network</td><td>Powerful for fleet-wide problems, useless for the stranded individual</td></tr>
+    <tr><td>Local escape (safe mode)</td><td>Yes</td><td>Last resort. Necessary, but it's also documented publicly, so it's a bypass an attacker with physical access can use</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The uncomfortable truth about recovery</span>
+    <p><strong>Every recovery path is a bypass.</strong> Recovery codes are a factor you can phish or find on a sticky note. Admin bypass is a social-engineering target — a helpdesk that can unlock any machine is a high-value phishing objective, and there are real incidents where that was the whole attack. A local escape hatch is by definition a documented way around the control.</p>
+    <p style="margin-top:8px">You cannot eliminate this. What you can do is <strong>make every recovery use loud and auditable</strong>: alert on it, require justification, rate-limit it, and treat a spike in recovery usage as a security signal in its own right. That framing — "I can't remove the bypass, so I instrument it" — is a mature answer.</p></div>
+</section>
+
+<!-- 11 -->
+<section id="trust">
+  <div class="sn">11</div>
+  <h2>Decision 9 — how much to trust the local machine</h2>
+  <p class="ss">The philosophical core of the product, and where honesty matters most.</p>
+
+  <div class="bx st"><span class="l">The uncomfortable question</span>
+    <p>Your agent runs on the machine it's protecting. An attacker with root on that machine can modify the agent binary, edit the authorization database to remove your mechanism, patch the daemon in memory, or change the system clock. <strong>Does the product actually work against a root attacker?</strong></p></div>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">How do you answer "can't an attacker with root just bypass this?"</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">The weak answer</div>
+        <ul>
+          <li>Claim SIP, code signing, and tamper detection make it infeasible</li>
+          <li>Point to the agent watching for its own removal</li>
+          <li><strong>Problem:</strong> an experienced security engineer knows these are speed bumps against root, not walls</li>
+          <li><strong>Problem:</strong> overclaiming is the fastest way to lose credibility</li>
+        </ul></div>
+      <div class="side b"><div class="t">The strong answer</div>
+        <ul>
+          <li>Concede it plainly: root on the endpoint is inside the trust boundary</li>
+          <li>Note that root implies the attacker <em>already</em> has what login would grant</li>
+          <li>Point out what still holds: the Secure Enclave key remains non-exportable, so they can't impersonate this device <em>elsewhere</em></li>
+          <li>Point to detection: tampering is visible in telemetry even when it isn't preventable</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>Concede it, then define what the product genuinely protects. Root on the machine defeats local enforcement — but it doesn't yield the device credential, and it's <strong>detectable</strong>. Prevention and detection are different goals, and a control that reliably detects what it can't prevent still has real value.</p></div>
+  </div>
+
+  <div class="bx go"><span class="l">The full answer, phrased for a security-minded interviewer</span>
+    <p>"Honestly? No — an attacker with root on the endpoint can defeat local enforcement, and I'd rather say that than claim otherwise. But two things still hold. First, the Secure Enclave key is non-exportable, so even with root they can't extract the device credential and impersonate this machine to the IdP from somewhere else — the blast radius stays local. Second, tampering is <strong>detectable</strong>: unexpected agent termination, auth-database modification, an unenrollment we didn't initiate. Those are strong signals, and a fleet-level view catches them.</p>
+    <p style="margin-top:8px">And there's a scoping point: if the attacker already has root, they have what a login session would have given them. Desktop MFA defends the <em>credential-compromise</em> path, not the already-compromised machine. Different control, different layer — that's what EDR and device posture are for."</p></div>
+
+  <div class="bx pu"><span class="l">Which connects to your actual work</span>
+    <p>This is the natural bridge from his product to yours. Desktop MFA proves the <em>user</em>; Endpoint Security and device posture prove the <em>machine</em>. Neither is complete alone, and the combination is what conditional access actually needs. Framing it that way positions you as complementary rather than as a candidate being examined.</p></div>
+</section>
+
+<!-- 12 -->
+<section id="rollout">
+  <div class="sn">12</div>
+  <h2>Decision 10 — rollout and blast radius</h2>
+  <p class="ss">The operational trade-offs, which for this product are security decisions too.</p>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Enforce immediately, or run in audit mode first?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Enforce immediately</div>
+        <ul>
+          <li>The gap closes now rather than in six weeks</li>
+          <li>Audit mode is a security control that isn't controlling anything</li>
+        </ul></div>
+      <div class="side b"><div class="t">Audit first</div>
+        <ul>
+          <li>Reveals who <em>would</em> have been locked out — unenrolled users, odd configurations, machines that never have network</li>
+          <li>The population you'd break is always larger than expected</li>
+          <li>A botched enforcement rollout means the customer disables the product entirely — net security worse</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>Audit mode first, always. Evaluate policy, log what <em>would</em> have happened, allow everything. Then enforce for enrolled users with a grace period for the rest. <strong>The fastest route to enforcement is the one that doesn't get rolled back.</strong></p></div>
+  </div>
+
+  <div class="dec">
+    <div class="hd"><div class="t">Decision</div><div class="q">Ship a kill switch — knowing it's also an attack surface?</div></div>
+    <div class="two">
+      <div class="side a"><div class="t">Against</div>
+        <ul>
+          <li>A remote mechanism to disable MFA fleet-wide is a very attractive target</li>
+          <li>Compromise the delivery channel and you disable the control everywhere at once</li>
+        </ul></div>
+      <div class="side b"><div class="t">For</div>
+        <ul>
+          <li>Without it, a bad build means physically touching every machine</li>
+          <li>The alternative to a controlled bypass is an uncontrolled outage</li>
+        </ul></div>
+    </div>
+    <div class="verdict"><div class="t">Where you land</div><p>Ship it, and harden it: <strong>signed</strong> payloads so it can't be forged, scoped per-tenant rather than global-only, delivered over MDM to the daemon so it works even when the plugin is broken, and every activation loudly audited. Then <strong>test it regularly</strong> — an untested kill switch is theatre, and you discover it doesn't work during the incident.</p></div>
+  </div>
+
+  <h3>The metrics that are security signals</h3>
+  <table class="tb">
+    <tr><th>Metric</th><th>What a spike means</th></tr>
+    <tr><td><strong>Fail-open rate</strong></td><td>The most important number. A spike means users are silently unprotected right now.</td></tr>
+    <tr><td>Offline verification rate</td><td>Connectivity problems — or someone deliberately keeping machines offline</td></tr>
+    <tr><td>Recovery-code usage</td><td>Legitimate lockouts, or an attacker working through the bypass paths</td></tr>
+    <tr><td>Lockout rate</td><td>Credential-stuffing attempts, or a broken factor</td></tr>
+    <tr><td>Agent crash / unenroll rate</td><td>A bad build spreading, or targeted tampering</td></tr>
+    <tr><td>Enrollment coverage</td><td>Who would be locked out if you enforced today</td></tr>
+  </table>
+  <div class="bx yo"><span class="l">Your ground</span>
+    <p>This is where your fleet-scale operations experience is directly transferable, and worth saying: staged rings with automatic halt on health regression, bounded local spooling of login-window telemetry because there's no network or session at that moment, and jittered upload so a regional outage doesn't produce a synchronised thundering herd when connectivity returns.</p></div>
+</section>
+
+<!-- 13 -->
+<section id="residual">
+  <div class="sn">13</div>
+  <h2>What remains unsolved</h2>
+  <p class="ss">Naming the residual risk honestly is more persuasive than claiming completeness.</p>
+
+  <table class="tb">
+    <tr><th>Residual risk</th><th>Why it persists</th><th>What actually addresses it</th></tr>
+    <tr><td><strong>Root on the endpoint</strong></td><td>The agent is inside the boundary it defends</td><td>EDR, device posture, secure boot — a different layer</td></tr>
+    <tr><td><strong>FileVault pass-through</strong></td><td>Pre-boot precedes any code you control</td><td>Disable pass-through; gate screensaver unlock too</td></tr>
+    <tr><td><strong>Offline mode is weaker</strong></td><td>You can't verify against something unreachable</td><td>Bound it — uses, freshness, rate limits. Cannot be eliminated.</td></tr>
+    <tr><td><strong>Recovery paths are bypasses</strong></td><td>A locked-out user needs <em>some</em> way in</td><td>Instrument and alert rather than remove</td></tr>
+    <tr><td><strong>Helpdesk social engineering</strong></td><td>Humans can be convinced</td><td>Verification procedures, callback, rate limits, audit</td></tr>
+    <tr><td><strong>Session after login</strong></td><td>MFA gates entry, not what happens after</td><td>Re-auth for sensitive actions, session monitoring</td></tr>
+    <tr><td><strong>Remote access paths</strong></td><td>SSH and ARD don't traverse the login window</td><td>Separate controls — and forgetting this is a real gap</td></tr>
+    <tr><td><strong>Break-glass accounts</strong></td><td>Someone must be able to get in when it breaks</td><td>Exempt but monitor; treat any use as an event</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The closing framing</span>
+    <p>"No single control is complete, and I'd rather define the boundary precisely than claim coverage I can't deliver. Desktop MFA closes the credential-compromise path into the endpoint — which was genuinely the last unauthenticated door in an otherwise MFA-protected estate. It doesn't close the already-compromised-machine path, and it shouldn't try to; that's device posture and EDR. Being explicit about which control owns which threat is what makes a defence-in-depth story real rather than marketing."</p></div>
+</section>
+
+<!-- 14 -->
+<section id="talk">
+  <div class="sn">14 / ★</div>
+  <h2>How to discuss this with him</h2>
+  <p class="ss">He built it. The goal is a peer conversation about trade-offs, not a recital of the architecture.</p>
+
+  <div class="bx st"><span class="l">Set the frame honestly, up front</span>
+    <p>"I haven't built the login-window side — my work is the device-agent side, System Extensions and Secure Enclave credentials. But I've thought about the trade-offs Desktop MFA has to make, and I'd expect they land roughly here. Tell me where I'm wrong."</p>
+    <p style="margin-top:8px">Honest, invites correction, and turns an examination into a discussion. Claiming familiarity you don't have with the person who wrote the code is the one unrecoverable move.</p></div>
+
+  <h3>The five positions to have ready</h3>
+  <ol>
+    <li><strong>Fail open, loudly, configurable.</strong> "Normally I'd fail closed. Here the blast radius of a false deny is a fleet locked out with no way in, versus a temporary reversion to password-only — where the user still needed a valid password. So I'd invert the usual instinct, make fail-open loud in telemetry, and let high-assurance tenants configure otherwise."</li>
+    <li><strong>Lockout is a DoS vector.</strong> "Escalating delays rather than hard locks, because a control that can deny is also a weapon."</li>
+    <li><strong>Offline is strictly weaker, and bounded rather than equivalent.</strong> "Bounded uses, freshness window, sealed counters, local rate limiting — and I'd say plainly it's weaker rather than pretend parity."</li>
+    <li><strong>Root defeats local enforcement, and that's fine to admit.</strong> "But the SEP key stays non-exportable so they can't impersonate the device elsewhere, and tampering is detectable. Prevention and detection are different goals."</li>
+    <li><strong>Friction is a security variable, not just a UX one.</strong> "Over-prompting trains users to approve reflexively, which is exactly the fatigue attack. And a product that's too strict gets disabled, which is zero security."</li>
+  </ol>
+
+  <h3>Questions worth asking him</h3>
+  <details class="q"><summary>The one I'd lead with</summary><div class="bod">
+    <p>"Which was harder in practice — the login-window environment itself, or the offline case? I'd guess offline, because you're making a security guarantee you can't verify centrally. But I'd be curious whether the environment constraints turned out worse."</p>
+    <p class="lb">Why it works</p><p>It identifies the two genuinely hard problems, it's specific enough that only someone who's thought about it would ask, and it invites a war story from someone who has one.</p></div></details>
+
+  <details class="q"><summary>On the fail-open decision</summary><div class="bod">
+    <p>"How did the fail-open versus fail-closed default land? I'd argue for fail-open with loud telemetry, because a bug locking out a fleet is worse than a temporary reversion to password-only — but I imagine that was a contested decision, and security-minded customers push back hard on it."</p></div></details>
+
+  <details class="q"><summary>On the FileVault gap</summary><div class="bod">
+    <p>"How do you handle the FileVault pass-through case? It seems like the login window may never appear, so the plugin never runs — do you disable pass-through, or lean on screensaver gating, or both?"</p>
+    <p class="lb">Why it works</p><p>This is a real, non-obvious gap. Asking about it demonstrates you've reasoned through the platform rather than read a description.</p></div></details>
+
+  <details class="q"><summary>On Platform SSO</summary><div class="bod">
+    <p>"Where are you on Platform SSO versus the plugin path? I'd assume you carry both while the fleet catches up — how do you decide when you're allowed to drop the older one?"</p></div></details>
+
+  <div class="bx yo"><span class="l">Where you contribute rather than receive</span>
+    <p>If the conversation opens up, you have things he may not: <strong>Endpoint Security at fleet scale</strong>, <strong>MDM device attestation</strong>, and <strong>telemetry pipelines across millions of endpoints</strong>. The framing that positions you well: <em>"Desktop MFA proves the user; the work I do proves the device. Conditional access needs both, and neither is complete alone."</em> That's a peer statement, not a candidate statement.</p></div>
+
+  <div class="bx go"><span class="l">The single most useful habit in this conversation</span>
+    <p>For every position you take, <strong>state the cost you're accepting.</strong> "I'd fail open — and the cost is that an attacker who can crash my agent bypasses the control, which is why the fail-open rate is the metric I'd alert on." Naming the downside of your own choice is what separates a designed decision from a preference, and with a Principal engineer who has lived these trade-offs, it's the thing that will read as genuine.</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Securing desktop access via MFA · threat model → hook point → factor → offline → failure posture → lockout → operations → residual risk.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=[].slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

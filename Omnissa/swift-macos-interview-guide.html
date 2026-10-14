@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swift for macOS — Interview Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13151A;
+    --panel:#191C23;
+    --card:#20242D;
+    --card-2:#262B35;
+    --line:#2E343F;
+    --line-soft:#242932;
+    --tx:#E7E9EE;
+    --tx-mid:#B6BCC7;
+    --tx-dim:#858C99;
+    --swift:#F26B3A;
+    --swift-deep:#D14E20;
+    --mint:#54D0B0;
+    --sky:#5AB6E6;
+    --violet:#A98BF0;
+    --easy:#4FBF7B;
+    --med:#E0A73C;
+    --hard:#E8654A;
+    --code-bg:#15181E;
+    --code-line:#232833;
+    --sh-key:#F26B3A;
+    --sh-type:#5AB6E6;
+    --sh-str:#8FD07A;
+    --sh-num:#E0A73C;
+    --sh-com:#697180;
+    --sh-attr:#A98BF0;
+    --sh-fn:#54D0B0;
+    --radius:14px;
+    --mono:"JetBrains Mono","SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --disp:"Space Grotesk","Inter",sans-serif;
+  }
+  [data-theme="light"]{
+    --ink:#F4F2EC;
+    --panel:#FBFAF6;
+    --card:#FFFFFF;
+    --card-2:#F4F3EE;
+    --line:#E1DED4;
+    --line-soft:#EBE9E1;
+    --tx:#23252B;
+    --tx-mid:#4C515C;
+    --tx-dim:#7C818C;
+    --code-bg:#1B1E25;
+    --code-line:#282D38;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+  body{
+    margin:0;background:var(--ink);color:var(--tx);
+    font-family:var(--sans);font-size:15.5px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--sky);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- Layout ---------- */
+  .shell{display:grid;grid-template-columns:290px minmax(0,1fr);max-width:1500px;margin:0 auto}
+  .sidebar{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:var(--panel);border-right:1px solid var(--line);
+    padding:26px 18px 60px;
+  }
+  .sidebar::-webkit-scrollbar{width:8px}
+  .sidebar::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+  main{padding:44px clamp(20px,4vw,60px) 120px;min-width:0}
+
+  /* ---------- Brand / hero ---------- */
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .glyph{
+    width:38px;height:38px;flex:none;border-radius:10px;
+    background:linear-gradient(135deg,var(--swift),var(--swift-deep));
+    display:grid;place-items:center;font-family:var(--disp);font-weight:700;
+    color:#fff;font-size:20px;box-shadow:0 6px 20px -6px var(--swift-deep);
+  }
+  .brand h1{font-family:var(--disp);font-size:16px;margin:0;line-height:1.1;letter-spacing:-.01em}
+  .brand p{margin:1px 0 0;font-size:11px;color:var(--tx-dim);letter-spacing:.08em;text-transform:uppercase}
+
+  .hero{
+    border:1px solid var(--line);border-radius:var(--radius);
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(242,107,58,.13), transparent 55%),
+      var(--card);
+    padding:30px 32px;margin-bottom:30px;position:relative;overflow:hidden;
+  }
+  .hero .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--swift);text-transform:uppercase}
+  .hero h2{font-family:var(--disp);font-size:clamp(26px,3.4vw,38px);line-height:1.08;margin:12px 0 10px;letter-spacing:-.02em}
+  .hero h2 .u{
+    background:linear-gradient(180deg,transparent 62%, rgba(242,107,58,.35) 62%);
+    padding:0 2px;
+  }
+  .hero p{color:var(--tx-mid);max-width:62ch;margin:0}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:22px;margin-top:22px;font-size:13px}
+  .hero .meta b{font-family:var(--disp);font-size:22px;display:block;color:var(--tx);line-height:1}
+  .hero .meta span{color:var(--tx-dim);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase}
+
+  /* ---------- Controls ---------- */
+  .controls{position:sticky;top:0;z-index:20;background:var(--ink);
+    padding:14px 0 16px;margin-bottom:8px;border-bottom:1px solid var(--line-soft)}
+  .searchwrap{position:relative;margin-bottom:12px}
+  .searchwrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}
+  #search{
+    width:100%;padding:13px 16px 13px 42px;background:var(--card);
+    border:1px solid var(--line);border-radius:11px;color:var(--tx);
+    font-family:var(--sans);font-size:15px;outline:none;
+  }
+  #search:focus{border-color:var(--swift);box-shadow:0 0 0 3px rgba(242,107,58,.15)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{
+    font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:20px;
+    background:var(--card);border:1px solid var(--line);color:var(--tx-mid);
+    cursor:pointer;user-select:none;transition:all .15s;white-space:nowrap;
+  }
+  .chip:hover{border-color:var(--tx-dim);color:var(--tx)}
+  .chip.active{background:var(--swift);border-color:var(--swift);color:#fff}
+  .toolbar .spacer{flex:1}
+  .btn{
+    font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:8px;
+    background:transparent;border:1px solid var(--line);color:var(--tx-mid);cursor:pointer;
+  }
+  .btn:hover{color:var(--tx);border-color:var(--tx-dim)}
+  #count{font-size:12.5px;color:var(--tx-dim);font-family:var(--mono)}
+
+  /* ---------- Nav ---------- */
+  .nav-label{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--tx-dim);
+    margin:26px 8px 8px;font-family:var(--mono)}
+  .nav a{
+    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;
+    color:var(--tx-mid);font-size:13.5px;line-height:1.3;
+  }
+  .nav a:hover{background:var(--card);color:var(--tx);text-decoration:none}
+  .nav a.on{background:var(--card-2);color:var(--tx)}
+  .nav a .idx{font-family:var(--mono);font-size:11px;color:var(--tx-dim);width:20px;flex:none}
+  .nav a.on .idx{color:var(--swift)}
+  .nav a .cnt{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--tx-dim);
+    background:var(--ink);border:1px solid var(--line);border-radius:20px;padding:1px 7px}
+
+  /* ---------- Sections & cards ---------- */
+  .section{margin-bottom:52px;scroll-margin-top:150px}
+  .section-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+  .section-head .num{font-family:var(--disp);font-size:15px;color:var(--swift);font-weight:600}
+  .section-head h3{font-family:var(--disp);font-size:24px;margin:0;letter-spacing:-.01em}
+  .section-desc{color:var(--tx-dim);font-size:14px;margin:0 0 22px;max-width:70ch}
+
+  .qa{
+    border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;
+    background:var(--card);overflow:hidden;transition:border-color .15s;
+  }
+  .qa.open{border-color:var(--line)}
+  .qa:hover{border-color:var(--tx-dim)}
+  .q{
+    display:flex;align-items:flex-start;gap:14px;padding:18px 20px;cursor:pointer;
+    user-select:none;
+  }
+  .q .qtext{flex:1;font-weight:500;font-size:16px;line-height:1.45;color:var(--tx)}
+  .q .qtext .qid{font-family:var(--mono);font-size:12px;color:var(--tx-dim);margin-right:9px}
+  .q .toggle{flex:none;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);
+    display:grid;place-items:center;color:var(--tx-dim);transition:transform .2s,color .15s}
+  .qa.open .q .toggle{transform:rotate(45deg);color:var(--swift)}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:none;padding-top:2px}
+  .diff{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 8px;border-radius:6px;font-weight:600}
+  .diff.easy{background:rgba(79,191,123,.14);color:var(--easy)}
+  .diff.med{background:rgba(224,167,60,.14);color:var(--med)}
+  .diff.hard{background:rgba(232,101,74,.16);color:var(--hard)}
+  .mark{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:transparent;
+    cursor:pointer;color:var(--tx-dim);display:grid;place-items:center;flex:none}
+  .mark:hover{border-color:var(--easy);color:var(--easy)}
+  .mark.done{background:rgba(79,191,123,.16);border-color:var(--easy);color:var(--easy)}
+  .qa.reviewed .qtext{opacity:.62}
+
+  .a{display:none;padding:2px 20px 22px;border-top:1px solid var(--line-soft)}
+  .qa.open .a{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .a p{margin:14px 0;color:var(--tx-mid)}
+  .a p strong,.a li strong{color:var(--tx);font-weight:600}
+  .a ul,.a ol{margin:14px 0;padding-left:22px;color:var(--tx-mid)}
+  .a li{margin:6px 0}
+  .a h4{font-family:var(--disp);font-size:15px;margin:22px 0 4px;color:var(--tx);letter-spacing:-.005em}
+  .a code:not(pre code){font-family:var(--mono);font-size:.87em;background:var(--card-2);
+    border:1px solid var(--line-soft);padding:1px 6px;border-radius:6px;color:var(--mint)}
+  .keypoint{border-left:3px solid var(--swift);background:rgba(242,107,58,.06);
+    padding:12px 16px;border-radius:0 10px 10px 0;margin:16px 0}
+  .keypoint b{color:var(--swift);font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;display:block;margin-bottom:3px}
+  .keypoint.gotcha{border-color:var(--hard);background:rgba(232,101,74,.07)}
+  .keypoint.gotcha b{color:var(--hard)}
+  .keypoint.tip{border-color:var(--mint);background:rgba(84,208,176,.07)}
+  .keypoint.tip b{color:var(--mint)}
+
+  /* ---------- Code ---------- */
+  pre{background:var(--code-bg);border:1px solid var(--code-line);border-radius:11px;
+    padding:16px 18px;overflow-x:auto;margin:16px 0;position:relative}
+  pre code{font-family:var(--mono);font-size:13px;line-height:1.7;color:#DDE1E8;white-space:pre}
+  pre .cp{position:absolute;top:8px;right:8px;font-family:var(--mono);font-size:10.5px;
+    color:var(--tx-dim);background:var(--card);border:1px solid var(--line);border-radius:6px;
+    padding:3px 8px;cursor:pointer;opacity:0;transition:opacity .15s}
+  pre:hover .cp{opacity:1}
+  pre .cp:hover{color:var(--tx)}
+  .tk-key{color:var(--sh-key);font-weight:600}
+  .tk-type{color:var(--sh-type)}
+  .tk-str{color:var(--sh-str)}
+  .tk-num{color:var(--sh-num)}
+  .tk-com{color:var(--sh-com);font-style:italic}
+  .tk-attr{color:var(--sh-attr)}
+  .tk-fn{color:var(--sh-fn)}
+
+  table.cmp{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  table.cmp th{background:var(--card-2);font-family:var(--disp);font-size:13px;color:var(--tx)}
+  table.cmp td{color:var(--tx-mid)}
+  table.cmp code{font-family:var(--mono);font-size:12px;color:var(--mint)}
+
+  .empty{text-align:center;padding:70px 20px;color:var(--tx-dim)}
+  .empty svg{opacity:.4;margin-bottom:14px}
+
+  .themebtn{position:fixed;bottom:22px;right:22px;z-index:40;width:46px;height:46px;border-radius:50%;
+    background:var(--card);border:1px solid var(--line);color:var(--tx-mid);cursor:pointer;
+    display:grid;place-items:center;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)}
+  .themebtn:hover{color:var(--swift);border-color:var(--swift)}
+  .totop{position:fixed;bottom:22px;right:78px;z-index:40;width:46px;height:46px;border-radius:50%;
+    background:var(--card);border:1px solid var(--line);color:var(--tx-mid);cursor:pointer;
+    display:none;place-items:center;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)}
+  .totop.show{display:grid}
+  .totop:hover{color:var(--swift);border-color:var(--swift)}
+
+  footer{border-top:1px solid var(--line);margin-top:40px;padding-top:24px;color:var(--tx-dim);font-size:13px}
+
+  @media(max-width:960px){
+    .shell{grid-template-columns:1fr}
+    .sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}
+    main{padding:28px 18px 100px}
+    .controls{position:static}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="glyph">S</div>
+      <div>
+        <h1>Swift Field Manual</h1>
+        <p>macOS interview prep</p>
+      </div>
+    </div>
+    <div class="nav-label">Sections</div>
+    <nav class="nav" id="nav"></nav>
+    <div class="nav-label" style="margin-top:28px">Study progress</div>
+    <div style="padding:0 10px">
+      <div style="height:8px;background:var(--card);border-radius:8px;overflow:hidden;border:1px solid var(--line)">
+        <div id="progbar" style="height:100%;width:0;background:linear-gradient(90deg,var(--swift),var(--mint));transition:width .3s"></div>
+      </div>
+      <div id="progtext" style="font-family:var(--mono);font-size:11px;color:var(--tx-dim);margin-top:8px">0 / 0 reviewed</div>
+      <button class="btn" id="resetprog" style="margin-top:10px;width:100%">Reset progress</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="hero">
+      <div class="eyebrow">// active-recall study set</div>
+      <h2>Swift, interrogated the way a <span class="u">macOS panel</span> actually does it.</h2>
+      <p>A deep, code-first question bank for Staff/Principal-level macOS interviews — ARC, protocol dispatch, structured concurrency, Objective-C interop, AppKit lifecycle, and the systems corners (XPC, memory layout, method dispatch) that senior loops probe. Tap a question to reveal a worked answer; mark cards as you master them.</p>
+      <div class="meta">
+        <div><b id="statQ">—</b><span>questions</span></div>
+        <div><b id="statS">—</b><span>topics</span></div>
+        <div><b id="statH">—</b><span>staff-level</span></div>
+        <div><b>2</b><span>refresh answers with recall</span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="searchwrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="text" placeholder="Search questions, keywords, APIs…  e.g. retain cycle, actor, witness table" autocomplete="off">
+      </div>
+      <div class="toolbar">
+        <div class="chip active" data-diff="all">All levels</div>
+        <div class="chip" data-diff="easy">Easy</div>
+        <div class="chip" data-diff="med">Medium</div>
+        <div class="chip" data-diff="hard">Staff</div>
+        <div class="spacer"></div>
+        <span id="count"></span>
+        <button class="btn" id="expandAll">Expand all</button>
+        <button class="btn" id="collapseAll">Collapse all</button>
+      </div>
+    </div>
+
+    <div id="content"></div>
+
+    <div class="empty" id="empty" style="display:none">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <p>No questions match that filter. Try a broader search term.</p>
+    </div>
+
+    <footer>
+      Built as an offline single-file study aid. All answers are worked from Swift language semantics current through Swift 6 / structured concurrency. Verify version-specific behaviour (typed throws, strict concurrency defaults) against your toolchain.
+    </footer>
+  </main>
+</div>
+
+<button class="totop" id="totop" title="Back to top"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg></button>
+<button class="themebtn" id="theme" title="Toggle theme"><svg id="themeicon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+
+<!-- ============ CONTENT DATA (as HTML template blocks) ============ -->
+<script id="data" type="application/json">
+{
+ "sections":[
+  {"id":"fundamentals","num":"01","title":"Language Fundamentals","desc":"Value vs reference semantics, structs vs classes, enums, optionals — the first-round filter questions that seniors still get wrong under pressure."},
+  {"id":"memory","num":"02","title":"Memory Management & ARC","desc":"How ARC actually works, the three ownership qualifiers, retain cycles, and capture lists — the most reliably asked area for macOS roles."},
+  {"id":"closures","num":"03","title":"Closures","desc":"Escaping vs non-escaping, capture semantics, autoclosure, and why closures are reference types."},
+  {"id":"protocols","num":"04","title":"Protocols & POP","desc":"Protocol-oriented programming, associated types, existentials vs generics, and the protocol-extension dispatch trap."},
+  {"id":"generics","num":"05","title":"Generics & Type System","desc":"Constraints, type erasure, opaque types (some), and the any keyword."},
+  {"id":"concurrency","num":"06","title":"Concurrency","desc":"GCD, race conditions, async/await, structured concurrency, actors, @MainActor, and Sendable."},
+  {"id":"errors","num":"07","title":"Error Handling","desc":"throws/try/catch, Result, rethrows, typed throws, and defer."},
+  {"id":"value","num":"08","title":"Value Semantics & COW","desc":"Copy-on-write, isKnownUniquelyReferenced, mutating methods, and inout."},
+  {"id":"dispatch","num":"09","title":"Method Dispatch","desc":"Direct, table (vtable/witness), and message dispatch — how final, dynamic, and extensions change everything."},
+  {"id":"interop","num":"10","title":"Objective-C Interop","desc":"@objc, dynamic, bridging, selectors, KVO — unavoidable on any real macOS codebase."},
+  {"id":"metaprogramming","num":"11","title":"Property Wrappers & Result Builders","desc":"@propertyWrapper, projected values, and @resultBuilder mechanics."},
+  {"id":"collections","num":"12","title":"Collections & Performance","desc":"Array/Dictionary/Set internals, complexity, lazy sequences, and capacity tuning."},
+  {"id":"macos","num":"13","title":"macOS / AppKit & Systems","desc":"NSApplication lifecycle, responder chain, run loops, XPC, and the endpoint/System Extension context."},
+  {"id":"swiftui","num":"14","title":"SwiftUI & Combine","desc":"State ownership (@State/@StateObject/@ObservedObject), view identity, and Combine publisher basics — increasingly asked even for AppKit-heavy roles."},
+  {"id":"security","num":"15","title":"Security, Signing & Distribution","desc":"Code signing, notarization, hardened runtime, entitlements, TCC, sandbox, launchd, Keychain/Secure Enclave, and the Endpoint Security framework — the section that wins endpoint-security loops."},
+  {"id":"advanced","num":"16","title":"Advanced / Staff-Level","desc":"Memory layout, unsafe pointers, ABI stability, existential containers, macros, and ownership modifiers."}
+ ]
+}
+</script>
+
+<script>
+/* =========================================================================
+   Question bank. Each entry: {s:sectionId, d:difficulty, q, a(HTML)}.
+   Code goes in <pre><code>…</code></pre> with RAW swift (escaped where needed).
+   The highlighter tokenizes textContent, so & < > must be written as entities
+   inside the <code> here.
+   ========================================================================= */
+const QA = [];
+function add(s,d,q,a){QA.push({s,d,q,a,id:QA.length+1});}
+
+/* ---------------- 01 FUNDAMENTALS ---------------- */
+add("fundamentals","easy",
+"What is the difference between a struct and a class, and how do you decide which to use?",
+`<p><strong>Structs are value types; classes are reference types.</strong> A struct is copied on assignment and when passed to a function — each variable holds its own instance. A class instance is shared: variables hold a reference to the same underlying object, and mutation through one reference is visible through all of them.</p>
+<pre><code>struct PointS { var x = 0 }
+class  PointC { var x = 0 }
+
+var a = PointS(); var b = a; b.x = 9   // a.x still 0  (copy)
+let c = PointC(); let d = c; d.x = 9   // c.x is 9    (shared)</code></pre>
+<h4>Other differences</h4>
+<ul>
+<li>Classes support <strong>inheritance</strong>; structs do not (they compose via protocols).</li>
+<li>Classes are heap-allocated and ARC-managed; structs live inline (on the stack or inside their container) unless they contain reference-type members.</li>
+<li>Classes get identity (<code>===</code>); structs only equality if you conform to <code>Equatable</code>.</li>
+<li>A class needs an explicit <code>init</code>; a struct gets a free memberwise initializer.</li>
+<li><code>let</code> on a struct makes the whole value immutable; <code>let</code> on a class only makes the <em>reference</em> constant — you can still mutate <code>var</code> properties.</li>
+</ul>
+<div class="keypoint"><b>Commit first</b>Default to a struct. Reach for a class only when you need reference identity, inheritance, deinitialization, or interop with Objective-C / AppKit types. This is Apple's own guidance and the answer they want to hear first.</div>`);
+
+add("fundamentals","easy",
+"What is an optional, and what are the ways to unwrap one safely?",
+`<p>An <code>Optional&lt;T&gt;</code> is an enum with two cases — <code>.some(T)</code> and <code>.none</code> — that encodes the presence or absence of a value in the type system. <code>T?</code> is sugar for <code>Optional&lt;T&gt;</code>. It replaces sentinel values and null-pointer crashes with something the compiler forces you to handle.</p>
+<h4>Unwrapping strategies</h4>
+<pre><code>// 1. Optional binding
+if let name = maybeName { use(name) }
+
+// 2. guard (early exit, binding stays in scope)
+guard let name = maybeName else { return }
+use(name)
+
+// 3. Nil-coalescing
+let name = maybeName ?? "Anonymous"
+
+// 4. Optional chaining
+let count = user?.profile?.friends.count   // Int?
+
+// 5. Shorthand shadowing (Swift 5.7+)
+if let maybeName { use(maybeName) }</code></pre>
+<div class="keypoint gotcha"><b>Avoid</b>Force-unwrapping (<code>maybeName!</code>) traps at runtime on <code>nil</code>. It's acceptable only where a <code>nil</code> is a genuine programmer error (e.g. a resource that must exist in the bundle) — and even then prefer a descriptive <code>guard … else { fatalError("…") }</code>.</div>`);
+
+add("fundamentals","med",
+"Explain enums with associated values, raw values, and indirect enums.",
+`<p>Swift enums are far richer than C enums — they're a full sum type.</p>
+<h4>Raw values</h4>
+<pre><code>enum HTTPStatus: Int {
+    case ok = 200, notFound = 404, serverError = 500
+}
+HTTPStatus(rawValue: 404)   // Optional(.notFound)</code></pre>
+<h4>Associated values</h4>
+<p>Each case can carry its own payload of different types — modelling a state machine cleanly:</p>
+<pre><code>enum LoadState {
+    case idle
+    case loading(progress: Double)
+    case loaded(Data)
+    case failed(Error)
+}
+switch state {
+case .loading(let p): showBar(p)
+case .loaded(let d):  render(d)
+case .failed(let e):  show(e)
+default: break
+}</code></pre>
+<h4>Indirect enums</h4>
+<p>An enum is normally a fixed-size value. A <em>recursive</em> case (a case that stores the enum itself) has unbounded size, so you mark it <code>indirect</code> to box that case on the heap:</p>
+<pre><code>indirect enum Expr {
+    case value(Int)
+    case add(Expr, Expr)
+    case mul(Expr, Expr)
+}
+// (2 + 3) * 4
+let e = Expr.mul(.add(.value(2), .value(3)), .value(4))</code></pre>
+<div class="keypoint tip"><b>Interview edge</b>You can't give a case both a raw value and an associated value — raw values require a fixed literal per case. Mention that; it's a common trick question.</div>`);
+
+add("fundamentals","med",
+"What does @escaping mean and why can't you assign a non-escaping closure to a property?",
+`<p>A closure parameter is <strong>non-escaping by default</strong>: the compiler guarantees it will be called (or discarded) before the function returns. That lets it avoid heap-allocating the capture context and skip some retain/release — and lets you omit <code>self.</code> inside it.</p>
+<p><code>@escaping</code> tells the compiler the closure may outlive the call — stored in a property, dispatched to another queue, or captured by another escaping closure. Storing a closure in a property is escaping by definition, so a non-escaping one can't be assigned there.</p>
+<pre><code>final class Loader {
+    var completion: (() -&gt; Void)?
+
+    // must be @escaping — we store it for later
+    func fetch(then done: @escaping () -&gt; Void) {
+        completion = done
+        DispatchQueue.global().async { done() }  // also escapes the queue hop
+    }
+}</code></pre>
+<div class="keypoint gotcha"><b>Gotcha</b>Because escaping closures can outlive the call, referencing <code>self</code> inside one implicitly captures a <strong>strong</strong> reference to <code>self</code> — the classic source of retain cycles. That's why <code>@escaping</code> closures require an explicit <code>self.</code> and often a <code>[weak self]</code> capture list.</div>`);
+
+add("fundamentals","easy",
+"What is the difference between == and === in Swift?",
+`<p><code>==</code> is <strong>value equality</strong>, defined by the <code>Equatable</code> protocol — "do these represent the same value?" <code>===</code> is <strong>reference identity</strong> — "are these two references the same object on the heap?" It only applies to class instances (and some class-bound protocols).</p>
+<pre><code>class Box { let v: Int; init(_ v: Int){ self.v = v } }
+let a = Box(1); let b = Box(1); let c = a
+a === b   // false — different objects
+a === c   // true  — same object
+// a == b would not compile unless Box conforms to Equatable</code></pre>`);
+
+add("fundamentals","med",
+"What is the difference between lazy var, computed properties, and stored properties?",
+`<table class="cmp"><tr><th>Kind</th><th>When evaluated</th><th>Storage</th></tr>
+<tr><td><code>let</code>/<code>var</code> stored</td><td>At initialization</td><td>Holds a value</td></tr>
+<tr><td><code>lazy var</code></td><td>On first access</td><td>Holds a value once computed</td></tr>
+<tr><td>computed <code>var</code></td><td>Every access</td><td>No storage — runs a getter</td></tr></table>
+<pre><code>class ViewModel {
+    // computed once, kept — good for expensive one-time setup
+    lazy var formatter: DateFormatter = {
+        let f = DateFormatter(); f.dateStyle = .long; return f
+    }()
+
+    var isValid: Bool { name.count &gt; 2 }   // recomputed each access
+    var name = ""
+}</code></pre>
+<div class="keypoint gotcha"><b>Gotcha</b><code>lazy</code> is <strong>not thread-safe</strong>: two threads hitting the first access concurrently can both run the initializer. Also, <code>lazy</code> requires <code>var</code> (it mutates on first read) and can't live in a struct you access via a <code>let</code>. It also can't have property observers.</div>`);
+
+add("fundamentals","hard",
+"Walk through Swift's initialization rules for classes — designated vs convenience, two-phase init, and required.",
+`<p>Swift enforces <strong>two-phase initialization</strong> to guarantee every stored property is set before use and to make inheritance safe.</p>
+<h4>Phase 1 (bottom-up)</h4>
+<p>Each class sets its own stored properties, then delegates up via <code>super.init</code>. Until phase 1 completes you may not read <code>self</code> or call instance methods.</p>
+<h4>Phase 2 (top-down)</h4>
+<p>Now the object is fully formed; the chain can customize further — call methods, use <code>self</code>, read properties.</p>
+<pre><code>class Vehicle {
+    var wheels: Int
+    init(wheels: Int) { self.wheels = wheels }        // designated
+}
+class Car: Vehicle {
+    var brand: String
+    init(brand: String) {
+        self.brand = brand            // phase 1: own props first
+        super.init(wheels: 4)         // then delegate up
+        // phase 2: self is now usable
+    }
+    convenience init() {              // must call a designated init laterally
+        self.init(brand: "Generic")
+    }
+}</code></pre>
+<h4>The rules that get asked</h4>
+<ul>
+<li><strong>Designated</strong> inits fully initialize and delegate <em>up</em> (<code>super.init</code>).</li>
+<li><strong>Convenience</strong> inits delegate <em>across</em> (<code>self.init</code>) and must ultimately reach a designated init.</li>
+<li><strong>Failable</strong> (<code>init?</code>) can return <code>nil</code>.</li>
+<li><strong>required</strong> forces every subclass to implement the init — used for protocol/factory requirements.</li>
+<li>A subclass inherits designated inits only if it declares no designated inits of its own (or sets defaults for its new properties).</li>
+</ul>`);
+
+/* ---------------- 02 MEMORY / ARC ---------------- */
+add("memory","easy",
+"How does ARC work, and how is it different from a tracing garbage collector?",
+`<p><strong>ARC (Automatic Reference Counting)</strong> tracks how many strong references point at each class instance. When you assign a reference the compiler inserts a <code>retain</code> (count +1); when a reference goes out of scope it inserts a <code>release</code> (count −1). When the count hits zero the object's <code>deinit</code> runs and its memory is freed — <strong>deterministically, immediately</strong>.</p>
+<h4>vs. tracing GC</h4>
+<ul>
+<li>ARC work happens at <strong>compile time</strong> (inserted retain/release calls) — no background collector thread, no stop-the-world pauses, predictable memory footprint. Critical for a low-overhead endpoint agent.</li>
+<li>A tracing GC (Java, Go, C#) periodically walks the object graph to find unreachable objects; it handles cycles automatically but with non-deterministic timing and pause cost.</li>
+<li>ARC's tradeoff: it <strong>cannot detect reference cycles</strong> — that's the programmer's job via <code>weak</code>/<code>unowned</code>.</li>
+</ul>
+<div class="keypoint"><b>Commit first</b>"ARC frees objects deterministically when their strong count reaches zero, with no collector thread — but it can't break cycles, so I use weak/unowned for those." Then expand.</div>`);
+
+add("memory","med",
+"Explain the difference between strong, weak, and unowned references. When would you use each?",
+`<table class="cmp"><tr><th></th><th>Increments count?</th><th>Optional?</th><th>On dealloc of target</th></tr>
+<tr><td><code>strong</code></td><td>Yes</td><td>No</td><td>keeps target alive</td></tr>
+<tr><td><code>weak</code></td><td>No</td><td>Always (<code>T?</code>)</td><td>auto-set to <code>nil</code></td></tr>
+<tr><td><code>unowned</code></td><td>No</td><td>No</td><td>becomes dangling → crash if accessed</td></tr></table>
+<ul>
+<li><strong>strong</strong> — the default; use for ownership.</li>
+<li><strong>weak</strong> — for references that may become <code>nil</code> and where the referrer does <em>not</em> own the target. Classic: delegates, and the child→parent back-reference. Must be a <code>var</code> optional because ARC zeroes it.</li>
+<li><strong>unowned</strong> — for references guaranteed to have <strong>equal or longer lifetime</strong>, where a nil check would be noise. Cheaper than weak (no side-table/zeroing) but unsafe if that lifetime assumption is wrong. Classic: a closure that captures <code>self</code> when <code>self</code> definitely outlives the closure.</li>
+</ul>
+<pre><code>protocol PickerDelegate: AnyObject { func picked(_ v: Int) }
+
+final class Picker {
+    weak var delegate: PickerDelegate?   // don't own the delegate
+}</code></pre>
+<div class="keypoint tip"><b>Rule of thumb</b>If it can legitimately go away → <code>weak</code>. If it can't outlive you but you don't own it → <code>unowned</code>. When unsure, choose <code>weak</code>: a nil is recoverable, a dangling <code>unowned</code> crashes.</div>`);
+
+add("memory","med",
+"What is a retain cycle? Give a concrete example and fix it.",
+`<p>A <strong>retain cycle</strong> (strong reference cycle) is when two or more objects hold strong references to each other, so neither's count can ever reach zero — they leak even after all external references are gone.</p>
+<h4>Parent ↔ child example</h4>
+<pre><code>final class Parent { var child: Child? }
+final class Child  { var parent: Parent? }   // BUG: both strong
+
+var p: Parent? = Parent()
+p?.child = Child()
+p?.child?.parent = p        // cycle formed
+p = nil                     // deinit never runs — leak</code></pre>
+<p><strong>Fix:</strong> make the back-reference <code>weak</code> (child does not own its parent):</p>
+<pre><code>final class Child { weak var parent: Parent? }</code></pre>
+<h4>Closure example (the one macOS interviews love)</h4>
+<pre><code>final class Downloader {
+    var onDone: (() -&gt; Void)?
+    func start() {
+        onDone = {           // self strongly captures the closure,
+            self.finish()    // closure strongly captures self → cycle
+        }
+    }
+    func finish() {}
+}</code></pre>
+<p><strong>Fix</strong> with a capture list:</p>
+<pre><code>onDone = { [weak self] in self?.finish() }</code></pre>
+<div class="keypoint tip"><b>How to detect</b>Instruments → Leaks / Allocations, or Xcode's Memory Graph Debugger (the purple "!" markers show cycles). Say this — interviewers want to know you can find leaks, not just define them.</div>`);
+
+add("memory","med",
+"What is a capture list, and what's the difference between [weak self] and [unowned self]?",
+`<p>A <strong>capture list</strong> is the <code>[…]</code> at the start of a closure that specifies how named values are captured. Without it, a closure captures by <em>strong reference</em>.</p>
+<pre><code>{ [weak self, capturedCount = count] in … }</code></pre>
+<ul>
+<li><code>[weak self]</code> — <code>self</code> becomes an <strong>optional</strong>; you must unwrap. Safe: if <code>self</code> is gone the closure just no-ops. Use when the closure may run after <code>self</code> is deallocated (network callbacks, timers, notifications).</li>
+<li><code>[unowned self]</code> — <code>self</code> stays non-optional; <strong>crashes</strong> if accessed after dealloc. Use only when <code>self</code> is guaranteed alive for the closure's whole life (e.g. a synchronous <code>map</code> that completes immediately).</li>
+</ul>
+<h4>The weak-strong dance</h4>
+<pre><code>fetch { [weak self] result in
+    guard let self else { return }   // promote to strong for the body
+    self.update(result)              // now safe within this scope
+}</code></pre>
+<div class="keypoint gotcha"><b>Subtle</b>Capture lists capture the value <em>at the point the closure is created</em>, not when it runs. <code>[x = count]</code> snapshots <code>count</code> then; mutating <code>count</code> afterward doesn't change the captured copy.</div>`);
+
+add("memory","hard",
+"You capture [weak self] and then guard let self = self. Does that create a temporary strong reference, and can it still cause problems?",
+`<p>Yes — <code>guard let self = self</code> (or the shorthand <code>guard let self</code>) promotes the weak reference to a <strong>temporary strong reference</strong> for the duration of that scope. That's intentional and correct: you want <code>self</code> kept alive while the closure body runs.</p>
+<p>The subtlety interviewers probe: this strong reference lives only for the enclosing scope. If inside that body you <em>schedule more async work</em> that again captures <code>self</code> strongly, you can re-extend the lifetime unexpectedly, or reintroduce a cycle if you store that closure. The temporary strong ref itself is fine; what you do with <code>self</code> afterward is where bugs hide.</p>
+<pre><code>timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+    guard let self else { return }
+    // 'self' is strong here — fine.
+    // But storing another strong closure on self would leak:
+    self.handler = { self.tick() }   // BUG: strong cycle re-created
+}</code></pre>
+<div class="keypoint tip"><b>Also worth saying</b>A <code>Timer</code> with a target-selector API retains its target strongly regardless of your capture list — a very common macOS leak. Invalidate the timer in <code>deinit</code>… except <code>deinit</code> never runs because the timer keeps you alive. Use the block API with <code>[weak self]</code>, or a proxy object.</div>`);
+
+add("memory","hard",
+"Why must weak references be optional and mutable, and how does ARC implement zeroing weak references?",
+`<p>A <code>weak</code> reference must be <code>var</code> and <code>Optional</code> because ARC <strong>zeroes</strong> it — automatically sets it to <code>nil</code> the moment its target deallocates. A constant or non-optional couldn't be reassigned to <code>nil</code>.</p>
+<h4>Under the hood</h4>
+<p>Swift objects carry a reference count split conceptually into <em>strong</em>, <em>unowned</em>, and <em>weak</em> counts (packed into the object header, with a side table allocated on demand). When you form a weak reference, ARC registers it in the object's <strong>side table</strong> rather than storing a raw pointer directly. When the strong count hits zero:</p>
+<ul>
+<li>The object's <code>deinit</code> runs and its memory can be reclaimed, but the side table survives while unowned/weak counts remain.</li>
+<li>Any load of a weak reference goes through the side table, sees the object is deinitialized, and returns <code>nil</code> — atomically, so there's no window where you read a dangling pointer.</li>
+</ul>
+<div class="keypoint"><b>Cost</b>This is why <code>weak</code> is more expensive than <code>unowned</code>: it needs the side table and an atomic check on every load. <code>unowned(safe)</code> traps on access after dealloc; <code>unowned(unsafe)</code> is a raw pointer with no checks (fast, dangerous).</div>`);
+
+/* ---------------- 03 CLOSURES ---------------- */
+add("closures","easy",
+"What is a closure and how is it different from a function?",
+`<p>A closure is a self-contained block of functionality that can be passed around and that <strong>captures references to constants and variables from its surrounding context</strong>. Functions are actually a special, named case of closures. All three of these are closures:</p>
+<pre><code>func add(_ a: Int, _ b: Int) -&gt; Int { a + b }     // named
+let add2 = { (a: Int, b: Int) in a + b }          // closure expression
+[3,1,2].sorted { $0 &lt; $1 }                         // trailing + shorthand args</code></pre>
+<p>The "closure" name comes from <em>closing over</em> the surrounding variables — it keeps them alive and can read/mutate them after the enclosing scope has returned.</p>
+<pre><code>func makeCounter() -&gt; () -&gt; Int {
+    var count = 0
+    return { count += 1; return count }   // captures and mutates 'count'
+}
+let next = makeCounter()
+next(); next()   // 1, then 2 — state persists in the closure</code></pre>`);
+
+add("closures","med",
+"Are closures value types or reference types? Why does it matter?",
+`<p><strong>Closures are reference types.</strong> Assigning a closure to another variable, or passing it around, shares the same underlying context — including any captured mutable state.</p>
+<pre><code>func makeCounter() -&gt; () -&gt; Int {
+    var n = 0; return { n += 1; return n }
+}
+let a = makeCounter()
+let b = a          // same closure, shared captured 'n'
+a()                // 1
+b()                // 2  (not 1 — shared state)</code></pre>
+<p>Why it matters:</p>
+<ul>
+<li>Two variables pointing at the same closure mutate the same captured variables.</li>
+<li>Storing a closure that captures <code>self</code> can form a retain cycle (closures ARC-manage their captures).</li>
+<li>Capturing a reference-type object in a closure retains it until the closure is released.</li>
+</ul>`);
+
+add("closures","hard",
+"What is @autoclosure and when is it appropriate?",
+`<p><code>@autoclosure</code> automatically wraps an argument expression in a closure, so it isn't evaluated until (and unless) the function actually calls it. It enables <strong>lazy evaluation</strong> while keeping a clean call site with no braces.</p>
+<pre><code>func logIfNeeded(_ message: @autoclosure () -&gt; String) {
+    if verbose { print(message()) }   // expensive string built only when needed
+}
+logIfNeeded(buildExpensiveDiagnostic())   // not called unless verbose</code></pre>
+<p>The standard library uses it for short-circuiting: <code>||</code>, <code>&amp;&amp;</code>, and <code>??</code> take their right side as an autoclosure so it's skipped when the left side already decides the result.</p>
+<pre><code>// simplified stdlib signature
+func ?? &lt;T&gt;(optional: T?, defaultValue: @autoclosure () -&gt; T) -&gt; T</code></pre>
+<div class="keypoint gotcha"><b>Use sparingly</b>It hides that an argument isn't evaluated eagerly, which surprises readers and can mask side-effect ordering. Apple's guidance: use it only when the deferred evaluation is the point (logging, assertions, defaults), and combine with <code>@escaping</code> only when genuinely needed.</div>`);
+
+/* ---------------- 04 PROTOCOLS ---------------- */
+add("protocols","easy",
+"What is protocol-oriented programming and how does it differ from OOP inheritance?",
+`<p><strong>Protocol-oriented programming (POP)</strong> builds abstractions from protocols plus protocol extensions (which supply default behaviour) rather than from a class hierarchy. Apple introduced the term at WWDC 2015 as "the first protocol-oriented programming language."</p>
+<h4>Why it's preferred in Swift</h4>
+<ul>
+<li>Works with <strong>value types</strong> (structs/enums) — class inheritance doesn't.</li>
+<li>A type can conform to <strong>many protocols</strong> — no single-inheritance limit, no diamond problem.</li>
+<li>You compose capabilities (<code>Equatable &amp; Hashable &amp; Codable</code>) instead of inheriting a monolithic base.</li>
+<li>Protocol extensions provide shared implementation without forcing a common superclass.</li>
+</ul>
+<pre><code>protocol Drawable { func draw() }
+extension Drawable {                 // default behaviour for all conformers
+    func draw() { print("default render") }
+}
+struct Circle: Drawable {}           // gets draw() for free
+struct Square: Drawable { func draw() { print("□") } }</code></pre>
+<div class="keypoint tip"><b>Nuance to volunteer</b>POP isn't anti-class. On macOS you still subclass NSView/NSViewController. The mature answer: prefer composition via protocols for your domain model, use classes where the framework or reference semantics demand it.</div>`);
+
+add("protocols","hard",
+"Explain the protocol extension dispatch gotcha: when does a default implementation get called instead of a type's own method?",
+`<p>This is the single most asked "gotcha" for senior Swift. The rule: <strong>a method declared in the protocol requirement uses dynamic dispatch; a method only in the extension (not a requirement) uses static dispatch based on the compile-time type.</strong></p>
+<pre><code>protocol Greeter {
+    func hello()          // a requirement
+}
+extension Greeter {
+    func hello() { print("protocol hello") }   // default for requirement
+    func bye()   { print("protocol bye") }      // NOT a requirement
+}
+struct Person: Greeter {
+    func hello() { print("person hello") }
+    func bye()   { print("person bye") }
+}
+
+let p: Greeter = Person()
+p.hello()   // "person hello"  — requirement → dynamic, uses Person's
+p.bye()     // "protocol bye"  — NOT a requirement → static, uses Greeter's!</code></pre>
+<p>Because <code>bye()</code> isn't listed in the protocol, the call through the <code>Greeter</code> existential is resolved statically to the extension's version. Only when you type <code>p</code> as <code>Person</code> do you get <code>Person.bye()</code>.</p>
+<div class="keypoint"><b>The fix / takeaway</b>If you want a method to be overridable by conformers, <strong>declare it in the protocol body</strong>, not just the extension. Extensions-only methods are for shared convenience you don't intend to be specialized.</div>`);
+
+add("protocols","hard",
+"What is an associated type, and what constraint does it place on how you can use the protocol?",
+`<p>An <code>associatedtype</code> is a placeholder type in a protocol, resolved by each conforming type. It makes the protocol generic over an element type.</p>
+<pre><code>protocol Container {
+    associatedtype Item
+    mutating func add(_ item: Item)
+    var count: Int { get }
+}
+struct IntStack: Container {
+    var items: [Int] = []
+    mutating func add(_ item: Int) { items.append(item) }  // Item = Int inferred
+    var count: Int { items.count }
+}</code></pre>
+<h4>The constraint that gets asked</h4>
+<p>A protocol with an associated type (a "PAT") has <strong>Self or associated-type requirements</strong>, so you <em>cannot</em> use it as a plain existential type in older Swift the way you'd use <code>Drawable</code>. You must use it as a generic constraint:</p>
+<pre><code>// ✅ generic — the concrete Item is known at each call site
+func total&lt;C: Container&gt;(_ c: C) where C.Item == Int { … }
+
+// pre-Swift 5.7 this was an error:
+func total(_ c: Container) { }   // "protocol can only be used as a generic constraint"</code></pre>
+<p>Swift 5.7 relaxed this with <strong>primary associated types</strong> and improved existentials, so you can now write <code>any Container&lt;Int&gt;</code>:</p>
+<pre><code>protocol Container&lt;Item&gt; { associatedtype Item; … }
+func total(_ c: any Container&lt;Int&gt;) { }   // now legal</code></pre>`);
+
+add("protocols","med",
+"What is the difference between using a protocol as a generic constraint vs as an existential (any)?",
+`<table class="cmp"><tr><th></th><th>Generic <code>&lt;T: P&gt;</code></th><th>Existential <code>any P</code></th></tr>
+<tr><td>Concrete type</td><td>Known &amp; fixed per call (monomorphized)</td><td>Erased — decided at runtime</td></tr>
+<tr><td>Dispatch</td><td>Often static, specialized</td><td>Dynamic through a witness table + boxing</td></tr>
+<tr><td>Cost</td><td>Zero-overhead, can inline</td><td>Heap box if value &gt; 3 words, indirection</td></tr>
+<tr><td>Heterogeneity</td><td>All elements same type</td><td>Can mix conforming types in one array</td></tr></table>
+<pre><code>// Generic: every element is the SAME concrete type T
+func printAll&lt;T: CustomStringConvertible&gt;(_ xs: [T]) { xs.forEach { print($0) } }
+
+// Existential: a MIXED array of different conforming types
+let shapes: [any Drawable] = [Circle(), Square()]</code></pre>
+<div class="keypoint tip"><b>Guidance</b>Reach for generics by default (faster, specializable). Use <code>any</code> when you genuinely need runtime polymorphism or a heterogeneous collection. Since Swift 5.6 the <code>any</code> keyword is required to make that cost explicit.</div>`);
+
+/* ---------------- 05 GENERICS ---------------- */
+add("generics","med",
+"What is the difference between some and any (opaque types vs existentials)?",
+`<p>Both hide a concrete type behind a protocol, but in opposite directions.</p>
+<h4><code>some P</code> — opaque type (reverse generic)</h4>
+<p>There is <strong>one specific underlying type</strong>, chosen by the implementation, hidden from the caller. The compiler knows it's a single fixed type, so it keeps type identity and enables static dispatch — zero cost.</p>
+<pre><code>func makeShape() -&gt; some Shape { Circle() }   // caller sees "a Shape",
+                                              // compiler knows it's Circle</code></pre>
+<h4><code>any P</code> — existential (boxed)</h4>
+<p>The value can be <strong>any conforming type, possibly different each time</strong>. It's boxed with a witness table; type identity is erased at compile time.</p>
+<pre><code>var shape: any Shape = Circle()
+shape = Square()   // fine — different concrete type</code></pre>
+<table class="cmp"><tr><th></th><th><code>some P</code></th><th><code>any P</code></th></tr>
+<tr><td>Underlying type</td><td>Fixed, one</td><td>Variable, many</td></tr>
+<tr><td>Preserves identity</td><td>Yes</td><td>No (erased)</td></tr>
+<tr><td>Overhead</td><td>None</td><td>Boxing + dynamic dispatch</td></tr>
+<tr><td>Reassign to other type</td><td>No</td><td>Yes</td></tr></table>
+<div class="keypoint tip"><b>Mnemonic</b><code>some</code> = "the callee commits to one hidden type"; <code>any</code> = "the value could be any of them at runtime." SwiftUI's <code>some View</code> uses opaque types so the huge generated view type stays hidden while preserving identity for the diffing engine.</div>`);
+
+add("generics","hard",
+"What is type erasure, and how would you implement an AnyContainer wrapper by hand?",
+`<p><strong>Type erasure</strong> hides a generic/associated-type-carrying type behind a concrete wrapper with a fixed public interface, so you can store or pass heterogeneous values that share a protocol with associated types. The stdlib does this with <code>AnySequence</code>, <code>AnyHashable</code>, <code>AnyView</code>, <code>AnyPublisher</code>.</p>
+<p>The classic pattern: a public struct that forwards to closures (or an internal abstract "box") capturing the erased type.</p>
+<pre><code>protocol Container {
+    associatedtype Item
+    func item(at i: Int) -&gt; Item
+    var count: Int { get }
+}
+
+struct AnyContainer&lt;Item&gt;: Container {
+    private let _count: () -&gt; Int
+    private let _item:  (Int) -&gt; Item
+
+    init&lt;C: Container&gt;(_ c: C) where C.Item == Item {
+        _count = { c.count }          // captures c, erasing its concrete type
+        _item  = { c.item(at: $0) }
+    }
+    var count: Int { _count() }
+    func item(at i: Int) -&gt; Item { _item(i) }
+}
+
+// now you can hold mixed concrete containers of the same Item:
+let boxes: [AnyContainer&lt;Int&gt;] = [AnyContainer(IntStack()), AnyContainer(IntRing())]</code></pre>
+<div class="keypoint"><b>Why bother</b>Because a PAT can't (historically) be used directly as a type. Note Swift 5.7's <code>any Container&lt;Int&gt;</code> now covers many cases without hand-written erasers — mention that you'd reach for the built-in existential first and only hand-roll when you need extra control or older deployment targets.</div>`);
+
+add("generics","med",
+"What are generic constraints and where clauses? Give a realistic example.",
+`<p>Constraints restrict the types a generic parameter can accept — via a protocol/class bound after <code>:</code>, or a <code>where</code> clause for relationships between types.</p>
+<pre><code>// bound: T must be Comparable
+func max&lt;T: Comparable&gt;(_ a: T, _ b: T) -&gt; T { a &gt; b ? a : b }
+
+// where clause: constrain an associated type + require equality
+func allEqual&lt;C: Collection&gt;(_ c: C) -&gt; Bool
+    where C.Element: Equatable {
+    guard let first = c.first else { return true }
+    return c.allSatisfy { $0 == first }
+}
+
+// conditional conformance: Array is Equatable only when its Element is
+extension Array: MyProtocol where Element: MyProtocol { … }</code></pre>
+<p><strong>Conditional conformance</strong> (the <code>extension … where</code> form) is the powerful one to name — it's how <code>[Int]</code> is <code>Equatable</code> but <code>[SomeNonEquatable]</code> isn't.</p>`);
+
+/* ---------------- 06 CONCURRENCY ---------------- */
+add("concurrency","easy",
+"Explain the main GCD primitives: serial vs concurrent queues, sync vs async.",
+`<p><strong>GCD (Grand Central Dispatch)</strong> schedules work onto a pool of threads via queues, so you think in queues, not threads.</p>
+<ul>
+<li><strong>Serial queue</strong> — runs one task at a time, in order (e.g. the main queue). Good for protecting shared state.</li>
+<li><strong>Concurrent queue</strong> — can run many tasks at once; order of completion isn't guaranteed.</li>
+<li><strong>async</strong> — enqueue work and return immediately (don't block the caller).</li>
+<li><strong>sync</strong> — enqueue and block the caller until the work finishes.</li>
+</ul>
+<pre><code>let serial = DispatchQueue(label: "io")            // serial by default
+let conc   = DispatchQueue(label: "work", attributes: .concurrent)
+
+DispatchQueue.global(qos: .userInitiated).async {
+    let data = load()
+    DispatchQueue.main.async { self.render(data) }  // UI back on main
+}</code></pre>
+<div class="keypoint gotcha"><b>Classic deadlock</b>Calling <code>DispatchQueue.main.sync { }</code> from the main thread deadlocks: main is busy waiting for a block it can't run until it's free. Never <code>sync</code> onto the queue you're already on.</div>`);
+
+add("concurrency","med",
+"What is a race condition, and how do you protect shared mutable state in GCD?",
+`<p>A <strong>race condition</strong> is when the result depends on the nondeterministic timing of concurrent accesses to shared mutable state, at least one of which is a write. It produces corrupted data, crashes, or heisenbugs.</p>
+<h4>Protection strategies</h4>
+<pre><code>// 1. Serial queue as a lock
+let q = DispatchQueue(label: "state")
+q.sync { balance += amount }            // all mutations serialized
+
+// 2. Concurrent queue + barrier (readers-writer)
+let q2 = DispatchQueue(label: "cache", attributes: .concurrent)
+func read() -&gt; V   { q2.sync { store[k] } }                 // concurrent reads
+func write(_ v: V) { q2.async(flags: .barrier) { store[k] = v } } // exclusive write
+
+// 3. os_unfair_lock / NSLock for fine-grained locking
+var lock = os_unfair_lock()
+os_unfair_lock_lock(&amp;lock); balance += amount; os_unfair_lock_unlock(&amp;lock)</code></pre>
+<div class="keypoint tip"><b>Modern answer</b>In new code, an <code>actor</code> gives you data-race-free shared state enforced by the compiler — no manual locking. Say you'd reach for that first in greenfield code, and use the barrier/serial-queue patterns when maintaining existing GCD code.</div>`);
+
+add("concurrency","med",
+"Explain async/await and structured concurrency. What does Task, async let, and TaskGroup give you?",
+`<p><code>async/await</code> lets you write asynchronous code in straight-line form; a <code>suspend</code> at <code>await</code> frees the thread instead of blocking it. <strong>Structured concurrency</strong> ties child task lifetimes to a scope — children can't outlive their parent, and cancellation/errors propagate down the tree automatically.</p>
+<pre><code>// sequential awaits
+let user  = try await fetchUser()
+let posts = try await fetchPosts(for: user)
+
+// async let — run two in parallel, await when needed
+async let avatar = fetchAvatar(user)
+async let feed   = fetchFeed(user)
+let (a, f) = try await (avatar, feed)   // both run concurrently
+
+// TaskGroup — dynamic fan-out
+let sizes = try await withThrowingTaskGroup(of: Int.self) { group in
+    for url in urls { group.addTask { try await size(of: url) } }
+    var total = 0
+    for try await s in group { total += s }
+    return total
+}</code></pre>
+<ul>
+<li><strong><code>Task { }</code></strong> — bridges sync → async; an <em>unstructured</em> task you can <code>await</code> or <code>cancel</code>.</li>
+<li><strong><code>async let</code></strong> — a lightweight child task; the binding is awaited within the same scope.</li>
+<li><strong><code>TaskGroup</code></strong> — spawn a dynamic number of children and collect results.</li>
+</ul>
+<div class="keypoint"><b>Cancellation is cooperative</b>Cancelling a task doesn't force-stop it — it sets a flag. Your code must check <code>Task.isCancelled</code> or call <code>try Task.checkCancellation()</code>. Say this; it separates people who've shipped async code from those who've read about it.</div>`);
+
+add("concurrency","hard",
+"What is an actor, and how does it prevent data races? What is actor reentrancy?",
+`<p>An <strong>actor</strong> is a reference type that protects its mutable state by serializing access: only one task touches its state at a time. The compiler enforces that all cross-actor access to mutable state is <code>await</code>ed and asynchronous — you literally cannot write a data race on actor-isolated state.</p>
+<pre><code>actor BankAccount {
+    private var balance = 0
+    func deposit(_ n: Int) { balance += n }      // isolated, synchronous inside
+    func current() -&gt; Int { balance }
+}
+let acct = BankAccount()
+await acct.deposit(100)   // cross-actor call must be awaited</code></pre>
+<h4>Actor reentrancy — the trap</h4>
+<p>Actors are <strong>reentrant</strong>: when an actor method <code>await</code>s (suspends), it releases the actor, and <em>other</em> queued calls can run before the first resumes. So invariants you assumed held across an <code>await</code> may have changed.</p>
+<pre><code>actor Cache {
+    var value: Int?
+    func loadOnce() async -&gt; Int {
+        if let v = value { return v }
+        let fetched = await slowFetch()   // ⚠️ actor released here
+        // another call could have set value while we awaited
+        value = fetched                   // may overwrite / double-fetch
+        return fetched
+    }
+}</code></pre>
+<div class="keypoint gotcha"><b>Guard your invariants</b>Re-check state after every <code>await</code> inside an actor. Reentrancy prevents deadlocks but means "one at a time" holds only between suspension points, not across them.</div>`);
+
+add("concurrency","hard",
+"What is Sendable and @MainActor, and why does strict concurrency care about them?",
+`<h4>Sendable</h4>
+<p><code>Sendable</code> is a marker protocol meaning "this type is safe to pass across concurrency domains (actors/tasks) without introducing a data race." Value types of Sendable members are Sendable; final classes with only immutable state can be; a class with mutable state generally isn't unless it does its own synchronization (<code>@unchecked Sendable</code>, which puts the burden on you).</p>
+<pre><code>struct Config: Sendable { let id: Int }          // auto-Sendable
+final class Counter: @unchecked Sendable {        // you promise it's safe
+    private let lock = NSLock(); private var n = 0
+    func inc() { lock.lock(); n += 1; lock.unlock() }
+}</code></pre>
+<h4>@MainActor</h4>
+<p><code>@MainActor</code> pins a type, method, or property to the main actor (the main thread) — the compiler guarantees UI code runs on main. AppKit/SwiftUI view code is main-actor-isolated.</p>
+<pre><code>@MainActor final class ViewModel: ObservableObject {
+    @Published var title = ""              // always mutated on main
+    func refresh() async {
+        let t = await service.fetchTitle()  // hops off main, then back
+        title = t                           // back on main automatically
+    }
+}</code></pre>
+<div class="keypoint"><b>Why strict concurrency cares</b>Swift 6's complete concurrency checking uses <code>Sendable</code> and actor isolation to prove at <em>compile time</em> that non-Sendable state never crosses isolation boundaries. Warnings you migrate now become errors — for a fleet-scale agent, this is how you eliminate whole classes of threading crashes before shipping.</div>`);
+
+add("concurrency","med",
+"How do you bridge a legacy completion-handler API into async/await?",
+`<p>Use a <strong>continuation</strong> — <code>withCheckedContinuation</code> (or the throwing variant) wraps a callback-based API and resumes exactly once with the result.</p>
+<pre><code>func loadData(from url: URL) async throws -&gt; Data {
+    try await withCheckedThrowingContinuation { cont in
+        legacyLoad(url) { data, error in
+            if let error { cont.resume(throwing: error) }
+            else        { cont.resume(returning: data!) }
+        }
+    }
+}</code></pre>
+<div class="keypoint gotcha"><b>The one rule</b>A continuation must be resumed <strong>exactly once</strong> — never zero times (leaks/hangs the task forever) and never twice (crashes). <code>withCheckedContinuation</code> traps in debug if you break this; <code>withUnsafeContinuation</code> skips the check for speed. Audit every code path in the callback.</div>`);
+
+/* ---------------- 07 ERRORS ---------------- */
+add("errors","easy",
+"Describe Swift's error-handling model: throws, try, and the try variants.",
+`<p>Errors are values conforming to the <code>Error</code> protocol. A function that can fail is marked <code>throws</code>; callers use <code>try</code> and handle failures with <code>do/catch</code>.</p>
+<pre><code>enum NetworkError: Error { case offline, badStatus(Int) }
+
+func fetch() throws -&gt; Data {
+    guard isOnline else { throw NetworkError.offline }
+    …
+}
+
+do {
+    let data = try fetch()
+} catch NetworkError.badStatus(let code) {
+    print("HTTP \\(code)")
+} catch {
+    print(error)          // 'error' bound implicitly
+}</code></pre>
+<h4>try variants</h4>
+<ul>
+<li><code>try</code> — propagate; must be in a throwing context or <code>do/catch</code>.</li>
+<li><code>try?</code> — convert to an optional: <code>nil</code> on failure. <code>let d = try? fetch()</code> → <code>Data?</code>.</li>
+<li><code>try!</code> — assert it won't throw; <strong>traps</strong> if it does. Only where failure is a programmer error.</li>
+</ul>`);
+
+add("errors","med",
+"When would you use Result vs throws? And what is rethrows?",
+`<p><strong><code>throws</code></strong> is Swift's idiomatic synchronous error channel — clean call sites, integrates with <code>try</code>. <strong><code>Result&lt;Success, Failure&gt;</code></strong> is a value you can store, pass, and defer handling on — useful for callbacks (pre-async), caching an outcome, or when you need to hold onto the error/success without immediately unwinding.</p>
+<pre><code>// Result shines when the outcome is a value to pass around
+func fetch(completion: (Result&lt;Data, NetworkError&gt;) -&gt; Void) { … }
+
+// bridge between the two:
+let r = Result { try riskyThrowingCall() }   // Result&lt;T, Error&gt;
+let value = try r.get()                        // back to throwing</code></pre>
+<h4>rethrows</h4>
+<p><code>rethrows</code> means "this function only throws <em>if</em> a closure argument it was given throws." It lets higher-order functions like <code>map</code> stay non-throwing when passed a non-throwing closure.</p>
+<pre><code>func transform&lt;T&gt;(_ f: () throws -&gt; T) rethrows -&gt; T { try f() }
+transform { 1 }             // no try needed — closure doesn't throw
+try transform { try risky() } // try needed — closure throws</code></pre>`);
+
+add("errors","hard",
+"What are typed throws (Swift 6) and what problem do they solve? What's the tradeoff?",
+`<p>Historically Swift's <code>throws</code> is <em>untyped</em> — a throwing function can throw <em>any</em> <code>Error</code>, so callers must handle a general <code>Error</code>. Swift 6 adds <strong>typed throws</strong>: you declare exactly which error type a function can throw.</p>
+<pre><code>enum ParseError: Error { case empty, malformed }
+
+func parse(_ s: String) throws(ParseError) -&gt; Value {
+    guard !s.isEmpty else { throw .empty }
+    …
+}
+
+do {
+    let v = try parse(input)
+} catch {              // 'error' is typed as ParseError here — exhaustive!
+    switch error { case .empty: …; case .malformed: … }
+}</code></pre>
+<h4>Where it helps</h4>
+<ul>
+<li>Exhaustive, compiler-checked <code>catch</code> with no <code>default</code>.</li>
+<li>Embedded/constrained contexts and generic code that must reason about the concrete error.</li>
+<li><code>Result</code>-like precision without leaving the <code>throws</code> ergonomics.</li>
+</ul>
+<div class="keypoint gotcha"><b>The tradeoff — use sparingly</b>Apple explicitly warns against overusing it. Committing to a concrete error type couples your API's error surface to callers; adding a new error case is a source-breaking change. For most app/library boundaries, untyped <code>throws</code> (or <code>throws(any Error)</code>) is still the right default. Reserve typed throws for tight, stable, often-generic code.</div>`);
+
+add("errors","easy",
+"What does defer do and when does it run?",
+`<p><code>defer</code> schedules a block to run when the current scope exits — normally, by <code>return</code>, by <code>throw</code>, or by <code>break</code>. It's for cleanup that must happen on every exit path.</p>
+<pre><code>func process(_ path: String) throws {
+    let handle = open(path)
+    defer { close(handle) }        // runs no matter how we leave
+    guard validate() else { throw Err.bad }   // close() still runs
+    try work(handle)
+}</code></pre>
+<p>Multiple <code>defer</code>s in a scope run in <strong>reverse order</strong> (LIFO) — like unwinding a stack.</p>`);
+
+/* ---------------- 08 VALUE SEMANTICS / COW ---------------- */
+add("value","med",
+"What is copy-on-write (COW), and which standard library types use it?",
+`<p><strong>Copy-on-write</strong> gives value semantics with the performance of sharing: a value type backed by a reference-typed buffer only <em>copies the buffer when a mutation happens on a shared instance</em>. Until you mutate, copies share storage.</p>
+<pre><code>var a = [1, 2, 3]     // buffer, refcount 1
+var b = a             // no copy yet — both share, refcount 2
+b.append(4)           // NOW b copies the buffer before mutating; a stays [1,2,3]</code></pre>
+<p>The stdlib's <code>Array</code>, <code>Dictionary</code>, <code>Set</code>, and <code>String</code> all use COW. It's why passing a huge array by value is cheap unless the callee mutates it.</p>
+<div class="keypoint tip"><b>Interview follow-up</b>The check that drives it is <code>isKnownUniquelyReferenced(&amp;buffer)</code>: if the buffer's refcount is 1, mutate in place; otherwise deep-copy first. That's exactly how you'd implement COW yourself.</div>`);
+
+add("value","hard",
+"Implement a copy-on-write value type by hand.",
+`<p>Wrap a reference-typed storage class in a struct and copy the storage lazily on mutation, gated by <code>isKnownUniquelyReferenced</code>.</p>
+<pre><code>final class Box&lt;T&gt; {           // heap storage
+    var value: T
+    init(_ v: T) { value = v }
+}
+
+struct COWArray&lt;T&gt; {
+    private var storage: Box&lt;[T]&gt;
+    init(_ elements: [T] = []) { storage = Box(elements) }
+
+    var elements: [T] { storage.value }
+
+    mutating func append(_ x: T) {
+        // copy only if the buffer is shared
+        if !isKnownUniquelyReferenced(&amp;storage) {
+            storage = Box(storage.value)   // deep copy before mutating
+        }
+        storage.value.append(x)
+    }
+}
+
+var x = COWArray([1,2,3])
+var y = x            // share storage
+y.append(4)          // y copies; x unaffected → value semantics preserved</code></pre>
+<div class="keypoint"><b>Why senior interviews ask this</b>It proves you understand the bridge between value semantics (the API contract) and reference-typed storage (the performance reality) — the same reasoning behind building efficient custom collections or caches in a systems codebase.</div>`);
+
+add("value","med",
+"What does the mutating keyword do, and why do structs need it but classes don't?",
+`<p>Methods on value types can't change <code>self</code> or its stored properties by default — a value method receives an immutable copy of <code>self</code>. Marking a method <code>mutating</code> lets it modify the instance's properties, and conceptually <em>reassign</em> <code>self</code>.</p>
+<pre><code>struct Counter {
+    private(set) var value = 0
+    mutating func increment() { value += 1 }
+    mutating func reset()     { self = Counter() }   // can replace self entirely
+}</code></pre>
+<p>Classes don't need it because a method already operates through a reference — mutating a property doesn't change the reference itself. Note you <strong>can't</strong> call a <code>mutating</code> method on a <code>let</code> struct: immutability is enforced at the binding.</p>`);
+
+add("value","med",
+"What is inout, and how does it differ from passing a reference?",
+`<p><code>inout</code> passes a variable so the function can mutate it and the change is visible to the caller. But it's <strong>not</strong> pass-by-reference in the C sense — the model is <em>copy-in, copy-out</em>: the value is copied in, the function works on the copy, and it's copied back on return (the optimizer may elide the copies).</p>
+<pre><code>func doubleIt(_ x: inout Int) { x *= 2 }
+var n = 5
+doubleIt(&amp;n)     // must pass with &amp;; n is now 10</code></pre>
+<div class="keypoint gotcha"><b>Exclusive access</b>Swift enforces exclusivity: you can't pass the same variable as two <code>inout</code> arguments, or read it elsewhere during the call — that's a compile-time or runtime "overlapping access" error, part of Swift's memory-safety model.</div>`);
+
+/* ---------------- 09 DISPATCH ---------------- */
+add("dispatch","hard",
+"Explain Swift's three method-dispatch mechanisms and what determines which one is used.",
+`<p>Swift picks a dispatch mechanism per call based on the declaring context and modifiers. Knowing this is core staff-level Swift and directly affects performance in a hot agent path.</p>
+<table class="cmp"><tr><th>Mechanism</th><th>Speed</th><th>Used for</th></tr>
+<tr><td><strong>Direct (static)</strong></td><td>Fastest — can inline</td><td>Structs/enums; <code>final</code>; global &amp; static funcs; extension methods on value types; methods not in a protocol requirement</td></tr>
+<tr><td><strong>Table (vtable / witness table)</strong></td><td>One indirection</td><td>Non-final class methods (vtable); protocol requirements (witness table)</td></tr>
+<tr><td><strong>Message (objc_msgSend)</strong></td><td>Slowest — dynamic lookup</td><td><code>@objc dynamic</code> members; NSObject subclass methods exposed to the Obj-C runtime</td></tr></table>
+<h4>What pushes a call up or down the ladder</h4>
+<ul>
+<li><code>final</code> (or a struct/enum, or a private method with no overrides) → <strong>direct</strong>.</li>
+<li>A normal class method that can be overridden → <strong>vtable</strong>.</li>
+<li>A protocol requirement called through a protocol type → <strong>witness table</strong>.</li>
+<li><code>@objc dynamic</code>, or KVO/method-swizzling needs → <strong>message dispatch</strong>.</li>
+<li>Whole-module optimization can devirtualize class calls to direct when it proves no override exists.</li>
+</ul>
+<div class="keypoint tip"><b>Practical lever</b>Marking classes/methods <code>final</code> (or the whole class) lets the compiler use direct dispatch and inline — a cheap, measurable win in tight loops. Say this: it shows you optimize with intent.</div>`);
+
+add("dispatch","med",
+"What does the final keyword do, and why does it matter for performance?",
+`<p><code>final</code> prevents a class, method, or property from being overridden or subclassed. Beyond expressing intent, it's a <strong>performance hint</strong>: the compiler knows there can be no override, so it can replace vtable dispatch with <strong>direct dispatch</strong> and potentially inline the call.</p>
+<pre><code>final class ImageCache {          // whole class can't be subclassed
+    final func lookup(_ k: Key) -&gt; Image? { … }  // direct dispatch
+}</code></pre>
+<p>In an endpoint agent running across millions of devices, marking non-extensible classes <code>final</code> is a routine, low-risk optimization. It also improves safety by locking down class hierarchies you don't intend to be extended.</p>`);
+
+add("dispatch","hard",
+"Why does adding a method in a class extension behave differently from adding it in the class body, with respect to dispatch and overriding?",
+`<p>For <strong>Objective-C-derived (NSObject) classes</strong>, methods declared in the main class body participate in the vtable and can be overridden. But a method added in an <em>extension</em> of such a class uses <strong>direct/static dispatch by default</strong> and <strong>cannot be overridden</strong> by a subclass — Swift extensions on classes don't add vtable entries.</p>
+<pre><code>class Base {
+    func inBody() { print("Base.inBody") }
+}
+extension Base {
+    func inExtension() { print("Base.inExtension") }
+}
+class Sub: Base {
+    override func inBody() { print("Sub.inBody") }         // ✅ allowed
+    // override func inExtension() { }  // ❌ error: cannot override, static dispatch
+}</code></pre>
+<p>To make an extension method overridable, expose it to the runtime with <code>@objc</code> (in an NSObject hierarchy), which forces message dispatch:</p>
+<pre><code>extension Base { @objc func hook() {} }   // now overridable via objc_msgSend</code></pre>
+<div class="keypoint gotcha"><b>Why it trips people up</b>You'll see it when a subclass "override" silently doesn't take effect, or when method swizzling / KVO expects a dynamic method. The fix is almost always adding <code>@objc dynamic</code>.</div>`);
+
+/* ---------------- 10 INTEROP ---------------- */
+add("interop","med",
+"What do @objc and dynamic do, and when do you need them?",
+`<p><code>@objc</code> exposes a Swift declaration to the Objective-C runtime, generating an Obj-C-compatible entry point. <code>dynamic</code> forces all access to go through that runtime (message dispatch), disabling Swift's static optimizations. You combine them as <code>@objc dynamic</code> when you need runtime interception.</p>
+<h4>When you need them (all common on macOS)</h4>
+<ul>
+<li><strong>Target-action</strong> selectors: <code>#selector(buttonTapped)</code> requires the method be <code>@objc</code>.</li>
+<li><strong>KVO</strong>: observed properties must be <code>@objc dynamic</code> so the runtime can swizzle setters.</li>
+<li><strong>KVC</strong>, <code>NSNotification</code> selectors, <code>NSMenu</code>/<code>NSToolbar</code> validation.</li>
+<li><strong>Method swizzling</strong> / dynamic replacement.</li>
+<li>Overriding a method declared in a Swift extension on an NSObject subclass.</li>
+</ul>
+<pre><code>class Model: NSObject {
+    @objc dynamic var progress: Double = 0   // KVO-observable
+}
+class Controller {
+    @objc func save(_ sender: NSButton) { … } // target-action selector
+}</code></pre>`);
+
+add("interop","med",
+"How does bridging work between Swift and Objective-C types (String/NSString, Array/NSArray, nullability)?",
+`<p>Swift and Foundation types <strong>bridge</strong> automatically at the boundary. <code>String</code> ↔ <code>NSString</code>, <code>Array</code> ↔ <code>NSArray</code>, <code>Dictionary</code> ↔ <code>NSDictionary</code>, <code>Int</code> ↔ <code>NSNumber</code>, etc. Swift value types are converted to/from their Foundation reference-type counterparts as needed.</p>
+<pre><code>let s: String = "hi"
+let ns = s as NSString          // explicit bridge
+let count = (s as NSString).length</code></pre>
+<h4>Nullability</h4>
+<p>Objective-C pointers are nullable by default. Annotations tell Swift how to import them:</p>
+<ul>
+<li><code>nonnull</code> → imported as non-optional <code>T</code>.</li>
+<li><code>nullable</code> → imported as <code>T?</code>.</li>
+<li>Unannotated → imported as an <strong>implicitly unwrapped optional</strong> <code>T!</code> (a footgun — it can be <code>nil</code> but is used as non-optional).</li>
+</ul>
+<pre><code>// Obj-C header
+- (nullable NSString *)nameForID:(NSInteger)id;   // → func nameForID(_:) -&gt; String?
+NS_ASSUME_NONNULL_BEGIN … NS_ASSUME_NONNULL_END   // bulk-annotate a header</code></pre>
+<div class="keypoint gotcha"><b>Cost note</b>Bridging isn't always free — <code>Array as NSArray</code> can be O(1) if it can wrap, but bridging a Swift-native collection to Foundation may copy or lazily bridge elements. In hot paths, keep types on one side of the boundary.</div>`);
+
+add("interop","hard",
+"How does KVO work in Swift, and what's the modern block-based API?",
+`<p><strong>Key-Value Observing</strong> lets one object be notified of changes to another's property. It relies on the Obj-C runtime, so observed properties must live on an <code>NSObject</code> subclass and be marked <code>@objc dynamic</code> (so the runtime can swizzle the setter to fire notifications).</p>
+<pre><code>class Download: NSObject {
+    @objc dynamic var bytesReceived: Int = 0
+}
+
+let d = Download()
+let token = d.observe(\\.bytesReceived, options: [.new, .old]) { obj, change in
+    print("now \\(change.newValue ?? 0)")
+}
+// observation lives as long as 'token' is retained; setting token = nil stops it</code></pre>
+<p>The modern <code>observe(_:options:changeHandler:)</code> API returns an <code>NSKeyValueObservation</code> token — type-safe via key paths, automatically removed when the token deinits, avoiding the old crash-prone manual <code>addObserver/removeObserver</code> balancing.</p>
+<div class="keypoint tip"><b>When to reach elsewhere</b>For pure-Swift observation prefer <code>@Published</code>/Combine or the Observation framework (<code>@Observable</code>, macOS 14+). Use KVO when observing Apple framework objects (e.g. <code>WKWebView.estimatedProgress</code>, <code>Operation.isFinished</code>) that only expose KVO.</div>`);
+
+/* ---------------- 11 METAPROGRAMMING ---------------- */
+add("metaprogramming","med",
+"What is a property wrapper? Implement one and explain projected values.",
+`<p>A <strong>property wrapper</strong> (<code>@propertyWrapper</code>) factors out get/set logic that would otherwise be repeated across many properties. The wrapper stores the real value and exposes it through <code>wrappedValue</code>; the <code>$</code> prefix exposes an optional <code>projectedValue</code>.</p>
+<pre><code>@propertyWrapper
+struct Clamped&lt;T: Comparable&gt; {
+    private var value: T
+    let range: ClosedRange&lt;T&gt;
+    init(wrappedValue: T, _ range: ClosedRange&lt;T&gt;) {
+        self.range = range
+        self.value = min(max(wrappedValue, range.lowerBound), range.upperBound)
+    }
+    var wrappedValue: T {
+        get { value }
+        set { value = min(max(newValue, range.lowerBound), range.upperBound) }
+    }
+    var projectedValue: Bool { value == range.upperBound }  // "$" accessor
+}
+
+struct Volume {
+    @Clamped(0...100) var level = 50
+}
+var v = Volume()
+v.level = 200      // clamped to 100
+v.$level           // true — projected value says we're at max</code></pre>
+<p>SwiftUI's <code>@State</code>, <code>@Binding</code>, <code>@Published</code>, and <code>@AppStorage</code> are all property wrappers; <code>$state</code> gives you a <code>Binding</code> as the projected value.</p>`);
+
+add("metaprogramming","hard",
+"What is a result builder, and roughly how does SwiftUI's ViewBuilder use it?",
+`<p>A <strong>result builder</strong> (<code>@resultBuilder</code>) is a compiler feature that transforms a block of statements into a single aggregated value by calling static <code>build*</code> methods you define. It's the machinery behind SwiftUI's declarative DSL, where a <code>body</code> block of views becomes one composed view.</p>
+<pre><code>@resultBuilder
+struct StringBuilder {
+    static func buildBlock(_ parts: String...) -&gt; String {
+        parts.joined(separator: "\\n")
+    }
+    static func buildOptional(_ part: String?) -&gt; String { part ?? "" }
+    static func buildEither(first: String) -&gt; String { first }
+    static func buildEither(second: String) -&gt; String { second }
+}
+
+@StringBuilder func makeReport(verbose: Bool) -&gt; String {
+    "Header"
+    "Body"
+    if verbose { "Debug details" }   // buildOptional
+}</code></pre>
+<p>The compiler rewrites the block: each statement becomes an argument, <code>if</code> becomes <code>buildOptional</code>/<code>buildEither</code>, loops become <code>buildArray</code>. That's exactly how <code>@ViewBuilder</code> lets you write a list of views with <code>if</code>/<code>ForEach</code> and get a single <code>some View</code> back.</p>
+<div class="keypoint tip"><b>Key methods to name</b><code>buildBlock</code> (required), <code>buildOptional</code>, <code>buildEither(first/second)</code> for if/else, <code>buildArray</code> for loops, <code>buildExpression</code>, and <code>buildFinalResult</code>.</div>`);
+
+/* ---------------- 12 COLLECTIONS ---------------- */
+add("collections","med",
+"What are the time complexities of common Array, Dictionary, and Set operations?",
+`<table class="cmp"><tr><th>Operation</th><th>Array</th><th>Dictionary / Set</th></tr>
+<tr><td>Access by index / key</td><td>O(1)</td><td>O(1) average (hashed)</td></tr>
+<tr><td>append / insert at end</td><td>O(1) amortized</td><td>O(1) average</td></tr>
+<tr><td>insert/remove at front/middle</td><td>O(n) (shifts elements)</td><td>—</td></tr>
+<tr><td>contains</td><td>O(n)</td><td>O(1) average</td></tr>
+<tr><td>Ordered iteration</td><td>O(n), insertion order</td><td>O(n), <strong>no order guarantee</strong></td></tr></table>
+<div class="keypoint tip"><b>Say the amortization</b><code>append</code> is O(1) <em>amortized</em>: Array doubles its capacity when full, so occasional O(n) reallocations average out. If you know the final size, call <code>reserveCapacity(n)</code> to avoid repeated growth — a real win when building large buffers.</div>
+<div class="keypoint gotcha"><b>Hash quality matters</b>Dictionary/Set are O(1) <em>average</em> but degrade toward O(n) with poor <code>Hashable</code> implementations that collide. A custom type used as a key must combine all identity-relevant fields into <code>hash(into:)</code>.</div>`);
+
+add("collections","med",
+"What is a lazy sequence and when does it help?",
+`<p><code>.lazy</code> defers evaluation: instead of building intermediate arrays for each <code>map</code>/<code>filter</code>, it computes elements on demand as you iterate. It avoids allocating throwaway collections and lets you short-circuit.</p>
+<pre><code>// eager: builds a full mapped array, then a full filtered array
+let a = (1...1_000_000).map { $0 * 2 }.filter { $0 % 3 == 0 }.first
+
+// lazy: pulls elements one at a time, stops at the first match
+let b = (1...1_000_000).lazy.map { $0 * 2 }.filter { $0 % 3 == 0 }.first</code></pre>
+<p>The lazy version does far less work: no million-element intermediates, and it stops as soon as <code>first</code> is satisfied.</p>
+<div class="keypoint gotcha"><b>Tradeoff</b>Lazy re-computes each time you iterate and adds per-element closure overhead, so it's a loss if you consume the whole sequence multiple times or the transforms are trivial. Use it for large/expensive pipelines with early exit; use eager for small collections you'll reuse.</div>`);
+
+/* ---------------- 13 MACOS ---------------- */
+add("macos","med",
+"Describe the AppKit application lifecycle and the role of NSApplicationDelegate.",
+`<p>A macOS app's entry point is <code>NSApplication</code> (the shared <code>NSApp</code>). It owns the main run loop and event dispatch. Your <code>NSApplicationDelegate</code> receives lifecycle callbacks.</p>
+<pre><code>@main
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ n: Notification) {
+        // set up windows, menus, services here
+    }
+    func applicationShouldTerminateAfterLastWindowClosed(_ app: NSApplication) -&gt; Bool {
+        true
+    }
+    func applicationWillTerminate(_ n: Notification) { /* flush state */ }
+}</code></pre>
+<h4>Key differences from iOS</h4>
+<ul>
+<li>Multiple windows are first-class; there's no single "key window" assumption. Window/document lifecycle is separate from app lifecycle.</li>
+<li>Apps can keep running with no windows (menu-bar/agent apps) — controlled by <code>LSUIElement</code> / activation policy.</li>
+<li><code>NSApplicationMain</code> / <code>@main</code> boots <code>NSApp</code>, loads the main menu, then runs the event loop via <code>run()</code>.</li>
+</ul>
+<div class="keypoint tip"><b>Relevant to agents</b>A background security agent typically runs as an <code>LSUIElement</code> / launchd daemon with no UI, or splits UI (a menu-bar app) from a privileged helper/daemon and a System Extension — three separate processes with distinct lifecycles.</div>`);
+
+add("macos","med",
+"What is the responder chain in AppKit, and how does an event or action travel through it?",
+`<p>The <strong>responder chain</strong> is an ordered list of <code>NSResponder</code> objects (views, view controllers, windows, the app) that get a chance to handle an event or action message. If the first responder doesn't handle it, the message passes to the next responder up the chain.</p>
+<h4>Two flows</h4>
+<ul>
+<li><strong>Events</strong> (key/mouse) start at the window's first responder and travel up: view → superview → window → window delegate → NSApp → app delegate.</li>
+<li><strong>Actions</strong> (nil-targeted <code>sendAction(_:to:nil)</code>) walk the chain looking for the first responder that implements the selector — this is how menu items and toolbar buttons find a handler without a hard-wired target.</li>
+</ul>
+<pre><code>// A menu item with target = nil dispatches through the responder chain.
+@objc func copy(_ sender: Any?) { … }   // handled by whichever responder implements it
+override var acceptsFirstResponder: Bool { true }</code></pre>
+<div class="keypoint tip"><b>Why it's powerful</b>Nil-targeted actions + menu validation (<code>validateMenuItem</code> / <code>NSUserInterfaceValidations</code>) let context determine which object handles Cut/Copy/Paste. It's the AppKit equivalent of iOS's <code>UIResponder</code> chain but more central to the menu-driven macOS model.</div>`);
+
+add("macos","hard",
+"What is XPC, and why is it central to a modern macOS security/agent architecture?",
+`<p><strong>XPC</strong> is Apple's inter-process communication mechanism for splitting an app into separate, privilege-isolated processes that communicate over a typed, asynchronous connection. Each side declares a protocol; the framework marshals calls across the process boundary.</p>
+<pre><code>@objc protocol AgentServiceProtocol {
+    func evaluate(_ event: Data, reply: @escaping (Bool) -&gt; Void)
+}
+
+// client
+let conn = NSXPCConnection(serviceName: "com.acme.agent.helper")
+conn.remoteObjectInterface = NSXPCInterface(with: AgentServiceProtocol.self)
+conn.resume()
+let proxy = conn.remoteObjectProxy as? AgentServiceProtocol
+proxy?.evaluate(eventData) { allowed in … }</code></pre>
+<h4>Why it matters for endpoint/agent work</h4>
+<ul>
+<li><strong>Privilege separation</strong>: a small privileged helper (installed via <code>SMAppService</code>/launchd) does the sensitive work; the sandboxed UI talks to it over XPC. A crash or compromise in one process is contained.</li>
+<li><strong>Stability</strong>: a crashing helper doesn't take down the UI; XPC services can be relaunched on demand.</li>
+<li><strong>System Extensions</strong> (Endpoint Security, Network Extension) run as separate processes and communicate with your app/daemon via XPC — the standard shape for a fleet endpoint agent.</li>
+<li><strong>Security</strong>: connections can be validated with code-signing requirements (<code>setCodeSigningRequirement</code>) so only your signed processes can connect.</li>
+</ul>
+<div class="keypoint"><b>Commit first</b>"XPC is how you split a macOS security product into a sandboxed UI, a privileged daemon, and a System Extension, each isolated and each validated by code-signing — it's the backbone of least-privilege on the platform." Then go into connection setup.</div>`);
+
+add("macos","hard",
+"AppKit vs SwiftUI on macOS — how do you decide, and how do they interoperate?",
+`<p><strong>AppKit</strong> is the mature, fully-featured macOS UI framework (menus, toolbars, complex tables, document architecture, fine control). <strong>SwiftUI</strong> is the declarative, cross-Apple-platform framework — faster to build, less control, some macOS-specific gaps.</p>
+<h4>How to decide</h4>
+<ul>
+<li>New, simpler UI, want cross-platform reuse, targeting recent macOS → <strong>SwiftUI</strong>.</li>
+<li>Deep macOS integration (custom <code>NSTableView</code>, precise event handling, older OS support, existing AppKit codebase) → <strong>AppKit</strong>.</li>
+<li>Most real apps are hybrid.</li>
+</ul>
+<h4>Interop bridges</h4>
+<pre><code>// AppKit view inside SwiftUI
+struct MetalView: NSViewRepresentable {
+    func makeNSView(context: Context) -&gt; MTKView { MTKView() }
+    func updateNSView(_ v: MTKView, context: Context) { … }
+}
+
+// SwiftUI hosted inside AppKit
+let host = NSHostingController(rootView: SettingsView())</code></pre>
+<p><code>NSViewRepresentable</code>/<code>NSViewControllerRepresentable</code> wrap AppKit for SwiftUI; <code>NSHostingController</code>/<code>NSHostingView</code> embed SwiftUI in AppKit.</p>
+<div class="keypoint tip"><b>Mature take</b>Adopt SwiftUI incrementally at the leaf level, keep the app shell and platform-specific pieces in AppKit, and bridge. Don't rewrite a shipping AppKit agent UI wholesale.</div>`);
+
+/* ---------------- 14 ADVANCED ---------------- */
+add("advanced","hard",
+"How is memory laid out for a struct vs a class, and what do MemoryLayout and the 'three-word rule' tell you?",
+`<p>A <strong>struct</strong> is stored inline: its properties are packed contiguously (with alignment padding) wherever the struct lives — on the stack, in a register, or inside its container. No header, no refcount.</p>
+<p>A <strong>class</strong> instance lives on the heap; a variable holds a pointer to it. The heap object has a header (isa/type metadata + reference counts) followed by its stored properties.</p>
+<pre><code>struct P { var x: Int; var y: Int }        // 16 bytes, inline
+MemoryLayout&lt;P&gt;.size        // 16
+MemoryLayout&lt;P&gt;.stride      // 16 (spacing in an array)
+MemoryLayout&lt;P&gt;.alignment   // 8</code></pre>
+<h4>The three-word rule (existential containers)</h4>
+<p>An existential like <code>any P</code> uses a fixed-size <strong>existential container</strong>: 3 words of inline buffer + a pointer to type metadata + a pointer to the protocol witness table. If the wrapped value fits in 3 words, it's stored inline; if it's larger, it's <strong>boxed on the heap</strong> and the buffer holds a pointer. This is why passing large values as <code>any P</code> can trigger heap allocation.</p>
+<div class="keypoint tip"><b>Why it's asked</b>It connects value semantics, existential cost, and performance tuning — exactly the reasoning behind choosing <code>some</code> over <code>any</code>, or keeping hot structs small enough to avoid boxing.</div>`);
+
+add("advanced","hard",
+"What are UnsafePointer types for, and what are the rules for using them safely?",
+`<p>The <code>Unsafe*Pointer</code> family gives you manual, C-like memory access — needed for C-API interop, performance-critical buffers, or working with raw bytes (e.g. parsing kernel event data in an endpoint agent). "Unsafe" means the compiler stops guaranteeing memory and type safety; you own correctness.</p>
+<table class="cmp"><tr><th>Type</th><th>Purpose</th></tr>
+<tr><td><code>UnsafePointer&lt;T&gt;</code></td><td>read-only typed pointer</td></tr>
+<tr><td><code>UnsafeMutablePointer&lt;T&gt;</code></td><td>read/write typed pointer</td></tr>
+<tr><td><code>UnsafeRawPointer</code></td><td>untyped bytes (needs <code>load(as:)</code> / rebinding)</td></tr>
+<tr><td><code>UnsafeBufferPointer&lt;T&gt;</code></td><td>a bounded, iterable region</td></tr></table>
+<pre><code>// Safe scoped access to an array's storage — no manual malloc/free
+let sum = numbers.withUnsafeBufferPointer { buf -&gt; Int in
+    var s = 0
+    for x in buf { s += x }
+    return s
+}</code></pre>
+<h4>Rules</h4>
+<ul>
+<li>Prefer the scoped <code>withUnsafe…</code> closures — the pointer is valid only inside the closure; <strong>never let it escape</strong>.</li>
+<li>If you <code>allocate</code>, you must <code>deinitialize</code> then <code>deallocate</code> — pair them, ideally with <code>defer</code>.</li>
+<li>Respect alignment and the <strong>strict type-based aliasing</strong> rules; use <code>withMemoryRebound</code> / <code>load(fromByteOffset:as:)</code> rather than reinterpreting casts.</li>
+<li>Don't form a pointer to a temporary or a value that may be moved (COW reallocation, array growth).</li>
+</ul>
+<div class="keypoint gotcha"><b>Interview framing</b>Say you reach for unsafe pointers only at C boundaries or measured hot paths, keep the unsafe region small and scoped, and wrap it in a safe Swift API — the systems-engineer instinct they're checking for.</div>`);
+
+add("advanced","hard",
+"What is ABI stability and why does @inlinable / library evolution matter?",
+`<p><strong>ABI (Application Binary Interface) stability</strong>, shipped in Swift 5, means binaries built with different Swift compiler versions can interoperate at runtime — which is why the Swift standard library now ships inside macOS/iOS instead of being embedded in every app. It fixes the binary layout of types and calling conventions.</p>
+<h4>Module stability &amp; library evolution</h4>
+<p>For a <em>framework</em> (not just an app) to evolve without forcing recompilation of clients, you build with <strong>library evolution</strong> (<code>-enable-library-evolution</code>). That inserts a layer of indirection so you can add stored properties or reorder them without breaking a compiled client — at a small runtime cost (resilient access).</p>
+<h4><code>@inlinable</code> / <code>@frozen</code></h4>
+<ul>
+<li><code>@inlinable</code> exposes a function's body across the module boundary so the client compiler can inline it, opting out of resilience for that function (faster, but the body becomes part of your ABI contract).</li>
+<li><code>@frozen</code> on a struct/enum promises its layout won't change, letting clients assume the field layout — again trading future flexibility for speed.</li>
+</ul>
+<div class="keypoint tip"><b>When this comes up</b>Building an SDK/framework distributed to other teams (e.g. an agent SDK). For an app-internal module you usually leave evolution off; for a shipped binary framework you enable it and use <code>@inlinable</code>/<code>@frozen</code> selectively on measured hot paths.</div>`);
+
+add("advanced","med",
+"What is @dynamicMemberLookup and @dynamicCallable used for?",
+`<p><code>@dynamicMemberLookup</code> lets a type resolve arbitrary property accesses at runtime through a <code>subscript(dynamicMember:)</code> — useful for wrapping loosely-typed data (JSON, scripting bridges, key-path proxies) with dot syntax.</p>
+<pre><code>@dynamicMemberLookup
+struct JSON {
+    private let raw: [String: Any]
+    subscript(dynamicMember key: String) -&gt; JSON? {
+        (raw[key] as? [String: Any]).map(JSON.init)
+    }
+}
+let city = json.address?.city     // resolved dynamically, still dot-syntax</code></pre>
+<p>The key-path form <code>subscript(dynamicMember: KeyPath&lt;…&gt;)</code> stays type-safe and powers things like SwiftUI's <code>@dynamicMemberLookup</code> bindings.</p>
+<p><code>@dynamicCallable</code> similarly lets an instance be called like a function, routing to <code>dynamicallyCall(withArguments:)</code> — mainly for Python/scripting interop.</p>
+<div class="keypoint gotcha"><b>Use judiciously</b>Both trade compile-time safety for flexibility. They're right for interop/DSL layers, wrong for ordinary domain code where you'd lose autocomplete and static checking.</div>`);
+
+/* ---------------- ROUND 2 ADDITIONS ---------------- */
+
+add("fundamentals","easy",
+"let vs var — and why does Swift push you toward let?",
+`<p><code>let</code> declares an immutable binding (set once); <code>var</code> a mutable one. Preferring <code>let</code> is more than style:</p>
+<ul>
+<li><strong>Safety &amp; intent</strong> — the compiler prevents accidental mutation, and readers know the value never changes.</li>
+<li><strong>Optimization</strong> — immutability lets the compiler avoid defensive copies and enables better reasoning.</li>
+<li><strong>Concurrency</strong> — immutable data is trivially <code>Sendable</code>; most data-race analysis gets simpler when state can't change.</li>
+</ul>
+<div class="keypoint gotcha"><b>Nuance to volunteer</b><code>let</code> on a <em>class instance</em> only freezes the reference — the object's <code>var</code> properties remain mutable. Full immutability needs value types (or immutable class design).</div>`);
+
+add("fundamentals","easy",
+"guard let vs if let — when do you choose which?",
+`<p>Both unwrap optionals; the difference is <strong>scope and control flow</strong>.</p>
+<pre><code>func process(_ input: String?) {
+    guard let input else { return }   // unwrapped 'input' visible for the REST of the function
+    // happy path continues un-nested
+    use(input)
+}
+
+if let input {                        // unwrapped value visible ONLY inside braces
+    use(input)
+}</code></pre>
+<ul>
+<li><code>guard</code> demands an early exit (<code>return</code>/<code>throw</code>/<code>break</code>/<code>continue</code>) in its <code>else</code> — the compiler enforces it. It's for <strong>preconditions</strong>: validate up front, keep the happy path flat.</li>
+<li><code>if let</code> is for <strong>branching</strong>: do one thing when present, optionally another when absent, then continue either way.</li>
+</ul>
+<div class="keypoint tip"><b>Senior signal</b>Say "guard flattens the pyramid of doom and communicates that nil is a failure condition, not a branch." Multiple guards at the top of a function read like a contract.</div>`);
+
+add("fundamentals","med",
+"What are property observers (willSet / didSet), and when do they NOT fire?",
+`<p><code>willSet</code> runs just before a stored property is set (with <code>newValue</code>); <code>didSet</code> just after (with <code>oldValue</code>). They're for reacting to changes — invalidating layout, persisting, notifying.</p>
+<pre><code>var volume: Int = 50 {
+    willSet { print("about to become \\(newValue)") }
+    didSet  {
+        if volume &gt; 100 { volume = 100 }   // allowed: no re-trigger from inside didSet
+        save(volume)
+    }
+}</code></pre>
+<h4>When they don't fire — the interview part</h4>
+<ul>
+<li><strong>During initialization</strong> — assignments inside <code>init</code> (before the object is fully initialized) skip observers.</li>
+<li>Setting the property from inside its own <code>didSet</code>/<code>willSet</code> doesn't recurse.</li>
+<li>They exist on stored properties (and overridden inherited ones) — a computed property uses its setter instead.</li>
+</ul>
+<div class="keypoint gotcha"><b>Subtle</b>Passing an observed property as <code>inout</code> always triggers the observers on return (copy-in/copy-out writes it back) — even if the function never changed it.</div>`);
+
+add("fundamentals","med",
+"Explain Swift's five access control levels and the difference between open and public.",
+`<table class="cmp"><tr><th>Level</th><th>Visible where</th><th>Notes</th></tr>
+<tr><td><code>open</code></td><td>Everywhere</td><td>Classes/members can be subclassed &amp; overridden <em>outside</em> the module</td></tr>
+<tr><td><code>public</code></td><td>Everywhere</td><td>Usable outside the module, but subclass/override only <em>inside</em> it</td></tr>
+<tr><td><code>internal</code></td><td>Same module</td><td>The default</td></tr>
+<tr><td><code>fileprivate</code></td><td>Same file</td><td>Shared between types in one file</td></tr>
+<tr><td><code>private</code></td><td>Enclosing declaration + same-file extensions</td><td>Tightest</td></tr></table>
+<p><strong>open vs public</strong> is the classic follow-up: both export the symbol, but <code>public</code> lets a framework author say "use this, don't extend it" — subclassing/overriding across the module boundary requires <code>open</code>. Frameworks default to <code>public</code> to keep control of their class hierarchies.</p>
+<div class="keypoint tip"><b>Also know</b><code>private(set) var x</code> — public read, private write — is the idiomatic way to expose read-only state. And since Swift 4, <code>private</code> extends to same-file extensions of the type.</div>`);
+
+add("fundamentals","easy",
+"What are tuples and when are they appropriate vs a struct?",
+`<p>A tuple groups multiple values into one compound value without declaring a type. Elements can be named.</p>
+<pre><code>let status: (code: Int, message: String) = (404, "Not Found")
+status.code                       // 404
+let (code, msg) = status          // decompose
+func minMax(_ xs: [Int]) -&gt; (min: Int, max: Int)? { … }   // multi-return</code></pre>
+<p><strong>Use tuples for</strong> transient, local grouping — multiple return values, quick decomposition in a <code>switch</code>. <strong>Use a struct when</strong> the grouping is part of your model: crosses API boundaries, needs methods, conformances (<code>Codable</code>, <code>Equatable</code>), or will evolve. Tuples can't conform to protocols or have methods.</p>`);
+
+add("fundamentals","med",
+"What is a subscript, and can you add one to your own type?",
+`<p>Subscripts let instances be indexed with <code>[…]</code> syntax — how <code>array[0]</code> and <code>dict[key]</code> work. You can define them on any type, with any parameter/return types, multiple parameters, generics, and even <code>static</code> subscripts.</p>
+<pre><code>struct Matrix {
+    private var grid: [Double]; let rows: Int, cols: Int
+    subscript(r: Int, c: Int) -&gt; Double {
+        get { grid[r * cols + c] }
+        set { grid[r * cols + c] = newValue }
+    }
+}
+var m = Matrix(rows: 2, cols: 2)
+m[1, 0] = 3.5</code></pre>
+<div class="keypoint tip"><b>Detail that lands</b>Dictionary's subscript returns an optional (<code>dict[key]</code> → <code>Value?</code>) and has a defaulted variant <code>dict[key, default: 0] += 1</code> — great for counting. Array's subscript traps on out-of-bounds instead of returning nil: a deliberate performance/semantics choice.</div>`);
+
+add("fundamentals","med",
+"map vs flatMap vs compactMap vs reduce — differences and gotchas.",
+`<pre><code>[1,2,3].map { $0 * 2 }                    // [2,4,6]
+[[1,2],[3]].flatMap { $0 }                // [1,2,3]      — flattens one level
+["1","x","3"].compactMap { Int($0) }      // [1,3]        — maps, drops nils
+[1,2,3,4].reduce(0, +)                    // 10           — folds to a single value
+[1,2,3].reduce(into: [:]) { $0[$1] = true } // dictionary building, no copies</code></pre>
+<ul>
+<li><strong>map</strong> — transform each element, same count.</li>
+<li><strong>flatMap</strong> — transform where each result is a <em>sequence</em>, concatenating results. (Historic note: the nil-dropping overload of flatMap was renamed <strong>compactMap</strong> in Swift 4.1.)</li>
+<li><strong>compactMap</strong> — transform to optionals, keeping only non-nil, unwrapped.</li>
+<li><strong>reduce</strong> — combine everything into one accumulated value; <code>reduce(into:)</code> mutates the accumulator in place, avoiding O(n²) copying when building collections.</li>
+</ul>
+<p>On <code>Optional</code>, <code>map</code>/<code>flatMap</code> also exist: <code>opt.map { f($0) }</code> transforms inside the optional; <code>flatMap</code> avoids nesting when <code>f</code> itself returns an optional.</p>`);
+
+add("fundamentals","med",
+"How does Codable work, and how do you handle keys that don't match your property names or dynamic JSON?",
+`<p><code>Codable</code> = <code>Encodable &amp; Decodable</code>. The compiler synthesizes encoding/decoding for types whose stored properties are themselves Codable.</p>
+<pre><code>struct User: Codable {
+    let id: Int
+    let fullName: String
+    let joined: Date
+
+    enum CodingKeys: String, CodingKey {      // map mismatched keys
+        case id
+        case fullName = "full_name"
+        case joined
+    }
+}
+let decoder = JSONDecoder()
+decoder.keyDecodingStrategy  = .convertFromSnakeCase   // or do it globally
+decoder.dateDecodingStrategy = .iso8601
+let user = try decoder.decode(User.self, from: data)</code></pre>
+<h4>Beyond synthesis</h4>
+<ul>
+<li>Custom logic: implement <code>init(from decoder:)</code> / <code>encode(to:)</code> using keyed/unkeyed containers — needed for nested flattening, versioning, or heterogeneous arrays.</li>
+<li>Optional/missing keys: declare the property optional or use <code>decodeIfPresent</code>.</li>
+<li>Unknown-at-compile-time keys: a custom <code>CodingKey</code> struct iterating <code>container.allKeys</code>.</li>
+</ul>
+<div class="keypoint gotcha"><b>Gotcha</b>Synthesized decoding is all-or-nothing per type: one bad field fails the whole decode with a typed <code>DecodingError</code> (.keyNotFound, .typeMismatch, .valueNotFound, .dataCorrupted). Log the error's <code>context.codingPath</code> — it pinpoints the failing field.</div>`);
+
+add("fundamentals","med",
+"Any vs AnyObject vs AnyClass — what's the difference?",
+`<ul>
+<li><strong><code>Any</code></strong> — any type at all: values, references, functions, optionals. The broadest existential.</li>
+<li><strong><code>AnyObject</code></strong> — any <em>class</em> instance. Also the constraint for class-only protocols (<code>protocol P: AnyObject</code>), which is what makes <code>weak var delegate</code> possible.</li>
+<li><strong><code>AnyClass</code></strong> — a class <em>metatype</em> (<code>AnyObject.Type</code>) — the type object itself, used in Obj-C-style APIs like registering cell classes.</li>
+</ul>
+<pre><code>var bag: [Any] = [42, "hi", { (x: Int) in x }]
+protocol Delegate: AnyObject {}      // class-bound → weak-capable
+weak var d: Delegate?</code></pre>
+<div class="keypoint gotcha"><b>Why class-only for weak</b><code>weak</code> requires reference counting; value types aren't refcounted, so a protocol must be constrained to <code>AnyObject</code> before you can hold a weak existential of it. This is the standard delegate-pattern question chain.</div>`);
+
+add("fundamentals","med",
+"static vs class keyword for type members — what's the difference?",
+`<p>Both declare <em>type-level</em> members (called on the type, not an instance). The difference: <strong><code>class</code> members can be overridden by subclasses; <code>static</code> members cannot.</strong> <code>static</code> is effectively <code>class final</code>.</p>
+<pre><code>class Shape {
+    static func kind() -&gt; String { "shape" }        // not overridable
+    class  func describe() -&gt; String { "generic" }  // overridable
+}
+class Circle: Shape {
+    override class func describe() -&gt; String { "circle" }
+    // override static func kind() … ❌ compile error
+}</code></pre>
+<p>Structs and enums only have <code>static</code> (no inheritance). Stored type properties must be <code>static</code> even in classes (no stored <code>class var</code>), and they're initialized <strong>lazily and atomically</strong> — which is exactly why the one-line singleton works:</p>
+<pre><code>final class Session { static let shared = Session(); private init() {} }</code></pre>`);
+
+add("fundamentals","hard",
+"Why is String.count O(n), and what's the difference between count and utf16.count?",
+`<p>Swift's <code>String</code> is a collection of <code>Character</code>s, where each <code>Character</code> is an <strong>extended grapheme cluster</strong> — one <em>user-perceived</em> character that may be built from multiple Unicode scalars (é as e + combining accent; family emoji as several scalars joined by ZWJs).</p>
+<p>Because clusters have variable width, the string can't know how many there are without walking its storage and applying grapheme-breaking rules — so <code>count</code> is <strong>O(n)</strong>, and string indices are opaque (<code>String.Index</code>, not <code>Int</code>): <code>s[2]</code> doesn't compile.</p>
+<pre><code>let s = "café 👨‍👩‍👧"
+s.count            // 6   — grapheme clusters (user-perceived)
+s.unicodeScalars.count  // more
+s.utf16.count      // more still — what NSString.length reports
+s.utf8.count       // byte count in UTF-8</code></pre>
+<div class="keypoint gotcha"><b>Interop trap</b><code>NSString.length</code> and <code>NSRange</code> count UTF-16 code units, not Characters. Mixing Swift ranges with NSRange (e.g. in NSAttributedString, regex APIs) without converting via <code>Range(nsRange, in: string)</code> corrupts offsets on emoji/combining marks. That conversion API is the right answer.</div>`);
+
+add("fundamentals","med",
+"How do you make a custom type Equatable and Hashable correctly? What's the contract between them?",
+`<p>For structs/enums whose members are already Equatable/Hashable, conformance is <strong>synthesized</strong> — just declare it. Implement manually when identity is a subset of fields:</p>
+<pre><code>struct Employee: Hashable {
+    let id: UUID
+    var name: String        // display data, not identity
+    var lastSeen: Date
+
+    static func == (l: Self, r: Self) -&gt; Bool { l.id == r.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}</code></pre>
+<h4>The contract</h4>
+<ul>
+<li><strong>Equal values must have equal hashes.</strong> (Unequal values may collide — that's fine.)</li>
+<li>Hash exactly the fields you compare in <code>==</code>. Hashing more breaks the contract; hashing fewer just increases collisions.</li>
+<li>Never implement <code>hashValue</code> directly — use <code>hash(into:)</code>; Swift seeds <code>Hasher</code> per-process (don't persist hashes).</li>
+</ul>
+<div class="keypoint gotcha"><b>Classic bug</b>Mutating a property that participates in hashing while the value sits in a <code>Set</code>/<code>Dictionary</code> key position — the element becomes unfindable. Keep identity fields immutable (<code>let</code>).</div>`);
+
+add("fundamentals","med",
+"Explain the delegation pattern and why delegates are weak.",
+`<p><strong>Delegation</strong> lets one object hand decision points and event notifications to another through a protocol, without knowing its concrete type — AppKit is built on it (<code>NSWindowDelegate</code>, <code>NSTableViewDelegate</code>, <code>URLSessionDelegate</code>).</p>
+<pre><code>protocol ScannerDelegate: AnyObject {
+    func scanner(_ s: Scanner, didFind threat: Threat)
+    func scannerDidFinish(_ s: Scanner)
+}
+final class Scanner {
+    weak var delegate: ScannerDelegate?
+    func run() { …; delegate?.scanner(self, didFind: t) }
+}</code></pre>
+<p><strong>Why weak:</strong> the typical shape is "owner creates the worker and sets itself as delegate." If the worker held its delegate strongly, owner→worker (strong) and worker→delegate/owner (strong) forms a retain cycle. Weak breaks it and correctly models that the worker doesn't own its delegate. This is also why delegate protocols are <code>AnyObject</code>-constrained.</p>
+<div class="keypoint tip"><b>Conventions worth naming</b>Pass the sender as the first parameter (allows one delegate for many instances); prefix methods with the delegating type's name; make purely-informational callbacks optional via protocol extensions with empty defaults.</div>`);
+
+add("fundamentals","med",
+"What is dependency injection in Swift, and how do you make code testable without a DI framework?",
+`<p><strong>Dependency injection</strong>: a type receives its collaborators from outside instead of creating them (or grabbing singletons). In Swift this is mostly just <em>initializer injection against a protocol</em> — no framework needed.</p>
+<pre><code>protocol Clock { var now: Date { get } }
+struct SystemClock: Clock { var now: Date { Date() } }
+struct FixedClock: Clock  { let now: Date }             // test double
+
+final class TokenValidator {
+    private let clock: Clock
+    init(clock: Clock = SystemClock()) { self.clock = clock }  // default = prod
+    func isValid(_ t: Token) -&gt; Bool { t.expiry &gt; clock.now }
+}
+
+// test:
+let v = TokenValidator(clock: FixedClock(now: .distantPast))</code></pre>
+<ul>
+<li><strong>Initializer injection</strong> — preferred: dependencies are explicit and the object is always valid.</li>
+<li><strong>Property/method injection</strong> — for optional or late-bound dependencies.</li>
+<li>Default parameter values keep production call sites clean while tests substitute doubles.</li>
+</ul>
+<div class="keypoint tip"><b>vs singletons</b>Say it directly: <code>URLSession.shared</code> reached from inside a type is hidden global state that makes tests order-dependent. Inject it (<code>init(session: URLSession = .shared)</code>) — same ergonomics, testable.</div>`);
+
+add("fundamentals","easy",
+"When is deinit called, and what are its limitations?",
+`<p><code>deinit</code> runs automatically just before a <strong>class</strong> instance is deallocated (strong count hits zero). Use it to release non-ARC resources: file descriptors, observers, timers, XPC connections, C allocations.</p>
+<pre><code>final class LogTail {
+    private let fd: Int32
+    init(path: String) { fd = open(path, O_RDONLY) }
+    deinit { close(fd) }          // deterministic cleanup
+}</code></pre>
+<ul>
+<li>Only classes (and actors) have <code>deinit</code> — structs/enums don't (no identity/lifetime).</li>
+<li>No parameters, can't be called directly, superclass <code>deinit</code> runs automatically after yours.</li>
+<li>If <code>deinit</code> never prints in a test, you've found a retain cycle — a standard leak-hunting trick.</li>
+</ul>
+<div class="keypoint gotcha"><b>Careful</b>Don't start async work that resurrects <code>self</code> from deinit, and beware touching <code>weak</code> references to self-adjacent objects mid-teardown. In Swift concurrency, actor/class <code>deinit</code> can't <code>await</code>.</div>`);
+
+/* ---------------- concurrency additions ---------------- */
+
+add("concurrency","med",
+"GCD vs OperationQueue — when would you pick Operations?",
+`<p><code>OperationQueue</code>/<code>Operation</code> is a higher-level layer over GCD adding lifecycle you'd otherwise hand-roll:</p>
+<ul>
+<li><strong>Dependencies</strong> — <code>opB.addDependency(opA)</code> builds a DAG of work.</li>
+<li><strong>Cancellation</strong> — operations expose <code>isCancelled</code>; you can cancel a whole queue. (Still cooperative — your code must check.)</li>
+<li><strong>Concurrency limits</strong> — <code>maxConcurrentOperationCount</code> (e.g. 4 simultaneous downloads).</li>
+<li><strong>KVO-able state</strong> — isReady/isExecuting/isFinished; pause/resume via <code>isSuspended</code>.</li>
+<li>Reusable, subclassable units (async operations override <code>start</code> and manage state).</li>
+</ul>
+<pre><code>let q = OperationQueue()
+q.maxConcurrentOperationCount = 2
+let parse = BlockOperation { parseAll() }
+let index = BlockOperation { buildIndex() }
+index.addDependency(parse)
+q.addOperations([parse, index], waitUntilFinished: false)</code></pre>
+<div class="keypoint tip"><b>Honest modern take</b>For new code, structured concurrency (TaskGroup + Task cancellation) covers most of what Operations offered, with compiler support. Operations remain relevant in existing codebases and where KVO-observable, pausable queues are already integrated.</div>`);
+
+add("concurrency","med",
+"What are DispatchGroup and DispatchSemaphore for? Show the classic 'wait for N async tasks' pattern.",
+`<h4>DispatchGroup — join a set of async tasks</h4>
+<pre><code>let group = DispatchGroup()
+for url in urls {
+    group.enter()
+    fetch(url) { result in
+        collect(result)
+        group.leave()             // must balance every enter
+    }
+}
+group.notify(queue: .main) { renderAll() }   // fires when count returns to zero</code></pre>
+<h4>DispatchSemaphore — counted access / bridging</h4>
+<pre><code>let sem = DispatchSemaphore(value: 3)   // at most 3 concurrent
+for job in jobs {
+    queue.async {
+        sem.wait()                       // decrement or block
+        defer { sem.signal() }           // increment
+        run(job)
+    }
+}</code></pre>
+<div class="keypoint gotcha"><b>Traps to name</b>(1) Unbalanced enter/leave hangs the group forever. (2) <code>semaphore.wait()</code> on the main thread to fake sync-over-async freezes the UI and can deadlock. (3) Never block inside a Swift-concurrency task with semaphores — it starves the cooperative thread pool. In async code the equivalent of DispatchGroup is a <code>TaskGroup</code>.</div>`);
+
+add("concurrency","med",
+"What are GCD QoS classes and why do they matter?",
+`<p><strong>Quality of Service</strong> tells the scheduler how urgent work is, so it can prioritize CPU, I/O, and (on portables) energy:</p>
+<table class="cmp"><tr><th>QoS</th><th>Meaning</th><th>Example</th></tr>
+<tr><td><code>userInteractive</code></td><td>Must not block UI feel</td><td>animation-frame work, event handling</td></tr>
+<tr><td><code>userInitiated</code></td><td>User waiting on the result</td><td>opening a document</td></tr>
+<tr><td><code>default</code></td><td>Between the two below</td><td>—</td></tr>
+<tr><td><code>utility</code></td><td>Progress-bar timescale</td><td>downloads, imports</td></tr>
+<tr><td><code>background</code></td><td>Invisible to user</td><td>indexing, telemetry upload, sync</td></tr></table>
+<pre><code>DispatchQueue.global(qos: .utility).async { runFleetInventoryScan() }</code></pre>
+<div class="keypoint tip"><b>Two senior points</b>(1) <strong>Priority inversion</strong>: if high-QoS work waits on low-QoS work (sync, locks), the system <em>boosts</em> the low-QoS work — but relying on boosting is a smell; structure queues so it doesn't happen. (2) For a background agent, being a good citizen means <code>utility</code>/<code>background</code> for scans and batch work — fleet-wide CPU/battery impact is a product feature.</div>`);
+
+add("concurrency","med",
+"How do Timer and RunLoop interact, and why doesn't a timer fire on a background queue?",
+`<p><code>Timer</code> is a <strong>run-loop source</strong>: it fires only when added to a RunLoop that is actually running in a mode that includes it. The main thread has a run loop spinning by default (that's the AppKit event loop); arbitrary GCD threads do <strong>not</strong> — so a timer scheduled on a background queue's thread never fires unless you run a loop there.</p>
+<pre><code>// main thread — works, because the main run loop is running
+Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in tick() }
+
+// run-loop-free contexts: use a DispatchSourceTimer instead
+let t = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
+t.schedule(deadline: .now() + 1, repeating: 1)
+t.setEventHandler { tick() }
+t.resume()</code></pre>
+<ul>
+<li>Run loop <strong>modes</strong>: a timer in <code>.default</code> mode pauses during event tracking (scroll/drag on macOS uses <code>eventTracking</code> mode). Schedule in <code>.common</code> to keep firing: <code>RunLoop.main.add(timer, forMode: .common)</code>.</li>
+<li><code>scheduledTimer</code> auto-adds to the <em>current</em> run loop; <code>Timer(timeInterval:…)</code> needs manual adding.</li>
+<li>Repeating timers must be <code>invalidate()</code>d; target-selector timers retain their target (leak trap covered in the ARC section).</li>
+</ul>
+<div class="keypoint tip"><b>Modern alternative</b>In async code: <code>for await _ in Timer.publish(…).values</code> (Combine bridge) or a simple <code>while !Task.isCancelled { try await Task.sleep(for: .seconds(1)); tick() }</code> loop, which composes with cancellation.</div>`);
+
+add("concurrency","hard",
+"What do nonisolated and a global actor annotation mean? How do you safely expose an actor property synchronously?",
+`<p><strong>Global actors</strong> (like <code>@MainActor</code>, or your own <code>@globalActor</code>) apply one shared actor's isolation to declarations anywhere in the program — every <code>@MainActor</code> function shares main-actor isolation.</p>
+<p><strong><code>nonisolated</code></strong> opts a member <em>out</em> of its actor's isolation, letting it be called synchronously from anywhere — legal only when it doesn't touch mutable actor state:</p>
+<pre><code>actor EventStore {
+    let deviceID: String                    // immutable
+    private var buffer: [Event] = []        // mutable, isolated
+
+    nonisolated var label: String {         // fine: reads only immutable state
+        "store-\\(deviceID)"
+    }
+    // nonisolated func flush() { buffer.removeAll() }  ❌ touches isolated state
+}</code></pre>
+<ul>
+<li>Use <code>nonisolated</code> for <code>Hashable</code>/<code>CustomStringConvertible</code>/logging identity — protocol requirements that must be synchronous.</li>
+<li>A custom global actor is right when a subsystem (e.g. all Endpoint-Security event handling) must serialize on one executor across many types.</li>
+</ul>
+<div class="keypoint gotcha"><b>Swift 6 note</b><code>nonisolated(unsafe)</code> exists as an escape hatch for globals you promise are safe — treat it like <code>@unchecked Sendable</code>: a code-review flag, not a fix.</div>`);
+
+add("concurrency","med",
+"What is AsyncSequence / AsyncStream, and when do you use them?",
+`<p><code>AsyncSequence</code> is the async analog of Sequence: values arrive over time and you consume them with <code>for try await</code>. <code>AsyncStream</code> is the easiest way to <em>create</em> one — typically bridging a callback/delegate world into async.</p>
+<pre><code>// Bridge a callback-based ES event source into an async stream
+func events() -&gt; AsyncStream&lt;SecurityEvent&gt; {
+    AsyncStream { continuation in
+        let client = ESClient { event in
+            continuation.yield(event)             // push each callback in
+        }
+        continuation.onTermination = { _ in client.stop() }   // cleanup on cancel
+    }
+}
+
+for await event in events() {
+    await process(event)
+}</code></pre>
+<ul>
+<li>Consumption supports familiar operators: <code>map</code>, <code>filter</code>, <code>prefix</code>, etc., lazily.</li>
+<li><code>AsyncThrowingStream</code> for failable sources; back-pressure via the buffering policy (<code>.bufferingNewest(n)</code>…).</li>
+<li>Cancellation of the consuming task triggers <code>onTermination</code> — resource cleanup composes with structured concurrency.</li>
+</ul>
+<div class="keypoint tip"><b>Where it shines</b>Long-lived event feeds: file-system events, notifications (<code>NotificationCenter.notifications(named:)</code> is built in), socket reads, agent telemetry. It replaces many delegate/Combine pipelines with plain loops.</div>`);
+
+/* ---------------- protocols/generics additions ---------------- */
+
+add("protocols","med",
+"How would you explain key paths (\\Type.property) and where are they used?",
+`<p>A <strong>key path</strong> is a typed, first-class reference to a property — "the path to <code>name</code> on <code>User</code>" — without an instance. Types: <code>KeyPath</code> (read), <code>WritableKeyPath</code> (read/write on value types), <code>ReferenceWritableKeyPath</code> (write through a class reference).</p>
+<pre><code>struct User { var name: String; var age: Int }
+let path = \\User.name                 // KeyPath&lt;User, String&gt;
+let u = User(name: "Chella", age: 34)
+u[keyPath: path]                       // "Chella"
+
+// As functions — since Swift 5.2 a key path literal converts to a closure:
+users.map(\\.name)
+users.sorted { $0[keyPath: \\.age] &lt; $1[keyPath: \\.age] }
+
+// Generic building block:
+func sortDescriptor&lt;T, V: Comparable&gt;(_ kp: KeyPath&lt;T, V&gt;) -&gt; (T, T) -&gt; Bool {
+    { $0[keyPath: kp] &lt; $1[keyPath: kp] }
+}</code></pre>
+<p>Used across the ecosystem: SwiftUI (<code>ForEach(items, id: \\.id)</code>), Combine (<code>assign(to:on:)</code>), modern KVO (<code>observe(\\.progress)</code>), SortDescriptor/predicate APIs, and <code>@dynamicMemberLookup</code>'s type-safe form.</p>`);
+
+add("generics","hard",
+"What are Swift macros (Swift 5.9+), and how do they differ from property wrappers or result builders?",
+`<p><strong>Macros</strong> perform compile-time source transformation: they receive your code's syntax tree (via SwiftSyntax), and expand into additional checked code. Two families:</p>
+<ul>
+<li><strong>Freestanding</strong> — <code>#stringify(x)</code>, <code>#warning</code>, <code>#Predicate</code>.</li>
+<li><strong>Attached</strong> — <code>@Observable</code>, <code>@Model</code> (SwiftData): attach to a declaration and add members/conformances/accessors.</li>
+</ul>
+<pre><code>// What @Observable expands into (conceptually): per-property observation
+@Observable final class Settings {
+    var theme: Theme = .dark      // macro generates access tracking around this
+}</code></pre>
+<h4>vs the older metaprogramming tools</h4>
+<table class="cmp"><tr><th></th><th>Property wrapper</th><th>Result builder</th><th>Macro</th></tr>
+<tr><td>Operates on</td><td>one property's storage</td><td>a closure's statements</td><td>arbitrary syntax</td></tr>
+<tr><td>Can add members/conformances</td><td>No</td><td>No</td><td>Yes</td></tr>
+<tr><td>Runs as</td><td>runtime code</td><td>compile-time rewrite (fixed rules)</td><td>compile-time plugin, type-checked expansion</td></tr></table>
+<div class="keypoint tip"><b>Interview framing</b>Macros remove boilerplate property wrappers couldn't (whole-type transformations like Observation's per-property tracking) while staying inspectable — Xcode can show you the expansion. They run in a sandboxed compiler plugin process.</div>`);
+
+/* ---------------- interop additions ---------------- */
+
+add("interop","hard",
+"What is method swizzling, how does it work, and when is it (barely) acceptable?",
+`<p><strong>Swizzling</strong> exchanges the implementations (IMPs) of two selectors at runtime using the Obj-C runtime — every message send to the original selector then runs your replacement. It's possible only for message-dispatched methods (<code>@objc dynamic</code> / NSObject methods).</p>
+<pre><code>extension NSWindow {
+    static let swizzle: Void = {
+        let cls = NSWindow.self
+        let m1 = class_getInstanceMethod(cls, #selector(makeKeyAndOrderFront(_:)))!
+        let m2 = class_getInstanceMethod(cls, #selector(swizzled_makeKeyAndOrderFront(_:)))!
+        method_exchangeImplementations(m1, m2)
+    }()
+    @objc func swizzled_makeKeyAndOrderFront(_ sender: Any?) {
+        audit(self)
+        swizzled_makeKeyAndOrderFront(sender)   // calls the ORIGINAL (impls swapped)
+    }
+}</code></pre>
+<h4>Risks (say these unprompted)</h4>
+<ul>
+<li>Global, invisible behaviour change; two libraries swizzling the same selector = undefined ordering.</li>
+<li>Breaks on OS updates; complicates crash triage; can trip App Review / hardened-runtime expectations.</li>
+<li>In security software it cuts both ways: you must also <em>detect</em> swizzling/injection as a tamper vector.</li>
+</ul>
+<div class="keypoint gotcha"><b>Acceptable uses</b>Last-resort instrumentation of framework code you don't own (analytics SDKs, debugging), done once (dispatch_once semantics via a static let), calling through to the original. Prefer subclassing, delegation, or official hooks whenever they exist.</div>`);
+
+add("interop","med",
+"NotificationCenter — how does it work, and what are the memory/threading rules?",
+`<p><code>NotificationCenter</code> is in-process publish/subscribe: post a named notification, all registered observers get called synchronously, on <strong>the thread the notification was posted from</strong>.</p>
+<pre><code>// Block-based API — returns a token
+let token = NotificationCenter.default.addObserver(
+    forName: .agentStateChanged, object: nil, queue: .main   // deliver on main
+) { [weak self] note in
+    self?.refresh(note.userInfo)
+}
+// MUST remove block-based observers, or the center keeps the block alive:
+deinit { NotificationCenter.default.removeObserver(token) }
+
+// Async bridge (modern):
+for await note in NotificationCenter.default.notifications(named: .agentStateChanged) { … }</code></pre>
+<ul>
+<li>Selector-based observers are auto-unregistered on dealloc on modern OSes; <strong>block-based tokens are not</strong> — store and remove them (or keep them in a bag tied to your lifetime).</li>
+<li>The <code>queue:</code> parameter controls delivery queue; passing nil = synchronous on the posting thread — a hidden threading hazard if the poster is a background queue and you touch UI.</li>
+<li>It's process-local. Cross-process needs <code>DistributedNotificationCenter</code> (limited, no userInfo restrictions apply) or proper IPC (XPC).</li>
+</ul>
+<div class="keypoint tip"><b>Design judgement</b>Notifications are for broadcast, many-listener, loosely-coupled events. For one-to-one communication prefer delegation or closures — interviewers like hearing the decision rule, not just the API.</div>`);
+
+/* ---------------- SwiftUI section ---------------- */
+
+add("swiftui","med",
+"@State vs @Binding vs @StateObject vs @ObservedObject vs @EnvironmentObject — who owns what?",
+`<p>The whole question is <strong>ownership</strong>: who creates and keeps the source of truth alive.</p>
+<table class="cmp"><tr><th>Wrapper</th><th>For</th><th>Ownership</th></tr>
+<tr><td><code>@State</code></td><td>Value types, view-local</td><td>View owns it; survives view-struct re-creation</td></tr>
+<tr><td><code>@Binding</code></td><td>Read-write access to someone else's @State</td><td>Not owned — a reference to parent's truth</td></tr>
+<tr><td><code>@StateObject</code></td><td>ObservableObject the view <em>creates</em></td><td>View owns; created once per view identity</td></tr>
+<tr><td><code>@ObservedObject</code></td><td>ObservableObject <em>passed in</em></td><td>Not owned; parent keeps it alive</td></tr>
+<tr><td><code>@EnvironmentObject</code></td><td>Shared object injected up the tree</td><td>Ancestor owns; crashes if missing</td></tr></table>
+<pre><code>struct Dashboard: View {
+    @StateObject private var model = FleetModel()     // created &amp; owned here
+    var body: some View {
+        DeviceList(model: model)                       // passed down
+    }
+}
+struct DeviceList: View {
+    @ObservedObject var model: FleetModel              // borrowed
+}</code></pre>
+<div class="keypoint gotcha"><b>The classic bug</b>Using <code>@ObservedObject</code> where the view <em>creates</em> the object: view structs are recreated on every parent update, so the object is re-instantiated and state resets (timers restart, downloads vanish). <code>@StateObject</code> exists precisely to pin creation to view identity. With the newer Observation framework (<code>@Observable</code>, macOS 14+), plain <code>let</code>/<code>@State</code> replaces much of this table — worth mentioning.</div>`);
+
+add("swiftui","med",
+"Why is SwiftUI's body called repeatedly, and what does 'view identity' mean for state?",
+`<p>SwiftUI views are cheap value-type <em>descriptions</em>, not objects. When observed state changes, the framework re-invokes <code>body</code>, diffs the resulting description against the previous one, and applies minimal changes to the real render tree. So:</p>
+<ul>
+<li><code>body</code> must be fast and side-effect-free — it can run many times per second.</li>
+<li>State (<code>@State</code>/<code>@StateObject</code>) is stored by the framework <em>outside</em> the struct, keyed by the view's <strong>identity</strong> — its position/type in the tree, or an explicit <code>.id()</code> / <code>ForEach id</code>.</li>
+<li>If identity changes (different branch of an <code>if</code>, changed <code>.id()</code>, ForEach key change), SwiftUI treats it as a <em>new</em> view: state is discarded and recreated, transitions run.</li>
+</ul>
+<pre><code>// These two have DIFFERENT identity per branch — state resets when flag flips:
+if compact { DetailView() } else { DetailView() }
+
+// Same identity, modifier changes — state preserved:
+DetailView().frame(width: compact ? 300 : 500)</code></pre>
+<div class="keypoint tip"><b>Performance lever</b>Stable, correct <code>id</code>s in ForEach (never array indices for reorderable data) and splitting big views into smaller ones so invalidation is scoped — the diff only re-runs bodies whose dependencies changed.</div>`);
+
+add("swiftui","med",
+"Combine in 60 seconds: Publisher, Subscriber, and the operators you actually use. Where does it stand vs async/await?",
+`<p><strong>Combine</strong> is Apple's reactive-streams framework: a <code>Publisher</code> emits a sequence of values over time (then completion or failure); <code>Subscriber</code>s receive them; operators transform the stream between the two.</p>
+<pre><code>final class SearchModel: ObservableObject {
+    @Published var query = ""
+    @Published private(set) var results: [Device] = []
+    private var bag = Set&lt;AnyCancellable&gt;()
+
+    init(service: SearchService) {
+        $query
+            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+            .removeDuplicates()
+            .map { service.search($0) }        // Publisher of Publishers
+            .switchToLatest()                   // cancel stale searches
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.results = $0 }
+            .store(in: &amp;bag)                    // lifetime = the bag
+    }
+}</code></pre>
+<ul>
+<li>Everyday operators: <code>map</code>, <code>filter</code>, <code>debounce</code>, <code>removeDuplicates</code>, <code>combineLatest</code>, <code>merge</code>, <code>flatMap</code>/<code>switchToLatest</code>, <code>receive(on:)</code>.</li>
+<li><code>AnyCancellable</code> cancels on deinit — dropping the token silently kills the subscription (a classic "why does nothing happen" bug).</li>
+</ul>
+<div class="keypoint tip"><b>Current positioning</b>Async/await + AsyncSequence now covers most one-shot and stream cases with simpler code, and Observation replaces <code>@Published</code>-driven UI updates. Combine still wins for multi-stream composition (combineLatest across inputs, debounced pipelines). Expect the "when would you still use Combine?" follow-up — that's the answer.</div>`);
+
+/* ---------------- SECURITY / DISTRIBUTION section ---------------- */
+
+add("security","med",
+"Walk through code signing, Gatekeeper, and notarization — what does each actually verify?",
+`<ul>
+<li><strong>Code signing</strong> — a cryptographic seal over your binaries with your Developer ID certificate. It proves <em>who</em> built the code and that it hasn't been modified since. Verify with <code>codesign -vvv --deep --strict App.app</code>.</li>
+<li><strong>Notarization</strong> — you upload the signed build to Apple's automated notary service, which scans for malware and code-signing problems, then issues a <em>ticket</em>. You <strong>staple</strong> the ticket to the app so it validates offline. It is not App Review — it's an automated malware/signing check.</li>
+<li><strong>Gatekeeper</strong> — the on-device enforcement: at first launch of downloaded software it checks the signature, the notarization ticket, and quarantine state, and blocks or warns accordingly. Assess with <code>spctl --assess -vvv App.app</code>.</li>
+</ul>
+<pre><code># the modern pipeline
+codesign --sign "Developer ID Application: …" --options runtime --timestamp App.app
+xcrun notarytool submit App.zip --keychain-profile "notary" --wait
+xcrun stapler staple App.app</code></pre>
+<div class="keypoint tip"><b>Details that signal experience</b>Sign with the hardened runtime (<code>--options runtime</code>) and a secure timestamp or notarization fails; installer .pkg uses the separate Developer ID <em>Installer</em> cert; sign nested code inside-out (frameworks/helpers before the app). Kexts required notarization from macOS 10.14.5 — and are effectively legacy now anyway.</div>`);
+
+add("security","med",
+"What is the hardened runtime, and which exceptions/entitlements does it interact with?",
+`<p>The <strong>hardened runtime</strong> is an opt-in (and notarization-required) set of process-level protections: it blocks code injection via DYLD environment variables, disallows loading libraries not signed by you or Apple, protects against debugger attachment in release, and gates access to protected resources behind entitlements.</p>
+<p>You then punch <em>specific, declared</em> holes only where needed:</p>
+<ul>
+<li><code>com.apple.security.cs.allow-jit</code> — JIT compilation (JS engines).</li>
+<li><code>com.apple.security.cs.disable-library-validation</code> — load third-party plugins not signed by your team (weakens injection defense — justify it).</li>
+<li><code>com.apple.security.cs.allow-dyld-environment-variables</code>, <code>…debugger</code> — dev/diagnostic scenarios.</li>
+<li>Resource-access entitlements (camera, audio-input, etc.) pair with usage-description strings.</li>
+</ul>
+<div class="keypoint"><b>Why security vendors care</b>For an endpoint agent, the hardened runtime + library validation is your own anti-tamper baseline: it prevents adversaries injecting a dylib into <em>your</em> privileged process. Disabling library validation in a security product is close to disqualifying — say that.</div>`);
+
+add("security","hard",
+"Explain TCC, PPPC profiles, and Full Disk Access — and why an ES client 'works in Terminal but fails as a LaunchDaemon.'",
+`<p><strong>TCC</strong> (Transparency, Consent, and Control) is macOS's per-app permission system for protected resources — Full Disk Access, screen recording, camera, Accessibility, etc. Grants are per <em>responsible</em> code-signing identity and stored in TCC databases.</p>
+<ul>
+<li><strong>User consent</strong> — the System Settings → Privacy &amp; Security toggles.</li>
+<li><strong>PPPC / Privacy Preferences Policy Control profiles</strong> — MDM-delivered payloads that pre-approve permissions fleet-wide (how enterprises deploy agents without per-user clicking). Some grants (e.g. FDA for system daemons in newer macOS) are effectively MDM-only.</li>
+</ul>
+<h4>The classic debugging story (tell it as a story)</h4>
+<p>An Endpoint Security client runs fine when launched from Terminal but fails at boot as a LaunchDaemon with a TCC Full-Disk-Access error. Why: launched from Terminal, the process <strong>inherits Terminal's FDA grant</strong> (the user gave Terminal FDA long ago). As a daemon there's nothing to inherit — the daemon itself needs the grant, which on managed fleets means a PPPC profile via MDM, or granting FDA to the app bundle that embeds the daemon/extension.</p>
+<div class="keypoint tip"><b>Also name</b>ES <em>consent</em> (the entitlement + user approval of the System Extension) is distinct from FDA — you can have one and not the other, and the failure modes differ. Interviewers at endpoint companies love this distinction because it burns real support hours.</div>`);
+
+add("security","hard",
+"Endpoint Security framework: architecture, AUTH vs NOTIFY events, deadlines, and muting.",
+`<p><strong>Endpoint Security (ES)</strong> is Apple's user-space API for security agents, replacing kernel-side KAuth/kexts. Architecture: your entitled client (<code>com.apple.developer.endpoint-security.client</code>, granted by Apple) connects via <code>es_new_client</code>, subscribes to event types, and receives messages from the ES subsystem.</p>
+<h4>Two event classes</h4>
+<ul>
+<li><strong>NOTIFY</strong> — informational, after the fact (process exec'd, file written). Cheap to handle; used for EDR telemetry.</li>
+<li><strong>AUTH</strong> — the kernel <em>blocks the operation</em> waiting for your verdict: <code>es_respond_auth_result</code> allow/deny. This is where prevention lives — and where the danger lives.</li>
+</ul>
+<h4>Deadlines — the staff-level detail</h4>
+<p>Every AUTH message carries a deadline. Miss it and the OS <strong>kills your client</strong> (termination namespace ENDPOINTSECURITY, "failed to respond before deadline"). Real-world triggers: heavy work inline in the handler, or sleep/wake races where events arrive around suspension. Design: respond fast from the handler's queue, do enrichment asynchronously, have a fail-open/fail-closed policy decision <em>designed in advance</em>, and respect <code>es_message_t</code>'s deadline field with margin.</p>
+<h4>Muting — the performance lever</h4>
+<p><code>es_mute_process</code> / <code>es_mute_path</code> (and inverted muting to allowlist only what you care about) cut event volume at the source. Without muting, a chatty subscription (file events) can measurably tax the whole machine — fleet-wide.</p>
+<div class="keypoint"><b>Commit-first summary</b>"ES gives entitled user-space agents notify events for telemetry and auth events for prevention; auth events have kill-you-if-you-miss-it deadlines, so the architecture is: answer fast, enrich async, mute aggressively." That one sentence is a strong open at Check Point or CrowdStrike-class loops.</div>`);
+
+add("security","hard",
+"System Extension vs root LaunchDaemon vs kext for a security agent — tradeoffs?",
+`<table class="cmp"><tr><th></th><th>System Extension</th><th>Root LaunchDaemon</th><th>Kext</th></tr>
+<tr><td>Runs in</td><td>User space, SIP-protected</td><td>User space, root</td><td>Kernel</td></tr>
+<tr><td>Tamper resistance</td><td>High — even root can't easily unload</td><td>Lower — root can kill/patch</td><td>High but a kernel bug = kernel panic/CVE</td></tr>
+<tr><td>Early-boot coverage</td><td>Yes — <code>NSEndpointSecurityEarlyBoot</code> holds third-party execs until ready</td><td>Boot order gaps possible</td><td>Yes</td></tr>
+<tr><td>Install UX</td><td>Extension approval (MDM can pre-approve)</td><td>Package/launchctl, simpler</td><td>Deprecated; heavy MDM ceremony, reboots</td></tr>
+<tr><td>Status</td><td>Apple's recommended path</td><td>Supported for ES (root + entitlement suffice)</td><td>Legacy — being phased out since 10.15</td></tr></table>
+<ul>
+<li>ES doesn't <em>require</em> a System Extension — a root daemon with the entitlement works — but the extension buys SIP anti-tamper and early-boot semantics, both product features for an EDR.</li>
+<li>Distribution constraint worth naming: ES system extensions ship via Developer ID, not the Mac App Store.</li>
+<li>Typical production shape: container app (UI/onboarding) + ES system extension + Network Extension where needed + XPC between them, all validated by code-signing requirements.</li>
+</ul>`);
+
+add("security","med",
+"What is the App Sandbox, and how does a sandboxed app access things outside its container?",
+`<p>The <strong>App Sandbox</strong> confines a process to its own container and an explicitly declared capability set — kernel-enforced. A compromised sandboxed process can only do what its entitlements allow.</p>
+<ul>
+<li>Capabilities are entitlements: network client/server, user-selected files, Downloads folder, printing, hardware (camera/mic), etc.</li>
+<li><strong>User intent expands the sandbox</strong>: files chosen via NSOpenPanel (Powerbox) or drag-and-drop become readable/writable even though they're outside the container.</li>
+<li><strong>Security-scoped bookmarks</strong> persist that access across launches — the interview follow-up. You save a bookmark from the user-picked URL, then resolve and <code>startAccessingSecurityScopedResource()</code> on next launch (and balance with stop).</li>
+<li>Mac App Store requires sandboxing; Developer ID apps choose. Security agents typically sandbox the UI app but the ES extension and privileged helpers have their own tailored profiles/entitlements.</li>
+</ul>
+<pre><code>let data = try url.bookmarkData(options: .withSecurityScope, …)
+// later:
+var stale = false
+let url = try URL(resolvingBookmarkData: data, options: .withSecurityScope,
+                  bookmarkDataIsStale: &amp;stale)
+guard url.startAccessingSecurityScopedResource() else { … }
+defer { url.stopAccessingSecurityScopedResource() }</code></pre>`);
+
+add("security","med",
+"launchd: daemons vs agents, and how do you install a privileged helper today?",
+`<ul>
+<li><strong>LaunchDaemon</strong> — system-wide, runs as root (or a specified user) with <em>no</em> GUI session; plist in <code>/Library/LaunchDaemons</code>. Your agent's privileged core.</li>
+<li><strong>LaunchAgent</strong> — per-user, runs inside a login session (can show UI); plist in <code>/Library/LaunchAgents</code> or <code>~/Library/LaunchAgents</code>.</li>
+<li>launchd is PID 1: on-demand launch (XPC/mach service activation, path/timer triggers), <code>KeepAlive</code> restart policies, and socket activation. Inspect with <code>launchctl print system/&lt;label&gt;</code>.</li>
+</ul>
+<h4>Privileged helper installation</h4>
+<p>The modern API is <strong><code>SMAppService</code></strong> (macOS 13+): daemons/agents ship <em>inside your app bundle</em>, registered with <code>SMAppService.daemon(plistName:)</code>, and the user approves in System Settings → Login Items. It replaces the deprecated <code>SMJobBless</code> flow (separate signed helper in <code>/Library/PrivilegedHelperTools</code> + authorization services). Either way, the helper exposes an XPC interface, and <strong>both sides validate each other's code-signing identity</strong> before trusting the connection.</p>
+<div class="keypoint gotcha"><b>The security question behind the question</b>An XPC service that doesn't verify its peer (audit token → code signing requirement like "same team ID, hardened runtime") is privilege escalation waiting to happen — any local process could connect and drive your root helper. Bring this up unprompted.</div>`);
+
+add("security","hard",
+"Keychain vs Secure Enclave — what does each protect, and how do you create a hardware-backed key?",
+`<h4>Keychain</h4>
+<p>The system's encrypted credential store (passwords, keys, certificates, tokens). Items carry accessibility (<code>kSecAttrAccessible…</code>) and access-control constraints; access is gated per app identity. On macOS, note the data-protection keychain vs the legacy file-based keychain, and that ACLs tie items to signing identity.</p>
+<h4>Secure Enclave</h4>
+<p>A separate hardware security processor. Private keys created in it are <strong>non-exportable by construction</strong> — the key never leaves the enclave; the OS hands you a key <em>reference</em> and the enclave performs signing/decryption internally. Only P-256 EC keys; operations can require biometric/user presence via <code>SecAccessControl</code>.</p>
+<pre><code>var error: Unmanaged&lt;CFError&gt;?
+let access = SecAccessControlCreateWithFlags(nil,
+    kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+    [.privateKeyUsage], &amp;error)!
+
+let attrs: [String: Any] = [
+    kSecAttrKeyType as String:        kSecAttrKeyTypeECSECPrimeRandom,
+    kSecAttrKeySizeInBits as String:  256,
+    kSecAttrTokenID as String:        kSecAttrTokenIDSecureEnclave,
+    kSecPrivateKeyAttrs as String: [
+        kSecAttrIsPermanent as String: true,
+        kSecAttrApplicationTag as String: "com.acme.devicekey",
+        kSecAttrAccessControl as String: access
+    ]
+]
+let key = SecKeyCreateRandomKey(attrs as CFDictionary, &amp;error)</code></pre>
+<div class="keypoint"><b>Why this matters for device trust</b>An enclave-resident key is the root of a device identity that can't be exfiltrated and re-used elsewhere — the foundation of attestation-based device trust (pair with ACME device attestation / managed device attestation in MDM contexts). If your background is attestation, steer the conversation here; it's differentiating.</div>`);
+
+add("security","med",
+"How do you debug and observe a background agent in production: unified logging, sysdiagnose, crash reports?",
+`<ul>
+<li><strong>Unified logging (os_log / Logger)</strong> — structured, low-overhead, level-aware (debug/info/default/error/fault). Private-by-default redaction (<code>%{public}s</code> to opt out — carefully, in a security product). Stream with <code>log stream --predicate 'subsystem == "com.acme.agent"'</code>, retrieve history with <code>log show</code>.</li>
+<li><strong>Signposts</strong> (<code>os_signpost</code>/Instruments) — measure intervals (event-handling latency, XPC round-trips) with near-zero cost in production.</li>
+<li><strong>sysdiagnose</strong> — the support-escalation workhorse: one archive with logs, spindumps, power data. Design your logging so a sysdiagnose answers "what was the agent doing at 14:32."</li>
+<li><strong>Crash reports</strong> — .ips files in <code>~/Library/Logs/DiagnosticReports</code> (or /Library for daemons); symbolicate against your dSYMs; watch for watchdog/Jetsam-style terminations and, for ES clients, the ENDPOINTSECURITY deadline termination namespace.</li>
+</ul>
+<pre><code>import os
+let log = Logger(subsystem: "com.acme.agent", category: "esclient")
+log.error("auth verdict timed out pid=\\(pid, privacy: .public)")</code></pre>
+<div class="keypoint tip"><b>Fleet framing</b>At fleet scale you can't attach a debugger — logging discipline, signpost-instrumented hot paths, and remote log-level toggles are the observability story interviewers want for a "millions of devices" agent.</div>`);
+
+add("security","med",
+"Universal binaries and Rosetta 2 — what should a macOS engineer know?",
+`<ul>
+<li>A <strong>universal (fat) binary</strong> contains both <code>arm64</code> and <code>x86_64</code> slices; the loader picks the native one. Inspect with <code>lipo -info</code> / <code>file</code>; Xcode builds both via <code>ARCHS = $(ARCHS_STANDARD)</code>.</li>
+<li><strong>Rosetta 2</strong> translates x86_64 processes on Apple silicon (mostly ahead-of-time at install/first-launch). It's per-process: an arm64 app can't load an x86_64 plugin or dylib — architecture must match across a process, a common plugin-ecosystem pain.</li>
+<li>Things that behave differently under translation or across ISAs: memory ordering (x86 TSO vs ARM weak ordering — latent data races surface on arm64), some low-level instructions, and performance characteristics. Kernel-adjacent and security software must run natively.</li>
+<li>Detect translation with <code>sysctl.proc_translated</code>; detect your own arch with <code>#if arch(arm64)</code>.</li>
+</ul>
+<div class="keypoint gotcha"><b>The race-condition angle</b>"Our code was fine for years on Intel and crashes on M-series" is often a real data race that x86's stronger memory model masked. Tie this back to Swift concurrency/TSan — it's a great systems answer.</div>`);
+
+/* ---------------- advanced additions ---------------- */
+
+add("advanced","hard",
+"What are borrowing/consuming and ~Copyable (noncopyable types) in modern Swift?",
+`<p>Swift 5.9+ adds <strong>ownership control</strong> for performance- and correctness-critical code:</p>
+<ul>
+<li><strong><code>borrowing</code></strong> parameter — the callee gets temporary read access, no retain/copy. (The historical default for most parameters, now spellable.)</li>
+<li><strong><code>consuming</code></strong> parameter — ownership transfers into the callee; the caller's value is dead afterward. Enables move semantics; <code>consume x</code> explicitly ends a binding's lifetime.</li>
+<li><strong><code>~Copyable</code></strong> — a type that <em>cannot</em> be copied, only moved. Perfect for unique resources: file descriptors, locks, one-shot tokens. The compiler enforces single ownership — use-after-consume is a compile error.</li>
+</ul>
+<pre><code>struct FileHandle: ~Copyable {
+    private let fd: Int32
+    init(path: String) { fd = open(path, O_RDONLY) }
+    consuming func close() { Darwin.close(fd) }   // consumes self — handle unusable after
+    deinit { Darwin.close(fd) }                    // runs if never explicitly closed
+}
+
+let f = FileHandle(path: "/etc/hosts")
+f.close()
+// f.close()      ❌ compile error: 'f' consumed</code></pre>
+<div class="keypoint tip"><b>Why interviewers ask</b>It's Swift absorbing Rust-style affine types: resource-safety bugs (double-close, use-after-free of descriptors) become compile errors, and hot paths shed retain/release traffic. Framing it that way shows you follow the language's systems-programming direction.</div>`);
+
+add("advanced","med",
+"What is Mirror / reflection in Swift, and what are its limits?",
+`<p><code>Mirror(reflecting:)</code> gives read-only runtime inspection of a value's children (property labels and values) — how default <code>dump()</code>, some debugging tools, and quick serializers work.</p>
+<pre><code>struct Config { let host = "api.acme.io"; let retries = 3 }
+for child in Mirror(reflecting: Config()).children {
+    print(child.label ?? "?", child.value)   // host api.acme.io / retries 3
+}</code></pre>
+<h4>Limits (the actual interview content)</h4>
+<ul>
+<li><strong>Read-only</strong> — no setting values, no method invocation (unlike Obj-C runtime reflection).</li>
+<li>Slow relative to direct access; not for hot paths.</li>
+<li>Doesn't see computed properties; superclass members need <code>superclassMirror</code> traversal.</li>
+<li>For real serialization use <code>Codable</code> (compile-time synthesized, fast, bidirectional); Mirror is for debugging, logging, test assertions.</li>
+</ul>`);
+
+add("advanced","hard",
+"Operator overloading and custom operators — how, and what's the responsible use?",
+`<p>Operators are just functions with symbolic names — define them as static members (preferred) or globals. Custom operators declare fixity and precedence.</p>
+<pre><code>struct Vector2 { var x, y: Double
+    static func + (l: Self, r: Self) -&gt; Self { .init(x: l.x + r.x, y: l.y + r.y) }
+    static func * (l: Self, s: Double) -&gt; Self { .init(x: l.x * s, y: l.y * s) }
+}
+
+// custom operator with precedence
+infix operator •: MultiplicationPrecedence
+extension Vector2 {
+    static func • (l: Self, r: Self) -&gt; Double { l.x * r.x + l.y * r.y }  // dot product
+}</code></pre>
+<ul>
+<li>Conforming to <code>Equatable</code>/<code>Comparable</code>/<code>AdditiveArithmetic</code> is operator overloading with protocol backing — prefer it, since generic algorithms (sorted, sum-style reductions) come free.</li>
+<li>Responsible use: overload when the domain has established math (vectors, matrices, money, versions). Avoid inventing cryptic operators for API calls — readability is the review bar.</li>
+</ul>`);
+/* ============================== RENDER ============================== */
+const sections = JSON.parse(document.getElementById('data').textContent).sections;
+const secMeta = {}; sections.forEach(s => secMeta[s.id] = s);
+
+/* ---- Swift tokenizer / highlighter ---- */
+const KW = new Set(("func var let class struct enum protocol extension import return if else guard for in while repeat switch case default break continue fallthrough where do try catch throw throws rethrows defer init deinit self Self super nil true false static final lazy weak unowned mutating nonmutating override private fileprivate internal public open associatedtype typealias some any inout indirect convenience required subscript get set willSet didSet async await actor isolated nonisolated as is operator precedencegroup dynamic optional unsafe borrowing consuming").split(" "));
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function highlight(code){
+  let i=0, n=code.length, out='';
+  const isId=c=>/[A-Za-z0-9_]/.test(c), idStart=c=>/[A-Za-z_]/.test(c);
+  while(i<n){
+    const c=code[i];
+    // line comment
+    if(c==='/'&&code[i+1]==='/'){let j=i;while(j<n&&code[j]!=='\n')j++;out+='<span class="tk-com">'+esc(code.slice(i,j))+'</span>';i=j;continue;}
+    // block comment
+    if(c==='/'&&code[i+1]==='*'){let j=i+2;while(j<n&&!(code[j]==='*'&&code[j+1]==='/'))j++;j=Math.min(n,j+2);out+='<span class="tk-com">'+esc(code.slice(i,j))+'</span>';i=j;continue;}
+    // string
+    if(c==='"'){let j=i+1;while(j<n){if(code[j]==='\\'){j+=2;continue;}if(code[j]==='"'){j++;break;}j++;}out+='<span class="tk-str">'+esc(code.slice(i,j))+'</span>';i=j;continue;}
+    // attribute
+    if(c==='@'){let j=i+1;while(j<n&&isId(code[j]))j++;out+='<span class="tk-attr">'+esc(code.slice(i,j))+'</span>';i=j;continue;}
+    // number
+    if(/[0-9]/.test(c)){let j=i;while(j<n&&/[0-9a-fA-FxX._]/.test(code[j]))j++;out+='<span class="tk-num">'+esc(code.slice(i,j))+'</span>';i=j;continue;}
+    // identifier
+    if(idStart(c)){let j=i;while(j<n&&isId(code[j]))j++;const w=code.slice(i,j);
+      if(KW.has(w)) out+='<span class="tk-key">'+w+'</span>';
+      else if(/^[A-Z]/.test(w)) out+='<span class="tk-type">'+w+'</span>';
+      else if(code[j]==='(') out+='<span class="tk-fn">'+w+'</span>';
+      else out+=esc(w);
+      i=j;continue;}
+    out+=esc(c);i++;
+  }
+  return out;
+}
+
+/* ---- build DOM ---- */
+const content = document.getElementById('content');
+const bySec = {}; QA.forEach(q=>{(bySec[q.s]=bySec[q.s]||[]).push(q);});
+let reviewed = loadReviewed();
+
+sections.forEach(sec=>{
+  const items = bySec[sec.id]||[];
+  const secEl = document.createElement('section');
+  secEl.className='section'; secEl.id=sec.id;
+  secEl.innerHTML = `<div class="section-head"><span class="num">${sec.num}</span><h3>${sec.title}</h3></div><p class="section-desc">${sec.desc}</p>`;
+  items.forEach(q=>{
+    const el = document.createElement('div');
+    el.className='qa'+(reviewed[q.id]?' reviewed':'');
+    el.dataset.diff=q.d; el.dataset.sec=q.s; el.dataset.id=q.id;
+    const diffLabel = q.d==='easy'?'Easy':q.d==='med'?'Medium':'Staff';
+    el.innerHTML = `
+      <div class="q">
+        <div class="badges">
+          <button class="mark${reviewed[q.id]?' done':''}" title="Mark reviewed" aria-label="Mark reviewed">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
+          </button>
+          <span class="diff ${q.d}">${diffLabel}</span>
+        </div>
+        <div class="qtext"><span class="qid">Q${q.id}</span>${q.q}</div>
+        <div class="toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+      </div>
+      <div class="a">${q.a}</div>`;
+    secEl.appendChild(el);
+  });
+  content.appendChild(secEl);
+});
+
+/* highlight all code blocks + add copy buttons + searchable text */
+document.querySelectorAll('pre code').forEach(code=>{
+  const raw = code.textContent;
+  code.dataset.raw = raw;
+  code.innerHTML = highlight(raw);
+  const pre = code.parentElement;
+  const btn = document.createElement('button');
+  btn.className='cp'; btn.textContent='copy';
+  btn.addEventListener('click',()=>{navigator.clipboard?.writeText(raw);btn.textContent='copied';setTimeout(()=>btn.textContent='copy',1200);});
+  pre.appendChild(btn);
+});
+// cache lowercase search text per card
+document.querySelectorAll('.qa').forEach(el=>{ el.dataset.text = el.textContent.toLowerCase(); });
+
+/* ---- interactions: expand/collapse ---- */
+content.addEventListener('click',e=>{
+  const mark = e.target.closest('.mark');
+  if(mark){ e.stopPropagation(); const qa=mark.closest('.qa'); toggleReviewed(qa); return; }
+  const q = e.target.closest('.q');
+  if(q){ q.closest('.qa').classList.toggle('open'); }
+});
+
+function toggleReviewed(qa){
+  const id = qa.dataset.id;
+  const on = qa.classList.toggle('reviewed');
+  qa.querySelector('.mark').classList.toggle('done', on);
+  if(on) reviewed[id]=1; else delete reviewed[id];
+  saveReviewed(); updateProgress();
+}
+
+/* ---- filtering ---- */
+const searchEl=document.getElementById('search');
+let activeDiff='all';
+document.querySelectorAll('.chip[data-diff]').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('.chip[data-diff]').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active'); activeDiff=chip.dataset.diff; applyFilter();
+  });
+});
+searchEl.addEventListener('input',applyFilter);
+function applyFilter(){
+  const term=searchEl.value.trim().toLowerCase();
+  let shown=0;
+  document.querySelectorAll('.qa').forEach(el=>{
+    const okDiff = activeDiff==='all'||el.dataset.diff===activeDiff;
+    const okText = !term||el.dataset.text.includes(term);
+    const vis = okDiff&&okText;
+    el.style.display = vis?'':'none';
+    if(vis) shown++;
+    if(vis&&term&&!el.classList.contains('open')) el.classList.add('open');
+  });
+  document.querySelectorAll('.section').forEach(sec=>{
+    const any=[...sec.querySelectorAll('.qa')].some(e=>e.style.display!=='none');
+    sec.style.display=any?'':'none';
+  });
+  document.getElementById('empty').style.display = shown?'none':'block';
+  document.getElementById('count').textContent = shown+' / '+QA.length+' shown';
+}
+
+document.getElementById('expandAll').onclick=()=>document.querySelectorAll('.qa').forEach(e=>{if(e.style.display!=='none')e.classList.add('open');});
+document.getElementById('collapseAll').onclick=()=>document.querySelectorAll('.qa').forEach(e=>e.classList.remove('open'));
+
+/* ---- nav ---- */
+const nav=document.getElementById('nav');
+sections.forEach(sec=>{
+  const a=document.createElement('a'); a.href='#'+sec.id;
+  a.innerHTML=`<span class="idx">${sec.num}</span><span>${sec.title}</span><span class="cnt">${(bySec[sec.id]||[]).length}</span>`;
+  nav.appendChild(a);
+});
+const navLinks=[...nav.querySelectorAll('a')];
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(en=>{ if(en.isIntersecting){
+    navLinks.forEach(l=>l.classList.toggle('on', l.getAttribute('href')==='#'+en.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('.section').forEach(s=>io.observe(s));
+
+/* ---- stats ---- */
+document.getElementById('statQ').textContent=QA.length;
+document.getElementById('statS').textContent=sections.length;
+document.getElementById('statH').textContent=QA.filter(q=>q.d==='hard').length;
+document.getElementById('count').textContent=QA.length+' / '+QA.length+' shown';
+
+/* ---- progress persistence ---- */
+function loadReviewed(){try{return JSON.parse(localStorage.getItem('swift_reviewed')||'{}');}catch{return {};}}
+function saveReviewed(){try{localStorage.setItem('swift_reviewed',JSON.stringify(reviewed));}catch{}}
+function updateProgress(){
+  const done=Object.keys(reviewed).length, total=QA.length;
+  document.getElementById('progbar').style.width=(total?done/total*100:0)+'%';
+  document.getElementById('progtext').textContent=`${done} / ${total} reviewed`;
+}
+document.getElementById('resetprog').onclick=()=>{
+  reviewed={};saveReviewed();
+  document.querySelectorAll('.qa').forEach(e=>{e.classList.remove('reviewed');e.querySelector('.mark').classList.remove('done');});
+  updateProgress();
+};
+updateProgress();
+
+/* ---- theme + back to top ---- */
+const themeBtn=document.getElementById('theme');
+try{ if(localStorage.getItem('swift_theme')==='light') document.documentElement.setAttribute('data-theme','light'); }catch{}
+themeBtn.onclick=()=>{
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
+  if(isLight){document.documentElement.removeAttribute('data-theme');try{localStorage.setItem('swift_theme','dark')}catch{}}
+  else{document.documentElement.setAttribute('data-theme','light');try{localStorage.setItem('swift_theme','light')}catch{}}
+};
+const toTop=document.getElementById('totop');
+window.addEventListener('scroll',()=>{toTop.classList.toggle('show',window.scrollY>600);});
+toTop.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 04 - JumpCloud Go (DURT) Device-Bound App Access</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 04 of 10</span>
+    <h1>JumpCloud Go (DURT) - Device-Bound App Access</h1>
+    <p>Phishing-resistant, device-bound application access with live posture signals - JumpCloud's closest parallel to Okta FastPass + Device-Bound SSO.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-03-device-binding.html">← Module 03</a>
+    <a href="index.html">Hub</a>
+    <a href="module-05-oauth-cap.html">Module 05 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">JumpCloud Go lets users open SSO-protected apps with minimal friction while proving they are on a managed device with acceptable posture. The client holds a <strong>DUK</strong> (Secure Enclave key), exchanges a <strong>DURT</strong> (refresh token) for a <strong>DUST</strong> (session token) on each access, and auth embeds a device assertion with live agent signals (~30s cache).</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>docs/jc_go/ARCHITECTURE.md</code> - Register + Access flows, component map</li>
+        <li><code>localgrpc/local_grpc_handler.go</code> - <code>GetSignals</code> export to DURT client</li>
+        <li><code>signal/collector_darwin.go</code> - osquery, CrowdStrike ZTA JWK, SentinelOne</li>
+        <li><code>signal/cache.go</code> - ~30s signal cache at access time</li>
+        <li><code>planning/ban-3495/context/JumpCloud-Go-explained.html</code> - plain-English walkthrough</li>
+        <li>macOS client: <code>jumpcloud-durt-macos</code> · Browser: NMH + Go extension (Chrome/Firefox) or SSO extension (Safari)</li>
+      </ul>
+      <table>
+        <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>DUK</td><td>Device User Key - TPM/Secure Enclave P256 signing key</td></tr>
+          <tr><td>DURT</td><td>Device User Refresh Token - exchanged on each app access</td></tr>
+          <tr><td>DUST</td><td>Device User Session Token - consumed by auth/backend, not client</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Okta Parallel</h2>
+      <div class="card okta">
+        <p><strong>Okta FastPass</strong> provides silent, phishing-resistant app authentication when Okta Verify is running. <strong>Device-Bound SSO (dbSSO)</strong> cryptographically binds the browser session to the device via Secure Enclave + Device Access certs. JumpCloud Go combines both ideas: hardware-bound token refresh (DUK) + live posture evaluation at each app open - matching OIE policies that check device state per resource access.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Register Flow</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant User
+  participant Browser
+  participant NMH as NMH / SSO Extension
+  participant DURTmac as jumpcloud-durt-macos
+  participant Agent as jumpcloud-agent
+  participant DURTsvc as DURT Service
+
+  User->>Browser: Install Go extension / Safari SSO policy
+  Browser->>NMH: Native messaging invoke
+  NMH->>DURTmac: Start registration
+  DURTmac->>DURTmac: Generate DUK in Secure Enclave
+  DURTmac->>DURTsvc: Register device user binding
+  DURTsvc-->>DURTmac: Issue DURT refresh token
+  DURTmac-->>User: Registration complete
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Access Flow</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant User
+  participant Browser
+  participant NMH as NMH / SSO Extension
+  participant DURTmac as DURT Client
+  participant Agent as jumpcloud-agent
+  participant Auth as jumpcloud-auth
+  participant App as Target SaaS App
+
+  User->>Browser: Open SSO app
+  Browser->>NMH: Request access
+  NMH->>Agent: GetSignals via local gRPC
+  Agent-->>NMH: OS EDR firewall signals ~30s cache
+  NMH->>DURTmac: Refresh with DUK signature
+  DURTmac->>Auth: Exchange DURT for DUST
+  Auth->>Auth: Mint DeviceAssertion with signals
+  Auth-->>App: Authenticated session
+  App-->>User: App access granted or CAP deny
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Interview Sound Bite</h2>
+      <div class="card soundbite">
+        "Unlike stale Mongo device claims at portal login (~2 hours old), JumpCloud Go evaluates live agent signals at each app open - same Zero Trust principle as Okta auth policies evaluating device state per resource, not just at initial SSO."
+      </div>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">How is JumpCloud Go like Okta FastPass?</div>
+        <div class="qa-a">Both provide silent, possession-factor app access without password re-entry. Go uses DUK-signed DURT refresh; FastPass uses Okta Verify's device key + WebAuthn. Both require managed device enrollment and support CAP/OIE-style policy gates.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Why live signals at access time?</div>
+        <div class="qa-a">Posture can degrade between login and app access (FileVault disabled, EDR stopped). Point-in-time portal JWT is insufficient for Zero Trust. Agent collects OS, firewall, CrowdStrike ZTA, SentinelOne via <code>signal/collector_darwin.go</code> with ~30s cache to balance freshness vs performance.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Safari vs Chrome path?</div>
+        <div class="qa-a">Chrome/Firefox use browser extension + Native Messaging Host. Safari uses Apple's SSO Extension Policy + tray app (<code>jcagent-tray-ssoe</code>) - no browser extension. Same DURT backend, different IPC surface - important for macOS platform interview depth.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What happens if DUK is wiped?</div>
+        <div class="qa-a">User must re-register - same as Okta requiring FastPass re-enrollment after device cert deletion. Hardware binding is intentional: stolen session cookies without device key are useless.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>DURT signals are ephemeral (not persisted) - BAN-3495/UDTL targets centralized posture store.</li>
+          <li>Go path not yet preferred over cert path in portal (ADR-011).</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-03-device-binding.html">← Module 03</a> · <a href="module-05-oauth-cap.html">Module 05 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

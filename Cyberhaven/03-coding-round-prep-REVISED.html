@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyberhaven Coding Round — Revised</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EBEEF1; --card:#FFFFFF; --ink:#0F1419; --muted:#5C6672;
+    --line:#D6DBE1; --probe:#1F4E9C; --probe-soft:#E2EAF6;
+    --strength:#276B4E; --risk:#B0600A; --risk-bg:#FBF2E5;
+    --code-bg:#101720; --code-ink:#D5DDE8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15.5px;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:44px 22px 90px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--probe);font-weight:500;margin-bottom:12px}
+  h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+    font-size:clamp(28px,5vw,44px);line-height:1.05;letter-spacing:-.02em}
+  .dek{color:var(--muted);font-size:16px;margin-top:12px;max-width:68ch}
+
+  .revbanner{margin-top:24px;background:#FFF;border:1px solid var(--line);
+    border-left:3px solid var(--risk);border-radius:0 11px 11px 0;padding:16px 20px}
+  .revbanner .h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--risk);margin-bottom:8px;font-weight:600}
+
+  .toc{margin-top:26px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px 20px}
+  .toc-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;counter-reset:t;columns:2;column-gap:28px}
+  .toc li{counter-increment:t;font-size:14px;margin-bottom:6px;break-inside:avoid}
+  .toc li::before{content:counter(t,decimal-leading-zero);font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--probe);margin-right:9px}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--probe)}
+
+  section{margin-top:54px;scroll-margin-top:20px}
+  h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:25px;
+    letter-spacing:-.015em;line-height:1.18}
+  h2 .num{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+    color:var(--probe);margin-right:10px;vertical-align:2px}
+  .sub{color:var(--muted);font-size:14.5px;margin:6px 0 18px;max-width:72ch}
+  h3{font-size:16.5px;font-weight:600;margin:24px 0 9px}
+  h3:first-child{margin-top:0}
+  h4{font-size:14.5px;font-weight:600;margin:16px 0 7px;color:var(--probe)}
+  p{margin-bottom:11px}
+  p:last-child{margin-bottom:0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:20px 22px;margin-bottom:14px}
+  ul{list-style:none}
+  ul.tick li{padding-left:20px;position:relative;margin-bottom:9px}
+  ul.tick li:last-child{margin-bottom:0}
+  ul.tick li::before{content:"›";position:absolute;left:2px;color:var(--probe);font-weight:700}
+  b{font-weight:600}
+  code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:#EAEEF3;
+    padding:1px 5px;border-radius:4px;color:#243447}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+    padding:16px 18px;overflow-x:auto;margin:12px 0 14px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55}
+  pre .c{color:#7C8B9E}
+  pre .k{color:#7FB3FF}
+  pre .s{color:#8FD6A9}
+  pre .b{color:#F08A8A;font-weight:600}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:12px 0 14px;
+    font-size:13.5px}
+  th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  th{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;background:#F6F8FA}
+  td.mono,th.mono{font-family:'IBM Plex Mono',monospace;font-size:12px}
+  .pri{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600}
+  .pri.hi{color:var(--strength)}
+  .pri.md{color:var(--risk)}
+  .pri.lo{color:var(--muted)}
+
+  .callout{background:var(--risk-bg);border:1px solid #EFDCBE;border-left:3px solid var(--risk);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .callout b{color:var(--risk)}
+  .win{background:#EAF3EE;border:1px solid #C9E0D3;border-left:3px solid var(--strength);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .win b{color:var(--strength)}
+  .key{background:var(--probe-soft);border:1px solid #C6D6EC;border-left:3px solid var(--probe);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .key b{color:var(--probe)}
+
+  .prob{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    margin-bottom:18px;overflow:hidden}
+  .prob-h{padding:14px 20px;background:#F6F8FA;border-bottom:1px solid var(--line)}
+  .prob-h .tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--probe);display:block;margin-bottom:4px}
+  .prob-h .t{font-weight:600;font-size:16px}
+  .prob-b{padding:18px 20px}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px;font-family:'IBM Plex Mono',monospace}
+  @media(max-width:640px){.toc ol{columns:1} pre{font-size:11px} table{font-size:12.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Cyberhaven · Round 03 · revised against candidate reports</div>
+  <h1>The coding round, rebalanced</h1>
+  <p class="dek">Candidate reports change the picture. This round is very likely <b>machine coding and low-level design</b> — build a working component with clean class structure, tests and edge cases — not a concurrency-primitives round. The Swift concurrency material still matters, but as extension answers rather than the main event.</p>
+
+  <div class="revbanner">
+    <div class="h">What changed from the first version</div>
+    <ul class="tick">
+      <li><b>Primary format is now machine coding / LLD.</b> Reported problems: a JSON parser, a log parser later scaled to a distributed service, a prototypal version control system, a Datadog-like logging service. Stated grading focus: clean class structures, test cases, edge cases.</li>
+      <li><b>A separate 30-minute engineering screen exists</b> before this round, and it carries a small code-optimization challenge. That may not have been in what the recruiter described to you.</li>
+      <li><b>System design is reported at 90 minutes, not 60</b>, and the loop runs 6–7 stages plus a reference check, usually ending with a founder or C-level conversation.</li>
+      <li><b>Concurrency primitives demoted</b> to §11 — still plausible as extension questions on an endpoint team, and still the right answer when an optimization problem is "these run sequentially."</li>
+    </ul>
+  </div>
+
+  <nav class="toc">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s1">Evidence and revised prediction</a></li>
+      <li><a href="#s2">The loop, corrected</a></li>
+      <li><a href="#s3">Running a machine-coding round</a></li>
+      <li><a href="#s4">The optimization challenge</a></li>
+      <li><a href="#s5">What "clean class structure" is graded on</a></li>
+      <li><a href="#s6">Problem A · JSON parser</a></li>
+      <li><a href="#s7">Problem B · log parser → distributed</a></li>
+      <li><a href="#s8">Problem C · version control system</a></li>
+      <li><a href="#s9">Problem D · logging service</a></li>
+      <li><a href="#s10">Tests and edge cases</a></li>
+      <li><a href="#s11">Concurrency, now secondary</a></li>
+      <li><a href="#s12">Swift rapid-fire bank</a></li>
+      <li><a href="#s13">Revised prep plan</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ── 01 ── -->
+<section id="s1">
+  <h2><span class="num">01</span>Evidence and revised prediction</h2>
+  <p class="sub">Weighing the reports rather than averaging them — one is far more relevant to you than the others.</p>
+
+  <table>
+    <tr><th>Report</th><th>What it says</th><th>Weight for you</th></tr>
+    <tr>
+      <td><b>Jan 2026 · Senior SWE · Bengaluru · referral</b></td>
+      <td>1 hr machine coding + HLD (log parser, then scale it to a distributed service). 1 hr LLD (prototypal version control). Graded on clean class structures, tests, edge cases. Phone screen was LeetCode easy/medium ramping up. Other problems named: JSON parser, Datadog-like logging service.</td>
+      <td><span class="pri hi">HIGHEST</span> Same city, same title, same entry path as you. Closest match available.</td>
+    </tr>
+    <tr>
+      <td><b>Jul 2026 · Senior SWE · accepted offer</b></td>
+      <td>Recruiter 30m → engineering screening 30m → coding 90m → system architecture 90m → hiring manager → higher management. The engineering screen carried a small code-optimization challenge.</td>
+      <td><span class="pri hi">HIGH</span> Most recent, and matches your stated 90-minute coding round exactly.</td>
+    </tr>
+    <tr>
+      <td><b>Sep 2024 · SWE</b></td>
+      <td>Given three pseudo API-call functions in Go; asked to make the code return its response efficiently.</td>
+      <td><span class="pri md">MEDIUM</span> Confirms the optimization format. The answer is parallelising independent calls.</td>
+    </tr>
+    <tr>
+      <td><b>Mar 2025 / Mar 2025 TA / Mar 2025 SWE</b></td>
+      <td>Design questions: real-time monitoring and classification of sensitive data movement across endpoints without hurting performance or privacy; a mall traffic analytics data system. One reviewer advises learning the product first or the design question won't make sense.</td>
+      <td><span class="pri hi">HIGH</span> For round 4, not this one — but it tells you where the loop is heading.</td>
+    </tr>
+    <tr>
+      <td><b>May 2025 · Frontend · Cluj</b></td>
+      <td>Live coding with two engineers; language questions plus one medium algorithmic problem.</td>
+      <td><span class="pri lo">LOW</span> Different discipline, but confirms the two-engineer format and that a medium algorithmic problem can appear.</td>
+    </tr>
+  </table>
+
+  <div class="callout"><b>The honest caveat.</b> The Bengaluru report reads like a generalist backend track — version control and JSON parsers are not macOS-endpoint problems. Aristide's endpoint org may well run its own loop, in which case the systems material from version 1 is closer. <b>So prepare both, weighted toward machine coding.</b> And ask Aisha directly: "Will the coding round be language-agnostic machine coding, or Swift-specific systems code?" That is a completely normal question and the answer redirects a week of prep.</div>
+
+  <h3>Revised probability of what you'll face</h3>
+  <table>
+    <tr><th>Format</th><th>Odds</th><th>Prep weight</th></tr>
+    <tr><td>Machine coding — build a working component, then extend</td><td><span class="pri hi">~55%</span></td><td>§06–§09</td></tr>
+    <tr><td>LLD — design classes for a system, write some of it, discuss tests</td><td><span class="pri hi">~25%</span></td><td>§05, §08</td></tr>
+    <tr><td>Systems/concurrency implementation (the v1 prediction)</td><td><span class="pri md">~15%</span></td><td>§11 + v1 doc</td></tr>
+    <tr><td>Pure algorithmic</td><td><span class="pri lo">~5%</span></td><td>Don't optimise for it</td></tr>
+  </table>
+</section>
+
+<!-- ── 02 ── -->
+<section id="s2">
+  <h2><span class="num">02</span>The loop, corrected</h2>
+  <div class="card">
+    <table>
+      <tr><th>#</th><th>Stage</th><th>Status</th></tr>
+      <tr><td class="mono">01</td><td>Recruiter screen — Aisha Ansari, 30 min</td><td>Done</td></tr>
+      <tr><td class="mono">02</td><td>Hiring manager — Aristide Fattori</td><td>Next</td></tr>
+      <tr><td class="mono">0?</td><td><b>Engineering screen, 30 min + optimization challenge</b></td><td>Reported by others; not in what you were told. Ask.</td></tr>
+      <tr><td class="mono">03</td><td>Coding, 90 min, two panelists</td><td>This document</td></tr>
+      <tr><td class="mono">04</td><td>System architecture — <b>reported at 90 min</b>, you were told 60</td><td>Confirm the length</td></tr>
+      <tr><td class="mono">05+</td><td>Senior leadership / founder round; possibly product or peer rounds</td><td>Likely</td></tr>
+      <tr><td class="mono">06</td><td><b>Reference check with current or former employers</b></td><td>Plan for this now</td></tr>
+    </table>
+    <div class="key"><b>Two asks for your hiring-manager call:</b> "Can you walk me through every remaining stage?" and "Is the coding round language-agnostic or Swift-specific?" Both are normal, both are cheap, and both materially change how you spend the next two weeks.</div>
+  </div>
+</section>
+
+<!-- ── 03 ── -->
+<section id="s3">
+  <h2><span class="num">03</span>Running a machine-coding round</h2>
+  <p class="sub">Different discipline from an algorithm round. Here you are being watched build software, not solve a puzzle — so the sequencing of what you write matters as much as the code.</p>
+
+  <table>
+    <tr><th>Minutes</th><th>Do this</th></tr>
+    <tr><td class="mono">0–7</td><td><b>Scope out loud, then get agreement.</b> "I'll build X with these four operations. I'm going to skip Y and Z unless we have time — is that the right cut?" Machine-coding rounds are lost by attempting too much, not by attempting too little.</td></tr>
+    <tr><td class="mono">7–15</td><td><b>Write the types and protocol boundaries first — no bodies.</b> Enums for the data model, protocols where I/O crosses the boundary, the public API of the main service. Then say: "before I fill these in, does this shape look right to you?" This single checkpoint is the highest-value thing you do all round.</td></tr>
+    <tr><td class="mono">15–55</td><td><b>Implement depth-first through one complete happy path</b> so something runs early. A working narrow slice beats four half-built layers.</td></tr>
+    <tr><td class="mono">55–70</td><td><b>Edge cases and errors.</b> Say them aloud as you handle them. The reported grading criteria name edge cases explicitly — treat this as a scored section, not cleanup.</td></tr>
+    <tr><td class="mono">70–85</td><td><b>Tests.</b> Also explicitly named in the grading. Even six assertions. Write them yourself before being asked.</td></tr>
+    <tr><td class="mono">85–90</td><td><b>State what you'd do next</b> with more time, and ask how their real implementation differs.</td></tr>
+  </table>
+
+  <div class="win"><b>The habit that wins these rounds:</b> narrate design decisions as trade-offs, not as facts. "I'm making the store a protocol so tests can use an in-memory version — costs a little indirection, buys testability." Two panelists means one is often assessing exactly this.</div>
+  <div class="callout"><b>Do not gold-plate.</b> The most common senior failure in machine coding is building an elegant abstraction layer and running out of time before anything works. Working and plain beats beautiful and unfinished, every time.</div>
+</section>
+
+<!-- ── 04 ── -->
+<section id="s4">
+  <h2><span class="num">04</span>The optimization challenge</h2>
+  <p class="sub">Reported in the 30-minute engineering screen and in an earlier round. Short, and there are only about five underlying answers.</p>
+
+  <div class="card">
+    <h3>The reported case: sequential calls that should be concurrent</h3>
+<pre><span class="c">// BEFORE — three independent calls, run one after another. 3× latency.</span>
+<span class="k">func</span> loadDashboard() <span class="k">async throws</span> -&gt; Dashboard {
+    <span class="k">let</span> user   = <span class="k">try await</span> fetchUser()
+    <span class="k">let</span> alerts = <span class="k">try await</span> fetchAlerts()
+    <span class="k">let</span> policy = <span class="k">try await</span> fetchPolicy()
+    <span class="k">return</span> Dashboard(user: user, alerts: alerts, policy: policy)
+}
+
+<span class="c">// AFTER — independent work overlaps. Latency = slowest call, not the sum.</span>
+<span class="k">func</span> loadDashboard() <span class="k">async throws</span> -&gt; Dashboard {
+    <span class="k">async let</span> user   = fetchUser()
+    <span class="k">async let</span> alerts = fetchAlerts()
+    <span class="k">async let</span> policy = fetchPolicy()
+    <span class="k">return</span> Dashboard(user: <span class="k">try await</span> user,
+                     alerts: <span class="k">try await</span> alerts,
+                     policy: <span class="k">try await</span> policy)
+}</pre>
+    <p>Then say the three things that turn a correct answer into a senior one:</p>
+    <ul class="tick">
+      <li><b>Check the dependency graph first.</b> Only genuinely independent calls parallelise. If <code>fetchPolicy</code> needs the user's org ID, it stays sequential — and saying that shows you read the code rather than pattern-matched.</li>
+      <li><b>Failure semantics change.</b> With <code>async let</code>, one throw cancels the siblings. Is that what you want, or should a failed alerts fetch still render the dashboard? If partial results are acceptable, use a task group collecting <code>Result</code>.</li>
+      <li><b>Bound the fan-out.</b> Three is fine; three hundred needs a task group with a concurrency limit, or you stampede the backend.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>The other four shapes, and their tells</h3>
+    <table>
+      <tr><th>Tell in the code</th><th>Fix</th></tr>
+      <tr><td>Nested loop comparing two collections</td><td>O(n²) → hash set or dictionary → O(n). The most common optimization question in existence.</td></tr>
+      <tr><td>A query or call inside a loop</td><td>N+1. Batch into one call, or preload into a map.</td></tr>
+      <tr><td>Invariant work computed inside a loop</td><td>Hoist it out. Or memoise if the input repeats.</td></tr>
+      <tr><td>String concatenation or array append in a hot loop</td><td>Reserve capacity; build once; avoid repeated reallocation.</td></tr>
+      <tr><td>Repeated linear scans of the same data</td><td>Build the index once, query many times.</td></tr>
+    </table>
+    <div class="key"><b>Always open with the same sentence:</b> "Before changing anything — what does the profile say, and what's the input size?" It costs five seconds, it's what you'd actually do, and it stops you optimising the wrong loop. Then optimise anyway; they want to see the change.</div>
+  </div>
+</section>
+
+<!-- ── 05 ── -->
+<section id="s5">
+  <h2><span class="num">05</span>What "clean class structure" is actually graded on</h2>
+  <p class="sub">The Bengaluru report names this explicitly. Here is what it means concretely, so you can hit it deliberately.</p>
+
+  <div class="card">
+    <ul class="tick">
+      <li><b>One reason to change per type.</b> A parser parses. A store stores. A tokenizer that also handles file I/O will be called out.</li>
+      <li><b>Protocols at every I/O boundary.</b> Filesystem, clock, network, object store. Not for architectural purity — so tests can inject fakes. Say that reason out loud; it converts an abstraction from overhead into justification.</li>
+      <li><b>Value types for data, classes for services.</b> Records, tokens, commits, log lines are structs. Repositories, stores, pipelines are final classes.</li>
+      <li><b>Typed errors, not strings.</b> An <code>enum</code> conforming to <code>Error</code> with the offset or context attached. In a parser, an error that says <em>what</em> and <em>where</em> is a feature.</li>
+      <li><b>Dependencies injected through the initialiser.</b> No singletons, no global state, nothing reaching out to the filesystem from three layers deep.</li>
+      <li><b>No god object.</b> If your <code>Repository</code> class has grown past ~8 methods, split it and say why.</li>
+      <li><b>Name things after the domain.</b> <code>ObjectStore</code>, <code>Commit</code>, <code>Index</code> — not <code>DataManager</code>, <code>Helper</code>, <code>Utils</code>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── 06 ── -->
+<section id="s6">
+  <h2><span class="num">06</span>Problem A · JSON parser</h2>
+  <p class="sub">Highest-probability single problem. It is on the reported list, it is a perfect 90-minute machine-coding scope, and for a security company it doubles as an untrusted-input exercise — which maps directly onto the JD line about processing untrusted data.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Problem A</span><span class="t">"Write a JSON parser."</span></div>
+    <div class="prob-b">
+
+      <h4>Step 1 — the data model, written first</h4>
+<pre><span class="k">indirect enum</span> JSONValue: Equatable {
+    <span class="k">case</span> null
+    <span class="k">case</span> bool(Bool)
+    <span class="k">case</span> number(Double)
+    <span class="k">case</span> string(String)
+    <span class="k">case</span> array([JSONValue])
+    <span class="k">case</span> object([String: JSONValue])
+}
+
+<span class="k">struct</span> JSONError: Error, Equatable {
+    <span class="k">enum</span> Kind: Equatable {
+        <span class="k">case</span> unexpectedEnd
+        <span class="k">case</span> unexpectedByte(UInt8)
+        <span class="k">case</span> invalidNumber
+        <span class="k">case</span> invalidEscape
+        <span class="k">case</span> invalidUTF8
+        <span class="k">case</span> depthLimitExceeded      <span class="c">// ← security, not correctness</span>
+        <span class="k">case</span> inputTooLarge
+        <span class="k">case</span> duplicateKey(String)
+        <span class="k">case</span> trailingData
+    }
+    <span class="k">let</span> kind: Kind
+    <span class="k">let</span> offset: Int              <span class="c">// byte offset — errors must locate themselves</span>
+}</pre>
+
+      <h4>Step 2 — the limits type. Introduce this unprompted.</h4>
+<pre><span class="k">struct</span> JSONLimits {
+    <span class="k">var</span> maxDepth: Int = 128          <span class="c">// recursive descent + deep nesting = stack overflow</span>
+    <span class="k">var</span> maxBytes: Int = 8 &lt;&lt; 20      <span class="c">// 8 MB — bound the allocation up front</span>
+    <span class="k">var</span> rejectDuplicateKeys = <span class="k">true</span>  <span class="c">// {"a":1,"a":2} is a real parser-differential bug</span>
+    <span class="k">static let</span> `default` = JSONLimits()
+}</pre>
+      <div class="win"><b>This is the single highest-scoring move in the problem.</b> Say: "Since this parses untrusted input, I'll bound depth and size before writing any parsing code. A recursive-descent parser on deeply nested input is a stack-overflow DoS, and duplicate-key handling that differs between parsers is how filter-bypass bugs happen." For a manager who used to do penetration testing, that sentence lands harder than a fast implementation.</div>
+
+      <h4>Step 3 — the parser core</h4>
+<pre><span class="k">struct</span> JSONParser {
+    <span class="k">private let</span> bytes: [UInt8]      <span class="c">// UTF-8 bytes, not Characters — grapheme</span>
+    <span class="k">private var</span> i = 0              <span class="c">// processing is wrong AND slow here</span>
+    <span class="k">private var</span> depth = 0
+    <span class="k">private let</span> limits: JSONLimits
+
+    <span class="k">static func</span> parse(_ text: String,
+                      limits: JSONLimits = .default) <span class="k">throws</span> -&gt; JSONValue {
+        <span class="k">try</span> parse(Array(text.utf8), limits: limits)
+    }
+
+    <span class="k">static func</span> parse(_ bytes: [UInt8],
+                      limits: JSONLimits = .default) <span class="k">throws</span> -&gt; JSONValue {
+        <span class="k">guard</span> bytes.count &lt;= limits.maxBytes <span class="k">else</span> {
+            <span class="k">throw</span> JSONError(kind: .inputTooLarge, offset: 0)
+        }
+        <span class="k">var</span> p = JSONParser(bytes: bytes, limits: limits)
+        <span class="k">let</span> value = <span class="k">try</span> p.parseValue()
+        p.skipWhitespace()
+        <span class="k">guard</span> p.i == bytes.count <span class="k">else</span> {          <span class="c">// "{} garbage" must fail</span>
+            <span class="k">throw</span> JSONError(kind: .trailingData, offset: p.i)
+        }
+        <span class="k">return</span> value
+    }
+
+    <span class="k">private mutating func</span> parseValue() <span class="k">throws</span> -&gt; JSONValue {
+        depth += 1
+        <span class="k">defer</span> { depth -= 1 }
+        <span class="k">guard</span> depth &lt;= limits.maxDepth <span class="k">else</span> {
+            <span class="k">throw</span> JSONError(kind: .depthLimitExceeded, offset: i)
+        }
+
+        skipWhitespace()
+        <span class="k">guard</span> i &lt; bytes.count <span class="k">else</span> { <span class="k">throw</span> err(.unexpectedEnd) }
+
+        <span class="k">switch</span> bytes[i] {
+        <span class="k">case</span> UInt8(ascii: "{"):  <span class="k">return</span> .object(<span class="k">try</span> parseObject())
+        <span class="k">case</span> UInt8(ascii: "["):  <span class="k">return</span> .array(<span class="k">try</span> parseArray())
+        <span class="k">case</span> UInt8(ascii: "\""): <span class="k">return</span> .string(<span class="k">try</span> parseString())
+        <span class="k">case</span> UInt8(ascii: "t"):  <span class="k">try</span> expect("true");  <span class="k">return</span> .bool(<span class="k">true</span>)
+        <span class="k">case</span> UInt8(ascii: "f"):  <span class="k">try</span> expect("false"); <span class="k">return</span> .bool(<span class="k">false</span>)
+        <span class="k">case</span> UInt8(ascii: "n"):  <span class="k">try</span> expect("null");  <span class="k">return</span> .null
+        <span class="k">default</span>:                 <span class="k">return</span> .number(<span class="k">try</span> parseNumber())
+        }
+    }
+
+    <span class="k">private mutating func</span> parseObject() <span class="k">throws</span> -&gt; [String: JSONValue] {
+        i += 1                                   <span class="c">// consume '{'</span>
+        <span class="k">var</span> result: [String: JSONValue] = [:]
+        skipWhitespace()
+        <span class="k">if</span> peek() == UInt8(ascii: "}") { i += 1; <span class="k">return</span> result }
+
+        <span class="k">while true</span> {
+            skipWhitespace()
+            <span class="k">guard</span> peek() == UInt8(ascii: "\"") <span class="k">else</span> { <span class="k">throw</span> err(.unexpectedByte(peek() ?? 0)) }
+            <span class="k">let</span> key = <span class="k">try</span> parseString()
+
+            <span class="k">if</span> limits.rejectDuplicateKeys, result[key] != <span class="k">nil</span> {
+                <span class="k">throw</span> JSONError(kind: .duplicateKey(key), offset: i)
+            }
+
+            skipWhitespace()
+            <span class="k">try</span> consume(UInt8(ascii: ":"))
+            result[key] = <span class="k">try</span> parseValue()
+
+            skipWhitespace()
+            <span class="k">switch</span> peek() {
+            <span class="k">case</span> UInt8(ascii: ","): i += 1; <span class="k">continue</span>     <span class="c">// note: trailing comma then</span>
+            <span class="k">case</span> UInt8(ascii: "}"): i += 1; <span class="k">return</span> result <span class="c">// hits the guard above → rejected</span>
+            <span class="k">case let</span> b?:            <span class="k">throw</span> err(.unexpectedByte(b))
+            <span class="k">case nil</span>:               <span class="k">throw</span> err(.unexpectedEnd)
+            }
+        }
+    }
+
+    <span class="k">private mutating func</span> skipWhitespace() {
+        <span class="k">while</span> i &lt; bytes.count {
+            <span class="k">switch</span> bytes[i] {
+            <span class="k">case</span> 0x20, 0x09, 0x0A, 0x0D: i += 1   <span class="c">// space, tab, LF, CR — and NOTHING else.</span>
+            <span class="k">default</span>: <span class="k">return</span>                        <span class="c">// JSON whitespace is exactly these four.</span>
+            }
+        }
+    }
+
+    @inline(__always) <span class="k">private func</span> peek() -&gt; UInt8? { i &lt; bytes.count ? bytes[i] : <span class="k">nil</span> }
+    <span class="k">private func</span> err(_ k: JSONError.Kind) -&gt; JSONError { JSONError(kind: k, offset: i) }
+}</pre>
+
+      <h4>Step 4 — the edge cases to name out loud</h4>
+      <table>
+        <tr><th>Area</th><th>What to handle and say</th></tr>
+        <tr><td><b>Strings</b></td><td>Escapes <code>\" \\ \/ \b \f \n \r \t</code> and <code>\uXXXX</code>. <b>Surrogate pairs</b> — a <code>\uD83D</code> must be followed by a low surrogate or the string is invalid. Unescaped control bytes below 0x20 are illegal. Naming surrogate pairs unprompted is a strong marker.</td></tr>
+        <tr><td><b>Numbers</b></td><td>Leading zeros are illegal (<code>01</code>). A leading <code>+</code> is illegal. <code>.5</code> and <code>5.</code> are illegal. <code>NaN</code> and <code>Infinity</code> are not JSON. Exponents are. Mention that <code>Double</code> loses precision on large integers and that a real parser keeps an integer case.</td></tr>
+        <tr><td><b>Structure</b></td><td>Trailing commas rejected. Trailing data after the top-level value rejected. Empty input rejected. Bare top-level scalars are legal in modern JSON.</td></tr>
+        <tr><td><b>Encoding</b></td><td>Input is UTF-8 bytes; invalid sequences must error rather than silently substitute. A BOM is not JSON whitespace.</td></tr>
+        <tr><td><b>Security</b></td><td>Depth limit, size limit, duplicate keys, and no unbounded pre-allocation from a length field.</td></tr>
+      </table>
+
+      <h4>Extensions they'll ask for</h4>
+      <ul class="tick">
+        <li><b>"Make it faster."</b> You're already on bytes rather than Characters — say so. Then: avoid <code>String</code> allocation for keys until needed, reserve capacity on containers, and consider a slice-based value type that defers materialisation.</li>
+        <li><b>"Stream it."</b> Reshape into an event-emitting pull parser (<code>.beginObject</code>, <code>.key</code>, <code>.value</code>, <code>.endObject</code>) so a 2&nbsp;GB document doesn't need 2&nbsp;GB of memory. Very relevant to an endpoint agent parsing backend responses.</li>
+        <li><b>"Serialise too."</b> Straightforward — but ask about key ordering. Deterministic output matters if anything downstream hashes or signs it.</li>
+        <li><b>"How would you test it?"</b> See §10, and mention the JSONTestSuite corpus and fuzzing the parser.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── 07 ── -->
+<section id="s7">
+  <h2><span class="num">07</span>Problem B · Log parser, then scale it</h2>
+  <p class="sub">Reported almost verbatim: build a log parser, then extend it to a distributed service. Two halves — machine coding, then HLD in the same session.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Problem B · part 1</span><span class="t">"Parse these logs and answer questions about them."</span></div>
+    <div class="prob-b">
+<pre><span class="c">// The shape that scores: pluggable format, streaming, bounded memory.</span>
+
+<span class="k">struct</span> LogRecord: Equatable {
+    <span class="k">let</span> timestamp: UInt64            <span class="c">// epoch nanos, normalised at parse time</span>
+    <span class="k">let</span> level: Level
+    <span class="k">let</span> source: String
+    <span class="k">let</span> message: String
+    <span class="k">let</span> fields: [String: String]
+}
+
+<span class="k">enum</span> Level: Int, Comparable {
+    <span class="k">case</span> debug, info, warn, error, fatal
+    <span class="k">static func</span> &lt; (a: Level, b: Level) -&gt; Bool { a.rawValue &lt; b.rawValue }
+}
+
+<span class="c">// Protocol at the boundary → new formats without touching the pipeline.</span>
+<span class="k">protocol</span> LineParser {
+    <span class="k">func</span> parse(_ line: Substring) -&gt; Result&lt;LogRecord, ParseFailure&gt;
+}
+
+<span class="k">struct</span> ParseFailure: Error { <span class="k">let</span> line: String; <span class="k">let</span> reason: String }
+
+<span class="c">// Streaming source — never load the whole file.</span>
+<span class="k">protocol</span> LineSource { <span class="k">mutating func</span> next() -&gt; Substring? }
+
+<span class="k">final class</span> LogPipeline {
+    <span class="k">private let</span> parser: LineParser
+    <span class="k">private let</span> filters: [(LogRecord) -&gt; Bool]
+    <span class="k">private var</span> aggregators: [Aggregator]
+    <span class="k">private(set) var</span> malformedCount = 0     <span class="c">// count, don't crash, don't silently skip</span>
+
+    <span class="k">func</span> run&lt;S: LineSource&gt;(_ source: <span class="k">inout</span> S) {
+        <span class="k">while let</span> line = source.next() {
+            <span class="k">guard</span> !line.isEmpty <span class="k">else</span> { <span class="k">continue</span> }
+            <span class="k">switch</span> parser.parse(line) {
+            <span class="k">case</span> .failure:
+                malformedCount += 1              <span class="c">// a real log file always has garbage lines</span>
+            <span class="k">case</span> .success(<span class="k">let</span> record):
+                <span class="k">guard</span> filters.allSatisfy({ $0(record) }) <span class="k">else</span> { <span class="k">continue</span> }
+                <span class="k">for</span> i <span class="k">in</span> aggregators.indices { aggregators[i].consume(record) }
+            }
+        }
+    }
+}
+
+<span class="k">protocol</span> Aggregator { <span class="k">mutating func</span> consume(_ r: LogRecord); <span class="k">func</span> result() -&gt; AggregateResult }
+<span class="c">// e.g. CountByLevel, TopKSources, ErrorRatePerMinute (tumbling window)</span></pre>
+
+      <h4>The points that earn the marks</h4>
+      <ul class="tick">
+        <li><b>Streaming, not slurping.</b> Say "logs are unbounded, so memory must be O(1) in file size" before you write anything.</li>
+        <li><b>Malformed lines are data, not exceptions.</b> Count them and report. A parser that throws on line 4,000,000 of a production log is useless.</li>
+        <li><b>Format is injected.</b> Syslog, JSON lines, and Apache combined all differ; the pipeline shouldn't care.</li>
+        <li><b>Timestamps normalised at the boundary.</b> Time zones, missing years in syslog, and clock skew across hosts are all real. Mention out-of-order arrival — logs are not sorted.</li>
+        <li><b>Top-K needs a heap, not a full sort.</b> If they ask for the top N sources, a bounded min-heap is O(n log k). Free complexity points.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Problem B · part 2</span><span class="t">"Now make it a distributed service."</span></div>
+    <div class="prob-b">
+<pre>  agents ──▶ LB ──▶ INGEST ──▶ partitioned log (Kafka) ──▶ STREAM WORKERS
+   │                  │             partition by             │
+   │                  │             tenant+source            ├─▶ hot store (time-series, 7d)
+   │                  │                                      ├─▶ inverted index (search)
+   │                  │                                      └─▶ cold store (object, 1y)
+   │                  └─ auth, schema validation, rate limit per tenant
+   └─ local spool + batch + compress + backoff (survive backend outage)
+
+                                                    QUERY ──▶ hot ∪ cold, merged</pre>
+      <table>
+        <tr><th>They will ask</th><th>Say</th></tr>
+        <tr><td>Partitioning</td><td>By tenant + source so one tenant can't hot-spot a partition, and ordering is preserved within a source. Watch for a single huge tenant needing sub-partitioning.</td></tr>
+        <tr><td>Delivery guarantee</td><td>At-least-once with idempotent writes keyed on a record hash. Exactly-once is expensive and rarely worth it for logs — pick, and justify.</td></tr>
+        <tr><td>Backpressure</td><td>Agent-side spool with a disk cap and a drop policy. The agent must never block the host, and it must never grow unbounded.</td></tr>
+        <tr><td>Late and out-of-order data</td><td>Windowed aggregation with a watermark and a grace period; corrections after that go to a repair path.</td></tr>
+        <tr><td>Retention and cost</td><td>Hot/warm/cold tiers, downsampled aggregates kept longer than raw. This is the answer that shows you've operated a system, not just drawn one.</td></tr>
+        <tr><td>Cardinality</td><td>The thing that actually kills log systems. Bound label cardinality at ingest or the index explodes.</td></tr>
+      </table>
+      <div class="key"><b>Bring it home:</b> "This is structurally the same problem as shipping endpoint telemetry off a million Macs — bounded local spool, batching, partitioned ingest, tiered retention." That reframes a generic exercise as their product, which is exactly the connection they're hoping a senior candidate makes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 08 ── -->
+<section id="s8">
+  <h2><span class="num">08</span>Problem C · Prototypal version control system</h2>
+  <p class="sub">Reported as the LLD round. Pure object design — there is almost no algorithmic content, and it is graded on structure, tests and edge cases.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Problem C</span><span class="t">"Build a basic version control system."</span></div>
+    <div class="prob-b">
+      <h4>Get the object model right and the rest follows</h4>
+<pre><span class="c">// Content-addressed storage: the ID *is* the hash of the content.</span>
+<span class="c">// This gives deduplication and integrity verification for free — say that.</span>
+<span class="k">struct</span> ObjectID: Hashable, CustomStringConvertible {
+    <span class="k">let</span> hex: String
+    <span class="k">var</span> description: String { String(hex.prefix(8)) }
+}
+
+<span class="k">enum</span> GitObject {
+    <span class="k">case</span> blob(Data)
+    <span class="k">case</span> tree([TreeEntry])
+    <span class="k">case</span> commit(Commit)
+}
+
+<span class="k">struct</span> TreeEntry: Comparable {
+    <span class="k">let</span> name: String
+    <span class="k">let</span> id: ObjectID
+    <span class="k">let</span> kind: Kind            <span class="k">enum</span> Kind { <span class="k">case</span> blob, tree }
+    <span class="c">// Sorted by name when serialised → identical content yields an identical</span>
+    <span class="c">// hash. Determinism is a requirement, not a nicety.</span>
+    <span class="k">static func</span> &lt; (a: Self, b: Self) -&gt; Bool { a.name &lt; b.name }
+}
+
+<span class="k">struct</span> Commit {
+    <span class="k">let</span> tree: ObjectID
+    <span class="k">let</span> parents: [ObjectID]   <span class="c">// 0 = initial, 1 = normal, 2+ = merge</span>
+    <span class="k">let</span> author: String
+    <span class="k">let</span> timestamp: Date
+    <span class="k">let</span> message: String
+}</pre>
+
+      <h4>Boundaries as protocols — the part being graded</h4>
+<pre><span class="k">protocol</span> ObjectStore {
+    <span class="k">func</span> put(_ object: GitObject) <span class="k">throws</span> -&gt; ObjectID
+    <span class="k">func</span> get(_ id: ObjectID) <span class="k">throws</span> -&gt; GitObject
+    <span class="k">func</span> contains(_ id: ObjectID) -&gt; Bool
+}
+
+<span class="k">protocol</span> RefStore {
+    <span class="k">func</span> resolve(_ name: String) <span class="k">throws</span> -&gt; ObjectID?
+    <span class="k">func</span> update(_ name: String, to id: ObjectID) <span class="k">throws</span>
+    <span class="k">func</span> listBranches() -&gt; [String]
+    <span class="k">var</span> head: Head { <span class="k">get set</span> }        <span class="k">enum</span> Head { <span class="k">case</span> branch(String), detached(ObjectID) }
+}
+
+<span class="k">protocol</span> FileSystem {                    <span class="c">// ← injectable: tests use an in-memory impl</span>
+    <span class="k">func</span> read(_ path: String) <span class="k">throws</span> -&gt; Data
+    <span class="k">func</span> write(_ data: Data, to path: String) <span class="k">throws</span>
+    <span class="k">func</span> listFiles(under path: String) <span class="k">throws</span> -&gt; [String]
+    <span class="k">func</span> delete(_ path: String) <span class="k">throws</span>
+}
+
+<span class="k">final class</span> Index {                       <span class="c">// the staging area</span>
+    <span class="k">private var</span> staged: [String: ObjectID] = [:]
+    <span class="k">func</span> stage(path: String, id: ObjectID) { staged[path] = id }
+    <span class="k">func</span> unstage(path: String)             { staged[path] = <span class="k">nil</span> }
+    <span class="k">func</span> buildTree(in store: ObjectStore) <span class="k">throws</span> -&gt; ObjectID { <span class="c">/* nested dirs → nested trees */</span> }
+}
+
+<span class="k">final class</span> Repository {
+    <span class="k">private let</span> objects: ObjectStore
+    <span class="k">private let</span> refs: RefStore
+    <span class="k">private let</span> fs: FileSystem
+    <span class="k">private let</span> index: Index
+
+    <span class="k">init</span>(objects: ObjectStore, refs: RefStore, fs: FileSystem, index: Index = Index()) { … }
+
+    <span class="k">func</span> add(_ path: String) <span class="k">throws</span>
+    <span class="k">func</span> commit(message: String, author: String) <span class="k">throws</span> -&gt; ObjectID
+    <span class="k">func</span> log(from: ObjectID?) <span class="k">throws</span> -&gt; [Commit]
+    <span class="k">func</span> branch(_ name: String) <span class="k">throws</span>
+    <span class="k">func</span> checkout(_ target: String) <span class="k">throws</span>
+    <span class="k">func</span> diff(_ a: ObjectID, _ b: ObjectID) <span class="k">throws</span> -&gt; [Change]
+    <span class="k">func</span> merge(_ branch: String) <span class="k">throws</span> -&gt; MergeResult
+}</pre>
+
+      <h4>Say these while designing</h4>
+      <ul class="tick">
+        <li><b>Content addressing buys dedup and integrity.</b> Two identical files stored once; a corrupted object is detectable because its content no longer hashes to its name.</li>
+        <li><b>Determinism.</b> Sorted tree entries and a canonical serialisation, so the same tree always produces the same hash. Without it nothing else works.</li>
+        <li><b>Three protocols, one concrete class.</b> The <code>Repository</code> orchestrates; storage, refs and the filesystem are injected. Tests construct a repository entirely in memory with no temp directories.</li>
+        <li><b>Scope honestly.</b> "I'll implement init, add, commit, log and branch fully. Merge I'll do fast-forward only, and I'll describe three-way merge rather than build it." Naming the cut is a senior behaviour; silently running out of time is not.</li>
+      </ul>
+
+      <h4>Edge cases — call these before they do</h4>
+      <table>
+        <tr><th>Case</th><th>Behaviour</th></tr>
+        <tr><td>Commit with nothing staged</td><td>Reject with a clear error, or allow with a flag. Decide and say which.</td></tr>
+        <tr><td>Initial commit</td><td>Zero parents. The special case that breaks naive log traversal.</td></tr>
+        <tr><td>Detached HEAD</td><td>Model HEAD as an enum of branch-or-commit. Modelling it as a string is the bug.</td></tr>
+        <tr><td>File deleted from the working tree</td><td>Tree diff must produce a deletion, not silently keep the old blob.</td></tr>
+        <tr><td>Nested directories</td><td>Trees contain trees. Recursion, and a depth guard.</td></tr>
+        <tr><td>Branch name collides with an existing ref</td><td>Reject.</td></tr>
+        <tr><td>Checkout with uncommitted changes</td><td>Refuse, or stash. State the policy.</td></tr>
+        <tr><td>Merge base</td><td>Lowest common ancestor of two commits. Say "I'd BFS both parent chains and find the first common node" even if you don't implement it.</td></tr>
+        <tr><td>Empty file vs missing file</td><td>Different objects. Easy to conflate.</td></tr>
+      </table>
+      <div class="win"><b>Line worth having ready:</b> "This is content-addressed storage with a DAG on top — the same shape as the provenance graph in a lineage product, where nodes are immutable and identity comes from content." It connects the exercise to their domain without being forced.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 09 ── -->
+<section id="s9">
+  <h2><span class="num">09</span>Problem D · Logging service</h2>
+  <p class="sub">Reported as a named problem. Can arrive as machine coding (build the client library) or as design (build the service). Prepare the library; the service is Problem B part 2.</p>
+
+  <div class="prob">
+    <div class="prob-h"><span class="tag">Problem D</span><span class="t">"Build a logging service like Datadog."</span></div>
+    <div class="prob-b">
+      <h4>If it's machine coding, they mean the client library</h4>
+<pre><span class="k">protocol</span> LogSink { <span class="k">func</span> write(_ batch: [LogRecord]) }
+
+<span class="k">final class</span> Logger {
+    <span class="k">private let</span> minLevel: Level
+    <span class="k">private let</span> sinks: [LogSink]
+    <span class="k">private let</span> buffer: BoundedQueue&lt;LogRecord&gt;   <span class="c">// see v1 doc §07</span>
+    <span class="k">private let</span> sampler: Sampler
+    <span class="k">private let</span> clock: Clock                      <span class="c">// injected → testable</span>
+
+    <span class="k">func</span> log(_ level: Level, _ message: @autoclosure () -&gt; String,
+             fields: [String: String] = [:]) {
+        <span class="c">// 1. Level check FIRST, and @autoclosure means the message string is</span>
+        <span class="c">//    never built when the log is filtered out. Free win; mention it.</span>
+        <span class="k">guard</span> level &gt;= minLevel <span class="k">else</span> { <span class="k">return</span> }
+        <span class="c">// 2. Sample high-volume low-value levels.</span>
+        <span class="k">guard</span> sampler.shouldEmit(level) <span class="k">else</span> { <span class="k">return</span> }
+        <span class="c">// 3. Never block the caller. Bounded buffer, drop with a counter.</span>
+        buffer.enqueue(LogRecord(timestamp: clock.nowNanos(), level: level,
+                                 source: currentSource(), message: message(),
+                                 fields: fields))
+    }
+    <span class="c">// A background drain batches from the buffer into the sinks.</span>
+}</pre>
+      <ul class="tick">
+        <li><b><code>@autoclosure</code> on the message</b> so string interpolation is never evaluated for a filtered-out log. Small, specific, and exactly the kind of thing that reads as experience.</li>
+        <li><b>Logging must never block or crash the host application.</b> Bounded buffer, drop and count, async drain. Same principle as the sensor.</li>
+        <li><b>Structured fields, not formatted strings</b> — you can't query a sentence.</li>
+        <li><b>Injected clock</b> for deterministic tests.</li>
+        <li><b>Sampling and rate limiting</b> as first-class features, not afterthoughts.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── 10 ── -->
+<section id="s10">
+  <h2><span class="num">10</span>Tests and edge cases</h2>
+  <p class="sub">Explicitly named in the reported grading criteria, which makes this a scored section rather than a nicety. Budget real time for it.</p>
+
+  <div class="card">
+    <h3>The test ladder — write these in order</h3>
+    <table>
+      <tr><th>Tier</th><th>Write</th></tr>
+      <tr><td><b>1 · Happy path</b></td><td>One test that proves the thing works end to end. Do this the moment the happy path compiles.</td></tr>
+      <tr><td><b>2 · Boundaries</b></td><td>Empty input, single element, at-capacity, one-past-capacity. This tier catches most real bugs.</td></tr>
+      <tr><td><b>3 · Malformed input</b></td><td>For a parser this is the main event: truncated, garbage bytes, wrong types, deeply nested. Assert the <em>specific</em> error and offset, not just that it threw.</td></tr>
+      <tr><td><b>4 · Round-trip / invariants</b></td><td><code>parse(serialise(x)) == x</code>. For a queue: <code>enqueued == drained + dropped</code>. Invariant tests find bugs example tests miss.</td></tr>
+      <tr><td><b>5 · Adversarial</b></td><td>Depth bombs, huge inputs, duplicate keys, pathological cases. For a security company, describing how you'd fuzz it is worth as much as writing another test.</td></tr>
+    </table>
+    <div class="win"><b>Say this once during the round:</b> "For a parser handling untrusted input I'd add a fuzzing target in CI alongside the unit tests — most parser bugs that matter are found by a fuzzer, not by a test author." True, cheap, and precisely aimed at this company.</div>
+  </div>
+
+  <div class="card">
+    <h3>Make everything testable by injecting three things</h3>
+<pre><span class="k">protocol</span> Clock: Sendable { <span class="k">func</span> nowNanos() -&gt; UInt64 }
+<span class="k">protocol</span> FileSystem { <span class="c">/* read / write / list / delete */</span> }
+<span class="k">protocol</span> IDGenerator { <span class="k">func</span> next() -&gt; String }
+
+<span class="c">// Real implementations in production, fakes in tests. No temp directories,</span>
+<span class="c">// no sleeps, no wall-clock dependence, no flaky tests.</span>
+<span class="k">final class</span> FakeClock: Clock {
+    <span class="k">private var</span> t: UInt64 = 0
+    <span class="k">func</span> nowNanos() -&gt; UInt64 { t }
+    <span class="k">func</span> advance(seconds: Double) { t &amp;+= UInt64(seconds * 1e9) }
+}</pre>
+    <p>Introducing the <code>Clock</code> protocol in the first ten minutes — before any test exists — is one of the clearest senior signals available in a machine-coding round. It says you write code you intend to test.</p>
+  </div>
+</section>
+
+<!-- ── 11 ── -->
+<section id="s11">
+  <h2><span class="num">11</span>Concurrency — now secondary, still worth having</h2>
+  <p class="sub">Demoted, not deleted. It remains the answer to optimization questions, it's plausible as an extension on an endpoint team, and version 1 of this document has the full treatment with working implementations.</p>
+
+  <div class="card">
+    <h3>Keep these ready</h3>
+    <ul class="tick">
+      <li><b>The parallelise-independent-work answer</b> from §04. Highest-probability use of concurrency in this loop.</li>
+      <li><b>The <code>UnfairLock</code> wrapper</b> and why <code>var lock = os_unfair_lock()</code> as a property is undefined behaviour. One minute of value if a thread-safety extension appears.</li>
+      <li><b>"Now make it thread-safe"</b> as an extension on any component you build: lock the mutable state, keep critical sections O(1), never call an injected closure while holding the lock.</li>
+      <li><b>The GCD-vs-actors opinion.</b> Structured concurrency above the ingest boundary; no actor in a deadline-bound callback path, because an actor hop is a suspension with unbounded queuing latency.</li>
+      <li><b>Bounded queue with drop accounting</b> — reusable in the logging-service problem and in any "the consumer is slower than the producer" follow-up.</li>
+      <li><b>Thread Sanitizer in CI</b> as the answer to "how do you find data races."</li>
+    </ul>
+    <div class="key"><b>If the round does turn out to be systems-flavoured</b> — entirely possible, since Aristide's org may not run the generalist Bengaluru loop — version 1 of this document is the one to revise from. Keep both.</div>
+  </div>
+</section>
+
+<!-- ── 12 ── -->
+<section id="s12">
+  <h2><span class="num">12</span>Swift rapid-fire bank</h2>
+  <p class="sub">Trimmed to what survives a machine-coding round. Skim the morning of.</p>
+  <table>
+    <tr><th>Question</th><th>Answer</th></tr>
+    <tr><td>struct vs class?</td><td>Value semantics and no identity vs identity, shared mutable state, deinit, inheritance. Data is structs; services are final classes.</td></tr>
+    <tr><td>Why <code>indirect enum</code>?</td><td>Recursive enum cases need heap indirection — a <code>JSONValue</code> containing <code>[JSONValue]</code> is the canonical example.</td></tr>
+    <tr><td>How does CoW work?</td><td>Shared buffer until mutation; <code>isKnownUniquelyReferenced</code> triggers the copy.</td></tr>
+    <tr><td>weak vs unowned?</td><td>weak is optional and zeroes, costs a side-table lookup; unowned is non-optional and faster but traps after dealloc.</td></tr>
+    <tr><td>Is <code>lazy var</code> thread-safe?</td><td>No. Global and static <code>let</code> are.</td></tr>
+    <tr><td><code>some</code> vs <code>any</code>?</td><td>Opaque single concrete type resolved at compile time vs boxed existential with dynamic dispatch.</td></tr>
+    <tr><td>throws vs Result?</td><td>throws for synchronous flow; Result when you need to store, pass, or collect outcomes — e.g. per-line parse failures.</td></tr>
+    <tr><td>What is <code>@autoclosure</code> for?</td><td>Defer evaluation of an argument — avoids building a log message that gets filtered out.</td></tr>
+    <tr><td>Why parse bytes, not Characters?</td><td>Swift <code>Character</code> is a grapheme cluster: correct for text, wrong and slow for byte-oriented formats.</td></tr>
+    <tr><td>size vs stride?</td><td>Bytes used vs bytes per array element with padding. Allocate with stride.</td></tr>
+    <tr><td>Lifetime of a <code>withUnsafeBytes</code> pointer?</td><td>Valid only inside the closure. Escaping it is undefined behaviour.</td></tr>
+    <tr><td>DispatchQueue.sync deadlock?</td><td>Calling <code>sync</code> on the queue you're already running on.</td></tr>
+    <tr><td>Semaphore in async code?</td><td>Don't — blocking a cooperative-pool thread can deadlock the runtime.</td></tr>
+    <tr><td>How do you find a data race?</td><td>Thread Sanitizer plus invariant stress tests. Not by reading.</td></tr>
+    <tr><td>defer ordering?</td><td>Reverse declaration order, on every exit path including throws.</td></tr>
+  </table>
+</section>
+
+<!-- ── 13 ── -->
+<section id="s13">
+  <h2><span class="num">13</span>Revised prep plan</h2>
+  <div class="card">
+    <h3>Do these, in order</h3>
+    <ul class="tick">
+      <li><b>1 · Build the JSON parser end to end, in Xcode, with tests.</b> Twice. Highest-probability single problem, and every skill it exercises — data modelling, error design, edge cases, untrusted input, tests — transfers to all the others. If you do one thing, do this.</li>
+      <li><b>2 · Design the version control system on paper.</b> Object model, three protocols, the <code>Repository</code> API, and the edge-case list from §08. You don't need to implement it — you need to be able to draw it in ten minutes and defend the boundaries.</li>
+      <li><b>3 · Build the log parser skeleton</b> and rehearse the scale-out diagram from §07 out loud. It's also half of your system-design round, so this is double-counted effort.</li>
+      <li><b>4 · Rehearse the optimization answer</b> — the parallelisation fix plus the three caveats. Two minutes, spoken. Likely to appear in the engineering screen.</li>
+      <li><b>5 · Make the <code>Clock</code> / <code>FileSystem</code> injection habit automatic.</b> It should be the second thing you type in any machine-coding round.</li>
+      <li><b>6 · Keep version 1 of this document warm</b> in case the endpoint org runs a systems-flavoured round. One re-read the night before is enough.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Don't spend time on</h3>
+    <ul class="tick">
+      <li><b>LeetCode grinding.</b> One medium may appear in a screen; it isn't where this loop is decided.</li>
+      <li><b>SwiftUI, Combine, UIKit.</b> Irrelevant to every reported problem.</li>
+      <li><b>Memorising ESF event names.</b> Save that energy for the design round, where product knowledge genuinely pays.</li>
+    </ul>
+  </div>
+  <div class="key"><b>The one thing to do before any of this:</b> ask Aisha or Aristide whether the coding round is language-agnostic machine coding or Swift systems code, and get the full remaining loop. Ten minutes of asking replaces a week of hedged preparation.</div>
+</section>
+
+<footer>Cyberhaven · round 03 prep · revised against candidate reports · 26 Jul 2026</footer>
+</div>
+</body>
+</html>

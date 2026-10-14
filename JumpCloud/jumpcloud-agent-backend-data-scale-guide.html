@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent → Backend Data Flow &amp; Scale — JumpCloud Complete Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #fffdf8;
+      --surface: #ffffff;
+      --surface2: #f7f4ee;
+      --border: #e8e2d6;
+      --text: #292524;
+      --muted: #57534e;
+      --accent: #0d9488;
+      --accent-bg: #f0fdfa;
+      --green: #047857;
+      --green-bg: #ecfdf5;
+      --amber: #b45309;
+      --amber-bg: #fffbeb;
+      --red: #b91c1c;
+      --red-bg: #fef2f2;
+      --blue: #1d4ed8;
+      --blue-bg: #eff6ff;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 19px; }
+    body { font-family: "Source Sans 3", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+    p { margin-bottom: 1.1rem; }
+    ul, ol { margin: 0 0 1.1rem 1.4rem; }
+    li { margin-bottom: .45rem; }
+
+    header {
+      background: linear-gradient(180deg, #f0fdfa, var(--bg));
+      border-bottom: 2px solid var(--border);
+      padding: 3rem 2rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-family: "Source Serif 4", Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: .75rem; color: #0f172a; }
+    header p { color: var(--muted); font-size: 1.12rem; max-width: 740px; margin: 0 auto; }
+    .nav-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: 1.75rem; }
+    .nav-pills a {
+      text-decoration: none; color: var(--muted); font-size: .9rem; font-weight: 600;
+      padding: .5rem 1rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+    }
+    .nav-pills a:hover { color: var(--accent); border-color: #5eead4; background: var(--accent-bg); }
+
+    main { max-width: 800px; margin: 0 auto; padding: 2.5rem 1.75rem 5rem; }
+    section { margin-bottom: 3.75rem; }
+    h2 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.65rem; color: #0f172a; margin-bottom: 1rem;
+      padding-bottom: .5rem; border-bottom: 3px solid var(--accent);
+    }
+    h3 { font-size: 1.25rem; font-weight: 700; color: #115e59; margin: 2rem 0 .75rem; }
+    h4 { font-size: 1.05rem; font-weight: 700; color: var(--muted); margin: 1.25rem 0 .5rem; }
+
+    .analogy {
+      background: var(--accent-bg); border: 1px solid #99f6e4; border-radius: var(--radius);
+      padding: 1.35rem 1.5rem; margin: 1.5rem 0;
+    }
+    .analogy-label { font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: .4rem; }
+
+    .truth { background: var(--green-bg); border-left: 5px solid var(--green); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+    .myth { background: var(--red-bg); border-left: 5px solid var(--red); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+    .note { background: var(--amber-bg); border-left: 5px solid var(--amber); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+    .info { background: var(--blue-bg); border-left: 5px solid var(--blue); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: .95rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin: 1.5rem 0;
+    }
+    th, td { padding: .85rem 1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; }
+    th { background: var(--surface2); font-weight: 700; font-size: .82rem; text-transform: uppercase; color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+
+    .diagram { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; text-align: center; }
+    .stat-num { font-size: 1.6rem; font-weight: 800; color: var(--accent); display: block; }
+    .stat-label { font-size: .85rem; color: var(--muted); line-height: 1.4; }
+
+    code { font-family: ui-monospace, monospace; font-size: .88em; background: #f5f5f4; padding: .12rem .4rem; border-radius: 4px; color: #115e59; }
+
+    .step { display: flex; gap: 1.1rem; margin-bottom: 1.5rem; align-items: flex-start; }
+    .step-num {
+      flex-shrink: 0; width: 2.2rem; height: 2.2rem; background: var(--accent); color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;
+    }
+    .step-body h4 { margin: 0 0 .35rem; color: #0f172a; font-size: 1.08rem; }
+    .step-body p { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
+
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: .95rem; border-top: 2px solid var(--border); background: var(--surface); }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Agent → Backend Data Flow &amp; Scale</h1>
+  <p>
+    How every managed device sends data to JumpCloud, how the backend ingests millions of devices
+    without melting down, and what is actually sent vs what stays on the device.
+  </p>
+  <div class="nav-pills">
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#what-sent">What is sent</a>
+    <a href="#agent-side">Agent batching</a>
+    <a href="#poll">Poll loop</a>
+    <a href="#uploads">Upload paths</a>
+    <a href="#backend">Backend handling</a>
+    <a href="#scale">Scale at millions</a>
+    <a href="#storage">Storage</a>
+    <a href="#future">Future (UDTL)</a>
+    <a href="#interview">Interview</a>
+  </div>
+</header>
+
+<main>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <h2>1. The Big Picture</h2>
+
+  <div class="myth">
+    <strong>Common misconception:</strong> "Each device sends everything to the backend all the time."
+    That would be impossible at fleet scale. JumpCloud uses a <strong>pull + push hybrid</strong>:
+    small frequent polls for control, batched uploads for telemetry, deduplication on the agent,
+    and async workers on the server for heavy writes.
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-label">Think of it like a warehouse</div>
+    <p>
+      The <strong>poll loop</strong> is a driver checking in every ~50 seconds: "Any new instructions for me?"
+      The server answers with a tiny note (heartbeat or one directive).<br><br>
+      <strong>Telemetry uploads</strong> are scheduled deliveries: audit events every 15 seconds (batched),
+      System Insights tables every 5 minutes to 1 week (only if changed), metrics every 30 seconds.<br><br>
+      The <strong>backend</strong> is not one giant database write per device — it routes hot paths to Redis/Mongo,
+      heavy work to SQS FIFO workers, and analytics to Kafka.
+    </p>
+  </div>
+
+  <p>
+    Only the <strong>main agent</strong> talks to the cloud. Tray apps, user-agent, and credential providers
+    use <strong>local gRPC</strong> on the device; the main agent forwards selected data upstream
+    (e.g. software usage events).
+  </p>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <h2>2. Architecture — Who Talks to Whom</h2>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+  subgraph Device["Managed device"]
+    Agent["jumpcloud-agent<br/>(main process)"]
+    UA["user-agent / tray / CP"]
+    UA -->|local gRPC| Agent
+  end
+
+  subgraph Edge["JumpCloud edge"]
+    HA["haproxy<br/>mTLS termination"]
+  end
+
+  subgraph Ingress["Ingress services"]
+    SI["SI Agent Server<br/>HTTP REST legacy paths"]
+    DAPI["devices-agent-api<br/>gRPC over HTTP/2"]
+  end
+
+  subgraph Hot["Hot path (synchronous)"]
+    Mongo[(MongoDB systems)]
+    Redis[(Redis last-contact)]
+  end
+
+  subgraph Async["Async plane"]
+    SQS["SQS FIFO workers"]
+    Kafka["Kafka topics"]
+    IoT["AWS IoT MQTT"]
+  end
+
+  subgraph Store["Durable stores"]
+    PG[(Postgres partitioned)]
+    S3[(S3 snapshots)]
+    DI["DI / event server"]
+  end
+
+  Agent -->|mTLS HTTP + gRPC| HA
+  HA --> SI
+  HA --> DAPI
+  DAPI -->|Poll Events| Mongo
+  DAPI --> Redis
+  DAPI -->|device_active| Kafka
+  DAPI -->|large payloads| SQS
+  SQS --> Mongo
+  SQS --> PG
+  SQS --> IoT
+  IoT -->|wake poll| Agent
+  DAPI --> DI
+  DAPI --> S3
+    </pre>
+  </div>
+
+  <table>
+    <thead><tr><th>Component</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>haproxy</strong></td><td>TLS termination, routes agent traffic to SI (HTTP) and devices-agent-api (gRPC)</td></tr>
+      <tr><td><strong>devices-agent-api</strong></td><td>Primary agent-facing service: Poll, Events, CommandResults, Insights, Kickstart</td></tr>
+      <tr><td><strong>SI Agent Server</strong></td><td>Legacy HTTP paths still used for some registration and forwarding during migration</td></tr>
+      <tr><td><strong>devices-worker-*</strong></td><td>Specialized K8s workers per queue type (sync, MQTT, logs, command results, CDC)</td></tr>
+      <tr><td><strong>jumpcloud-auth</strong></td><td>User login, Connect Keys for registration — <em>not</em> bulk device telemetry</td></tr>
+    </tbody>
+  </table>
+
+  <p>Canonical agent topology: <code>docs/how_does_the_agent_work.md</code></p>
+</section>
+
+<!-- WHAT IS SENT -->
+<section id="what-sent">
+  <h2>3. What Data Does Each Device Send?</h2>
+
+  <p>Not everything on the device goes to the cloud. Data falls into four buckets:</p>
+
+  <table>
+    <thead><tr><th>Bucket</th><th>Examples</th><th>Frequency</th><th>Size</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Control plane</strong></td>
+        <td>Poll request (checksums, versions), poll response (directives)</td>
+        <td>Every ~50s (+ MQTT wake)</td>
+        <td>Small (KB)</td>
+      </tr>
+      <tr>
+        <td><strong>Events</strong></td>
+        <td>Login/logout, file audit, auth context</td>
+        <td>Batched every 15s</td>
+        <td>Up to ~5 MB / batch</td>
+      </tr>
+      <tr>
+        <td><strong>Telemetry</strong></td>
+        <td>System Insights osquery tables, metrics, software usage</td>
+        <td>5 min – 1 week per table</td>
+        <td>Varies; deduped if unchanged</td>
+      </tr>
+      <tr>
+        <td><strong>On-demand</strong></td>
+        <td>Diagnostics, policy results, FDE keys, MDM reports, command output</td>
+        <td>When triggered</td>
+        <td>Small to large (queued if huge)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Complete outbound endpoint catalog</h3>
+  <p>All paths relative to <code>https://{AgentServerHost}:{AgentServerGoPort}</code> over mTLS:</p>
+
+  <table>
+    <thead><tr><th>Method</th><th>Path / RPC</th><th>Data</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/poll/{id}</code></td><td>Poll for directives / heartbeat</td></tr>
+      <tr><td>GET</td><td><code>/authconf</code>, <code>/policyconf</code>, <code>/softwareappconf</code>, <code>/trustedappconf</code>, <code>/systeminsightsconf</code>, <code>/pushconfig</code></td><td>Config pull (triggered by poll directive or startup)</td></tr>
+      <tr><td>POST</td><td><code>/eventbatch</code></td><td>Audit / security events (JSON batch)</td></tr>
+      <tr><td>POST</td><td><code>/metrics</code>, <code>/metricsbatch</code></td><td>Operational metrics</td></tr>
+      <tr><td>POST</td><td><code>/systeminsights/snapshots/{table}</code></td><td>Osquery table snapshot</td></tr>
+      <tr><td>POST</td><td><code>/systemreport</code>, <code>/diagnosticResponse</code></td><td>Diagnostics</td></tr>
+      <tr><td>POST</td><td><code>/agentStartup</code>, <code>/agentStartupDiagnostics</code></td><td>Startup signals</td></tr>
+      <tr><td>POST</td><td><code>/policyresults</code>, <code>/software_app_statuses</code></td><td>Policy / app status</td></tr>
+      <tr><td>POST</td><td><code>/fdekey</code>, <code>/mdm</code>, <code>/notifications</code></td><td>FDE escrow, MDM report, admin alerts</td></tr>
+      <tr><td>POST</td><td><code>/response</code>, <code>/workflowStart</code></td><td>Workflow completion</td></tr>
+      <tr><td>gRPC</td><td><code>SoftwareTracking/ReportSoftwareEvents</code></td><td>Software usage (50 events/RPC)</td></tr>
+      <tr><td>gRPC</td><td><code>AgentLog/Snapshot</code></td><td>Streamed agent logs (optional)</td></tr>
+      <tr><td>gRPC</td><td><code>Agent/*</code></td><td>User verify, KB patches, session change, directive status</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- AGENT SIDE -->
+<section id="agent-side">
+  <h2>4. Agent-Side: Batching, Limits &amp; Anti-Flood</h2>
+
+  <p>Before data leaves the device, the agent deliberately <strong>shapes traffic</strong> so one compromised or misconfigured device cannot overwhelm the cloud.</p>
+
+  <div class="stat-grid">
+    <div class="stat"><span class="stat-num">5/s</span><span class="stat-label">HTTP upload rate limit (burst 5)</span></div>
+    <div class="stat"><span class="stat-num">5 MB</span><span class="stat-label">Max request body size</span></div>
+    <div class="stat"><span class="stat-num">4500</span><span class="stat-label">Max events per batch</span></div>
+    <div class="stat"><span class="stat-num">15s</span><span class="stat-label">Event batch window</span></div>
+    <div class="stat"><span class="stat-num">30s</span><span class="stat-label">Metrics batch tick</span></div>
+    <div class="stat"><span class="stat-num">10s</span><span class="stat-label">Max poll jitter (anti-herd)</span></div>
+  </div>
+
+  <h3>Event batching (<code>event/handlers/audit_manager.go</code>)</h3>
+  <ul>
+    <li>Aggregates events in <strong>15-second buckets</strong></li>
+    <li>Deduplicates repeated events (same type/username/IP) with <code>repeatCount</code></li>
+    <li>Caps at <strong>4500 events</strong> per POST (~5 MB server limit)</li>
+    <li>Overflow spills to <code>jc_failed_audit_event.log</code> (100 MB, rotated)</li>
+  </ul>
+
+  <h3>Metrics batching (<code>metrics/dbqueue.go</code>)</h3>
+  <ul>
+    <li>SQLite-backed queue on device</li>
+    <li>Sends every <strong>30 seconds</strong>, up to <strong>800</strong> metrics per tick, <strong>100</strong> per HTTP batch</li>
+    <li>On failure: exponential backoff up to <strong>5 minutes</strong></li>
+    <li>Explicit anti-flood: limits max rows per interval to prevent DB flooding attacks</li>
+  </ul>
+
+  <h3>System Insights deduplication (<code>system/insights/system_insights.go</code>)</h3>
+  <ul>
+    <li>Checks tables every <strong>5 minutes</strong>; uploads only when due per table interval (default 1 hour, min 5 min, max 1 week)</li>
+    <li><strong>MD5 hash cache</strong> on disk — skips POST if table data unchanged</li>
+    <li><strong>Random boot delay</strong> up to query interval to spread fleet upgrade load</li>
+  </ul>
+
+  <h3>Software usage (multi-hop)</h3>
+  <ol>
+    <li>User-agent collects usage → local gRPC to main agent (max 5000 pending)</li>
+    <li>Main agent persists to SQLite, forwards in chunks of <strong>50</strong> via gRPC</li>
+  </ol>
+
+  <h3>Log streaming (optional)</h3>
+  <ul>
+    <li>Batch size: <strong>4 KB – 4 MB</strong>; interval: <strong>30s – 1 hour</strong></li>
+    <li>gRPC <code>AgentLog.Snapshot</code> with batched log lines</li>
+  </ul>
+
+  <div class="note">
+    <strong>Poll is NOT rate-limited</strong> on the agent — it uses <code>jcclient</code> with Fibonacci backoff on errors (up to 377s).
+    Uploads use <code>jchttp.Client</code> with the 5 req/s limiter.
+  </div>
+</section>
+
+<!-- POLL -->
+<section id="poll">
+  <h2>5. The Poll Loop — Control Plane Heartbeat</h2>
+
+  <p>Poll is the <strong>most important recurring request</strong>. It is small but hits every device constantly — so both sides optimize it heavily.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Agent
+  participant HA as haproxy
+  participant API as devices-agent-api
+  participant Redis
+  participant Mongo
+
+  Agent->>HA: GET /poll/0 (mTLS + checksums + versions)
+  HA->>API: gRPC Poll
+  API->>Redis: Set last-contact timestamp
+  API->>Mongo: Check directives (upgrade, policy, SI conf, auth...)
+  alt Has directive
+    API-->>Agent: JSON directive (one at a time)
+  else Nothing pending
+    API-->>Agent: heartbeat JSON
+  end
+  Note over Agent: Wait ~50s + jitter, or wake on MQTT
+  Agent->>HA: GET /poll/{nextId}
+    </pre>
+  </div>
+
+  <h3>Poll timing</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Heartbeat interval</td><td><strong>50 seconds</strong></td><td>Server can override via <code>Jc-Agent-Poll-Interval</code> header (per-org Split.io)</td></tr>
+      <tr><td>After directive</td><td><strong>5 seconds</strong></td><td>Faster chain for multi-step work</td></tr>
+      <tr><td>Jitter</td><td>Up to <strong>10 seconds</strong></td><td>Prevents millions of devices polling at same instant</td></tr>
+      <tr><td>Error backoff</td><td>Fibonacci to <strong>377s</strong></td><td>Reduces load during outages</td></tr>
+      <tr><td>Poll timeout</td><td><strong>60 seconds</strong></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>What the agent sends on each poll (headers)</h3>
+  <ul>
+    <li>Config checksums: policies, software apps, trusted apps, System Insights</li>
+    <li>Agent version, Remote Assist version</li>
+    <li>MQTT connection status</li>
+  </ul>
+
+  <h3>What the server returns (first match wins)</h3>
+  <p>Directive chain in <code>jumpcloud-devices/services/systems_poll.go</code>: uninstall, system update, cert renew, upgrade, directive service, FDE, System Insights conf, policies, software apps, trusted apps, auth conf, agent conf, MDM enroll, legacy command queue — or default <strong>heartbeat</strong>.</p>
+
+  <h3>MQTT push wake (ADR-003)</h3>
+  <p>When backend state changes, server publishes <code>{}</code> to <code>systems/{systemId}/state</code> via AWS IoT. Agent subscribes and triggers <strong>immediate poll</strong>. MQTT carries no config — only a "poll now" hint. Batched up to <strong>100 systems</strong> per SQS worker message.</p>
+</section>
+
+<!-- UPLOADS -->
+<section id="uploads">
+  <h2>6. Upload Paths — Data Plane Detail</h2>
+
+  <h3>System Insights (largest recurring payload)</h3>
+  <p>Osquery runs on-device; agent POSTs JSON snapshots per table:</p>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Config from cloud</h4>
+      <p><code>GET /systeminsightsconf</code> — which tables, intervals, enhanced mode</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Query locally</h4>
+      <p>Osquery executes SQL against device state (processes, disk encryption, apps, etc.)</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Upload if changed</h4>
+      <p><code>POST /systeminsights/snapshots/{tableName}</code> with <code>{ "data": [ rows ] }</code> — skipped if MD5 matches cache</p>
+    </div>
+  </div>
+
+  <h3>Audit events → DI</h3>
+  <p><code>POST /eventbatch</code> → SI/devices → <code>jcevents.EventLogger</code> → Device Insights event server. Batch timestamp validated (±5 min skew).</p>
+
+  <h3>Command results (size-aware)</h3>
+  <p>gRPC <code>CommandResults.UpdateCommandResult</code>:</p>
+  <ul>
+    <li>≤ ~256 KiB → enqueue <strong>SQS</strong> <code>devices-worker-command-results</code></li>
+    <li>Larger → inline write to Mongo DocDB (bypasses SQS size limit)</li>
+  </ul>
+
+  <h3>Agent logs</h3>
+  <p>gRPC <code>AgentLog.Snapshot</code> → S3 snapshot → <code>devices-worker-logs</code> processes asynchronously.</p>
+</section>
+
+<!-- BACKEND -->
+<section id="backend">
+  <h2>7. How the Backend Handles Incoming Data</h2>
+
+  <p>JumpCloud separates <strong>hot synchronous paths</strong> (must complete during Poll) from <strong>async workers</strong> (can lag seconds/minutes).</p>
+
+  <table>
+    <thead><tr><th>Data type</th><th>Hot path</th><th>Async path</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Poll / heartbeat</td>
+        <td>Redis last-contact + Mongo directive check</td>
+        <td>Kafka <code>device_active</code> on active transition</td>
+      </tr>
+      <tr>
+        <td>Events</td>
+        <td>Transform + forward to DI</td>
+        <td>DI indexing pipeline</td>
+      </tr>
+      <tr>
+        <td>Command results</td>
+        <td>Size gate</td>
+        <td>SQS worker → Mongo DocDB</td>
+      </tr>
+      <tr>
+        <td>Directory sync</td>
+        <td>Enqueue only</td>
+        <td>SQS FIFO per-org → rebuild systemsToUsers, policy conf</td>
+      </tr>
+      <tr>
+        <td>Policy results</td>
+        <td>—</td>
+        <td>Postgres <strong>partitioned</strong> table + CloudEvents</td>
+      </tr>
+      <tr>
+        <td>MQTT wake</td>
+        <td>—</td>
+        <td>SQS <code>devices-worker-mqtt</code> → AWS IoT publish</td>
+      </tr>
+      <tr>
+        <td>Logs</td>
+        <td>S3 put</td>
+        <td>Log workers + optimize/retrieval workers</td>
+      </tr>
+      <tr>
+        <td>CDC / org events</td>
+        <td>—</td>
+        <td>Kafka → <code>devices-cdc-worker</code>, <code>devices-cloudevent-worker</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Device online/offline lifecycle</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  Poll["Agent Poll"] --> Redis["Redis<br/>agent-last-contact-{id}"]
+  Poll --> Active["Mongo active=true"]
+  Active --> Kafka["Kafka devices.state_changes<br/>device_active"]
+  Cron["Worker cron"] --> Redis
+  Cron --> Inactive["Mongo bulk inactive<br/>(no poll in 5 min)"]
+  Inactive --> Kafka2["Kafka device_inactive"]
+    </pre>
+  </div>
+  <p>ADR-001 defines Kafka schema for analytics/alerting on device up/down — without adding DI events for every poll.</p>
+</section>
+
+<!-- SCALE -->
+<section id="scale">
+  <h2>8. Scaling to Millions of Devices</h2>
+
+  <div class="analogy">
+    <div class="analogy-label">The math problem</div>
+    <p>
+      1 million devices × poll every 50s ≈ <strong>20,000 polls/second</strong> globally.
+      Plus event batches, SI uploads, metrics. The solution is not "bigger Mongo" alone —
+      it is <strong>shaping traffic at the edge</strong> (agent jitter, dedup, batching) and
+      <strong>specialized async workers</strong> on the server.
+    </p>
+  </div>
+
+  <h3>Scale strategies (observed in code &amp; ADRs)</h3>
+
+  <table>
+    <thead><tr><th>Strategy</th><th>How it works</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Poll jitter</strong></td>
+        <td>Random 0–10s added so devices don't sync-poll after fleet reboot</td>
+        <td><code>dispatch/dispatcher.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>Per-org poll interval</strong></td>
+        <td>Split.io can slow or disable poll for specific orgs</td>
+        <td><code>systems_poll.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>MQTT wake batching</strong></td>
+        <td>Up to 100 systems per SQS message; reconnect spread 1–4 min per device ID hash</td>
+        <td><code>mqtt/client.go</code>, agent <code>push/client.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>SI dedup + stagger</strong></td>
+        <td>Don't upload unchanged tables; random boot delay spreads SI load</td>
+        <td><code>system_insights.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>Agent-side rate limit</strong></td>
+        <td>5 HTTP uploads/sec prevents one device flooding cloud</td>
+        <td><code>main.go</code>, <code>http/rate_limiting_client.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>SQS FIFO per-org</strong></td>
+        <td>Directory sync ordered per org; parallel across orgs</td>
+        <td><code>services/sync.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>Dynamic sub-partitioning</strong></td>
+        <td>Hot orgs get more FIFO partitions (FNV hash buckets)</td>
+        <td><code>sync/dynamic/dispatch_partitioner.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>Diversion FIFO</strong></td>
+        <td>Noisy orgs routed to dedicated queue so they don't block others</td>
+        <td><code>diversion_sync_producer.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>Horizontal workers</strong></td>
+        <td>Separate K8s deployments per queue: fifo, mqtt, logs, command-results, cdc</td>
+        <td><code>cmd/connect.go</code> BindConsumer</td>
+      </tr>
+      <tr>
+        <td><strong>Postgres partitioning</strong></td>
+        <td>Policy results time-partitioned via pg_partman; avoids scanning millions of rows</td>
+        <td><code>policies-postgres</code></td>
+      </tr>
+      <tr>
+        <td><strong>Kafka partition keys</strong></td>
+        <td>Device ID as key for state-change events</td>
+        <td><code>internal/messaging/routers/kafka/</code></td>
+      </tr>
+      <tr>
+        <td><strong>Inline vs queued writes</strong></td>
+        <td>Large command results bypass SQS 256 KiB limit</td>
+        <td><code>command_results.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>Directive backoff</strong></td>
+        <td>Redis timestamps throttle cert renew (1h), insights (5m), trusted apps (10m)</td>
+        <td><code>systems_poll.go</code></td>
+      </tr>
+      <tr>
+        <td><strong>SI API isolation</strong></td>
+        <td>Dedicated <code>si-internal-api-devices</code> cluster with CPU caps</td>
+        <td><code>docs/si-internal-api-devices.md</code></td>
+      </tr>
+      <tr>
+        <td><strong>Agent deploy slowroll</strong></td>
+        <td>Gradual fleet upgrades across millions of devices</td>
+        <td><code>agentdeployer/readme.md</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>What happens during a traffic spike?</h3>
+  <ol>
+    <li><strong>Poll</strong> stays lightweight — checksum compare, one directive, Redis touch</li>
+    <li><strong>Uploads</strong> queue on device (SQLite metrics, event overflow file) if cloud is slow</li>
+    <li><strong>Workers</strong> scale horizontally; FIFO preserves per-org ordering</li>
+    <li><strong>Offline devices</strong> miss MQTT wakes; catch up on next periodic poll (eventual consistency)</li>
+  </ol>
+
+  <div class="truth">
+    <strong>Design principle:</strong> The poll loop is the <em>control plane</em> (small, frequent, checksum-driven).
+    Telemetry is the <em>data plane</em> (batched, deduped, async on server). Never mix heavy payloads into poll responses — ADR-002 and ADR-003 explicitly keep MQTT and poll bodies small.
+  </div>
+</section>
+
+<!-- STORAGE -->
+<section id="storage">
+  <h2>9. Where Data Lives on the Backend</h2>
+
+  <table>
+    <thead><tr><th>Store</th><th>What</th><th>Why this store</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>MongoDB</strong> (<code>systems</code>)</td>
+        <td>Device document: hostname, org, active, versions, checksums, insights conf, cert metadata</td>
+        <td>Flexible document model for per-device state; hot read on every poll</td>
+      </tr>
+      <tr>
+        <td><strong>Mongo DocDB</strong></td>
+        <td>Command results (large output)</td>
+        <td>Separate connection; scales write-heavy command output</td>
+      </tr>
+      <tr>
+        <td><strong>Redis</strong></td>
+        <td>Last poll time, directive backoff, MQTT status, caches</td>
+        <td>Sub-ms reads for "is device online?" without hammering Mongo</td>
+      </tr>
+      <tr>
+        <td><strong>Postgres (devices)</strong></td>
+        <td>Directive service queue, software apps, Windows patches, diverted orgs</td>
+        <td>Relational integrity, indexed queries</td>
+      </tr>
+      <tr>
+        <td><strong>Postgres (policies)</strong></td>
+        <td><code>policy_results_partitioned</code> — time-partitioned</td>
+        <td>Millions of policy result rows; partition pruning for queries</td>
+      </tr>
+      <tr>
+        <td><strong>S3</strong></td>
+        <td>Agent log snapshots</td>
+        <td>Cheap bulk storage; workers process async</td>
+      </tr>
+      <tr>
+        <td><strong>Kafka</strong></td>
+        <td><code>devices.state_changes</code>, CDC, CloudEvents</td>
+        <td>Analytics, downstream consumers, decoupled from poll path</td>
+      </tr>
+      <tr>
+        <td><strong>DI / event server</strong></td>
+        <td>Audit events from <code>/eventbatch</code></td>
+        <td>Admin-visible security event log</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- FUTURE -->
+<section id="future">
+  <h2>10. Future: Near-Real-Time Telemetry (BAN-3495 / UDTL)</h2>
+
+  <p>Today's System Insights model has <strong>5 minutes to 2 hours</strong> latency — fine for inventory, too slow for Conditional Access when encryption is turned off <em>right now</em>.</p>
+
+  <div class="info">
+    <strong>BAN-3495 (in planning):</strong> Agent becomes a <strong>stateless delta emitter</strong> — detects posture changes via OS events, pushes normalized attribute deltas (≤50 events/envelope) to the Shared Device Trust Layer (ZR-2375 ingestion API). System Insights and poll paths <em>remain</em>; UDTL is additive.
+  </div>
+
+  <table>
+    <thead><tr><th>Today</th><th>Future (UDTL)</th></tr></thead>
+    <tbody>
+      <tr><td>Full table snapshots on interval</td><td>Delta events on change only</td></tr>
+      <tr><td>POST via SI agent paths</td><td><code>POST /api/v1/devices/{id}/telemetry/events</code> (Zirconium)</td></tr>
+      <tr><td>Minutes–hours freshness</td><td>Near-real-time for CAP / BeyondCorp</td></tr>
+      <tr><td>Agent resolves nothing</td><td>SDTL resolves precedence across Agent + MDM sources</td></tr>
+    </tbody>
+  </table>
+
+  <p>References: <code>planning/ban-3495/PRD.md</code>, <code>udtl_ingestion_api_contract.md</code></p>
+</section>
+
+<!-- INTERVIEW -->
+<section id="interview">
+  <h2>11. Interview Answers</h2>
+
+  <h3>"How does the agent send data to the backend?"</h3>
+  <p>
+    "The main agent is the only cloud-facing process. It uses mTLS to haproxy, which routes to
+    devices-agent-api (gRPC) and SI (legacy HTTP). The poll loop runs every ~50 seconds with jitter —
+    it's the control plane for directives and config checksums. Telemetry goes on separate paths:
+    batched audit events every 15s, System Insights snapshots when tables change, metrics every 30s.
+    On-device components like user-agent talk to the main agent over local gRPC, not directly to cloud."
+  </p>
+
+  <h3>"How do you handle millions of devices sending data?"</h3>
+  <p>
+    "Multi-layer shaping: agents batch and deduplicate before send, add poll jitter to prevent thundering herd,
+    rate-limit uploads to 5/sec per device. Server-side: poll is a thin hot path to Redis + Mongo;
+    heavy work goes to SQS FIFO workers scaled horizontally per workload type. Directory sync uses
+    per-org FIFO ordering with dynamic partitioning for hot tenants. Policy results use Postgres time
+    partitioning. Kafka decouples device active/inactive analytics from the poll path. MQTT provides
+    wake hints without pushing config over the wire."
+  </p>
+
+  <h3>"Does every device send all its data constantly?"</h3>
+  <p>
+    "No. Poll is small and frequent. System Insights only uploads tables that are due and only if
+    the MD5 hash changed. Events are batched and deduplicated. Command results over 256 KiB bypass
+    the queue inline. The design explicitly separates control plane (poll) from data plane (batched uploads)."
+  </p>
+
+  <h3>"What if the backend is down?"</h3>
+  <p>
+    "Poll uses Fibonacci backoff up to 377 seconds. Uploads retry (10× for HTTP client, up to 1440 for jcclient).
+    Events spill to a local overflow file. Metrics queue in SQLite on device with backoff to 5 minutes.
+    Devices keep working locally; they catch up when cloud returns."
+  </p>
+
+  <h3>Key code references</h3>
+  <table>
+    <thead><tr><th>Topic</th><th>Path</th></tr></thead>
+    <tbody>
+      <tr><td>Agent architecture</td><td><code>docs/how_does_the_agent_work.md</code></td></tr>
+      <tr><td>Poll loop</td><td><code>dispatch/dispatcher.go</code></td></tr>
+      <tr><td>Event batching</td><td><code>event/handlers/audit_manager.go</code></td></tr>
+      <tr><td>Metrics queue</td><td><code>metrics/dbqueue.go</code>, <code>main.go</code></td></tr>
+      <tr><td>System Insights</td><td><code>system/insights/system_insights.go</code></td></tr>
+      <tr><td>5 MB limit</td><td><code>lib/http.go</code></td></tr>
+      <tr><td>MQTT wake</td><td><code>push/client.go</code>, ADR-003</td></tr>
+      <tr><td>Backend poll handler</td><td><code>jumpcloud-devices/services/systems_poll.go</code></td></tr>
+      <tr><td>Events → DI</td><td><code>jumpcloud-devices/services/events.go</code></td></tr>
+      <tr><td>Command results queue</td><td><code>jumpcloud-devices/services/command_results.go</code></td></tr>
+      <tr><td>Sync + partitioning</td><td><code>jumpcloud-devices/docs/SYNC.md</code></td></tr>
+      <tr><td>Future telemetry</td><td><code>planning/ban-3495/PRD.md</code></td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:1.5rem;">
+    Related guides:
+    <a href="jumpcloud-agent-endpoint-interview-guide.html">Agent architecture interview guide</a> ·
+    <a href="jumpcloud-mtls-complete-guide.html">mTLS complete guide</a> ·
+    <a href="jumpcloud-secure-enclave-guide.html">Secure Enclave guide</a>
+  </p>
+</section>
+
+</main>
+
+<footer>
+  JumpCloud Agent → Backend Data Flow &amp; Scale Guide — jumpcloud-agent + jumpcloud-devices
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { padding: 20 } });
+</script>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Six macOS Frameworks — From Scratch, for Interviews</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a20; --panel2:#1c2028; --ink:#e2e5ea; --dim:#9aa0ab;
+    --blue:#6cb2eb; --teal:#57cbb0; --amber:#e6b673; --red:#e07a86; --green:#a3cf8a; --purple:#c99ee0;
+    --line:#282d36; --code-bg:#0c0e12;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+
+  .layout{display:flex}
+  nav{width:280px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{padding:0 22px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  nav .brand span{font:600 11px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  nav .brand b{display:block;color:var(--teal);font-size:15px;margin-top:4px;font-weight:600}
+  nav a{display:block;padding:7px 22px;color:var(--dim);font-size:13.5px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none;border-left-color:var(--teal)}
+  nav a .num{color:#565c66;font:600 11px var(--mono);margin-right:8px}
+  nav a.sub{padding-left:44px;font-size:12.5px}
+
+  main{flex:1;min-width:0;max-width:820px;padding:44px 52px 140px;margin:0 auto}
+  header.hero{margin-bottom:12px}
+  .crumb{font:600 12px var(--mono);color:var(--teal);letter-spacing:.12em;text-transform:uppercase}
+  h1{font-size:32px;line-height:1.2;margin:12px 0 10px;font-weight:700;letter-spacing:-.02em}
+  .hero p{color:var(--dim);font-size:16px;max-width:60ch}
+
+  h2{font-size:15px;font-family:var(--mono);color:var(--amber);letter-spacing:.06em;text-transform:uppercase;
+     margin:0 0 6px}
+  .chapter{border-top:1px solid var(--line);margin-top:60px;padding-top:40px}
+  .chapter-title{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+  .chapter-tag{color:var(--dim);font-size:15px;margin-bottom:8px}
+  h3{font-size:19px;margin:38px 0 8px;font-weight:650;letter-spacing:-.01em}
+  h4{font-size:15px;margin:22px 0 4px;color:var(--teal);font-family:var(--mono);font-weight:600}
+
+  p{margin:12px 0}
+  strong{color:#fff;font-weight:650}
+  .lead{font-size:17px;color:var(--ink)}
+  ul,ol{margin:12px 0;padding-left:24px} li{margin:7px 0}
+
+  code{font:13.5px var(--mono);background:var(--code-bg);border:1px solid var(--line);
+       border-radius:5px;padding:1.5px 6px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;
+      overflow-x:auto;font:13px/1.6 var(--mono);color:#cbd0d8;margin:16px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  pre.ascii{color:#8b93a1;line-height:1.4}
+  .c{color:#5c6470}.k{color:#c99ee0}.s{color:#a3cf8a}.f{color:#6cb2eb}.t{color:#57cbb0}.n{color:#e6b673}.str{color:#a3cf8a}
+
+  .plain{background:linear-gradient(180deg,#1a1e26,#171a20);border:1px solid var(--line);
+         border-radius:12px;padding:4px 20px;margin:18px 0}
+  .plain .tag{font:600 11px var(--mono);color:var(--teal);letter-spacing:.08em;text-transform:uppercase;
+              display:block;margin-top:14px}
+
+  .qa{border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden;background:var(--panel)}
+  .qa .q{padding:14px 18px;font-weight:600;font-size:15.5px;background:var(--panel2);cursor:pointer;
+         list-style:none;position:relative;padding-left:46px}
+  .qa .q::before{content:'Q';position:absolute;left:18px;top:14px;color:var(--bg);background:var(--blue);
+                 width:20px;height:20px;border-radius:5px;font:700 12px var(--mono);text-align:center;line-height:20px}
+  .qa .q::after{content:'+';position:absolute;right:18px;color:var(--dim);font-size:18px}
+  .qa[open] .q::after{content:'\2212'}
+  .qa .a{padding:4px 18px 16px;font-size:14.5px;border-top:1px solid var(--line)}
+  .qa .a .model{color:var(--dim);font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-top:12px}
+
+  .note{border-left:3px solid var(--amber);padding:2px 16px;margin:16px 0;font-size:14.5px;color:var(--ink)}
+  .note.gotcha{border-left-color:var(--red)}
+  .note.agent{border-left-color:var(--teal)}
+  .note b:first-child{display:block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;
+       text-transform:uppercase;margin-bottom:2px}
+  .note b{color:var(--amber)} .note.gotcha b{color:var(--red)} .note.agent b{color:var(--teal)}
+
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600;font-size:13px}
+
+  .pill{display:inline-block;font:600 11px var(--mono);padding:2px 9px;border-radius:20px;
+        background:var(--panel2);border:1px solid var(--line);color:var(--dim);margin-right:6px}
+  @media(max-width:900px){nav{display:none}main{padding:28px 20px 90px}}
+  @media print{nav{display:none}body{background:#fff;color:#111}.qa{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand"><span>macOS Frameworks · Deep Dive</span><b>The Six the JD Names</b></div>
+  <a href="#how-to"><span class="num">00</span>How to read this</a>
+  <a href="#cf"><span class="num">01</span>CoreFoundation</a>
+  <a href="#security"><span class="num">02</span>Security</a>
+  <a href="#scf"><span class="num">03</span>SystemConfiguration</a>
+  <a href="#iokit"><span class="num">04</span>IOKit</a>
+  <a href="#ne"><span class="num">05</span>Network Extension</a>
+  <a href="#es"><span class="num">06</span>Endpoint Security</a>
+  <a href="#map"><span class="num">07</span>How they fit together</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">JD requirement · "Strong knowledge of macOS frameworks"</div>
+  <h1>The Six macOS Frameworks, From Scratch</h1>
+  <p>Endpoint Security · Network Extension · Security · SystemConfiguration · CoreFoundation · IOKit. Each one explained in plain English first, then in the depth an interviewer will push you to. Built for the Omnissa macOS role.</p>
+</header>
+
+<section id="how-to" style="margin-top:40px">
+<h2>Read me first</h2>
+<p class="lead">Every framework below follows the same four beats, so you always know where you are:</p>
+<ol>
+<li><strong>The one-sentence version</strong> — what it is, in plain words, before any jargon.</li>
+<li><strong>Why it exists</strong> — the problem Apple built it to solve. If you understand the problem, the API design stops feeling random.</li>
+<li><strong>How it actually works</strong> — the core concepts and the handful of APIs you'll be asked about, with small examples.</li>
+<li><strong>In the interview</strong> — the real questions, with model answers written in your "commit first, then caveat" style: the direct answer in sentence one, the nuance after.</li>
+</ol>
+<p>I've ordered them <strong>foundation-first</strong>, not JD-order. CoreFoundation underpins everything, so it's first. The two headline security frameworks — Network Extension and Endpoint Security — come last, once you have the vocabulary to understand them properly.</p>
+<div class="note agent"><b>A thread that runs through everything</b>You already build software that uses all six at JumpCloud. Wherever it helps, I'll point out where a concept shows up in an endpoint agent — because "I've shipped this" is your strongest answer, and connecting the framework concept to your real work is what turns a textbook answer into a senior one.</div>
+</section>
+
+
+<!-- ================= CH 1: CoreFoundation ================= -->
+<section class="chapter" id="cf">
+<h2>Framework 01</h2>
+<div class="chapter-title">CoreFoundation</div>
+<div class="chapter-tag">The plumbing under everything else. Master this and four other frameworks get easier.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>CoreFoundation (CF) is a C library that gives macOS its basic building-block types — strings, arrays, dictionaries, numbers, dates — plus the memory rules and the event loop that older system APIs are built on.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>Long before Swift, Apple needed a set of fundamental data types that both <strong>C-based system code</strong> and <strong>Objective-C apps</strong> could share without conversion. So they wrote CoreFoundation in C: <code>CFStringRef</code>, <code>CFArrayRef</code>, <code>CFDictionaryRef</code>, <code>CFNumberRef</code>, and so on. Foundation's Objective-C classes (<code>NSString</code>, <code>NSArray</code>…) are, under the hood, often the very same objects — a trick called <strong>toll-free bridging</strong>: you can cast a <code>CFStringRef</code> to an <code>NSString*</code> for free because they're literally the same thing in memory.</p>
+<p>You care about CF because the low-level frameworks in this document — Security, SystemConfiguration, IOKit — are C APIs that hand you and expect CF objects. You can't use them without speaking CF.</p>
+
+<h3>How it actually works</h3>
+
+<h4>1 · Everything is a "CFType" with a reference count</h4>
+<p>Every CF object (<code>CFStringRef</code>, <code>CFDictionaryRef</code>, etc.) is a chunk of heap memory with a <strong>retain count</strong> — a number tracking how many owners it has. When the count drops to zero, the object is freed. This is manual: <em>you</em> adjust the count.</p>
+<ul>
+<li><code>CFRetain(obj)</code> — "I want to keep this." Count +1.</li>
+<li><code>CFRelease(obj)</code> — "I'm done with this." Count −1. At zero, it's destroyed.</li>
+</ul>
+
+<h4>2 · The one rule that governs all of CF: the Create/Get rule</h4>
+<p>This is the single most-tested CF concept. It answers "do I own this object, i.e. must I release it?" — just by looking at the function name:</p>
+<table>
+<tr><th>If the function name contains…</th><th>You own the result</th><th>So you must…</th></tr>
+<tr><td><strong>Create</strong> or <strong>Copy</strong><br><span class="pill">CFStringCreateWithCString</span></td><td>Yes — it came to you with a +1 retain count</td><td>call <code>CFRelease</code> when done</td></tr>
+<tr><td><strong>Get</strong><br><span class="pill">CFDictionaryGetValue</span></td><td>No — you're just borrowing it</td><td>do <em>nothing</em>; releasing it is a bug (over-release → crash)</td></tr>
+</table>
+<div class="note"><b>The mental shortcut</b>"Create/Copy = you clean up. Get = hands off." Interviewers love this because getting it wrong is the source of a huge fraction of real CF crashes — either a leak (forgot to release a Created object) or a crash (released a Got object you didn't own).</div>
+
+<h4>3 · How this looks from Swift: <code>Unmanaged</code></h4>
+<p>Swift's ARC wants to manage retain counts for you, but C functions don't tell the compiler their ownership rules. So at the boundary, Swift gives you <code>Unmanaged&lt;T&gt;</code> and makes you state the rule explicitly:</p>
+<pre><code><span class="c">// A C function returned a CFStringRef. Did it "Create" it?</span>
+<span class="k">let</span> name = SecCopyErrorMessageString(status, <span class="k">nil</span>)   <span class="c">// "Copy" → we own +1</span>
+<span class="c">// takeRetainedValue: "I own it, ARC — consume the +1 for me"</span>
+<span class="k">let</span> str = name?.takeRetainedValue() <span class="k">as</span> String?
+
+<span class="c">// If it were a "Get" (borrowed), we'd use:</span>
+<span class="c">// .takeUnretainedValue()  → "I don't own it, don't touch the count"</span></code></pre>
+<p>Say it in one line: <strong><code>takeRetainedValue</code> consumes a +1 (for Create/Copy); <code>takeUnretainedValue</code> borrows (for Get).</strong> Matching the wrong one leaks or crashes.</p>
+
+<h4>4 · The run loop (why old APIs need it)</h4>
+<p>A <strong>run loop</strong> (<code>CFRunLoop</code>) is a thread's event pump: it sleeps until something happens — a timer fires, a network source has data, a system notification arrives — then wakes and dispatches it. Many older C APIs (SystemConfiguration, IOKit notifications) deliver their callbacks by attaching a "source" to a run loop.</p>
+<p>The modern move — and a good thing to volunteer — is that most of these APIs now let you deliver callbacks to a <strong>dispatch queue</strong> instead (e.g. <code>SCDynamicStoreSetDispatchQueue</code>), which is cleaner in a daemon than running a CFRunLoop by hand.</p>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">Explain CoreFoundation memory management.</summary>
+<div class="a">
+<p><strong>Commit:</strong> CF is manually reference-counted, and the ownership rule is encoded in the function name — the <em>Create Rule</em>. Functions with "Create" or "Copy" in the name return an object you own with a +1 retain count, so you must <code>CFRelease</code> it. Functions with "Get" return a borrowed reference you must not release.</p>
+<p><strong>Then the nuance:</strong> from Swift this surfaces as <code>Unmanaged</code>, where you pick <code>takeRetainedValue</code> for Create/Copy results and <code>takeUnretainedValue</code> for Get results. And CF toll-free bridges with Foundation, so a <code>CFStringRef</code> and an <code>NSString</code> are often the same object — which is why bridging is free.</p>
+<p class="model">Why this lands</p>
+<p>You named the rule, gave the Swift consequence, and connected to bridging — three layers in thirty seconds.</p>
+</div></details>
+
+<details class="qa"><summary class="q">What is toll-free bridging?</summary>
+<div class="a">
+<p><strong>Commit:</strong> It's the fact that certain CoreFoundation types and their Foundation counterparts are implemented as the same underlying object, so you can cast between them with zero cost — <code>CFStringRef</code> ↔ <code>NSString</code>, <code>CFArrayRef</code> ↔ <code>NSArray</code>, <code>CFDictionaryRef</code> ↔ <code>NSDictionary</code>.</p>
+<p><strong>Nuance:</strong> not every CF type bridges, and the historical reason it exists is that CF (C) and Foundation (Obj-C) were designed to share one object model so system code and app code didn't pay conversion costs.</p>
+</div></details>
+
+<details class="qa"><summary class="q">You call a CF function and the app leaks memory. How do you reason about it?</summary>
+<div class="a">
+<p><strong>Commit:</strong> First thing I check is whether I'm holding onto a Created/Copied object without releasing it — the most common CF leak. I read the function names: any "Create" or "Copy" result I'm keeping needs a matching <code>CFRelease</code> on every exit path.</p>
+<p><strong>Nuance:</strong> in Swift I'd verify the <code>Unmanaged</code> choice — a <code>takeUnretainedValue</code> on something I actually own leaks; the reverse over-releases. And I'd confirm with Instruments' Allocations tool, which interposes on the allocator and shows me the retain/release history and backtraces for the leaked object.</p>
+</div></details>
+
+</section>
+<!-- ================= CH 2: Security ================= -->
+<section class="chapter" id="security">
+<h2>Framework 02</h2>
+<div class="chapter-title">Security</div>
+<div class="chapter-tag">Keychain, certificates, cryptographic keys, and verifying who signed a piece of code. The heart of "device trust."</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>The Security framework is macOS's vault and its notary: it stores secrets (passwords, keys, certificates) safely in the <strong>Keychain</strong>, performs cryptography using keys that can live inside secure hardware, and lets you <strong>verify the identity of code</strong> — proving a running process was signed by who you think.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>Two very different needs, one framework. First, apps need somewhere safe to keep secrets — you don't want passwords sitting in a plain file. The <strong>Keychain</strong> is an encrypted, access-controlled database for exactly that. Second, the OS needs to answer "can I trust this?" — is this certificate valid, was this app signed by a legitimate developer, is the process on the other end of my connection really my own helper tool? Those are the <strong>code-signing and trust</strong> APIs.</p>
+<p>For an endpoint / zero-trust product this framework is central: <strong>device trust</strong> means proving a device is who it claims to be, using a cryptographic key that only that device holds. That's built directly on Security.framework.</p>
+
+<h3>How it actually works</h3>
+
+<h4>1 · Keychain items and the SecItem API</h4>
+<p>The Keychain stores <strong>items</strong> — a password, a key, a certificate, an identity. You interact with it through four C functions that all take a dictionary of attributes:</p>
+<table>
+<tr><td><code>SecItemAdd</code></td><td>store a new item</td></tr>
+<tr><td><code>SecItemCopyMatching</code></td><td>look one up (note "Copy" → you own the result)</td></tr>
+<tr><td><code>SecItemUpdate</code></td><td>modify</td></tr>
+<tr><td><code>SecItemDelete</code></td><td>remove</td></tr>
+</table>
+<p>You describe the item with attribute keys: its class (<code>kSecClass</code> — generic password, key, certificate…), a service name, an account, and crucially an <strong>accessibility</strong> setting.</p>
+
+<h4>2 · Accessibility: <em>when</em> is a secret readable?</h4>
+<p>Every keychain item carries a policy for when it can be unlocked — this is a favorite interview probe:</p>
+<ul>
+<li><code>kSecAttrAccessibleWhenUnlocked</code> — readable only while the device is unlocked. The safe default.</li>
+<li><code>kSecAttrAccessibleAfterFirstUnlock</code> — readable after the first unlock following a boot, even if later locked. This is what a <strong>background daemon</strong> needs, because it must function while the screen is locked.</li>
+<li>The <code>…ThisDeviceOnly</code> variants — never migrate to a new device via backup. Right choice for a device-identity key that should be non-portable.</li>
+</ul>
+
+<h4>3 · The Secure Enclave — keys that can't be stolen</h4>
+<p class="lead">This is the concept that makes device trust actually secure, so understand it precisely.</p>
+<p>The <strong>Secure Enclave</strong> is a separate security chip (a coprocessor) isolated from the main CPU. You can ask it to <em>generate a private key inside itself</em>, and here's the key property: <strong>the private key never leaves the enclave — it never exists in normal memory, not even for a moment.</strong> Your app only ever gets a <em>handle</em> to it. When you need to sign something, you hand the data to the enclave and it returns the signature; the key itself is untouchable.</p>
+<pre><code><span class="c">// Generate a key that lives and dies inside the Secure Enclave</span>
+<span class="k">var</span> attrs: [String: Any] = [
+    kSecAttrKeyType <span class="k">as</span> String: kSecAttrKeyTypeECSECPrimeRandom,
+    kSecAttrTokenID <span class="k">as</span> String: kSecAttrTokenIDSecureEnclave,   <span class="c">// ← the magic line</span>
+    kSecAttrKeySizeInBits <span class="k">as</span> String: <span class="n">256</span>,
+]
+<span class="k">let</span> privateKey = SecKeyCreateRandomKey(attrs <span class="k">as</span> CFDictionary, &amp;error)
+<span class="c">// privateKey is a HANDLE. The actual key material is inside the chip.</span></code></pre>
+<div class="note agent"><b>Your device-trust story, in one breath</b>"On the device I generate an elliptic-curve key inside the Secure Enclave — the private key never touches host memory. I put a certificate proving the device's identity in the Keychain with after-first-unlock, this-device-only accessibility so the daemon can use it while locked and it can't be exfiltrated to another machine. To access a protected resource, the device signs a challenge with the enclave key; possession of that hardware-bound key plus posture signals is what the zero-trust backend checks." — This single answer covers Secure Enclave, Keychain, certificates, and zero-trust at once. Rehearse it.</div>
+
+<h4>4 · Certificates, identities, and trust evaluation</h4>
+<p>Three related objects you should distinguish cleanly:</p>
+<ul>
+<li><strong><code>SecCertificate</code></strong> — a public certificate (identity + public key, signed by a CA).</li>
+<li><strong><code>SecKey</code></strong> — a cryptographic key (public or private).</li>
+<li><strong><code>SecIdentity</code></strong> — a certificate <em>paired with</em> its matching private key. This is what you present for client authentication (mTLS).</li>
+</ul>
+<p>To decide whether a certificate is trustworthy, you build a <strong><code>SecTrust</code></strong> object (the cert plus a policy, e.g. "SSL for hostname X") and evaluate it — the system walks the chain up to a trusted root and checks validity and revocation.</p>
+
+<h4>5 · Code-signing verification — the agent-security superpower</h4>
+<p>Separate from keychains: Security.framework lets a privileged process ask <strong>"who signed the code that's running as this other process?"</strong> This is how you harden an IPC connection — you don't trust a peer because of its PID, you trust it because it was signed by your team.</p>
+<pre class="ascii">
+ another process connects to your daemon
+        │  you have its audit token (kernel-verified identity)
+        ▼
+ SecCodeCopyGuestWithAttributes(auditToken) ──▶ a SecCode for the peer
+        │
+        ▼
+ SecCodeCheckValidity(peer, requirement)
+        requirement string, e.g.:
+        anchor apple generic and certificate leaf[subject.OU] = "YOURTEAMID"
+        │
+        ▼   pass = "yes, my team signed this binary"  |  fail = reject the connection
+</pre>
+<p>The <strong>requirement string</strong> is a mini-language describing "what must be true of the signature." <code>SecStaticCode</code> is the on-disk equivalent (verify a file); <code>SecCode</code> is the running-process version.</p>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">How does the Secure Enclave make a key more secure than storing it in the Keychain?</summary>
+<div class="a">
+<p><strong>Commit:</strong> A Secure Enclave key's private material is generated inside the enclave chip and never leaves it — it's never in main memory, so even code that fully compromises the host process can't read the key; it can only ask the enclave to sign, which it can't do without the device. A plain Keychain item, by contrast, is decrypted into process memory when you use it.</p>
+<p><strong>Nuance:</strong> the two combine — you keep the enclave key handle and its certificate in the Keychain for lookup, and you can attach a <code>SecAccessControl</code> requiring biometrics or the device passcode at use-time for an extra gate. The trade-off is that enclave keys are limited to specific algorithms (EC, not arbitrary key types) and can't be exported or backed up — which for device identity is exactly what you want.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Your daemon needs a secret while the Mac is locked. Which keychain accessibility do you choose and why?</summary>
+<div class="a">
+<p><strong>Commit:</strong> <code>kSecAttrAccessibleAfterFirstUnlock</code> — a background daemon must keep working when the user locks the screen, and this makes the item readable from the first post-boot unlock onward, including while locked.</p>
+<p><strong>Nuance:</strong> I'd add <code>ThisDeviceOnly</code> if it's a device-bound secret that must never migrate via backup. I would <em>not</em> use <code>WhenUnlocked</code> for a daemon — it'd fail the moment the screen locks. Choosing accessibility is really about matching the secret's lifetime and threat model to the daemon's runtime.</p>
+</div></details>
+
+<details class="qa"><summary class="q">How would you make sure only your own app can connect to your privileged helper?</summary>
+<div class="a">
+<p><strong>Commit:</strong> I verify the peer's <em>code signature</em>, not its PID. From the connection's audit token I build a <code>SecCode</code> and call <code>SecCodeCheckValidity</code> against a requirement that pins my Team ID and signing identifier — so only a binary my team signed passes.</p>
+<p><strong>Nuance:</strong> PID-based checks are unsafe because PIDs get reused — a malicious process could inherit a PID. The audit token includes a pid-version that defeats that, and the signature check defeats impersonation entirely. This is the correct way to secure an XPC or socket connection, and I'll come back to it in the IPC discussion.</p>
+</div></details>
+
+<div class="note gotcha"><b>Common trap</b>Don't confuse <em>notarization</em> (Apple scanning your app for malware before distribution) with <em>code signing</em> (proving who built it) or <em>trust evaluation</em> (validating a TLS certificate chain). Three different things people blur together. Signing = identity; notarization = Apple's malware scan; trust eval = is this cert chain valid.</div>
+</section>
+
+
+<!-- ================= CH 3: SystemConfiguration ================= -->
+<section class="chapter" id="scf">
+<h2>Framework 03</h2>
+<div class="chapter-title">SystemConfiguration</div>
+<div class="chapter-tag">The live map of the Mac's network state — and how to react to it without polling.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>SystemConfiguration (SC) is a live database of the machine's network and system configuration — current IP addresses, DNS servers, proxies, the active network interface, who's logged in — that you can both read and <strong>subscribe to for change notifications</strong>.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>Network conditions on a laptop change constantly: Wi-Fi drops, the user plugs in Ethernet, a VPN comes up, they walk into an office and hit a proxy. Software that cares about the network — and an endpoint agent very much does — needs to <em>know</em> the moment this happens, not discover it by failing. SystemConfiguration is the OS's authoritative, push-based source for that state.</p>
+
+<h3>How it actually works</h3>
+
+<h4>1 · SCDynamicStore — the reactive state store</h4>
+<p>The core object is <strong><code>SCDynamicStore</code></strong>: a key-value store the system keeps up to date. You watch keys (using pattern matching, e.g. "all IPv4 state keys") and register a callback that fires whenever a matching value changes. No polling — the system pushes to you.</p>
+<pre><code><span class="c">// Watch for any change to network global state, deliver on a queue</span>
+<span class="k">let</span> store = SCDynamicStoreCreate(<span class="k">nil</span>, <span class="str">"com.corp.agent"</span> <span class="k">as</span> CFString, callback, &amp;ctx)
+<span class="k">let</span> keys = [<span class="str">"State:/Network/Global/IPv4"</span>, <span class="str">"State:/Network/Global/DNS"</span>]
+SCDynamicStoreSetNotificationKeys(store, keys <span class="k">as</span> CFArray, <span class="k">nil</span>)
+SCDynamicStoreSetDispatchQueue(store, myQueue)   <span class="c">// modern: no manual run loop</span>
+<span class="c">// callback now fires on myQueue whenever the primary IPv4 route or DNS changes</span></code></pre>
+
+<h4>2 · What lives in there</h4>
+<ul>
+<li><strong>Network state</strong> — primary interface, IP addresses, router, DNS servers (the example above).</li>
+<li><strong>Proxy settings</strong> — <code>SCDynamicStoreCopyProxies</code> gives the system proxy config, including PAC-file URLs. Essential for an enterprise agent whose uploads must respect corporate proxies.</li>
+<li><strong>Console user</strong> — who's currently logged in at the screen, and login/logout transitions.</li>
+</ul>
+
+<h4>3 · Reachability, and its modern replacement</h4>
+<p><strong><code>SCNetworkReachability</code></strong> answers "is this host potentially reachable, and would connecting need Wi-Fi/cellular?" It's classic but dated. The senior move is to mention that Apple now steers you toward <strong><code>NWPathMonitor</code></strong> in Network.framework for path/reachability monitoring — saying this signals you're current, not stuck on 2015 APIs.</p>
+
+<div class="note agent"><b>Where an agent uses this</b>Network transitions are first-class experience and security telemetry. A DEX agent reports connectivity changes; a security agent re-evaluates posture when the network changes (e.g., left the trusted network → tighten access). Doing it event-driven via SCDynamicStore instead of a polling timer is both correct and battery-friendly — and battery is something a fleet agent gets blamed for, so it's worth saying.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">How would your agent detect that the network changed, efficiently?</summary>
+<div class="a">
+<p><strong>Commit:</strong> I'd subscribe to <code>SCDynamicStore</code> for the network state keys — primary IPv4/IPv6 route and DNS — and get a push callback the instant they change, delivered to a dispatch queue. No polling.</p>
+<p><strong>Nuance:</strong> for simple "can I reach this host" checks I'd use <code>NWPathMonitor</code> from Network.framework, which is the modern replacement for <code>SCNetworkReachability</code>. Event-driven matters at fleet scale — a polling timer that wakes the CPU every few seconds across millions of devices is a measurable battery and energy cost, and an agent that drains battery gets uninstalled.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Your telemetry uploads work at home but fail on the corporate network. Where do you look?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Proxies. Enterprise networks route outbound traffic through an HTTP proxy, often configured by a PAC file. I'd read the system proxy configuration via <code>SCDynamicStoreCopyProxies</code> and make sure my HTTP client honors it, including evaluating the PAC file for the destination.</p>
+<p><strong>Nuance:</strong> I'd also consider TLS-inspecting middleboxes — if I pin certificates, an enterprise's inspection proxy will break the connection, so pinning needs an enterprise-aware exception path. This is exactly the kind of real-world networking an endpoint agent has to survive.</p>
+</div></details>
+</section>
+
+<!-- ================= CH 4: IOKit ================= -->
+<section class="chapter" id="iokit">
+<h2>Framework 04</h2>
+<div class="chapter-title">IOKit</div>
+<div class="chapter-tag">The window into hardware — devices, power, sleep/wake, and the device tree.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>IOKit is macOS's driver framework. Drivers live in the kernel side of it, but from a normal app you use IOKit to <strong>read the live tree of hardware devices</strong> — serial numbers, USB devices, battery state — and to get notified when hardware changes or the machine sleeps and wakes.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>The OS needs a structured way to represent every piece of hardware — the built-in ones and everything plugged in — and to let drivers attach to them. That structure is the <strong>IORegistry</strong>: a live tree of device objects, each with properties. Drivers are the kernel half; the userspace half (what you'll be asked about for an agent role) is <em>querying</em> that tree and <em>watching</em> it.</p>
+
+<h3>How it actually works</h3>
+
+<h4>1 · The IORegistry: a tree of devices with properties</h4>
+<p>Picture a live tree. The root is the machine; branches are buses (PCI, USB); leaves are individual devices. Each node has a class (what kind of thing it is) and a dictionary of properties (serial number, vendor ID, capacity…). You explore it by <strong>matching</strong>.</p>
+
+<h4>2 · Matching — how you find a device</h4>
+<p>You build a matching dictionary ("find me all IOUSBHostDevice objects"), hand it to <code>IOServiceGetMatchingServices</code>, and iterate the results, reading properties off each:</p>
+<pre><code><span class="c">// Enumerate USB devices and read a property from each</span>
+<span class="k">let</span> matching = IOServiceMatching(<span class="str">"IOUSBHostDevice"</span>)
+<span class="k">var</span> iter: io_iterator_t = <span class="n">0</span>
+IOServiceGetMatchingServices(kIOMainPortDefault, matching, &amp;iter)
+
+<span class="k">while</span> <span class="k">case</span> <span class="k">let</span> dev = IOIteratorNext(iter), dev != <span class="n">0</span> {
+    <span class="k">var</span> props: Unmanaged&lt;CFMutableDictionary&gt;? = <span class="k">nil</span>
+    IORegistryEntryCreateCFProperties(dev, &amp;props, kCFAllocatorDefault, <span class="n">0</span>)
+    <span class="c">// props now holds vendor, product, serial, etc. (note "Create" → release it)</span>
+    IOObjectRelease(dev)
+}</code></pre>
+<p>Notice CoreFoundation everywhere — <code>CFMutableDictionary</code>, the Create rule, <code>Unmanaged</code>. This is why CF came first.</p>
+
+<h4>3 · What an agent actually reads from IOKit</h4>
+<table>
+<tr><td><strong>Hardware inventory</strong></td><td>model, serial number (via <code>IOPlatformExpertDevice</code>), UUID — device identity for asset tracking</td></tr>
+<tr><td><strong>Power &amp; battery</strong></td><td>charge, health, on-AC-or-battery (<code>IOPMPowerSource</code>) — experience telemetry</td></tr>
+<tr><td><strong>USB monitoring</strong></td><td>watch for device insert/remove — a security signal (data exfiltration via USB)</td></tr>
+<tr><td><strong>Sleep / wake</strong></td><td><code>IORegisterForSystemPower</code> — get notified before sleep and after wake</td></tr>
+</table>
+
+<h4>4 · Notifications — watching for change</h4>
+<p>Beyond one-time queries, you can register for events: device added/removed, or system power transitions. These historically deliver via a run loop source (<code>IONotificationPort</code>) — which ties back to the CoreFoundation run-loop concept.</p>
+
+<div class="note"><b>Say this and sound current</b>Kernel extensions (kexts) are deprecated. Real drivers now use <strong>DriverKit</strong> (running in userspace, safer). And for the <em>monitoring</em> an agent does, you don't need a kext at all — you use IOKit's userspace query/notification APIs plus Endpoint Security. Volunteering "I'd never ship a kext for this today" signals you know the modern platform.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">How would your agent get the device's serial number and detect USB drives being plugged in?</summary>
+<div class="a">
+<p><strong>Commit:</strong> For the serial, I query the IORegistry — match <code>IOPlatformExpertDevice</code> and read the platform serial property. For USB, I register an IOKit notification for device-published events on USB device matching, so I get a callback each time one is attached or removed.</p>
+<p><strong>Nuance:</strong> USB insert/remove is a genuine security signal — removable media is a classic exfiltration and malware vector — so an endpoint agent surfaces it as an event. All of this is userspace IOKit; no kernel extension needed, which matters because kexts are deprecated in favor of DriverKit and userspace monitoring.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why does your daemon care about sleep/wake notifications?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Because a laptop sleeps constantly, and the agent needs to behave correctly around it — flush pending telemetry before sleep, and re-establish connections and re-check posture on wake. I register with <code>IORegisterForSystemPower</code> to get those transitions.</p>
+<p><strong>Nuance:</strong> sleep/wake is itself experience telemetry (how often, how long), and getting it wrong causes bugs like stale network connections after wake or wakeups that drain battery. Handling power events cleanly is part of being a well-behaved fleet agent.</p>
+</div></details>
+</section>
+
+
+<!-- ================= CH 5: Network Extension ================= -->
+<section class="chapter" id="ne">
+<h2>Framework 05 · Headline framework</h2>
+<div class="chapter-title">Network Extension</div>
+<div class="chapter-tag">Legitimately see and control network traffic — VPNs, content filters, DNS proxies — from userspace.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>Network Extension (NE) is Apple's official, sandboxed way to intercept and control network traffic: build a VPN, filter or block connections, proxy DNS, or route specific apps' traffic — all from a userspace <strong>system extension</strong>, no kernel code.</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>Before NE, doing this meant kernel network hooks (kexts) — powerful but dangerous: a bug took down the whole machine, and Apple couldn't guarantee privacy. NE replaces all of that with a set of <strong>provider</strong> classes that run in userspace with specific entitlements. You subclass the right provider for your use case; the system delivers traffic to you and enforces your verdicts.</p>
+
+<h3>How it actually works</h3>
+
+<h4>1 · Pick the right provider — this is the core knowledge</h4>
+<p>NE isn't one thing; it's a family. Interviewers test whether you can choose the correct provider for a goal:</p>
+<table>
+<tr><th>Provider</th><th>What it sees / does</th><th>Classic use</th></tr>
+<tr><td><strong>NEFilterDataProvider</strong><br>(content filter)</td><td>Every network flow, inline; you allow / drop / ask-for-more per flow</td><td>Firewall, per-app visibility, DLP</td></tr>
+<tr><td><strong>NEDNSProxyProvider</strong></td><td>All DNS queries on the system</td><td>DNS security &amp; telemetry</td></tr>
+<tr><td><strong>NEPacketTunnelProvider</strong></td><td>Raw IP packets via a virtual interface</td><td>Full VPN (your own protocol)</td></tr>
+<tr><td><strong>NEAppProxyProvider</strong></td><td>Per-app TCP/UDP flows (not raw packets)</td><td>Per-app VPN, ZTNA</td></tr>
+<tr><td><strong>NETransparentProxyProvider</strong></td><td>Selected flows, intercepted transparently — app doesn't know</td><td>Modern ZTNA / selective interception</td></tr>
+</table>
+<p>The one-line way to remember the split: <strong>packet tunnel = whole-device VPN at the IP layer; app proxy / transparent proxy = per-app at the flow layer; content filter = observe/allow/deny; DNS proxy = just DNS.</strong></p>
+
+<h4>2 · Flows, and per-app attribution</h4>
+<p>A content filter delivers <strong>flows</strong> — <code>NEFilterFlow</code> objects representing one connection. The powerful part: each flow carries the identity of the app that created it (its signing identifier and audit token), so you can make decisions like "block this app from reaching that host." That per-process attribution is what turns raw traffic into meaningful security policy.</p>
+
+<h4>3 · The privacy design you should name</h4>
+<p>The content-filter <em>data</em> provider — the one that sees actual traffic — runs in a sandbox <strong>with no ability to send data off the device</strong>. Apple did this deliberately: an extension that can read all your traffic must not also be able to phone it home. Configuration and any "call home" happens in a separate control provider / the containing app. Knowing this privacy split is a senior signal.</p>
+
+<div class="note agent"><b>Your Zscaler/ZPA prep transfers directly</b>Per-app VPN and ZTNA (zero-trust network access) is exactly <code>NEAppProxyProvider</code> / <code>NETransparentProxyProvider</code> territory. If you did the ZPA data-path work, you can speak to how selected flows get intercepted, tunneled to a broker, and policy-checked — that's the same mental model, just Apple's framing.</div>
+
+<h4>4 · How it's deployed to a fleet</h4>
+<p>An NE provider ships as a <strong>system extension</strong> bundled in an app. On one Mac the user approves it; across a fleet, the MDM pushes a profile that pre-approves and activates it silently — zero-touch. That MDM angle is the enterprise differentiator and worth mentioning.</p>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">You need to block a specific app from reaching certain domains. Which NE provider, and how?</summary>
+<div class="a">
+<p><strong>Commit:</strong> An <code>NEFilterDataProvider</code> — a content filter. It sees every flow inline with the originating app's identity, so I match the app's signing identifier and the destination and return a drop verdict for the ones I want blocked.</p>
+<p><strong>Nuance:</strong> if I only needed to control it at the DNS level I could use an <code>NEDNSProxyProvider</code> instead, which is lighter — but that's bypassable via hardcoded IPs, so a true block belongs at the flow layer. And the filter data provider is sandboxed with no network egress by design, so any "report this block to the server" happens in the control provider, not the data provider.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Full VPN vs per-app VPN — which provider for each, and why does it matter?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Full device VPN uses <code>NEPacketTunnelProvider</code> — you get raw IP packets through a virtual interface and tunnel everything. Per-app is <code>NEAppProxyProvider</code> (or <code>NETransparentProxyProvider</code>) — you operate on individual apps' TCP/UDP flows, so only chosen apps are routed.</p>
+<p><strong>Nuance:</strong> the layer is the real difference — packet tunnel works at L3 (IP packets, protocol-agnostic), app proxy works at the flow/socket layer with app attribution. For a zero-trust product you usually want per-app or transparent proxying so you route corporate apps to the broker without tunneling the user's personal traffic — better privacy and performance.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why is Network Extension better than the old kernel approach?</summary>
+<div class="a">
+<p><strong>Commit:</strong> It runs in userspace, so a bug crashes and restarts the extension instead of panicking the whole machine, and it's constrained by entitlements and sandboxing so it can't abuse the traffic it sees.</p>
+<p><strong>Nuance:</strong> that safety is why Apple deprecated network kexts entirely. The content-filter data provider even has no network egress, so an extension that reads all traffic structurally cannot exfiltrate it — a privacy guarantee the kernel approach couldn't make.</p>
+</div></details>
+</section>
+
+<!-- ================= CH 6: Endpoint Security ================= -->
+<section class="chapter" id="es">
+<h2>Framework 06 · Headline framework</h2>
+<div class="chapter-title">Endpoint Security</div>
+<div class="chapter-tag">Watch — and optionally block — security-relevant events on the system: process launches, file operations, and more.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>Endpoint Security (ES) lets a privileged userspace program subscribe to a stream of security events — a process is about to exec, a file is being opened, a process forked — and either just <strong>observe</strong> them or <strong>authorize</strong> them (allow/deny before they happen).</p>
+</div>
+
+<h3>Why it exists</h3>
+<p>Security products (EDR, antivirus, DLP) need to see everything happening on a machine, and sometimes stop it. This used to require kernel extensions hooking syscalls — the same panic-the-machine risk as network kexts. ES is the userspace replacement: Apple emits the events to you from the kernel, over an entitled client, safely.</p>
+
+<h3>How it actually works</h3>
+
+<h4>1 · The client and the two event modes</h4>
+<p>You create an <strong><code>es_client_t</code></strong> (requires a restricted Apple-granted entitlement), subscribe to the event types you care about, and receive them in a handler. Every event is one of two modes — <strong>this distinction is the most important thing to know about ES:</strong></p>
+<table>
+<tr><th>Mode</th><th>What happens</th><th>Your job</th></tr>
+<tr><td><strong>NOTIFY</strong></td><td>The event already happened; you're told after the fact</td><td>Observe, log, report. Nobody's waiting.</td></tr>
+<tr><td><strong>AUTH</strong></td><td>The kernel has <em>paused</em> the operation and is waiting for your verdict</td><td>Decide <strong>allow or deny</strong> — and fast (see deadlines)</td></tr>
+</table>
+<pre><code><span class="c">// Subscribe to: block-capable exec, plus notify-only fork/exit</span>
+es_subscribe(client, [ES_EVENT_TYPE_AUTH_EXEC,
+                      ES_EVENT_TYPE_NOTIFY_FORK,
+                      ES_EVENT_TYPE_NOTIFY_EXIT], <span class="n">3</span>)
+
+<span class="c">// In the handler, for an AUTH event you MUST respond:</span>
+es_respond_auth_result(client, msg, ES_AUTH_RESULT_ALLOW, <span class="k">false</span>)</code></pre>
+
+<h4>2 · The deadline — the concept that shapes all ES design</h4>
+<p class="lead">Every AUTH event carries a <strong>deadline</strong>. If you don't respond in time, the kernel decides for you — and if you're chronically late, it <strong>kills your client</strong>.</p>
+<p>Think about what this forces: your AUTH handler must be <em>fast</em>. You cannot make a network call, hit a slow database, or block on a lock inside it. Everything needed to decide must be in memory. This single constraint drives the whole architecture of an ES agent:</p>
+<ul>
+<li><strong>Cache verdicts.</strong> Keyed by the binary's CDHash (its cryptographic identity), so the second launch of an already-approved app is an instant memory lookup, not a re-evaluation.</li>
+<li><strong>Never block in the handler.</strong> If a decision genuinely needs slow work, you retain the message (<code>es_retain_message</code>), decide on another queue, and respond before the deadline — or design so the common case never needs that.</li>
+</ul>
+
+<h4>3 · What's in an event</h4>
+<p>Each message carries rich, kernel-verified process info in an <strong><code>es_process_t</code></strong>: the audit token, the path, the signing ID and Team ID, and the <strong>CDHash</strong> (the code-directory hash — the binary's true fingerprint). Because it's from the kernel, it's trustworthy — you're not asking the process to identify itself.</p>
+
+<h4>4 · Muting — the performance lever</h4>
+<p>A busy Mac generates a firehose of events. If you process all of them you'll burn CPU (and you'll see your <em>own</em> agent's activity too). <strong>Muting</strong> tells the kernel to stop sending you events from specific processes or paths (<code>es_mute_process</code>, <code>es_mute_path</code>) — including muting your own agent so you don't watch yourself.</p>
+<div class="note"><b>Why muting beats filtering</b>Muting happens <em>in the kernel</em> — muted events are never generated for you at all. Filtering in your handler means the event was already produced, copied, and delivered before you throw it away. At tens of thousands of events per second the difference between "never sent" and "sent then discarded" is the difference between 3% and 30% CPU. This is a favorite senior probe.</div>
+
+<div class="note agent"><b>You've built both sides of this</b>NOTIFY for experience/telemetry (what's running, what changed), AUTH for enforcement (block untrusted binaries). If you've shipped an ES client at JumpCloud, the strongest possible answer to any ES question is to describe your real design: which events, how you cache verdicts against the deadline, how you mute your own agent, and how events flow into a bounded queue for enrichment. Lead with that.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">Walk me through what happens when a process tries to launch and your ES client is watching exec.</summary>
+<div class="a">
+<p><strong>Commit:</strong> If I subscribed to <code>ES_EVENT_TYPE_AUTH_EXEC</code>, the kernel pauses the exec and sends me a message with a deadline. My handler inspects the <code>es_process_t</code> — path, Team ID, CDHash — decides allow or deny, and calls <code>es_respond_auth_result</code> before the deadline. If I only need to observe, I use the NOTIFY variant and the exec isn't blocked at all.</p>
+<p><strong>Nuance:</strong> the deadline is the design driver — the verdict must come from an in-memory cache keyed by CDHash, never a network call, or I'll miss the deadline and eventually get my client killed. First launch of an unknown binary might do heavier work off the handler thread by retaining the message; repeat launches are cache hits.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Your ES agent is using 30% CPU on a busy build machine. First move?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Muting. A build machine spawns thousands of short-lived processes and does massive file I/O, so I'm drowning in events. I mute the known-noisy, trusted sources — the compiler toolchain, my own agent's processes — at the kernel level with <code>es_mute_path</code> / <code>es_mute_process</code>, so those events are never generated for me.</p>
+<p><strong>Nuance:</strong> muting in the kernel is far cheaper than filtering in my handler, because muted events aren't produced, copied, or delivered at all. I'd also make sure I'm not doing per-event work that belongs batched, and that my verdict cache is actually hitting. Muting first, though — it's the biggest lever.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why is Endpoint Security in userspace an improvement over the old kernel extensions it replaced?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Stability and security. An ES client runs in userspace (typically inside a system extension), so a bug crashes just the extension — which the system restarts — instead of kernel-panicking the entire Mac the way a faulty kext would.</p>
+<p><strong>Nuance:</strong> it's also gated by a restricted entitlement Apple must grant, and it gives structured, kernel-verified event data rather than fragile syscall hooking. That's why Apple deprecated the kext-based approach — same story as Network Extension replacing network kexts.</p>
+</div></details>
+
+<details class="qa"><summary class="q">NOTIFY vs AUTH — when would you deliberately choose NOTIFY even for a security feature?</summary>
+<div class="a">
+<p><strong>Commit:</strong> When I only need to record or react after the fact and don't need to block — NOTIFY has no deadline pressure, so it's cheaper and can't accidentally freeze the system if my client is slow.</p>
+<p><strong>Nuance:</strong> AUTH is only justified when I genuinely must prevent the operation, because every AUTH subscription adds latency to that operation system-wide and risks the deadline. A well-designed agent uses AUTH sparingly for true enforcement and NOTIFY broadly for visibility — over-using AUTH is how agents make Macs feel sluggish.</p>
+</div></details>
+</section>
+
+
+<!-- ================= CH 7: The map ================= -->
+<section class="chapter" id="map">
+<h2>Putting it together</h2>
+<div class="chapter-title">How the six fit in one agent</div>
+<div class="chapter-tag">If you can draw this, you can answer almost any "how would you build X" question.</div>
+
+<p>These aren't six unrelated topics — they're layers of one system. Here's how they stack inside an endpoint agent, which is also a clean thing to sketch on a whiteboard:</p>
+
+<pre class="ascii">
+ ┌──────────────────────────────────────────────────────────────┐
+ │  THE AGENT  (a LaunchDaemon + one or more System Extensions)  │
+ ├──────────────────────────────────────────────────────────────┤
+ │                                                              │
+ │  SENSING LAYER — what's happening on this device?           │
+ │   • Endpoint Security ....... processes, file events         │
+ │   • Network Extension ....... network flows, DNS             │
+ │   • IOKit ................... hardware, USB, power, sleep     │
+ │   • SystemConfiguration ..... network/proxy/DNS changes      │
+ │                                                              │
+ │  TRUST LAYER — who is this device, who can I trust?         │
+ │   • Security ................ Secure Enclave device key,     │
+ │                               Keychain, code-sign checks     │
+ │                                                              │
+ │  FOUNDATION — the types & rules all of the above speak      │
+ │   • CoreFoundation .......... CFTypes, Create/Get rule,      │
+ │                               run loops                      │
+ └──────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>The connections interviewers love</h3>
+<ul>
+<li><strong>CoreFoundation is the language</strong> the C frameworks (Security, SystemConfiguration, IOKit) speak — CFTypes in, CFTypes out, Create/Get ownership throughout. Getting CF right is a prerequisite, not a side topic.</li>
+<li><strong>Security is the trust anchor</strong> for everything else: the code-signing checks that validate an ES event's process, the device key behind zero-trust access, the identity you present for mTLS.</li>
+<li><strong>ES and NE are the same idea in two domains</strong> — userspace system extensions that replaced dangerous kernel hooks, both gated by entitlements, both delivering kernel-verified events you observe or block.</li>
+<li><strong>The audit token ties it together:</strong> ES gives you one per process, NE flows carry one, and you feed it to Security's <code>SecCode</code> APIs to verify who signed the code. One identity primitive, three frameworks.</li>
+</ul>
+
+<div class="note agent"><b>Your closing move in any framework question</b>Zoom out to this map. "Endpoint Security tells me what's executing, Network Extension what's connecting, IOKit what hardware's present, SystemConfiguration how the network's changing — all keyed to kernel-verified process identity that I validate through Security.framework, all built on CoreFoundation types. At JumpCloud I've built agents that combine these." That shows you see the platform as a system, which is exactly the level this role is hiring for.</div>
+
+<h3>A 3-day drill for these six</h3>
+<table>
+<tr><th>Day</th><th>Do this</th><th>You're ready when…</th></tr>
+<tr><td>1</td><td>CoreFoundation + Security. Say the Create/Get rule and the Secure-Enclave device-trust story out loud until fluent.</td><td>You can explain <code>Unmanaged</code> and the device-key flow without notes.</td></tr>
+<tr><td>2</td><td>SystemConfiguration + IOKit. Sketch the SCDynamicStore subscription and an IORegistry query from memory.</td><td>You can answer "detect network change" and "read serial + watch USB" cleanly.</td></tr>
+<tr><td>3</td><td>Network Extension + Endpoint Security. Memorize the NE provider table and the AUTH/NOTIFY + deadline + muting trio.</td><td>You can pick the right NE provider for any goal and explain why muting beats filtering.</td></tr>
+</table>
+
+<div class="note"><b>The through-line for all of them</b>Every one of these frameworks replaced a riskier old approach (kexts, polling, plaintext secrets) with a safer, entitled, event-driven one. If you forget a detail under pressure, reason from that principle — "Apple would have made this userspace, entitled, and push-based" — and you'll usually reconstruct the right answer.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Okta Interview Prep — JumpCloud Grounded Study Plan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Interview Prep · Device Identity</span>
+    <h1>Okta Device Identity — JumpCloud-Grounded Study Plan</h1>
+    <p>10 modules mapping JumpCloud implementations to Okta Device Access, FastPass, and Zero Trust posture. Study each page, then whiteboard the Mermaid diagram from memory.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Architecture Reference</h2>
+      <div class="card" style="border-left:4px solid var(--blue);background:var(--blue-bg);">
+        <p><strong><a href="device-registration-authentication-architecture.html">Device Registration &amp; Authentication Architecture</a></strong> — end-to-end view of how devices enroll, authenticate to JumpCloud servers, and how data is secured in transit and at rest (mTLS, keychain, DURT, MDM).</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>How to Use This Pack</h2>
+      <ol class="study">
+        <li>Read the JumpCloud source files listed in each module (30–45 min).</li>
+        <li>Study the Mermaid diagram until you can redraw it on a whiteboard.</li>
+        <li>Practice the Interview Q&amp;A out loud — use Okta terminology in answers.</li>
+        <li>Note the <strong>Gaps &amp; Honest Limits</strong> section — credibility beats overselling.</li>
+      </ol>
+      <p style="font-size:.9rem;color:var(--muted);margin-top:.75rem;"><strong>Diagrams:</strong> Require internet access to load Mermaid from CDN. Hard-refresh the page (Cmd+Shift+R) after updates. If a diagram still fails, open the browser developer console for the parse error.</p>
+    </section>
+
+    <section>
+      <h2>JD → JumpCloud → Okta Quick Map</h2>
+      <table>
+        <thead>
+          <tr><th>Okta JD Theme</th><th>JumpCloud</th><th>Okta Parallel</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>macOS client architecture</td><td>Root daemon + user-agent + Swift extensions</td><td>Okta Verify + Device Access daemon</td></tr>
+          <tr><td>Secure Enclave / keychain</td><td>DUK, device-trust keychain ACLs</td><td>Device Access certs, Device-Bound SSO</td></tr>
+          <tr><td>Endpoint security</td><td>MDM ES profile + Swift ES client</td><td>ODA posture / managed device signals</td></tr>
+          <tr><td>Device binding</td><td>Cert serial → JWT; DURT/DUST</td><td>Device registration, Okta-joined state</td></tr>
+          <tr><td>OAuth/OIDC + device context</td><td>DeviceTrust RPC; local gRPC OIDC</td><td>FastPass, Platform SSO 2.0, dbSSO</td></tr>
+          <tr><td>FIDO / passkeys</td><td>WebAuthn RP in jumpcloud-auth</td><td>FastPass (phishing-resistant factor)</td></tr>
+          <tr><td>MDM protocols</td><td>jumpcloud-apple-mdm</td><td>MDM-deployed ODA profiles</td></tr>
+          <tr><td>Zero Trust posture</td><td>signal collectors → CAP; BAN-3495 UDTL</td><td>OIE auth policies (device state, managed)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Modules</h2>
+      <div class="module-grid">
+        <div class="module-card">
+          <span class="num">Module 01</span>
+          <h3>macOS Multi-Process Agent</h3>
+          <p>Root daemon, user-agent, Swift extensions, local gRPC IPC.</p>
+          <a class="stretch" href="module-01-macos-agent-arch.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 02</span>
+          <h3>Keychain &amp; Secure Enclave</h3>
+          <p>Device-trust keychain, DUK, cert lifecycle, trusted-app ACLs.</p>
+          <a class="stretch" href="module-02-keychain-secure-enclave.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 03</span>
+          <h3>Device Binding &amp; Assertions</h3>
+          <p>Cert serial path vs DURT path converging on DeviceAssertion JWT.</p>
+          <a class="stretch" href="module-03-device-binding.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 04</span>
+          <h3>JumpCloud Go (DURT)</h3>
+          <p>Device-bound app access, NMH, live signals at access time.</p>
+          <a class="stretch" href="module-04-jc-go.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 05</span>
+          <h3>OAuth / CAP / PDP</h3>
+          <p>Three device-data paths, policy evaluation, Okta OIE parallels.</p>
+          <a class="stretch" href="module-05-oauth-cap.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 06</span>
+          <h3>WebAuthn / FIDO2</h3>
+          <p>Registration &amp; authentication ceremonies, phishing resistance.</p>
+          <a class="stretch" href="module-06-webauthn.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 07</span>
+          <h3>Apple MDM</h3>
+          <p>Check-in, SCEP, profile chain, provisioning vs runtime plane.</p>
+          <a class="stretch" href="module-07-apple-mdm.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 08</span>
+          <h3>Endpoint Security</h3>
+          <p>ES framework, NOTIFY vs AUTH, BAN-3495 telemetry pipeline.</p>
+          <a class="stretch" href="module-08-endpoint-security.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 09</span>
+          <h3>Device Telemetry / UDTL</h3>
+          <p>PushEvents, current silos vs target posture store.</p>
+          <a class="stretch" href="module-09-device-telemetry.html">Open module →</a>
+        </div>
+        <div class="module-card">
+          <span class="num">Module 10</span>
+          <h3>Zero Trust Synthesis</h3>
+          <p>Full-stack capstone + 5 competitor-aware interview answers.</p>
+          <a class="stretch" href="module-10-zero-trust-synthesis.html">Open module →</a>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Recommended Schedule</h2>
+      <table>
+        <thead><tr><th>Week</th><th>Modules</th><th>Focus</th></tr></thead>
+        <tbody>
+          <tr><td>Week 1</td><td>1–5</td><td>Platform + identity core</td></tr>
+          <tr><td>Week 2</td><td>6–10</td><td>Protocols + posture + capstone</td></tr>
+          <tr><td>Pre-interview</td><td>10</td><td>Whiteboard Module 10 in 10 min; explain NOTIFY vs AUTH cold</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <p>BAN-3495 Interview Prep · JumpCloud internal study artifact · Not for external distribution</p>
+    <p style="margin-top:.5rem"><a href="../README.md">← Back to BAN-3495 planning pack</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JumpCloud Agent Auth — Explained Simply</title>
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --surface: #ffffff;
+      --border: #e2ddd4;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --green: #16a34a;
+      --green-light: #f0fdf4;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --purple: #7c3aed;
+      --purple-light: #f5f3ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 17px;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 1.85rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    header p {
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+    }
+
+    .nav-link {
+      display: inline-block;
+      margin-top: 1.25rem;
+      font-family: -apple-system, sans-serif;
+      font-size: 0.9rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .nav-link:hover { text-decoration: underline; }
+
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    h3 {
+      font-family: -apple-system, sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.75rem 0 0.6rem;
+      color: var(--accent);
+    }
+
+    p { margin-bottom: 1.1rem; }
+
+    .analogy {
+      background: var(--accent-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .analogy-label {
+      font-family: -apple-system, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .analogy p:last-child { margin-bottom: 0; }
+
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    @media (max-width: 560px) {
+      .compare { grid-template-columns: 1fr; }
+    }
+
+    .compare-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .compare-box.bad { border-color: #fecaca; background: #fef2f2; }
+    .compare-box.good { border-color: #bbf7d0; background: var(--green-light); }
+
+    .compare-box h4 {
+      font-family: -apple-system, sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .compare-box p {
+      font-size: 0.95rem;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .step-list {
+      list-style: none;
+      padding: 0;
+      margin: 1.25rem 0;
+    }
+
+    .step-list li {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .step-body h4 {
+      font-family: -apple-system, sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-body p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .visual {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.25rem 0;
+      text-align: center;
+    }
+
+    .visual-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin: 0.5rem 0;
+    }
+
+    .box {
+      font-family: -apple-system, sans-serif;
+      background: #f5f5f4;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      min-width: 100px;
+    }
+
+    .box.device { border-color: var(--accent); background: var(--accent-light); }
+    .box.server { border-color: var(--green); background: var(--green-light); }
+    .box.lock { border-color: var(--purple); background: var(--purple-light); font-size: 1.2rem; }
+
+    .arrow {
+      font-size: 1.25rem;
+      color: var(--muted);
+    }
+
+    .caption {
+      font-family: -apple-system, sans-serif;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+    }
+
+    .glossary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .glossary-item {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .glossary-item:last-child { border-bottom: none; }
+
+    .glossary-item dt {
+      font-family: -apple-system, sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .glossary-item dd {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .timeline {
+      border-left: 3px solid var(--accent);
+      padding-left: 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .timeline-item {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -1.72rem;
+      top: 0.45rem;
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .timeline-item h4 {
+      font-family: -apple-system, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-item p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .highlight {
+      background: #fef9c3;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+    }
+
+    .summary-box {
+      background: var(--green-light);
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .summary-box h3 {
+      color: var(--green);
+      margin-top: 0;
+    }
+
+    .summary-box ul {
+      padding-left: 1.25rem;
+      margin: 0;
+    }
+
+    .summary-box li {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-family: -apple-system, sans-serif;
+      border-top: 1px solid var(--border);
+    }
+
+    .deep-dive {
+      background: var(--surface);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 2rem 1.75rem;
+      margin: 2rem 0 3rem;
+    }
+
+    .deep-dive > h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+
+    .file-tree {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.85rem;
+      background: #f5f5f4;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      line-height: 1.8;
+    }
+
+    .file-tree .dir { color: var(--muted); }
+    .file-tree .secret { color: #b91c1c; font-weight: 600; }
+    .file-tree .public { color: var(--green); }
+
+    .handshake {
+      counter-reset: hs;
+      margin: 1.25rem 0;
+    }
+
+    .handshake-step {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: flex-start;
+    }
+
+    .handshake-step::before {
+      counter-increment: hs;
+      content: counter(hs);
+      flex-shrink: 0;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: var(--purple);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .handshake-step p { margin: 0; font-size: 0.95rem; }
+    .handshake-step strong { font-family: -apple-system, sans-serif; }
+
+    .never-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+
+    .never-box strong { color: #b91c1c; }
+
+    .cert-fields {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 0.35rem 1rem;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+      font-family: -apple-system, sans-serif;
+    }
+
+    .cert-fields dt { font-weight: 600; color: var(--text); }
+    .cert-fields dd { color: var(--muted); margin: 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Certificates &amp; mTLS — Explained Simply</h1>
+  <p>A plain-language guide to how your JumpCloud agent proves its identity to our servers.</p>
+  <a class="nav-link" href="agent-authentication-architecture.html">← Back to technical architecture</a>
+  <br />
+  <a class="nav-link" href="certificate-visual-guide.html" style="margin-top: 0.5rem;">🎬 Visual &amp; animated certificate guide →</a>
+  <br />
+  <a class="nav-link" href="#cert-deep-dive" style="margin-top: 0.35rem;">Jump to: How certificates are created &amp; used →</a>
+</header>
+
+<main>
+
+  <!-- INTRO -->
+  <section>
+    <h2>Why does any of this matter?</h2>
+    <p>
+      Your laptop or server runs a small program called the <strong>JumpCloud agent</strong>.
+      It talks to JumpCloud's cloud servers constantly — to get policies, run commands,
+      check passwords, and report status.
+    </p>
+    <p>
+      The cloud needs to answer one critical question every time:
+      <em>"Is this really one of our customer's devices, or is someone pretending?"</em>
+    </p>
+    <p>
+      Certificates and mTLS are how we answer that question — securely, automatically,
+      without you typing a password every five minutes.
+    </p>
+  </section>
+
+  <!-- HTTPS -->
+  <section>
+    <h2>Part 1: HTTPS — the locked envelope</h2>
+    <p>
+      You've seen <strong>HTTPS</strong> in your browser (the padlock icon). It's the same idea here.
+      When the agent sends data to JumpCloud, the data travels inside an <strong>encrypted tunnel</strong>
+      so nobody on the network can read or tamper with it.
+    </p>
+
+    <div class="analogy">
+      <div class="analogy-label">Think of it like…</div>
+      <p>
+        Mailing a letter inside a <strong>locked box</strong>. Only the recipient has the key.
+        Even if someone intercepts the package, they can't read what's inside.
+      </p>
+    </div>
+
+    <div class="visual">
+      <div class="visual-row">
+        <div class="box device">Your Device</div>
+        <span class="arrow">→</span>
+        <div class="box lock">🔒 Encrypted</div>
+        <span class="arrow">→</span>
+        <div class="box server">JumpCloud Server</div>
+      </div>
+      <div class="caption">Normal HTTPS — data is encrypted in transit</div>
+    </div>
+
+    <p>
+      With regular HTTPS (like visiting a website), <em>you</em> check that the website is real
+      (the padlock proves it's really your bank, not a fake site). But the website doesn't
+      check who <em>you</em> are — unless you log in separately.
+    </p>
+  </section>
+
+  <!-- CERTIFICATES -->
+  <section>
+    <h2>Part 2: Digital certificates — a device ID card</h2>
+    <p>
+      A <strong>digital certificate</strong> is like a government-issued ID card, but for computers.
+      It says: <em>"This device is device #ABC123, issued by JumpCloud, valid until next year."</em>
+    </p>
+
+    <div class="analogy">
+      <div class="analogy-label">Think of it like…</div>
+      <p>
+        A <strong>company badge</strong>. It has your photo (identity), your employee number
+        (unique ID), the company logo (who issued it), and an expiry date. Security at the
+        building entrance checks the badge before letting you in.
+      </p>
+    </div>
+
+    <h3>Two pieces that always go together</h3>
+    <p>Every certificate comes as a pair:</p>
+
+    <dl class="glossary">
+      <div class="glossary-item">
+        <dt>Private key 🔑</dt>
+        <dd>
+          Stays <strong>secret on the device forever</strong>. Like the PIN for your badge —
+          never shared, never sent over the network. Stored in a protected file on disk.
+        </dd>
+      </div>
+      <div class="glossary-item">
+        <dt>Certificate (public part) 📇</dt>
+        <dd>
+          Can be shown to anyone. Proves the device owns the matching private key.
+          Contains a unique ID (<strong>certuuid</strong>) and is signed by JumpCloud's authority.
+        </dd>
+      </div>
+    </dl>
+
+    <div class="analogy">
+      <div class="analogy-label">Important</div>
+      <p>
+        If someone steals your <em>certificate</em>, it's annoying but fixable — you revoke it.
+        If someone steals your <em>private key</em>, they can impersonate your device.
+        That's why the private key never leaves the machine and is stored with strict file permissions.
+      </p>
+    </div>
+  </section>
+
+  <!-- CERTIFICATE DEEP DIVE -->
+  <section id="cert-deep-dive" class="deep-dive">
+    <h2>Deep Dive: How the certificate is created on the device</h2>
+    <p>
+      This section walks through exactly what happens on your machine during first install —
+      no jargon where we can avoid it, but enough detail to understand the mechanics.
+    </p>
+
+    <h3>Files the agent creates on disk</h3>
+    <p>After setup completes, three security-related files live in the agent config directory (e.g. <code>/opt/jc/</code> on Linux):</p>
+
+    <div class="file-tree">
+      <span class="dir">/opt/jc/</span> (or equivalent)<br>
+      ├── <span class="secret">client.key</span> &nbsp; ← private key (secret, never leaves device)<br>
+      ├── <span class="public">client.crt</span> &nbsp; ← certificate (public ID card)<br>
+      └── <span class="public">ca.crt</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ← trust bundle (how to verify JumpCloud servers)
+    </div>
+
+    <p>
+      The config file <code>jcagent.conf</code> also stores the device's account number
+      (<strong>systemKey</strong>) and its certificate ID (<strong>certuuid</strong>) —
+      but the actual cryptographic secrets live in those three files.
+    </p>
+
+    <h3>What's printed on the certificate?</h3>
+    <p>Think of these as the fields on an ID card:</p>
+    <dl class="cert-fields">
+      <dt>Common Name (CN)</dt>
+      <dd>The device's unique ID — a random <strong>certuuid</strong> like <code>a3f8b2c1…</code>. This never changes, even when the certificate is renewed.</dd>
+      <dt>Organization (O)</dt>
+      <dd>Always <code>JumpCloud</code> — who the certificate belongs to.</dd>
+      <dt>Issuer</dt>
+      <dd>JumpCloud's Certificate Authority (CA) — the "government" that signed the ID.</dd>
+      <dt>Valid from / until</dt>
+      <dd>Start and expiry dates. After expiry, the agent renews automatically.</dd>
+      <dt>Digital signature</dt>
+      <dd>Proof that JumpCloud's CA officially issued this card — tampering breaks the signature.</dd>
+    </dl>
+
+    <h3>Creation — step by step on the device</h3>
+
+    <ol class="step-list">
+      <li>
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <h4>Generate a unique device name (certuuid)</h4>
+          <p>
+            The agent creates a random UUID (like a serial number) using secure randomness.
+            This becomes the device's permanent identity — its name on the certificate.
+            Example: <code>a3f8b2c1d4e5…</code> (32 hex characters).
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <h4>Generate the private key — entirely on the device</h4>
+          <p>
+            The agent uses cryptography (RSA 2048-bit) to create a key pair.
+            The <strong>private key</strong> is written to <code>client.key</code> with
+            restricted file permissions (only root/admin can read it).
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <h4>Create a Certificate Signing Request (CSR) — "please make me an ID card"</h4>
+          <p>
+            The agent builds a CSR using the private key. The CSR says:
+            <em>"Please issue a certificate for device ID <strong>a3f8b2c1…</strong>,
+            organization JumpCloud."</em>
+          </p>
+          <p style="margin-top: 0.5rem;">
+            Crucially: the CSR proves the requester <em>owns</em> the private key (via math),
+            but the private key itself is <strong>not included</strong> in the CSR.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <div class="step-body">
+          <h4>Send the CSR to JumpCloud Kickstart (with Connect Key)</h4>
+          <p>
+            The CSR is uploaded to <code>POST /SignCsr</code> along with the Connect Key
+            (to prove enrollment is authorized). At this point the connection is encrypted (HTTPS)
+            but the device does <em>not</em> yet have a certificate — it's asking for one.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">5</span>
+        <div class="step-body">
+          <h4>JumpCloud signs the CSR and returns the certificate</h4>
+          <p>
+            JumpCloud's CA stamps the CSR as official and returns <code>client.crt</code>.
+            The server also stores the signed cert temporarily (until registration finishes)
+            and checks the certuuid isn't already used by another device.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">6</span>
+        <div class="step-body">
+          <h4>Download the trust bundle (ca.crt)</h4>
+          <p>
+            The agent downloads JumpCloud's CA certificates so it knows which servers to trust.
+            Without this, it couldn't verify it's talking to the real JumpCloud — not an impostor.
+          </p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="never-box">
+      <strong>The private key never travels over the network.</strong>
+      It is born on the device, lives on the device, and dies on the device.
+      JumpCloud never sees it. Only the CSR (the application) and the resulting certificate (the ID card) are exchanged.
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">CSR explained simply</div>
+      <p>
+        A CSR is like filling out a form at the DMV: "My name is a3f8b2c1, please print a license."
+        You sign the form with your personal signature (private key math) to prove you're really asking.
+        The DMV (JumpCloud CA) prints the license (certificate) and gives it back.
+        Your signature style (private key) stays with you — it's not printed on the license.
+      </p>
+    </div>
+
+    <h3>Why keep the same private key forever?</h3>
+    <p>
+      On renewal, JumpCloud issues a new <code>client.crt</code> but keeps the same
+      <code>client.key</code> and same <code>certuuid</code>. This is intentional: the agent
+      uses the private key to encrypt local secrets (like FileVault recovery keys). Changing
+      the key would break access to those stored secrets.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: 2rem 0;" />
+
+    <h2 style="font-size: 1.25rem; border: none; padding: 0; margin-bottom: 1rem;">Deep Dive: How the certificate is used for authentication</h2>
+    <p>
+      Once <code>client.crt</code> and <code>client.key</code> exist, every call to JumpCloud
+      uses them automatically. You don't "log in" with the certificate — the agent's HTTP
+      client loads both files and presents them during the TLS connection setup.
+    </p>
+
+    <h3>The TLS handshake — proving you own the certificate</h3>
+    <p>When the agent connects to <code>agent.jumpcloud.com</code>, this happens before any API data is sent:</p>
+
+    <div class="handshake">
+      <div class="handshake-step">
+        <p><strong>Server proves itself.</strong> JumpCloud sends its server certificate. The agent checks it against <code>ca.crt</code> — "Is this really JumpCloud, or a fake?"</p>
+      </div>
+      <div class="handshake-step">
+        <p><strong>Server asks for the device's certificate.</strong> Because this is mTLS, the server says: "Now show me your ID card."</p>
+      </div>
+      <div class="handshake-step">
+        <p><strong>Agent sends client.crt.</strong> The public certificate travels over the wire. Still no private key.</p>
+      </div>
+      <div class="handshake-step">
+        <p><strong>Server sends a random challenge.</strong> "Prove you own the private key that matches this certificate."</p>
+      </div>
+      <div class="handshake-step">
+        <p><strong>Agent signs the challenge with client.key.</strong> The signature is sent back. This is the cryptographic equivalent of entering your PIN — done in milliseconds, invisibly.</p>
+      </div>
+      <div class="handshake-step">
+        <p><strong>Server verifies the signature.</strong> If it matches the certificate → the device truly owns the private key. The encrypted tunnel opens. If not → connection rejected.</p>
+      </div>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Why the challenge matters</div>
+      <p>
+        Showing the certificate alone isn't enough — anyone could copy the public ID card file.
+        The challenge-response step proves the device still has the matching secret key <em>right now</em>,
+        not just a photocopy of the badge from yesterday.
+      </p>
+    </div>
+
+    <h3>After TLS — the second identity check</h3>
+    <p>
+      mTLS gets the request through the front door. The application then does one more check
+      to bind the certificate to a specific device record:
+    </p>
+
+    <div class="visual">
+      <div class="visual-row">
+        <div class="box device">Agent sends<br><small>x-system-id header</small></div>
+        <span class="arrow">+</span>
+        <div class="box lock">Load balancer reads<br><small>cert CN from mTLS</small></div>
+        <span class="arrow">→</span>
+        <div class="box server">Database lookup<br><small>systemKey + certuuid</small></div>
+      </div>
+      <div class="caption">Both must match the same row in the Systems database</div>
+    </div>
+
+    <ol class="step-list">
+      <li>
+        <span class="step-num">A</span>
+        <div class="step-body">
+          <h4>Load balancer reads the certificate</h4>
+          <p>
+            After mTLS succeeds, the load balancer extracts the certificate's Common Name
+            (the certuuid) and forwards it as headers like <code>X-SSL-CLIENT-DN</code>
+            and <code>X-SSL-CLIENT-CN</code> to the application server.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">B</span>
+        <div class="step-body">
+          <h4>Agent includes its account number</h4>
+          <p>
+            Every request also carries <code>x-system-id</code> — the systemKey assigned
+            during registration (stored in <code>jcagent.conf</code>).
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">C</span>
+        <div class="step-body">
+          <h4>Server cross-checks in the database</h4>
+          <p>
+            Query: find system where <code>_id = systemKey</code> AND <code>certuuid = CN from certificate</code>.
+            Match found → request proceeds, policies/commands flow.
+            No match → 401 Unauthorized.
+          </p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="analogy">
+      <div class="analogy-label">Two locks on the door</div>
+      <p>
+        <strong>Lock 1 (TLS/mTLS):</strong> Cryptography proves you physically hold the private key
+        that matches a valid JumpCloud-issued certificate.<br><br>
+        <strong>Lock 2 (application):</strong> The database confirms that certificate ID and account
+        number belong to the same, still-active device.<br><br>
+        An attacker needs to defeat both — steal the private key <em>and</em> know the systemKey,
+        and the device must still be registered in JumpCloud.
+      </p>
+    </div>
+
+    <h3>What the agent code actually does (simplified)</h3>
+    <p>On every API call, the agent's HTTP client:</p>
+    <ul style="padding-left: 1.4rem; margin-bottom: 1rem; color: var(--muted); font-size: 0.95rem;">
+      <li>Loads <code>client.crt</code> + <code>client.key</code> into the TLS stack</li>
+      <li>Loads <code>ca.crt</code> as trusted roots (minimum TLS 1.2)</li>
+      <li>Attaches headers: <code>x-system-id</code>, <code>x-ssl-client-cn</code> (certuuid), agent version</li>
+      <li>Opens the connection — TLS handshake + mTLS challenge happen automatically</li>
+      <li>Sends the API payload (JSON) inside the encrypted tunnel</li>
+    </ul>
+
+    <h3>Certificate renewal — same identity, new expiry date</h3>
+    <p>Before the certificate expires, the agent:</p>
+    <ol class="step-list">
+      <li>
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <h4>Uses the existing certificate to authenticate</h4>
+          <p>Renewal goes to the <em>private</em> kickstart server — you must already have a valid cert to get in.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <h4>Creates a new CSR with the same private key and same certuuid</h4>
+          <p>Same device identity, new application for a fresh expiry date.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <h4>Receives a new client.crt, replaces the old one</h4>
+          <p>client.key unchanged. certuuid unchanged. systemKey unchanged. Seamless to the user.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- mTLS -->
+  <section>
+    <h2>Part 3: mTLS — both sides show ID</h2>
+    <p>
+      Regular HTTPS = the server proves it's real, but the client stays anonymous.
+      <strong>Mutual TLS (mTLS)</strong> = <em>both sides</em> show ID cards before talking.
+    </p>
+
+    <div class="compare">
+      <div class="compare-box bad">
+        <h4>Regular HTTPS (websites)</h4>
+        <p>Server shows ID ✓ &nbsp;|&nbsp; Your browser stays anonymous</p>
+      </div>
+      <div class="compare-box good">
+        <h4>mTLS (JumpCloud agent)</h4>
+        <p>Server shows ID ✓ &nbsp;|&nbsp; Device shows ID ✓</p>
+      </div>
+    </div>
+
+    <div class="visual">
+      <div class="visual-row">
+        <div class="box device">Device<br><small>shows cert</small></div>
+        <span class="arrow">⇄</span>
+        <div class="box lock">🔒 mTLS<br><small>both verified</small></div>
+        <span class="arrow">⇄</span>
+        <div class="box server">Server<br><small>shows cert</small></div>
+      </div>
+      <div class="caption">Both sides must present valid, trusted certificates before any data flows</div>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Think of it like…</div>
+      <p>
+        Entering a secure government building. <strong>You</strong> show your badge at the gate.
+        The <strong>guard</strong> also shows their official credentials. Both parties verify
+        each other before the conversation starts. No badge? No entry. Fake badge? No entry.
+      </p>
+    </div>
+
+    <h3>Who checks the ID?</h3>
+    <p>
+      A <strong>load balancer</strong> (a front-door server) sits in front of JumpCloud's services.
+      It terminates the encrypted connection, inspects the device's certificate, and checks:
+    </p>
+    <ul style="padding-left: 1.4rem; margin-bottom: 1rem; color: var(--muted);">
+      <li>Was this certificate signed by JumpCloud's Certificate Authority (CA)?</li>
+      <li>Is it still valid (not expired)?</li>
+      <li>Does the unique ID on the certificate match a known device in our database?</li>
+    </ul>
+    <p>
+      Only if all checks pass does the request reach the actual application server.
+    </p>
+  </section>
+
+  <!-- CONNECT KEY vs CERT -->
+  <section>
+    <h2>Part 4: Connect Key vs Certificate — two different keys for two different jobs</h2>
+    <p>
+      This is the part that confuses most people. JumpCloud uses <strong>two separate
+      authentication mechanisms</strong>, each for a different moment in the device's life.
+    </p>
+
+    <dl class="glossary">
+      <div class="glossary-item">
+        <dt>Connect Key — the "invitation code"</dt>
+        <dd>
+          A short-lived secret code (like a one-time invite link) that says
+          <em>"this device is allowed to join organization X."</em>
+          Used <strong>only during initial setup</strong> — when the agent is first installed.
+          An admin, MDM system, or user portal provides it. Once the device is registered,
+          the Connect Key's job is done.
+        </dd>
+      </div>
+      <div class="glossary-item">
+        <dt>Certificate — the "permanent badge"</dt>
+        <dd>
+          Issued <em>during</em> setup and used <strong>forever after</strong> (renewed periodically).
+          Every single API call the agent makes for the rest of its life is authenticated
+          with this certificate. No Connect Key needed anymore.
+        </dd>
+      </div>
+    </dl>
+
+    <div class="analogy">
+      <div class="analogy-label">Think of it like…</div>
+      <p>
+        Getting hired at a company. The <strong>Connect Key</strong> is your job offer letter —
+        it gets you in the door on day one. The <strong>certificate</strong> is your employee badge —
+        you swipe it every morning for years. You don't bring your offer letter to work every day.
+      </p>
+    </div>
+  </section>
+
+  <!-- REGISTRATION STORY -->
+  <section>
+    <h2>Part 5: What happens when a device is first installed — the full story</h2>
+    <p>
+      Here's the entire registration process told as a simple story, step by step.
+    </p>
+
+    <ol class="step-list">
+      <li>
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <h4>Someone installs the agent and provides a Connect Key</h4>
+          <p>
+            An IT admin runs the installer with a key from the Admin Console, or MDM pushes
+            the agent with an auto-generated key, or a user downloads it from the User Portal.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <h4>The agent creates its own secret key (private key)</h4>
+          <p>
+            Generated locally on the device. Never sent anywhere. This is the "PIN" that
+            will prove ownership of the certificate forever.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <h4>The agent asks JumpCloud to make an ID card (certificate)</h4>
+          <p>
+            It sends a <strong>Certificate Signing Request (CSR)</strong> — basically
+            "please issue an ID card for device #XYZ" — along with the Connect Key to prove
+            it's allowed to ask.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <div class="step-body">
+          <h4>JumpCloud signs and returns the certificate</h4>
+          <p>
+            JumpCloud's Certificate Authority stamps the ID card as official. The signed
+            certificate is temporarily stored server-side until registration completes
+            (prevents someone from grabbing a cert and never finishing setup).
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">5</span>
+        <div class="step-body">
+          <h4>The agent tests that its new badge works</h4>
+          <p>
+            A quick "can I get in the door?" check — the agent connects using its new
+            certificate and Connect Key. If this fails, registration stops here.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">6</span>
+        <div class="step-body">
+          <h4>The agent officially registers as a system</h4>
+          <p>
+            Using its new certificate (mTLS), the agent tells JumpCloud:
+            "I'm device #XYZ, here's my hardware info (hostname, serial number, OS, etc.).
+            Please add me to the organization's device list."
+            JumpCloud creates the device record and sends back a <strong>systemKey</strong>
+            — the device's permanent account number.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">7</span>
+        <div class="step-body">
+          <h4>Done — the Connect Key is retired, the certificate takes over</h4>
+          <p>
+            From now on, every conversation uses mTLS with the certificate.
+            The device shows up in the Admin Console. Policies start flowing.
+          </p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- DAILY LIFE -->
+  <section>
+    <h2>Part 6: Every day after registration — how the agent stays authenticated</h2>
+    <p>
+      Once registered, the agent never asks for a Connect Key again. Every time it
+      calls JumpCloud (which is constantly — every few minutes), this happens automatically:
+    </p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <h4>Agent opens an encrypted connection (TLS)</h4>
+        <p>The tunnel is established. Data will be encrypted.</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Agent presents its certificate</h4>
+        <p>"Hi, I'm device #XYZ. Here's my signed ID card."</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Load balancer verifies the certificate</h4>
+        <p>Signed by JumpCloud CA? Not expired? ✓</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Agent also sends its systemKey</h4>
+        <p>"And here's my account number: 507f1f77bcf86cd799439011"</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Server cross-checks both pieces</h4>
+        <p>
+          Does account number <span class="highlight">507f…</span> belong to a device whose
+          certificate ID is <span class="highlight">XYZ</span>? If yes → request allowed.
+          If no → rejected (400/401).
+        </p>
+      </div>
+      <div class="timeline-item">
+        <h4>Business happens</h4>
+        <p>Policies downloaded, commands executed, metrics sent — all over the encrypted mTLS channel.</p>
+      </div>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Why check both the certificate AND the systemKey?</div>
+      <p>
+        It's like requiring both your <strong>badge</strong> (certificate) and typing your
+        <strong>employee number</strong> (systemKey) at the gate. If someone somehow got a copy
+        of a certificate, they'd also need to know which account number it belongs to.
+        Two pieces of identity are harder to fake than one.
+      </p>
+    </div>
+  </section>
+
+  <!-- RENEWAL -->
+  <section>
+    <h2>Part 7: Certificate renewal — getting a new badge, keeping the same PIN</h2>
+    <p>
+      Certificates expire (typically after a year or so). Before that happens, the agent
+      automatically renews its certificate. Important details:
+    </p>
+    <ul style="padding-left: 1.4rem; margin-bottom: 1rem; color: var(--muted);">
+      <li>The <strong>private key stays the same</strong> — like keeping your PIN when you get a new physical badge</li>
+      <li>The <strong>device ID (certuuid) stays the same</strong> — same employee number on the new badge</li>
+      <li>Renewal requires the <strong>existing certificate</strong> — you must already be authenticated to renew</li>
+      <li>Renewal happens over the <strong>private kickstart server</strong>, which only accepts mTLS connections</li>
+    </ul>
+
+    <div class="analogy">
+      <div class="analogy-label">Think of it like…</div>
+      <p>
+        Your company badge expires annually. You go to HR (using your <em>current</em> badge to get in),
+        they print a new one with the same employee number, and you keep using the same PIN.
+        You can't walk in off the street and ask for a badge — you need to already be an employee.
+      </p>
+    </div>
+  </section>
+
+  <!-- USER vs DEVICE -->
+  <section>
+    <h2>Part 8: Device auth vs User auth — two different questions</h2>
+    <p>
+      mTLS answers: <em>"Which device is this?"</em><br>
+      User authentication answers: <em>"Which person is using this device?"</em>
+    </p>
+    <p>
+      These are completely separate. When you log into your Mac or enter your password
+      at the Windows login screen, a second authentication happens:
+    </p>
+
+    <ol class="step-list">
+      <li>
+        <span class="step-num">A</span>
+        <div class="step-body">
+          <h4>Device is already authenticated (mTLS)</h4>
+          <p>The agent's certificate already proved this is a managed JumpCloud device.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">B</span>
+        <div class="step-body">
+          <h4>User enters username + password (or MFA)</h4>
+          <p>The agent sends credentials to JumpCloud over the already-secure mTLS channel.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">C</span>
+        <div class="step-body">
+          <h4>JumpCloud checks: is this user allowed on this device?</h4>
+          <p>The user must be "bound" to the system. Random users can't log in even with valid passwords.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">D</span>
+        <div class="step-body">
+          <h4>Login granted (or denied)</h4>
+          <p>JumpCloud returns a token; the agent unlocks the session locally.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="analogy">
+      <div class="analogy-label">Think of it like…</div>
+      <p>
+        Entering a secure office building. The <strong>building's security system</strong> (mTLS)
+        verifies the building itself is a legitimate JumpCloud-managed site. Then the
+        <strong>reception desk</strong> (user auth) checks your personal ID and confirms
+        you're on the visitor list for <em>this specific building</em>.
+      </p>
+    </div>
+  </section>
+
+  <!-- WHAT IF -->
+  <section>
+    <h2>Part 9: What happens when things go wrong?</h2>
+
+    <dl class="glossary">
+      <div class="glossary-item">
+        <dt>Device is removed from JumpCloud</dt>
+        <dd>
+          The system record is deleted. The next time the agent connects, the server recognizes
+          the device is gone and sends an <strong>uninstall command</strong> instead of policies.
+          The certificate alone isn't enough — the account must still exist.
+        </dd>
+      </div>
+      <div class="glossary-item">
+        <dt>Certificate expires without renewal</dt>
+        <dd>
+          mTLS handshake fails. The agent can't connect. It will attempt to renew automatically;
+          if that fails too, the agent stops functioning until an admin intervenes.
+        </dd>
+      </div>
+      <div class="glossary-item">
+        <dt>Agent cloned from a golden image</dt>
+        <dd>
+          Two devices can't share the same certificate ID. During registration, JumpCloud checks
+          that the certuuid is unique. A cloned image with a duplicate ID will be rejected.
+        </dd>
+      </div>
+      <div class="glossary-item">
+        <dt>Someone intercepts network traffic</dt>
+        <dd>
+          They see encrypted gibberish (TLS). They can't decrypt it without the keys.
+          They can't impersonate the device without the private key, which never left the machine.
+        </dd>
+      </div>
+      <div class="glossary-item">
+        <dt>Connect Key is stolen before use</dt>
+        <dd>
+          Connect Keys are short-lived and single-purpose. An attacker could potentially register
+          a rogue device if they get the key before the legitimate device does — which is why
+          keys should be treated as secrets and MDM enrollment is preferred over shared keys.
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- SUMMARY -->
+  <section>
+    <div class="summary-box">
+      <h3>The whole thing in five sentences</h3>
+      <ul>
+        <li>A <strong>Connect Key</strong> is a one-time invitation that lets a new device join your organization.</li>
+        <li>During setup, the device creates a <strong>private key</strong> (secret) and gets a <strong>certificate</strong> (ID card) signed by JumpCloud.</li>
+        <li>After setup, the Connect Key is retired. The <strong>certificate + systemKey</strong> authenticate every request forever.</li>
+        <li><strong>mTLS</strong> means both the device and server prove their identity before any data is exchanged — inside an encrypted tunnel.</li>
+        <li><strong>User login</strong> is a separate step on top: the device must already be trusted before a person's credentials are checked.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <a href="agent-authentication-architecture.html" style="color: var(--accent);">Technical architecture version →</a>
+  &nbsp;·&nbsp; JumpCloud Agent Authentication
+</footer>
+
+</body>
+</html>

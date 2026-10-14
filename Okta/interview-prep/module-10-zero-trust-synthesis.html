@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 10 - Zero Trust Synthesis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 10 of 10 - Capstone</span>
+    <h1>Zero Trust Synthesis - Full Stack</h1>
+    <p>End-to-end device identity from MDM enroll to posture-driven access - plus five competitor-aware interview answers.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-09-device-telemetry.html">← Module 09</a>
+    <a href="index.html">Hub</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">This capstone ties all nine modules into one narrative: <strong>provision trust → bind identity → authenticate → evaluate posture → enforce access → react to change</strong>. Practice drawing this diagram in 10 minutes before your interview.</p>
+    </section>
+
+    <section>
+      <h2>Full-Stack Architecture</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph enroll [1 Provision]
+    DEP[ABM DEP]
+    MDM[jumpcloud-apple-mdm]
+    Profiles[ES SSO Agent profiles]
+    DEP --> MDM --> Profiles
+  end
+
+  subgraph bind [2 Bind Identity]
+    Cert[device-trust cert user keychain]
+    DUK[Secure Enclave DUK]
+  end
+
+  Profiles --> Cert
+  Profiles --> DUK
+
+  subgraph login [3 Device Login]
+    LW[Login window plugin]
+    DT[DeviceTrust RPC]
+    PSSO[Platform SSO analog]
+    LW --> DT
+    LW --> PSSO
+  end
+
+  subgraph appaccess [4 App Access]
+    Go[JumpCloud Go DURT]
+    FP[Okta FastPass analog]
+    Signals[Live agent signals]
+    Go --> Signals
+  end
+
+  subgraph policy [5 Policy]
+    Assert[DeviceAssertion JWT]
+    PDP[CAP PDP Evaluate]
+  end
+
+  Cert --> Assert
+  DUK --> Go
+  Go --> Assert
+  Signals --> Assert
+  Assert --> PDP
+
+  subgraph posture [6 Continuous Posture]
+    ES[ES hooks BAN-3495]
+    UDTL[UDTL compliance_verdicts]
+    ES --> UDTL
+    UDTL -.-> PDP
+  end
+
+  subgraph enforce [7 Enforce]
+    Allow[ALLOW]
+    MFA[MFA step-up]
+    Deny[DENY revoke session]
+    PDP --> Allow
+    PDP --> MFA
+    PDP --> Deny
+  end
+
+  enroll --> bind --> login --> appaccess --> policy --> enforce
+  posture --> policy
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>JumpCloud ↔ Okta Component Map</h2>
+      <table>
+        <thead><tr><th>Stage</th><th>JumpCloud</th><th>Okta</th></tr></thead>
+        <tbody>
+          <tr><td>Provision</td><td>jumpcloud-apple-mdm profiles</td><td>ODA .mobileconfig via customer MDM</td></tr>
+          <tr><td>Device cert</td><td>Device-trust CSR + keychain</td><td>Device Access SCEP cert</td></tr>
+          <tr><td>Hardware key</td><td>DUK Secure Enclave</td><td>Secure Enclave for dbSSO</td></tr>
+          <tr><td>Desktop login</td><td>Login plugin + DeviceTrust</td><td>Device Access + Platform SSO 2.0</td></tr>
+          <tr><td>App SSO</td><td>JumpCloud Go + DURT</td><td>FastPass + Okta Verify</td></tr>
+          <tr><td>Phishing-resistant</td><td>WebAuthn RP + Go</td><td>FastPass WebAuthn factor</td></tr>
+          <tr><td>Policy</td><td>CAP PDP</td><td>OIE authentication policies</td></tr>
+          <tr><td>Posture store</td><td>UDTL roadmap</td><td>Device object + risk in Okta UD</td></tr>
+          <tr><td>Session binding</td><td>DUST + device assertion</td><td>Device-Bound SSO</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Five Competitor-Aware Interview Answers</h2>
+
+      <div class="qa-item">
+        <div class="qa-q">1. How is JumpCloud Go like Okta FastPass?</div>
+        <div class="qa-a">Both deliver silent, phishing-resistant app access bound to a registered device. Go exchanges DUK-signed DURT refresh tokens and embeds live posture signals (~30s cache) in device assertions. FastPass uses Okta Verify's device key with OIE policies requiring possession factor + hardware-protected + phishing-resistant. Same user outcome - passwordless app access - same security bar - device must be enrolled and posture-checked.</div>
+      </div>
+
+      <div class="qa-item">
+        <div class="qa-q">2. How is CAP like OIE authentication policies?</div>
+        <div class="qa-a">Both are Policy Decision Points evaluating rules at authentication time. CAP's <code>AuthnPolicyDecisions.Evaluate</code> checks device assertion claims (FDE, managed, CrowdStrike ZTA) plus user/network context. OIE rules check device.state, device.managementStatus, and factor properties. Outcomes map directly: ALLOW → access granted, MFA → step-up, DENY → block. JumpCloud's gap is data freshness - Okta has unified device object; we're building UDTL for the same consolidation.</div>
+      </div>
+
+      <div class="qa-item">
+        <div class="qa-q">3. What's your MDM story?</div>
+        <div class="qa-a">JumpCloud operates full Apple MDM - SCEP enrollment, check-in with Mdm-Signature verification, APNs push, DDM declarations. MDM delivers ES system extension entitlements, SSO extension profiles, and agent install - provisioning plane. Agent and Swift extensions are runtime plane. I've worked the integration point where MDM enrollment chains ES profile install and agent association - same role MDM plays for Okta Device Access cert and Platform SSO deployment.</div>
+      </div>
+
+      <div class="qa-item">
+        <div class="qa-q">4. What's your Endpoint Security story?</div>
+        <div class="qa-a">Three layers: (1) MDM provisions ES entitlement via system extension policy, (2) production Swift ES client protects service-account keychain using AUTH events, (3) BAN-3495 plans NOTIFY-based ES hooks for posture telemetry with FSEvents fallback. I can explain NOTIFY vs AUTH, callback threading rules, and why ES beats polling for FileVault/firewall change detection - sub-30s vs 2-hour Mongo staleness.</div>
+      </div>
+
+      <div class="qa-item">
+        <div class="qa-q">5. What would you bring from JumpCloud to Okta?</div>
+        <div class="qa-a">Three things: (1) Multi-process macOS security architecture - root daemon, user agent, signed extensions with explicit IPC trust boundaries. (2) Device assertion model - embedding posture signals in signed JWTs consumed by PDP, with cert and hardware-key dual binding paths. (3) Producer/consumer telemetry split - event-driven deltas with precedence rules (MDM &gt; Agent) feeding centralized trust store - the architecture both companies need for continuous Zero Trust. Plus hands-on BAN-3495 RFC work: PushEvents contract, attribute registry, cross-team alignment with platform team.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Mock Whiteboard Drill</h2>
+      <div class="card">
+        <p><strong>10-minute exercise:</strong> Draw the Full-Stack Architecture diagram from memory. Label:</p>
+        <ol class="study">
+          <li>Three process tiers (root / user / Swift)</li>
+          <li>Two device binding paths (cert + DUK)</li>
+          <li>Three CAP data paths and their freshness</li>
+          <li>Where UDTL fits in the future</li>
+          <li>One Okta product name at each stage</li>
+        </ol>
+        <p>Then explain NOTIFY vs AUTH in 30 seconds without notes.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Behavioral Angle - AI-Native Engineering</h2>
+      <div class="card okta">
+        <p>The JD mentions AI coding assistants. Cite concrete example: BAN-3495 planning pack - architecture diagrams, PushEvents contract draft, CAP flow docs - accelerated with Cursor/BMAD workflows. Shows you already operate the way Okta R&amp;D expects: AI for boilerplate and exploration, human for architecture decisions and cross-team alignment.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Honest Gaps Summary (Say With Confidence)</h2>
+      <div class="card gap">
+        <table>
+          <thead><tr><th>Gap</th><th>How to Frame</th></tr></thead>
+          <tbody>
+            <tr><td>Production ES in Swift sibling repo</td><td>"I own MDM provisioning + telemetry RFC; partner with macOS apps team on ES client"</td></tr>
+            <tr><td>No RFC 8628 device code flow</td><td>"Custom DeviceTrust OAuth-like flow - I'd evaluate RFC 8628 if building greenfield"</td></tr>
+            <tr><td>Device key signature TODO</td><td>"Known gap; I'd prioritize closing it for parity with Okta-joined guarantees"</td></tr>
+            <tr><td>UDTL not shipped</td><td>"Deep on producer contract and target architecture from BAN-3495 discovery"</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p><a href="index.html">← Back to all modules</a> · Good luck with your Okta interview.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

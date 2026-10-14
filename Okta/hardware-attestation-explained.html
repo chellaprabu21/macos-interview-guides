@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hardware-Rooted Attestation — from scratch</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;
+  --hw:#0f5c63;--hwT:#e0f0f0;        /* hardware / silicon */
+  --sw:#8a4b12;--swT:#f9efe2;        /* software claim */
+  --go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;
+  --stop:#a03a2a;--stopT:#f9e7e2;
+  --pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--hw),var(--pur));z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:284px;flex:0 0 284px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#0d1618;color:#c3d0d1;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#7f9598;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#7f9598;margin:15px 4px 6px;border-top:1px solid #1f2f31;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#5c7275;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a3b5b7;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#69807f;min-width:20px}
+  nav a:hover{background:#17282a;color:#fff}nav a.active{background:var(--hw);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:846px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--hw);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--hw)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.3px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .hwb{border-left-color:var(--hw);background:var(--hwT)}.hwb .l{color:var(--hw)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.7px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.7px;color:var(--hw)}
+
+  .stage{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:18px 16px 14px;margin:18px 0}
+  .stage .ttl{font-family:'Sora';font-weight:700;font-size:14.5px;margin-bottom:4px}
+  .stage .sub{font-size:13px;color:var(--faint);margin-bottom:14px}
+  .ctrls{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .btn{font-family:'Inter';font-size:13px;font-weight:500;padding:6px 14px;border-radius:7px;border:1px solid var(--lineS);background:var(--surf2);color:var(--ink);cursor:pointer}
+  .btn:hover{background:var(--line)}
+  .btn.pri{background:var(--hw);color:#fff;border-color:var(--hw)}
+  .btn.pri:hover{filter:brightness(1.15)}
+  .btn.alt{background:var(--pur);border-color:var(--pur);color:#fff}
+  .btn:disabled{opacity:.4;cursor:default}
+  .narr{font-size:13.4px;color:var(--soft);margin-left:auto;text-align:right;max-width:56%;line-height:1.45}
+  svg .lbl{font-family:'Inter';font-size:11px;fill:var(--soft)}
+  svg .lblb{font-family:'Sora';font-size:12px;font-weight:700;fill:var(--ink)}
+  svg .mono{font-family:'JetBrains Mono';font-size:10px;fill:var(--faint)}
+  .fade{opacity:0;transition:opacity .4s ease}
+  .fade.on{opacity:1}
+  .mv{transition:transform 1s cubic-bezier(.4,0,.2,1), opacity .35s ease}
+
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.h{border-color:var(--hw);background:var(--hwT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .nd.p{border-color:var(--pur);background:var(--purT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}.narr{max-width:100%;text-align:left;margin-left:0;margin-top:8px}}
+  @media (prefers-reduced-motion:reduce){.mv,.fade{transition:none}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Attestation</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Hardware-Rooted<br>Attestation<span class="s">from "why is this hard"<br>to the full picture</span></div>
+  <div class="ct">13 sections · 4 animations</div>
+  <nav id="toc">
+    <div class="grp">The foundation</div>
+    <a href="#problem"><span class="n">01</span><span>The problem ★</span></a>
+    <a href="#claim"><span class="n">02</span><span>Why claims fail ▶</span></a>
+    <a href="#idea"><span class="n">03</span><span>The core idea</span></a>
+    <div class="grp">The machinery</div>
+    <a href="#sep"><span class="n">04</span><span>The Secure Enclave</span></a>
+    <a href="#factory"><span class="n">05</span><span>The factory step ★</span></a>
+    <a href="#chain"><span class="n">06</span><span>The chain of trust ▶</span></a>
+    <div class="grp">In motion</div>
+    <a href="#enroll"><span class="n">07</span><span>Enrollment, step by step ▶</span></a>
+    <a href="#login"><span class="n">08</span><span>Every login after ▶</span></a>
+    <a href="#posture"><span class="n">09</span><span>Device posture</span></a>
+    <div class="grp">The payoff</div>
+    <a href="#bound"><span class="n">10</span><span>Device-bound tokens ★</span></a>
+    <a href="#limits"><span class="n">11</span><span>What it can't do</span></a>
+    <a href="#compare"><span class="n">12</span><span>TPM, App Attest, FIDO</span></a>
+    <a href="#qa"><span class="n">13</span><span>Answering the question</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Built from the ground up · why silicon has to vouch for software</p>
+  <h1>Hardware-rooted attestation, from scratch.</h1>
+  <p class="led">Start with a problem that looks impossible: a server receives a message claiming to be from a genuine corporate Mac. How can it possibly tell? Every answer you'd reach for first turns out to be circular. Attestation is the way out — and once you see the shape of the problem, the solution becomes obvious.</p>
+</header>
+
+<!-- 01 -->
+<section id="problem">
+  <div class="sn">01 / ★ THE FOUNDATION</div>
+  <h2>The problem</h2>
+  <p class="ss">Read this section slowly. Everything else is a consequence of it.</p>
+
+  <h3>The scenario</h3>
+  <p>Your company has 50,000 Macs. You want each one to prove it's a genuine, company-issued device before it gets access to anything.</p>
+  <p>A device connects to your server and says:</p>
+  <div class="bx sw" style="border-left-color:var(--sw);background:var(--swT)"><span class="l" style="color:var(--sw)">The device says</span>
+    <p style="font-family:'JetBrains Mono';font-size:14px">"Hello. I am a genuine MacBook Pro, serial C02XY. Here is my public key. Please trust me."</p></div>
+
+  <p><strong>How does the server verify any of that?</strong></p>
+
+  <h3>Every obvious answer fails</h3>
+  <table class="tb">
+    <tr><th>Idea</th><th>Why it doesn't work</th></tr>
+    <tr><td>Check the serial number</td><td>It's just a string in a message. I can type any serial I like.</td></tr>
+    <tr><td>Check the OS version and hardware model</td><td>Also just strings the device reports about itself.</td></tr>
+    <tr><td>Give each device a secret at setup</td><td>Where do you store it? A file can be copied. Now ten machines share one identity.</td></tr>
+    <tr><td>Have the device sign with a private key</td><td>Better — but where does that key live? If it's in a file, it can be copied. The signature proves possession of a copyable secret, not of a device.</td></tr>
+    <tr><td>Have the agent verify its own integrity</td><td><strong>Circular.</strong> If the machine is compromised, the compromised agent reports "everything is fine."</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The circularity — this is the whole problem</span>
+    <p>Every piece of evidence the device offers is <strong>produced by the device</strong>. If the device is lying, the evidence is a lie too. You are asking a potentially untrustworthy party to certify its own trustworthiness.</p>
+    <p style="margin-top:8px">It's like asking someone with no ID: <em>"can you prove who you are?"</em> and accepting <em>"yes — I'm telling you who I am."</em> No amount of extra detail in the answer fixes it. The <strong>source</strong> of the claim is the problem, not its content.</p></div>
+
+  <h3>So what would actually break the circle?</h3>
+  <p>You need a statement from something that:</p>
+  <ol>
+    <li><strong>Isn't the software</strong> — so compromising the OS doesn't compromise the statement</li>
+    <li><strong>Can't be copied</strong> — so it identifies <em>this specific machine</em>, not a class of machines</li>
+    <li><strong>Traces to someone you already trust</strong> — otherwise you've just moved the question one step</li>
+  </ol>
+  <p>Those three requirements describe hardware-rooted attestation exactly. The rest of this document is how each one is achieved.</p>
+</section>
+
+<!-- 02 -->
+<section id="claim">
+  <div class="sn">02</div>
+  <h2>Why a software claim always fails</h2>
+  <p class="ss">Watch the same message arrive from a real device and from an impostor. The server can't tell them apart.</p>
+
+  <div class="stage">
+    <div class="ttl">Two devices, one indistinguishable message</div>
+    <div class="sub">Toggle between the genuine Mac and a script pretending to be one.</div>
+    <svg id="a1" viewBox="0 0 700 250" width="100%">
+      <g id="a1dev"><rect x="30" y="60" width="170" height="76" rx="10" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5" id="a1box"/>
+        <text class="lblb" x="115" y="84" text-anchor="middle" id="a1t1">Genuine MacBook</text>
+        <text class="lbl" x="115" y="104" text-anchor="middle" id="a1t2">real hardware</text>
+        <text class="mono" x="115" y="123" text-anchor="middle" id="a1t3">software key in a file</text></g>
+
+      <g><rect x="500" y="60" width="170" height="76" rx="10" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.5"/>
+        <text class="lblb" x="585" y="90" text-anchor="middle">Server</text>
+        <text class="lbl" x="585" y="110" text-anchor="middle">must decide: trust?</text></g>
+
+      <g id="a1msg" class="mv"><rect x="216" y="76" width="268" height="44" rx="8" fill="var(--swT)" stroke="var(--sw)" stroke-width="1.5"/>
+        <text class="mono" x="350" y="94" text-anchor="middle" fill="var(--sw)">"I'm a genuine Mac, serial C02XY"</text>
+        <text class="mono" x="350" y="110" text-anchor="middle" fill="var(--sw)">+ public key + signature</text></g>
+
+      <g id="a1verdict"><rect x="180" y="168" width="340" height="52" rx="9" fill="var(--warnT)" stroke="var(--warn)" stroke-width="1.5" id="a1vbox"/>
+        <text class="lblb" x="350" y="190" text-anchor="middle" id="a1v1" fill="var(--warn)">Server sees: bytes</text>
+        <text class="lbl" x="350" y="208" text-anchor="middle" id="a1v2">identical in both cases — no way to distinguish</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="a1t">Switch to the impostor →</button>
+      <div class="narr" id="a1n">A genuine Mac sends its claim. The signature proves it holds a private key — but says nothing about where that key lives.</div>
+    </div>
+  </div>
+
+  <div class="bx wn"><span class="l">The uncomfortable conclusion</span>
+    <p>A signature proves <strong>possession of a private key</strong>. That's all. If the key sits in a file, then possession means "whoever copied that file" — which could be a script on a Linux VM in another country. The signature is mathematically perfect and tells you nothing you needed to know.</p></div>
+
+  <div class="bx go"><span class="l">The question to hold in mind</span>
+    <p>The real question isn't <em>"can this device sign?"</em> It's <strong><em>"can this key exist anywhere other than one specific piece of silicon?"</em></strong> Answer that and device identity becomes real. Everything from here is machinery for answering it.</p></div>
+</section>
+
+<!-- 03 -->
+<section id="idea">
+  <div class="sn">03</div>
+  <h2>The core idea</h2>
+  <p class="ss">One sentence, then the two things that make it work.</p>
+
+  <div class="bx hwb"><span class="l">Attestation in one sentence</span>
+    <p style="font-size:17px"><strong>A piece of tamper-proof silicon inside the device signs a statement about a key — and that silicon's own key was certified by the manufacturer at the factory.</strong></p></div>
+
+  <p>Two shifts are happening there, and both are essential:</p>
+
+  <h3>Shift 1 — the speaker changes</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:10px">
+      <div class="nd r" style="min-width:440px"><b>before</b>the <strong>software</strong> says "trust me, I'm real hardware" — worthless, because compromised software says the same</div>
+      <span class="ar">↓</span>
+      <div class="nd h" style="min-width:440px"><b>after</b>the <strong>silicon</strong> says "this key was made inside me and cannot leave" — and the silicon can't be reprogrammed by software</div>
+    </div>
+    <div class="cap">Same claim, entirely different source. That's what breaks the circle.</div>
+  </div>
+
+  <h3>Shift 2 — the trust moves to someone you already trust</h3>
+  <p>But wait — why believe the silicon? Because of the factory step: when the chip was manufactured, a unique key was permanently fused into it, and <strong>Apple signed a certificate for that key</strong>.</p>
+  <p>So verifying an attestation means checking a signature chain up to Apple's root certificate — which your OS already trusts, the same way it trusts the CAs behind HTTPS. You're not asked to trust the device. <strong>You're asked to trust Apple, which you already do the moment you buy the machine.</strong></p>
+
+  <div class="bx pu"><span class="l">The analogy that makes it click</span>
+    <p>A passport works the same way. Anyone can <em>say</em> their name. A passport is different because it's issued by a government you already trust, contains anti-forgery features you can verify, and is bound to one person via a photo and biometrics.</p>
+    <p style="margin-top:8px"><strong>Attestation is a passport for a cryptographic key</strong> — issued by the chip, backed by the manufacturer, and bound to one physical device.</p></div>
+</section>
+
+<!-- 04 -->
+<section id="sep">
+  <div class="sn">04</div>
+  <h2>The Secure Enclave — the tamper-proof part</h2>
+  <p class="ss">What it actually is, and the one property that matters.</p>
+
+  <h3>What it is</h3>
+  <p>A <strong>separate processor</strong> on the same chip as the main CPU, with its own boot ROM, its own encrypted memory, and its own tiny operating system. It shares almost nothing with the main system.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd" style="min-width:280px"><b>Application Processor</b>macOS · your apps · the kernel · root<br><span style="color:var(--stop)">an attacker who owns the machine owns all of this</span></div>
+      <span class="ar">│</span>
+      <div class="nd h" style="min-width:240px"><b>Secure Enclave (SEP)</b>own boot ROM<br>own encrypted RAM<br>own micro-OS<br><span style="color:var(--hw)">unreachable from the left</span></div>
+    </div>
+    <div class="cap">A hard boundary in silicon. Software on the left cannot read memory on the right.</div>
+  </div>
+
+  <h3>The one property that matters</h3>
+  <div class="bx hwb"><span class="l">Non-exportability</span>
+    <p>A key generated <em>inside</em> the Secure Enclave <strong>never leaves it</strong>. Not to your app. Not to the kernel. Not to root. Not to a debugger. There is no API that returns it, because the hardware has no path to emit it.</p>
+    <p style="margin-top:8px">What you get instead is a <strong>handle</strong>. You pass data in and say "sign this." The SEP performs the operation internally and hands back the result. The key itself never crosses the boundary.</p></div>
+
+  <h3>Why that's fundamentally different from the Keychain</h3>
+  <table class="tb">
+    <tr><th></th><th>Keychain</th><th>Secure Enclave</th></tr>
+    <tr><td>Encrypted at rest</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td>To <em>use</em> it, the key is…</td><td><strong>loaded into process memory</strong></td><td><strong>never leaves the chip</strong></td></tr>
+    <tr><td>Can root extract it?</td><td>Yes — read the process memory</td><td><strong>No</strong></td></tr>
+    <tr><td>Copy the disk to another Mac?</td><td>Potentially usable</td><td><strong>Useless</strong> — the key isn't on the disk</td></tr>
+    <tr><td>Backup / migrate</td><td>Yes</td><td><strong>No</strong> — and that's the point</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The trade-off, stated honestly</span>
+    <p>Non-exportability means <strong>no backup and no migration</strong>. Replace the Mac and the key is gone — the user must re-enroll. That's not a limitation to work around; it's the guarantee itself. A key that could be moved to a new machine would, by definition, be a key that could be moved to an attacker's machine.</p></div>
+
+<pre><code><span class="c">// Generating a key that lives inside the SEP</span>
+<span class="k">let</span> access = SecAccessControlCreateWithFlags(
+    <span class="k">nil</span>,
+    kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,  <span class="c">// no migration</span>
+    [.privateKeyUsage],
+    <span class="k">nil</span>)!
+
+<span class="k">let</span> attrs: [<span class="k">String</span>: Any] = [
+    kSecAttrKeyType <span class="k">as</span> <span class="k">String</span>:      kSecAttrKeyTypeECSECPrimeRandom,
+    kSecAttrKeySizeInBits <span class="k">as</span> <span class="k">String</span>: 256,          <span class="c">// P-256</span>
+    kSecAttrTokenID <span class="k">as</span> <span class="k">String</span>:      kSecAttrTokenIDSecureEnclave,  <span class="c">// ← inside</span>
+    kSecPrivateKeyAttrs <span class="k">as</span> <span class="k">String</span>: [
+        kSecAttrIsPermanent <span class="k">as</span> <span class="k">String</span>:   <span class="k">true</span>,
+        kSecAttrAccessControl <span class="k">as</span> <span class="k">String</span>: access
+    ]
+]
+
+<span class="k">let</span> privateKey = SecKeyCreateRandomKey(attrs <span class="k">as</span> CFDictionary, &amp;err)!
+<span class="c">// `privateKey` is a HANDLE. The bytes are not in your process.</span>
+<span class="c">// You can request signatures. You can never read it.</span></code></pre>
+</section>
+
+<!-- 05 -->
+<section id="factory">
+  <div class="sn">05 / ★</div>
+  <h2>The factory step — where trust originates</h2>
+  <p class="ss">This is the part people miss, and it's the foundation of everything.</p>
+
+  <p>We've established the SEP can hold an unextractable key. But that only helps if the server has a reason to believe the SEP is real. Otherwise an attacker just claims <em>"my key is in a Secure Enclave, honest"</em> — and we're back to a software claim.</p>
+
+  <div class="bx hwb"><span class="l">What happens during manufacture</span>
+    <p>When the chip is made, a <strong>unique attestation key</strong> is permanently fused into that specific piece of silicon. It cannot be changed, extracted, or reprogrammed — it's part of the physical device.</p>
+    <p style="margin-top:8px">Apple then <strong>signs a certificate</strong> for that key, using a certificate authority Apple controls. The private half stays in the chip forever; Apple keeps a record that this key belongs to genuine Apple silicon.</p></div>
+
+  <h3>Why this is the crucial move</h3>
+  <p>The attestation key exists <strong>before any software runs</strong>. It predates the OS installation, the malware, the attacker. It was created in a factory under Apple's control and certified there.</p>
+  <p>So when that key signs something, the statement isn't coming from software running on the device. It's coming from <strong>a component whose identity was established before the device ever booted</strong> — and certified by a party the server already trusts.</p>
+
+  <div class="bx st"><span class="l">Why an attacker can't fake it</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>Can't extract the key</strong> — it's fused into hardware with no read path.</li>
+      <li><strong>Can't forge a certificate</strong> — that requires Apple's CA private key.</li>
+      <li><strong>Can't reuse another device's attestation</strong> — the server's nonce makes each one single-use (see §07).</li>
+      <li><strong>Can't have the OS produce one</strong> — the OS doesn't have the attestation key. Only the SEP does.</li>
+    </ul></div>
+
+  <div class="bx pu"><span class="l">Where the trust ultimately rests</span>
+    <p>This does mean the whole system rests on <strong>trusting Apple's manufacturing process and CA</strong>. That's not a flaw — it's an explicit, auditable trust anchor, exactly like trusting a certificate authority for HTTPS. Every trust system has a root; what matters is that the root is small, explicit, and belongs to a party with strong incentives to protect it.</p></div>
+</section>
+
+<!-- 06 -->
+<section id="chain">
+  <div class="sn">06</div>
+  <h2>The chain of trust</h2>
+  <p class="ss">Now assemble it. Four links, from Apple's root down to your device's login key.</p>
+
+  <div class="stage">
+    <div class="ttl">How trust flows down</div>
+    <div class="sub">Step through each link and what it certifies.</div>
+    <svg id="a2" viewBox="0 0 700 330" width="100%">
+      <g id="a2l1" class="fade"><rect x="200" y="16" width="300" height="52" rx="10" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.6"/>
+        <text class="lblb" x="350" y="38" text-anchor="middle">Apple Root CA</text>
+        <text class="mono" x="350" y="56" text-anchor="middle">already in your trust store · offline</text></g>
+      <g id="a2ar1" class="fade"><path d="M350 70 L350 92" stroke="var(--faint)" stroke-width="1.6" marker-end="url(#am)"/>
+        <text class="mono" x="392" y="86">signs</text></g>
+
+      <g id="a2l2" class="fade"><rect x="200" y="94" width="300" height="52" rx="10" fill="var(--hwT)" stroke="var(--hw)" stroke-width="1.6"/>
+        <text class="lblb" x="350" y="116" text-anchor="middle">Attestation key in THIS chip</text>
+        <text class="mono" x="350" y="134" text-anchor="middle">fused at manufacture · never leaves silicon</text></g>
+      <g id="a2ar2" class="fade"><path d="M350 148 L350 170" stroke="var(--faint)" stroke-width="1.6" marker-end="url(#am)"/>
+        <text class="mono" x="392" y="164">signs</text></g>
+
+      <g id="a2l3" class="fade"><rect x="180" y="172" width="340" height="60" rx="10" fill="var(--goT)" stroke="var(--go)" stroke-width="1.6"/>
+        <text class="lblb" x="350" y="194" text-anchor="middle">Attestation statement</text>
+        <text class="mono" x="350" y="211" text-anchor="middle">"this key was made inside me, is non-exportable,</text>
+        <text class="mono" x="350" y="225" text-anchor="middle">and here is your nonce proving it's fresh"</text></g>
+      <g id="a2ar3" class="fade"><path d="M350 234 L350 256" stroke="var(--faint)" stroke-width="1.6" marker-end="url(#am)"/>
+        <text class="mono" x="400" y="250">describes</text></g>
+
+      <g id="a2l4" class="fade"><rect x="200" y="258" width="300" height="52" rx="10" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.6"/>
+        <text class="lblb" x="350" y="280" text-anchor="middle">Your device credential</text>
+        <text class="mono" x="350" y="298" text-anchor="middle">P-256 key used for every login</text></g>
+
+      <defs><marker id="am" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--faint)" stroke-width="1.6"/></marker></defs>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="a2go">Step</button>
+      <button class="btn" id="a2rs">Reset</button>
+      <div class="narr" id="a2n">Trust has to start somewhere the server already accepts.</div>
+    </div>
+  </div>
+
+  <div class="bx go"><span class="l">Read it from the bottom</span>
+    <p>"I trust this login key <strong>because</strong> the chip's attestation vouched for it. I trust the chip's attestation <strong>because</strong> Apple certified that chip at the factory. I trust Apple <strong>because</strong> their root certificate is already in my trust store."</p>
+    <p style="margin-top:8px">Each link answers "why?" for the one below. The chain ends at something you accepted before the conversation started — which is exactly how HTTPS works too.</p></div>
+</section>
+
+<!-- 07 -->
+<section id="enroll">
+  <div class="sn">07</div>
+  <h2>Enrollment — the whole flow</h2>
+  <p class="ss">Where attestation actually happens. Once per device, and it establishes everything afterwards.</p>
+
+  <div class="stage">
+    <div class="ttl">Enrolling a device</div>
+    <div class="sub">Step through it. Watch what each party knows at each point.</div>
+    <svg id="a3" viewBox="0 0 700 340" width="100%">
+      <text class="lblb" x="95" y="20" text-anchor="middle">Mac</text>
+      <text class="lblb" x="605" y="20" text-anchor="middle">Server (IdP)</text>
+      <line x1="95" y1="30" x2="95" y2="318" stroke="var(--lineS)" stroke-width="1.5"/>
+      <line x1="605" y1="30" x2="605" y2="318" stroke="var(--lineS)" stroke-width="1.5"/>
+
+      <g id="a3s1" class="mv fade"><rect x="380" y="40" width="212" height="30" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.4"/>
+        <text class="mono" x="486" y="59" text-anchor="middle">challenge: nonce 7f3a…</text></g>
+
+      <g id="a3s2" class="fade"><rect x="24" y="82" width="230" height="46" rx="8" fill="var(--hwT)" stroke="var(--hw)" stroke-width="1.5"/>
+        <text class="mono" x="139" y="100" text-anchor="middle" fill="var(--hw)">SEP generates P-256 key</text>
+        <text class="mono" x="139" y="117" text-anchor="middle">private half never leaves</text></g>
+
+      <g id="a3s3" class="fade"><rect x="24" y="138" width="230" height="46" rx="8" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.5"/>
+        <text class="mono" x="139" y="156" text-anchor="middle" fill="var(--pur)">SEP signs attestation</text>
+        <text class="mono" x="139" y="173" text-anchor="middle">using its factory key</text></g>
+
+      <g id="a3s4" class="mv fade"><rect x="112" y="196" width="240" height="44" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.4"/>
+        <text class="mono" x="232" y="214" text-anchor="middle">public key + attestation</text>
+        <text class="mono" x="232" y="230" text-anchor="middle">+ nonce + cert chain</text></g>
+
+      <g id="a3s5" class="fade"><rect x="440" y="250" width="235" height="46" rx="8" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="mono" x="557" y="268" text-anchor="middle" fill="var(--go)">verify chain → Apple root</text>
+        <text class="mono" x="557" y="285" text-anchor="middle">check nonce matches</text></g>
+
+      <g id="a3s6" class="fade"><rect x="180" y="304" width="340" height="28" rx="7" fill="var(--hwT)" stroke="var(--hw)" stroke-width="1.5"/>
+        <text class="lbl" x="350" y="323" text-anchor="middle" fill="var(--hw)">key bound to user + device · enrollment complete</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="a3go">Step</button>
+      <button class="btn" id="a3rs">Reset</button>
+      <div class="narr" id="a3n">A Mac wants to enroll. The server has never seen it before and has no reason to trust anything it says.</div>
+    </div>
+  </div>
+
+  <h3>What each element is for</h3>
+  <table class="tb">
+    <tr><th>Element</th><th>Prevents</th></tr>
+    <tr><td><strong>Server nonce</strong></td><td><strong>Replay.</strong> Without it, an attacker could capture a valid attestation from a real device and reuse it forever. The nonce makes each attestation single-use and provably fresh.</td></tr>
+    <tr><td><strong>Key generated in SEP</strong></td><td>A software key masquerading as hardware-backed</td></tr>
+    <tr><td><strong>Non-exportability assertion</strong></td><td>A key that could later be copied to another machine</td></tr>
+    <tr><td><strong>Certificate chain</strong></td><td>The device vouching for itself — the chain moves the vouching to Apple</td></tr>
+    <tr><td><strong>Device identifier</strong></td><td>One machine enrolling repeatedly as many devices</td></tr>
+    <tr><td><strong>Access-control flags</strong></td><td>Server learns whether biometric/passcode is required to use the key, so it can enforce policy</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">What the server knows afterwards</span>
+    <p>Not "this device claims to be genuine" but: <strong>"Apple's silicon has certified that this specific public key was generated inside a real Secure Enclave, cannot be exported, and this proof was produced just now in response to my challenge."</strong></p>
+    <p style="margin-top:8px">That's a statement from hardware, not from software. The circle from §01 is broken.</p></div>
+</section>
+
+<!-- 08 -->
+<section id="login">
+  <div class="sn">08</div>
+  <h2>Every login after enrollment</h2>
+  <p class="ss">Attestation happens once. Afterwards it's a simple signature — but it inherits all the strength.</p>
+
+  <div class="stage">
+    <div class="ttl">Daily authentication</div>
+    <div class="sub">Fast, and no attestation needed — the key's provenance was settled at enrollment.</div>
+    <svg id="a4" viewBox="0 0 700 250" width="100%">
+      <text class="lblb" x="95" y="20" text-anchor="middle">Mac</text>
+      <text class="lblb" x="605" y="20" text-anchor="middle">Server</text>
+      <line x1="95" y1="30" x2="95" y2="232" stroke="var(--lineS)" stroke-width="1.5"/>
+      <line x1="605" y1="30" x2="605" y2="232" stroke="var(--lineS)" stroke-width="1.5"/>
+
+      <g id="a4s1" class="mv fade"><rect x="380" y="42" width="212" height="30" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.4"/>
+        <text class="mono" x="486" y="61" text-anchor="middle">challenge: nonce b91c…</text></g>
+
+      <g id="a4s2" class="fade"><rect x="24" y="86" width="240" height="44" rx="8" fill="var(--hwT)" stroke="var(--hw)" stroke-width="1.5"/>
+        <text class="mono" x="144" y="104" text-anchor="middle" fill="var(--hw)">SEP signs the nonce</text>
+        <text class="mono" x="144" y="121" text-anchor="middle">optionally gated on Touch ID</text></g>
+
+      <g id="a4s3" class="mv fade"><rect x="130" y="146" width="220" height="30" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.4"/>
+        <text class="mono" x="240" y="165" text-anchor="middle">signature</text></g>
+
+      <g id="a4s4" class="fade"><rect x="420" y="192" width="255" height="44" rx="8" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="mono" x="547" y="210" text-anchor="middle" fill="var(--go)">verify with stored public key</text>
+        <text class="mono" x="547" y="227" text-anchor="middle">+ evaluate device posture</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn alt" id="a4go">Step</button>
+      <button class="btn" id="a4rs">Reset</button>
+      <div class="narr" id="a4n">The user is logging in. The device was enrolled weeks ago.</div>
+    </div>
+  </div>
+
+  <div class="bx pu"><span class="l">Why no attestation is needed each time</span>
+    <p>Attestation answered a one-time question: <em>"is this key hardware-bound?"</em> Once the server has recorded "yes," every later signature from that key inherits the answer. A valid signature <strong>can only come from that specific silicon</strong>, because the private key exists nowhere else.</p>
+    <p style="margin-top:8px">That's also why it's fast enough to sit on the login path — it's one elliptic-curve signature, not a chain verification.</p></div>
+
+  <div class="bx wn"><span class="l">When you'd re-attest</span>
+    <p>On re-enrollment after a wipe, on hardware change, on a policy-driven periodic refresh, or if any anomaly suggests the binding should be re-established. Some designs re-attest annually simply to bound how stale the original proof can become.</p></div>
+</section>
+
+<!-- 09 -->
+<section id="posture">
+  <div class="sn">09</div>
+  <h2>Device posture — the other half</h2>
+  <p class="ss">Attestation proves the key is real. Posture asks whether the machine is healthy. Different questions.</p>
+
+  <table class="tb">
+    <tr><th></th><th>Attestation</th><th>Posture</th></tr>
+    <tr><td>Question</td><td>Is this key genuinely hardware-bound?</td><td>Is this machine in an acceptable state?</td></tr>
+    <tr><td>Answered by</td><td>Silicon, cryptographically</td><td>Software, reporting observations</td></tr>
+    <tr><td>Frequency</td><td>Once at enrollment</td><td>Continuously</td></tr>
+    <tr><td>Can it be lied about?</td><td><strong>No</strong></td><td><strong>Yes</strong>, if the machine is compromised</td></tr>
+    <tr><td>Examples</td><td>Key provenance, non-exportability</td><td>FileVault on, OS patch level, agent running, no jailbreak/tampering</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">Why the post says "evaluated server-side"</span>
+    <p>This phrasing is deliberate and important. The device <strong>reports</strong> signals; the server <strong>decides</strong>. If the device evaluated its own posture and reported a verdict, you'd be back to the §01 circularity — a compromised machine would simply report "compliant."</p>
+    <p style="margin-top:8px">Evaluating server-side means the policy lives where the attacker can't edit it, it can change without shipping a client update, and the raw signals are auditable. The device answers questions; it doesn't get to grade its own exam.</p></div>
+
+  <div class="bx wn"><span class="l">The honest limit</span>
+    <p>Posture signals still <em>originate</em> on the device, so a sufficiently compromised machine can lie about them. Attestation doesn't fix that — it's a different problem, addressed by tamper detection, measured boot, and EDR. What attestation guarantees is that <strong>the reporting device is the enrolled device</strong>, which at least means a lie is attributable to a specific known machine rather than an anonymous one.</p></div>
+
+  <div class="bx go"><span class="l">The two-part framing to use</span>
+    <p>"Attestation answers <em>'is this really the device I enrolled?'</em> — cryptographically, and unfakeably. Posture answers <em>'is that device currently healthy?'</em> — by observation, and defeatable by a sufficiently deep compromise. You need both, and it's worth being precise about which guarantee comes from which."</p></div>
+</section>
+
+<!-- 10 -->
+<section id="bound">
+  <div class="sn">10 / ★ THE PAYOFF</div>
+  <h2>Device-bound tokens — why any of this matters</h2>
+  <p class="ss">The post mentions "PSSO and Device Bound SSO turn that one unlock into SSO across everything downstream." Here's why that's a big deal.</p>
+
+  <h3>The problem with normal session tokens</h3>
+  <p>After you log in, the server gives you a <strong>bearer token</strong>. The name is literal: <em>whoever bears it, uses it.</em> It carries no identity of its own.</p>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:9px">
+      <div class="nd" style="min-width:450px"><b>1</b>you authenticate — password, MFA, everything correct</div>
+      <div class="nd" style="min-width:450px"><b>2</b>server issues a session token; your browser or app stores it</div>
+      <div class="nd r" style="min-width:450px"><b>3</b>malware, or an adversary-in-the-middle phishing proxy, <strong>steals the token</strong></div>
+      <div class="nd r" style="min-width:450px"><b>4</b>attacker replays it from their own machine — <strong>and it works</strong></div>
+    </div>
+    <div class="cap">Your MFA was perfect. It didn't matter, because the token doesn't care who holds it.</div>
+  </div>
+  <p>This is exactly how modern AiTM phishing kits operate: they don't want your password, they want the <em>session cookie</em> issued after you authenticate. It sidesteps MFA entirely.</p>
+
+  <h3>What device binding changes</h3>
+  <div class="bx hwb"><span class="l">The fix</span>
+    <p>Bind the token to the device's Secure Enclave key. Now using the token requires <strong>a fresh signature from a key that cannot leave the original machine</strong>. The token alone is worthless.</p>
+    <p style="margin-top:8px">Steal it and replay it from another machine? You can't produce the signature. The private key is in silicon 5,000 miles away, and it never leaves.</p></div>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd r" style="min-width:200px"><b>bearer token</b>stolen → works anywhere</div>
+      <span class="ar">vs</span>
+      <div class="nd h" style="min-width:220px"><b>device-bound token</b>stolen → useless without the SEP key</div>
+    </div>
+    <div class="cap">This is what kills the session-theft attack class.</div>
+  </div>
+
+  <h3>The full chain, assembled</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd h" style="min-width:470px"><b>1 · attestation</b>proves the device key is genuinely hardware-bound and non-exportable</div>
+      <span class="ar">↓</span>
+      <div class="nd" style="min-width:470px"><b>2 · posture</b>server evaluates whether the machine is healthy enough to be trusted</div>
+      <span class="ar">↓</span>
+      <div class="nd p" style="min-width:470px"><b>3 · Desktop MFA at login</b>user proves themselves; device proves itself by signing with the attested key</div>
+      <span class="ar">↓</span>
+      <div class="nd g" style="min-width:470px"><b>4 · PSSO / Device Bound SSO</b>the resulting session is bound to that same key — one unlock, SSO everywhere downstream, and none of it replayable elsewhere</div>
+    </div>
+    <div class="cap">Each layer depends on the one above. Attestation is the foundation the rest stands on.</div>
+  </div>
+
+  <div class="bx go"><span class="l">Why this is the actual product thesis</span>
+    <p>Without attestation, "device-bound" is a claim the device makes about itself — and an attacker's VM makes the same claim. <strong>Attestation is what makes device binding a verifiable cryptographic property rather than a marketing phrase</strong>, and that property is what lets one unlock safely become SSO across an entire estate.</p></div>
+</section>
+
+<!-- 11 -->
+<section id="limits">
+  <div class="sn">11</div>
+  <h2>What attestation can't do</h2>
+  <p class="ss">Knowing the boundary is what makes you credible rather than promotional.</p>
+
+  <table class="tb">
+    <tr><th>It does NOT prove</th><th>Why</th><th>What addresses it</th></tr>
+    <tr><td><strong>The machine isn't compromised</strong></td><td>Malware with root can <em>request</em> signatures from the SEP — it just can't extract the key. Attestation proves the key is real, not that its user is honest.</td><td>EDR, posture, tamper detection</td></tr>
+    <tr><td><strong>The user is the right person</strong></td><td>It proves the <em>device</em>. A thief with the unlocked machine gets the same signatures.</td><td>MFA, biometric gating on the key</td></tr>
+    <tr><td><strong>Anything about the present</strong></td><td>It's a point-in-time statement from enrollment. A device attested a year ago may be very different today.</td><td>Continuous posture, periodic re-attestation</td></tr>
+    <tr><td><strong>Posture claims are truthful</strong></td><td>Those come from software, and software can lie if deeply compromised.</td><td>Server-side evaluation, corroborating signals</td></tr>
+    <tr><td><strong>Immunity to physical attack</strong></td><td>Extremely well-resourced physical attacks on silicon exist, though they're expensive and don't scale.</td><td>Out of scope for most threat models — say so</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The honest summary</span>
+    <p>"Attestation closes one question <strong>completely</strong>: is this key genuinely bound to real hardware. That question was previously unanswerable, and closing it is what makes device identity meaningful. It leaves 'is this machine currently healthy' entirely open — that's posture and EDR. Being precise about which control owns which question is what makes a defence-in-depth story real rather than a slide."</p></div>
+</section>
+
+<!-- 12 -->
+<section id="compare">
+  <div class="sn">12</div>
+  <h2>The same idea elsewhere</h2>
+  <p class="ss">Once you see the pattern, you see it everywhere — which confirms you've understood it rather than memorised one instance.</p>
+
+  <table class="tb">
+    <tr><th>System</th><th>Hardware root</th><th>Attests</th></tr>
+    <tr><td><strong>Apple Secure Enclave</strong></td><td>Key fused at manufacture, Apple-certified</td><td>A key was generated in the SEP and is non-exportable</td></tr>
+    <tr><td><strong>TPM</strong> (Windows/PC)</td><td>Endorsement Key burned in, vendor-certified</td><td>Same idea, plus <strong>measured boot</strong> — PCRs record what code ran, so it can attest to boot integrity too</td></tr>
+    <tr><td><strong>Apple App Attest</strong></td><td>Same SEP root</td><td>That a genuine, unmodified instance of <em>your app</em> is running on real Apple hardware — anti-fraud rather than device identity</td></tr>
+    <tr><td><strong>FIDO2 / WebAuthn</strong></td><td>Authenticator's attestation key</td><td>What <em>kind</em> of authenticator this is, so a relying party can require certified hardware</td></tr>
+    <tr><td><strong>Android Key Attestation</strong></td><td>Google-certified hardware key</td><td>Key properties plus device integrity and boot state</td></tr>
+    <tr><td><strong>Cloud confidential computing</strong></td><td>CPU vendor key (SGX, SEV)</td><td>That your code is running unmodified in an encrypted enclave</td></tr>
+  </table>
+
+  <div class="bx pu"><span class="l">The universal pattern</span>
+    <p><strong>An unforgeable hardware identity, established before any software exists, certified by the manufacturer, used to make verifiable statements about software-visible things.</strong> The details change; the shape never does. TPM adds measured boot; App Attest scopes to an app; FIDO scopes to authenticator type. Same skeleton.</p></div>
+
+  <div class="bx wn"><span class="l">The privacy angle — worth one sentence</span>
+    <p>A permanent per-device key is also a permanent tracking identifier, so platforms deliberately limit it: attestation is per-relying-party or uses privacy-preserving CA schemes, so the same device doesn't present a correlatable identity everywhere. Mentioning this shows you've considered the trade-off, not just the security win.</p></div>
+</section>
+
+<!-- 13 -->
+<section id="qa">
+  <div class="sn">13</div>
+  <h2>Answering the question</h2>
+  <p class="ss">Layered answers — start short, go deeper if they push.</p>
+
+  <details class="q" open><summary>What is hardware-rooted attestation?</summary><div class="bod">
+    <p>It solves the enrollment trust problem. When a device presents a public key, the server has no way to know whether it came from a Secure Enclave or a file on disk — and every claim the device makes about itself is worthless, because a compromised device makes the same claims.</p>
+    <p>So the Secure Enclave signs a statement — containing the new public key, the server's challenge nonce, and the key's properties — using an attestation key fused into the chip at manufacture and certified by Apple. The server verifies that chain to Apple's root. Now the guarantee comes from silicon rather than from software, and the circularity is broken.</p></div></details>
+
+  <details class="q"><summary>Why can't the device just sign a message to prove itself?</summary><div class="bod">
+    <p>A signature proves possession of a private key — nothing more. If that key lives in a file it can be copied, so "possession" might mean a script on a VM. The signature is mathematically perfect and answers the wrong question. What you actually need to know is whether the key can exist anywhere other than one specific piece of silicon, and only the hardware can answer that.</p></div></details>
+
+  <details class="q"><summary>What's the nonce for?</summary><div class="bod">
+    <p>Freshness. Without a server-supplied nonce, an attacker could capture a valid attestation from a genuine device and replay it forever from anywhere. Including the server's challenge in the signed statement makes each attestation single-use and proves it was produced just now, in response to this specific request.</p></div></details>
+
+  <details class="q"><summary>What stops an attacker forging an attestation?</summary><div class="bod">
+    <p>Four things. The attestation key is fused into hardware with no read path, so it can't be extracted. Forging the certificate would need Apple's CA private key. Replaying another device's attestation fails the nonce check. And the OS can't produce one, because it doesn't hold the attestation key — only the SEP does. The whole point is that the statement originates outside the software the attacker controls.</p></div></details>
+
+  <details class="q"><summary>Does attestation happen on every login?</summary><div class="bod">
+    <p>No — once at enrollment. It answers a one-time question: is this key hardware-bound? Once the server records the answer, every later signature from that key inherits it, because the key exists nowhere else. Daily logins are a single elliptic-curve signature, which is fast enough for the login path. You'd re-attest on re-enrollment, hardware change, or a policy-driven refresh.</p></div></details>
+
+  <details class="q"><summary>Why does posture have to be evaluated server-side?</summary><div class="bod">
+    <p>Because a compromised device would happily grade itself as compliant. The device reports raw signals; the server applies the policy. That keeps the policy where an attacker can't edit it, lets it change without a client update, and keeps the signals auditable. It's the same principle as never trusting client-side validation.</p></div></details>
+
+  <details class="q"><summary>How does this connect to device-bound tokens?</summary><div class="bod">
+    <p>A normal session token is a bearer credential — steal it and replay it anywhere, which is exactly what adversary-in-the-middle phishing kits harvest, sidestepping MFA entirely. Binding the token to the Secure Enclave key means using it requires a fresh signature from a key that can't leave the machine. The stolen token is useless elsewhere. Attestation is what makes that binding trustworthy rather than a claim — without it, an attacker's VM asserts device binding just as loudly.</p></div></details>
+
+  <details class="q"><summary>Can't an attacker with root just bypass it?</summary><div class="bod">
+    <p>They can request signatures from the SEP while they have root on that machine — but they can't extract the key, so they can't impersonate the device from anywhere else. The blast radius stays local, and the compromise is detectable through posture and tamper signals. Attestation was never meant to defend an already-compromised machine; it answers whether the key is real. Machine health is a different control at a different layer.</p></div></details>
+
+  <div class="bx go"><span class="l">The compressed version</span>
+    <p><strong>Software can't vouch for itself — a compromised device makes the same claims as a healthy one. So a piece of tamper-proof silicon, whose own key was certified by Apple at the factory, signs a statement about a freshly generated key: it was made in here, it can't leave, and here's your nonce proving this is happening now. The server verifies that chain to Apple's root. That turns "trust me, I'm a real device" into something cryptographically checkable — and it's the foundation device-bound tokens and SSO stand on.</strong></p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Hardware-rooted attestation · the trust problem → the Secure Enclave → the factory root → enrollment → device-bound tokens → limits.
+</p>
+
+</div></main>
+</div>
+<script>
+(function(){
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=[].slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+
+  function $(i){return document.getElementById(i)}
+  function on(e){e.classList.add('on')} function off(e){e.classList.remove('on')}
+
+  /* --- A1: software claim toggle --- */
+  (function(){
+    var box=$('a1box'),t1=$('a1t1'),t2=$('a1t2'),t3=$('a1t3'),
+        vbox=$('a1vbox'),v1=$('a1v1'),v2=$('a1v2'),n=$('a1n'),btn=$('a1t');
+    var mode=0;
+    function render(){
+      if(mode===0){
+        box.setAttribute('fill','var(--goT)');box.setAttribute('stroke','var(--go)');
+        t1.textContent='Genuine MacBook';t2.textContent='real hardware';
+        t3.textContent='software key in a file';
+        v1.textContent='Server sees: bytes';
+        v2.textContent='identical in both cases — no way to distinguish';
+        vbox.setAttribute('fill','var(--warnT)');vbox.setAttribute('stroke','var(--warn)');
+        v1.setAttribute('fill','var(--warn)');
+        n.textContent='A genuine Mac sends its claim. The signature proves it holds a private key — but says nothing about where that key lives.';
+        btn.textContent='Switch to the impostor →';
+      }else{
+        box.setAttribute('fill','var(--stopT)');box.setAttribute('stroke','var(--stop)');
+        t1.textContent='Linux VM, Bulgaria';t2.textContent='a Python script';
+        t3.textContent='copied the same key file';
+        v1.textContent='Server sees: the SAME bytes';
+        v2.textContent='the claim, the key, the signature — all valid';
+        vbox.setAttribute('fill','var(--stopT)');vbox.setAttribute('stroke','var(--stop)');
+        v1.setAttribute('fill','var(--stop)');
+        n.textContent='An attacker who copied the key file sends a byte-identical message. Every check passes. The server has no basis to tell these apart — which is why software claims cannot work.';
+        btn.textContent='← Back to the genuine device';
+      }
+    }
+    btn.addEventListener('click',function(){mode=1-mode;render()});render();
+  })();
+
+  /* --- A2: chain of trust --- */
+  (function(){
+    var l1=$('a2l1'),a1=$('a2ar1'),l2=$('a2l2'),a2=$('a2ar2'),
+        l3=$('a2l3'),a3=$('a2ar3'),l4=$('a2l4'),n=$('a2n'),go=$('a2go'),rs=$('a2rs');
+    var s=0,all=[l1,a1,l2,a2,l3,a3,l4];
+    function reset(){s=0;all.forEach(off);
+      n.textContent='Trust has to start somewhere the server already accepts.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(l1);n.textContent='Apple\u2019s root CA certificate is already in your operating system\u2019s trust store — you accepted it when you bought the machine, exactly like the CAs behind HTTPS.';}
+      else if(s===2){on(a1);on(l2);n.textContent='At the factory, a unique key is fused into this specific chip and Apple signs a certificate for it. That key predates the OS, the malware, and the attacker.';}
+      else if(s===3){on(a2);on(l3);n.textContent='When a new key is generated, the chip signs a statement about it using that factory key — including the server\u2019s nonce, so the statement is provably fresh.';}
+      else if(s===4){on(a3);on(l4);
+        n.textContent='And that statement describes your actual device credential. Read it bottom-up: I trust this key because the chip vouched for it, because Apple certified the chip, because I already trust Apple.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* --- A3: enrollment --- */
+  (function(){
+    var s1=$('a3s1'),s2=$('a3s2'),s3=$('a3s3'),s4=$('a3s4'),s5=$('a3s5'),s6=$('a3s6'),
+        n=$('a3n'),go=$('a3go'),rs=$('a3rs');
+    var s=0,all=[s1,s2,s3,s4,s5,s6];
+    function reset(){s=0;all.forEach(off);
+      s1.style.transform='translate(0,0)';s4.style.transform='translate(0,0)';
+      n.textContent='A Mac wants to enroll. The server has never seen it before and has no reason to trust anything it says.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(s1);n.textContent='The server sends a random nonce. This is the anti-replay control — it forces the proof to be generated now, not captured from another device earlier.';}
+      else if(s===2){s1.style.transform='translate(-330px,0)';on(s2);
+        n.textContent='The Mac asks the Secure Enclave to generate a P-256 key pair. The private half is created inside the chip and has no path out — not to the app, not to the kernel, not to root.';}
+      else if(s===3){on(s3);
+        n.textContent='The SEP signs an attestation: the new public key, the server\u2019s nonce, the key\u2019s properties (hardware-generated, non-exportable, access controls) — signed with the factory-fused attestation key.';}
+      else if(s===4){on(s4);s4.style.transform='translate(300px,0)';
+        n.textContent='All of it goes to the server: the public key, the attestation, and the certificate chain leading back to Apple.';}
+      else if(s===5){on(s5);
+        n.textContent='The server verifies the chain terminates at Apple\u2019s root, and that the nonce matches the one it just issued. Both must hold.';}
+      else if(s===6){on(s6);
+        n.textContent='Now the server knows — from Apple\u2019s silicon, not from the device\u2019s own claim — that this key is real, hardware-bound, and freshly attested. It binds the key to the user and device. Enrollment is complete.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* --- A4: daily login --- */
+  (function(){
+    var s1=$('a4s1'),s2=$('a4s2'),s3=$('a4s3'),s4=$('a4s4'),
+        n=$('a4n'),go=$('a4go'),rs=$('a4rs');
+    var s=0,all=[s1,s2,s3,s4];
+    function reset(){s=0;all.forEach(off);
+      s1.style.transform='translate(0,0)';s3.style.transform='translate(0,0)';
+      n.textContent='The user is logging in. The device was enrolled weeks ago.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(s1);n.textContent='The server sends a fresh challenge nonce — again, so the response can\u2019t be replayed.';}
+      else if(s===2){s1.style.transform='translate(-330px,0)';on(s2);
+        n.textContent='The Secure Enclave signs it with the enrolled key, optionally requiring Touch ID first. No attestation this time — the key\u2019s provenance was settled at enrollment.';}
+      else if(s===3){on(s3);s3.style.transform='translate(300px,0)';
+        n.textContent='Just a signature goes back. Fast — one elliptic-curve operation.';}
+      else if(s===4){on(s4);
+        n.textContent='The server verifies it against the stored public key. A valid signature can only come from that specific silicon, because the private key exists nowhere else. Posture is evaluated alongside it.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+})();
+</script>
+</body>
+</html>

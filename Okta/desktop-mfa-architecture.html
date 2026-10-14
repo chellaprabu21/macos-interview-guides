@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Desktop MFA &amp; Password Sync — how they're built</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;--brand:#1c4f7c;--brandT:#e3edf5;--go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;--stop:#a03a2a;--stopT:#f9e7e2;--pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:var(--pur);z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:288px;flex:0 0 288px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#12101a;color:#cbc6d7;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#8f86a2;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#8f86a2;margin:15px 4px 6px;border-top:1px solid #2a2636;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#6a627d;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#aea6be;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#726989;min-width:20px}
+  nav a:hover{background:#201c2b;color:#fff}nav a.active{background:var(--pur);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:850px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pur);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--pur)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.4px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .yo{border-left-color:var(--brand);background:var(--brandT)}.yo .l{color:var(--brand)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .tag{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.hot{background:var(--stopT);color:var(--stop)}
+  .tag.med{background:var(--brandT);color:var(--brand)}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.8px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.8px;color:var(--pur)}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.a{border-color:var(--brand);background:var(--brandT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .nd.p{border-color:var(--pur);background:var(--purT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Desktop MFA</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Desktop MFA &amp;<br>Password Sync<span class="s">how these products are<br>actually built on macOS</span></div>
+  <div class="ct">15 sections</div>
+  <nav id="toc">
+    <div class="grp">Foundations</div>
+    <a href="#problem"><span class="n">01</span><span>The problem &amp; constraints</span></a>
+    <a href="#boundaries"><span class="n">02</span><span>The three environments ★</span></a>
+    <a href="#authz"><span class="n">03</span><span>The authorization system</span></a>
+    <div class="grp">Desktop MFA</div>
+    <a href="#arch"><span class="n">04</span><span>Process architecture</span></a>
+    <a href="#plugin"><span class="n">05</span><span>The plugin, in detail</span></a>
+    <a href="#enroll"><span class="n">06</span><span>Enrollment</span></a>
+    <a href="#online"><span class="n">07</span><span>Online authentication</span></a>
+    <a href="#offline"><span class="n">08</span><span>Offline authentication ★</span></a>
+    <a href="#recovery"><span class="n">09</span><span>Recovery &amp; lockout</span></a>
+    <div class="grp">Password Sync</div>
+    <a href="#psync"><span class="n">10</span><span>Desktop Password Sync</span></a>
+    <a href="#platformsso"><span class="n">11</span><span>Platform SSO</span></a>
+    <div class="grp">Operations</div>
+    <a href="#deploy"><span class="n">12</span><span>Deployment &amp; MDM</span></a>
+    <a href="#ops"><span class="n">13</span><span>Rollout, telemetry, kill switch</span></a>
+    <a href="#test"><span class="n">14</span><span>Testing this</span></a>
+    <a href="#qa"><span class="n">15</span><span>Talking about it ★</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Architectural reconstruction · the products your interviewer personally built</p>
+  <h1>Desktop MFA, from the login window down.</h1>
+  <p class="led">A complete walkthrough of how MFA at the macOS login window is implemented — the authorization plugin, the daemon, the offline problem, and the operational machinery that keeps a fleet from being locked out. This is reconstruction from public platform mechanisms, not inside knowledge, so hold it as "how I would build it" rather than "how Okta did."</p>
+</header>
+
+<section id="problem">
+  <div class="sn">01</div>
+  <h2>The problem &amp; constraints</h2>
+  <p class="ss">Understand what makes this hard and the architecture becomes inevitable.</p>
+
+  <h3>What the product does</h3>
+  <p>Require a second factor before a user can log into a Mac — and optionally before unlocking the screensaver. The corporate laptop is the highest-value endpoint an attacker can reach: a stolen device with a weak or phished password gives access to everything the user has, including cached credentials, local secrets, and any session tokens on disk.</p>
+
+  <h3>Why it's hard</h3>
+  <table class="tb">
+    <tr><th>Constraint</th><th>Consequence</th></tr>
+    <tr><td>You don't own the login window</td><td>No API to "add a step to login." You must insert into Apple's authorization machinery.</td></tr>
+    <tr><td>No user session exists yet</td><td>No user keychain, no LaunchAgents, no home directory (it may not be mounted), no normal app environment.</td></tr>
+    <tr><td>The network may be unavailable</td><td>Wi-Fi often hasn't connected. Your IdP is unreachable at exactly the moment you need it.</td></tr>
+    <tr><td>FileVault happens first</td><td>Pre-boot unlock occurs before macOS is running — no plugin, no daemon, no network.</td></tr>
+    <tr><td>A bug locks people out permanently</td><td>There is no "uninstall from the login window." <strong>This dominates every design decision.</strong></td></tr>
+    <tr><td>Recovery must work offline</td><td>A locked-out user can't open a browser to self-serve.</td></tr>
+    <tr><td>Multiple OS versions in the fleet</td><td>Behaviour differs across macOS releases; you support several simultaneously.</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The sentence that governs everything</span>
+    <p><strong>A bug in an authorization mechanism locks every user out of every Mac in the fleet, with no way in from the login window.</strong> That single fact drives fail-open defaults, hard timeouts on every network call, a remotely-deliverable kill switch, staged rollout with automatic halt, and a documented local recovery path. If you say one thing about this product, say this — it's what the team actually lives with.</p></div>
+</section>
+
+<section id="boundaries">
+  <div class="sn">02 / ★</div>
+  <h2>The three environments</h2>
+  <p class="ss">Any design must state which of these it operates in. Getting this wrong is the most common misunderstanding of the product.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:10px">
+      <div class="nd r" style="min-width:460px"><b>1 · pre-boot — FileVault</b>EFI/recoveryOS environment · local password or recovery key only · no macOS, no daemons, no plugins, no network · <strong>you cannot run code here</strong></div>
+      <span class="ar">↓</span>
+      <div class="nd a" style="min-width:460px"><b>2 · login window — loginwindow + SecurityAgent + authd</b>macOS is running · your plugin executes as an authorization mechanism · a root daemon can run · network <em>may</em> exist · no user session, no user keychain, no home directory</div>
+      <span class="ar">↓</span>
+      <div class="nd g" style="min-width:460px"><b>3 · user session</b>full environment · LaunchAgents, UI, user keychain, reliable network · enrollment and settings live here</div>
+    </div>
+    <div class="cap">Three environments, three capability sets. State which one you're in before proposing anything.</div>
+  </div>
+
+  <h3>The FileVault complication</h3>
+  <p>With FileVault enabled, the pre-boot unlock authenticates the user against the volume's encryption keys. macOS then commonly <strong>passes those credentials through</strong> to complete login automatically — so the login window may never appear, and a naive MFA plugin never runs.</p>
+  <div class="bx wn"><span class="l">How products handle it</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>Disable the pass-through</strong> so the login window always appears after FileVault unlock — the user unlocks the disk, then authenticates properly with MFA. Costs an extra step; gains actual enforcement.</li>
+      <li><strong>Also gate the screensaver</strong> (<code>system.login.screensaver</code>), so even if initial login is bypassed, the machine is protected on every subsequent unlock.</li>
+      <li><strong>Accept the gap explicitly</strong> and document it — FileVault protects data at rest, MFA protects session establishment, and they're different threat models.</li>
+    </ul>
+    <p style="margin-top:8px">Being able to explain this gap is one of the strongest signals you understand the product rather than the marketing.</p></div>
+</section>
+
+<section id="authz">
+  <div class="sn">03</div>
+  <h2>The authorization system — the hook point</h2>
+  <p class="ss">The platform mechanism that makes the whole product possible.</p>
+
+  <h3>The model</h3>
+  <ul>
+    <li><strong>Rights</strong> — named strings for privileged operations: <code>system.login.console</code> (console login), <code>system.login.screensaver</code> (unlock), <code>system.preferences</code>, <code>authenticate</code>.</li>
+    <li><strong>The authorization database</strong> — policy stored in <code>/var/db/auth.db</code>, seeded from <code>/System/Library/Security/authorization.plist</code>. Inspect with <code>security authorizationdb read system.login.console</code>.</li>
+    <li><strong>Rules and mechanisms</strong> — a right is satisfied by an ordered chain of <strong>mechanisms</strong>, each a piece of code that runs and votes.</li>
+    <li><strong>authd</strong> evaluates rights. <strong>SecurityAgent</strong> hosts mechanisms that draw UI.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">The key realisation</span>
+    <p><strong>Login is just an authorization right.</strong> Because it's a chain, and the chain is data in a database, a vendor can insert their own mechanism into it. That's the entire basis of Desktop MFA, Jamf Connect, and every comparable product.</p></div>
+
+  <h3>The chain, with your mechanism inserted</h3>
+<pre><code>$ security authorizationdb read system.login.console
+
+&lt;key&gt;mechanisms&lt;/key&gt;
+&lt;array&gt;
+  &lt;string&gt;builtin:policy-banner&lt;/string&gt;
+  &lt;string&gt;loginwindow:login&lt;/string&gt;                <span class="c">// collects user + password</span>
+  &lt;string&gt;builtin:login-begin&lt;/string&gt;
+  &lt;string&gt;system.login.fus&lt;/string&gt;                 <span class="c">// fast user switching</span>
+  &lt;string&gt;builtin:home-directory-mount&lt;/string&gt;
+  &lt;string&gt;builtin:authenticate,privileged&lt;/string&gt;  <span class="c">// local credential check</span>
+
+  &lt;string&gt;OktaMFA:check,privileged&lt;/string&gt;         <span class="c">// ← privileged: policy, no UI</span>
+  &lt;string&gt;OktaMFA:prompt&lt;/string&gt;                   <span class="c">// ← unprivileged: draws UI</span>
+  &lt;string&gt;OktaMFA:verify,privileged&lt;/string&gt;        <span class="c">// ← privileged: final verdict</span>
+
+  &lt;string&gt;builtin:auth-with-user-record&lt;/string&gt;
+  &lt;string&gt;loginwindow:success&lt;/string&gt;
+  &lt;string&gt;builtin:login-end&lt;/string&gt;
+&lt;/array&gt;</code></pre>
+
+  <h3>The privileged / non-privileged split</h3>
+  <table class="tb">
+    <tr><th></th><th>Non-privileged</th><th>Privileged (<code>,privileged</code>)</th></tr>
+    <tr><td>Host process</td><td>SecurityAgent</td><td>authd</td></tr>
+    <tr><td>Runs as</td><td>The <code>_securityagent</code> user</td><td><strong>root</strong></td></tr>
+    <tr><td>Can draw UI</td><td><strong>Yes</strong></td><td>No</td></tr>
+    <tr><td>Used for</td><td>The MFA prompt, number entry, status</td><td>Reading policy, talking to the privileged daemon, the final verdict</td></tr>
+  </table>
+  <p>They communicate through the <strong>authorization context</strong> — a key-value store shared along the chain. That's why a real implementation needs at least two mechanisms in the same plugin bundle.</p>
+
+  <div class="bx wn"><span class="l">A security note worth making</span>
+    <p>Earlier mechanisms may have placed <strong>the user's password in the context in plaintext</strong>. That's precisely why this is such a sensitive place to run code, why the bundle must be signed and manually installed, and why the interface between your mechanisms should carry the minimum necessary — never more of the context than you need.</p></div>
+</section>
+
+<section id="arch">
+  <div class="sn">04 / DESKTOP MFA</div>
+  <h2>Process architecture</h2>
+  <p class="ss">Five components, split on trust and session boundaries.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:9px">
+      <div class="nd" style="min-width:470px"><b>1 · Enrollment app (user session)</b>SwiftUI · enroll factors · generate the Secure Enclave key · register with the IdP · show status</div>
+      <div class="nd" style="min-width:470px"><b>2 · LaunchAgent (per user)</b>menu bar · notifications · keeps the offline verifier fresh while the session is active</div>
+      <div class="nd r" style="min-width:470px"><b>3 · Authorization plugin (login window)</b>two or three mechanisms in one bundle · runs inside SecurityAgent and authd · votes allow/deny</div>
+      <div class="nd p" style="min-width:470px"><b>4 · LaunchDaemon (root, always running)</b>the brain · policy · network to the IdP · offline verifier store · Secure Enclave operations · telemetry</div>
+      <div class="nd a" style="min-width:470px"><b>5 · The IdP (cloud)</b>factor verification · policy source · audit · admin console</div>
+    </div>
+    <div class="cap">The plugin is deliberately thin. The daemon does the work, because the plugin runs in a hostile, short-lived environment.</div>
+  </div>
+
+  <h3>Why the daemon, and not logic in the plugin</h3>
+  <ul>
+    <li><strong>Lifetime</strong> — the plugin is instantiated per login attempt and torn down. It has nowhere to keep state, connections, or caches.</li>
+    <li><strong>Network</strong> — a long-lived daemon can maintain a warm connection, pre-fetch policy, and know the network state before the login window even appears.</li>
+    <li><strong>Crash isolation</strong> — a crash inside a login mechanism is catastrophic; a crash in a daemon is a restart.</li>
+    <li><strong>Reuse</strong> — the same daemon serves the login window, the screensaver, and the user-session app.</li>
+    <li><strong>Testability</strong> — logic in a framework the daemon links can be unit tested. Logic inside an authorization plugin effectively cannot.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">The design rule</span>
+    <p>"The plugin is a <strong>thin client</strong>. It gathers the username from the context, asks the daemon for a decision over XPC with a hard timeout, presents whatever UI the daemon says to present, and votes. All policy, crypto, network, and state live in the daemon — which is testable, restartable, and shared."</p></div>
+
+  <h3>The XPC interface</h3>
+<pre><code>@objc <span class="k">protocol</span> MFADaemonProtocol {
+    <span class="c">// Does this user need MFA at all, and which factors are available?</span>
+    <span class="k">func</span> evaluatePolicy(username: <span class="k">String</span>,
+                        reply: @escaping (<span class="k">Data</span>?, <span class="k">Error</span>?) -&gt; <span class="k">Void</span>)
+
+    <span class="c">// Start a verification; returns a challenge to display (e.g. a number)</span>
+    <span class="k">func</span> beginVerification(username: <span class="k">String</span>, factor: <span class="k">String</span>,
+                           reply: @escaping (<span class="k">Data</span>?, <span class="k">Error</span>?) -&gt; <span class="k">Void</span>)
+
+    <span class="c">// Poll or submit; daemon owns all network and crypto</span>
+    <span class="k">func</span> completeVerification(sessionID: <span class="k">String</span>, response: <span class="k">Data</span>?,
+                              reply: @escaping (<span class="k">Bool</span>, <span class="k">Error</span>?) -&gt; <span class="k">Void</span>)
+
+    <span class="c">// NOT: func runCommand(_ s: String) — never a general lever</span>
+}</code></pre>
+  <p>The daemon validates every connecting peer by <strong>audit token</strong> against a code-signing requirement — never by pid, since pids recycle and can be raced. The plugin, the agent, and the enrollment app each have their own designated requirement.</p>
+</section>
+
+<section id="plugin">
+  <div class="sn">05</div>
+  <h2>The plugin, in detail</h2>
+  <p class="ss">A CFPlugIn bundle exposing plugin and mechanism interfaces. The mechanism callbacks are where everything happens.</p>
+
+  <h3>The lifecycle</h3>
+  <div class="dg">
+    <div class="fl">
+      <div class="nd"><b>Create</b>plugin loaded<br>once</div><span class="ar">→</span>
+      <div class="nd a"><b>MechanismCreate</b>per invocation</div><span class="ar">→</span>
+      <div class="nd p"><b>MechanismInvoke</b>do the work,<br>set a result</div><span class="ar">→</span>
+      <div class="nd"><b>MechanismDeactivate</b>user cancelled /<br>chain unwound</div><span class="ar">→</span>
+      <div class="nd"><b>MechanismDestroy</b></div>
+    </div>
+    <div class="cap">Invoke is where you vote. Deactivate is where you clean up if the user backs out.</div>
+  </div>
+
+  <h3>The mechanism, conceptually</h3>
+<pre><code><span class="c">// Real API is C with function-pointer tables; shown here for clarity.</span>
+
+OSStatus MechanismInvoke(AuthorizationMechanismRef inMechanism) {
+
+    <span class="c">// 1. Read what earlier mechanisms gathered</span>
+    <span class="k">const</span> AuthorizationValue *user = NULL;
+    callbacks-&gt;GetContextValue(engine, kAuthorizationEnvironmentUsername,
+                               &amp;flags, &amp;user);
+
+    <span class="c">// 2. Ask the daemon — with a HARD timeout</span>
+    Decision d = askDaemonWithTimeout(user, /* seconds */ 8);
+
+    <span class="c">// 3. Vote</span>
+    <span class="k">switch</span> (d) {
+      <span class="k">case</span> DecisionAllow:
+        callbacks-&gt;SetResult(engine, kAuthorizationResultAllow); <span class="k">break</span>;
+      <span class="k">case</span> DecisionDeny:
+        callbacks-&gt;SetResult(engine, kAuthorizationResultDeny); <span class="k">break</span>;
+      <span class="k">case</span> DecisionUserCancelled:
+        callbacks-&gt;SetResult(engine, kAuthorizationResultUserCanceled); <span class="k">break</span>;
+      <span class="k">case</span> DecisionUnavailable:
+        <span class="c">// Daemon unreachable, timed out, or internal error.</span>
+        <span class="c">// THE MOST IMPORTANT LINE IN THE PRODUCT:</span>
+        callbacks-&gt;SetResult(engine, failOpenPolicy
+                                     ? kAuthorizationResultAllow
+                                     : kAuthorizationResultDeny);
+        <span class="k">break</span>;
+    }
+    <span class="k">return</span> errAuthorizationSuccess;
+}</code></pre>
+
+  <div class="bx st"><span class="l">Why that last branch is the whole product</span>
+    <p>Every unexpected condition — daemon crashed, XPC unavailable, timeout exceeded, an internal exception — must land in a <strong>deliberate, configurable branch</strong>, never in an accidental deny and never in a crash. A crash inside the mechanism is worse than either outcome, because the behaviour then depends on how the OS handles a failed mechanism. So the plugin wraps everything, times out aggressively, and has exactly one place where the fail-open/fail-closed policy is decided.</p></div>
+
+  <h3>The four results</h3>
+  <table class="tb">
+    <tr><th>Result</th><th>Effect</th></tr>
+    <tr><td><code>kAuthorizationResultAllow</code></td><td>Proceed to the next mechanism</td></tr>
+    <tr><td><code>kAuthorizationResultDeny</code></td><td>Fail the right — login refused</td></tr>
+    <tr><td><code>kAuthorizationResultUserCanceled</code></td><td>User backed out; chain unwinds cleanly, back to the login window</td></tr>
+    <tr><td><code>kAuthorizationResultUndefined</code></td><td>Error state — treated as failure</td></tr>
+    </table>
+
+  <h3>Drawing the UI</h3>
+  <p>The non-privileged mechanism runs inside SecurityAgent and can present an interface, but it's a constrained environment — not a normal app. Practical approach: keep the UI minimal (a number-matching field, a status line, a cancel button), avoid anything requiring a full app lifecycle, and drive all content from the daemon so the plugin holds no logic. Localisation matters here, since this is the first thing a user sees.</p>
+</section>
+
+<section id="enroll">
+  <div class="sn">06</div>
+  <h2>Enrollment</h2>
+  <p class="ss">Happens in the full user session, where you have every capability. This is where the cryptographic foundation is laid.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd" style="min-width:450px"><b>1</b>user authenticates to the IdP normally (browser or embedded flow, OIDC)</div>
+      <div class="nd p" style="min-width:450px"><b>2</b>daemon generates a <strong>P-256 key pair inside the Secure Enclave</strong> — non-exportable</div>
+      <div class="nd a" style="min-width:450px"><b>3</b>public key + device identifiers sent to the IdP, bound to this user and device</div>
+      <div class="nd a" style="min-width:450px"><b>4</b>optional <strong>device attestation</strong> proves it's genuine hardware with a hardware-bound key</div>
+      <div class="nd g" style="min-width:450px"><b>5</b>IdP issues a device credential; daemon provisions the <strong>offline verifier</strong> (section 08)</div>
+      <div class="nd" style="min-width:450px"><b>6</b>recovery codes generated and shown once — the user must store them</div>
+    </div>
+    <div class="cap">Enrollment is the only moment you're guaranteed network, UI, and a user session simultaneously.</div>
+  </div>
+
+<pre><code><span class="c">// The key that anchors everything</span>
+<span class="k">let</span> access = SecAccessControlCreateWithFlags(
+    <span class="k">nil</span>,
+    kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,  <span class="c">// daemon needs it pre-login</span>
+    [.privateKeyUsage],
+    <span class="k">nil</span>)!
+
+<span class="k">let</span> attrs: [<span class="k">String</span>: Any] = [
+    kSecAttrKeyType <span class="k">as</span> <span class="k">String</span>:       kSecAttrKeyTypeECSECPrimeRandom,
+    kSecAttrKeySizeInBits <span class="k">as</span> <span class="k">String</span>:  256,
+    kSecAttrTokenID <span class="k">as</span> <span class="k">String</span>:       kSecAttrTokenIDSecureEnclave,
+    kSecPrivateKeyAttrs <span class="k">as</span> <span class="k">String</span>:  [
+        kSecAttrIsPermanent <span class="k">as</span> <span class="k">String</span>:   <span class="k">true</span>,
+        kSecAttrAccessControl <span class="k">as</span> <span class="k">String</span>: access
+    ]
+]
+<span class="k">let</span> deviceKey = SecKeyCreateRandomKey(attrs <span class="k">as</span> CFDictionary, &amp;error)!</code></pre>
+
+  <div class="bx wn"><span class="l">The accessibility choice matters</span>
+    <p><code>WhenUnlocked</code> would be wrong here — the daemon must use the key at the <em>login window</em>, before any user has unlocked. <code>AfterFirstUnlock</code> makes the key available once the device has been unlocked at least since boot. <code>ThisDeviceOnly</code> prevents it migrating to another machine via backup. Explaining that choice demonstrates you've actually thought about the pre-login environment.</p></div>
+
+  <div class="bx go"><span class="l">The framing</span>
+    <p>"Enrollment is a bootstrapping problem. It's the one moment where I have network, UI, and a user session at once — so everything the constrained environments will need later must be provisioned <em>here</em>: the hardware key, the offline verifier, the cached policy, and the recovery codes. Get enrollment wrong and there's no way to fix it from the login window."</p></div>
+</section>
+
+<section id="online">
+  <div class="sn">07</div>
+  <h2>Online authentication</h2>
+  <p class="ss">The happy path. Network available, IdP reachable.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd" style="min-width:460px"><b>1</b>user enters username/password at the login window; earlier mechanisms verify the local credential</div>
+      <div class="nd a" style="min-width:460px"><b>2</b>privileged mechanism reads the username from the context, asks the daemon over XPC whether MFA is required for this user</div>
+      <div class="nd p" style="min-width:460px"><b>3</b>daemon requests a challenge from the IdP, signing the request with the <strong>Secure Enclave device key</strong></div>
+      <div class="nd" style="min-width:460px"><b>4</b>IdP dispatches the factor — push to the phone with a <strong>number-matching</strong> code, or the user provides a TOTP / security key</div>
+      <div class="nd" style="min-width:460px"><b>5</b>unprivileged mechanism displays the number or input field in SecurityAgent</div>
+      <div class="nd a" style="min-width:460px"><b>6</b>daemon polls or receives the result; verifies the IdP's signed assertion</div>
+      <div class="nd g" style="min-width:460px"><b>7</b>privileged mechanism votes allow; the chain continues and the session starts</div>
+    </div>
+    <div class="cap">Every network hop lives in the daemon. The plugin only asks and displays.</div>
+  </div>
+
+  <h3>Design details worth naming</h3>
+  <ul>
+    <li><strong>Number matching</strong> — the user must type a number shown on the Mac into the phone. This defeats MFA fatigue, where an attacker spams approvals hoping the user taps to make it stop.</li>
+    <li><strong>The device key signs the request</strong>, so the IdP knows the challenge originates from an enrolled machine, not an attacker replaying a username.</li>
+    <li><strong>Hard timeouts at every layer</strong> — the mechanism times out on the daemon, the daemon times out on the network. A hung login window is indistinguishable from a broken Mac to the user.</li>
+    <li><strong>Cancellation must work</strong> — if the user hits cancel, <code>MechanismDeactivate</code> fires and the chain must unwind cleanly back to the login window, not hang.</li>
+    <li><strong>Push is a doorbell, not a courier</strong> — never trust data in the push payload; the phone app fetches the challenge details over its own authenticated channel.</li>
+    <li><strong>Screensaver unlock is a separate right</strong>, so decide independently whether to gate it, and whether a grace period applies after a recent successful login.</li>
+  </ul>
+</section>
+
+<section id="offline">
+  <div class="sn">08 / ★ THE HARD PART</div>
+  <h2>Offline authentication</h2>
+  <p class="ss">A laptop on a plane must still unlock. This is where the real engineering is, and where most candidates' answers fall apart.</p>
+
+  <h3>The requirement</h3>
+  <p>Verify a second factor with <strong>no network</strong>, in an environment where the attacker may have physical possession of the machine and root access to its disk. You cannot call the IdP. You cannot trust the local clock. And whatever you store must not let an attacker derive valid codes.</p>
+
+  <h3>The mechanism — a shared-secret OTP, provisioned in advance</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:9px">
+      <div class="nd a" style="min-width:460px"><b>at enrollment (online)</b>IdP and device establish a shared secret · the device seals it so only this machine can use it</div>
+      <div class="nd p" style="min-width:460px"><b>sealing</b>secret wrapped by a <strong>Secure Enclave key</strong> · stored in the system keychain with <code>AfterFirstUnlockThisDeviceOnly</code> · unusable if copied to another machine</div>
+      <div class="nd" style="min-width:460px"><b>offline login</b>user opens the authenticator app (which has the same secret) and reads a code · daemon unseals its copy and verifies locally</div>
+      <div class="nd g" style="min-width:460px"><b>on reconnect</b>daemon reports offline uses to the IdP · counters reconcile · secret rotated if policy requires</div>
+    </div>
+    <div class="cap">The secret never exists in usable form on disk — it's sealed to hardware that can't be extracted.</div>
+  </div>
+
+  <h3>The controls that make it safe</h3>
+  <table class="tb">
+    <tr><th>Control</th><th>Why</th></tr>
+    <tr><td><strong>Bounded offline uses</strong></td><td>Allow N offline logins before requiring an online check-in. Limits how long a stolen laptop stays usable with a compromised factor.</td></tr>
+    <tr><td><strong>Freshness window</strong></td><td>The offline verifier expires after X days without contact, forcing reconnection.</td></tr>
+    <tr><td><strong>Counter / replay protection</strong></td><td>For HOTP-style counters, track and reject reuse. For TOTP, reject a code already accepted in that window.</td></tr>
+    <tr><td><strong>Clock-skew tolerance</strong></td><td>TOTP needs a window of accepted steps, but a wide window weakens it — and an attacker with root can change the clock. Prefer counter-based or bind to a monotonic source where possible.</td></tr>
+    <tr><td><strong>Rate limiting locally</strong></td><td>Offline brute force is otherwise unlimited. Escalating delay between attempts, persisted so a reboot doesn't reset it.</td></tr>
+    <tr><td><strong>Tamper resistance</strong></td><td>Counters and attempt state sealed alongside the secret, so editing a file on disk doesn't grant more attempts.</td></tr>
+    <tr><td><strong>Reconciliation on reconnect</strong></td><td>Report offline usage so the IdP has an audit trail and can spot anomalies.</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The honest trade-off to state</span>
+    <p>"Offline verification is <strong>strictly weaker</strong> than online, and I'd say so rather than pretend otherwise. Online you get real-time policy, revocation, risk signals, and full audit. Offline you're verifying against a pre-shared secret with no ability to revoke and no live policy. So the design bounds the exposure — limited uses, a freshness window, and local rate limiting — rather than claiming equivalence. An organisation that can't accept that gap can set the policy to fail closed, and accept that a user with no network can't log in."</p></div>
+
+  <div class="bx wn"><span class="l">Why FIDO2 doesn't simply solve this</span>
+    <p>A natural question: "why not just use a security key offline?" A hardware authenticator <em>can</em> work offline for the crypto, but the <strong>relying party</strong> — the IdP that issued the challenge and verifies the assertion — is unreachable. You'd need the local daemon to act as a relying party with a pre-provisioned public key and a locally-generated challenge, which is workable but means local policy, local replay protection, and no live revocation. It's the same trade-off in different clothing, and being able to reason through that rather than hand-wave is a strong answer.</p></div>
+</section>
+
+<section id="recovery">
+  <div class="sn">09</div>
+  <h2>Recovery &amp; lockout</h2>
+  <p class="ss">Existential for this product. A locked-out user cannot open a browser to self-serve.</p>
+
+  <h3>The recovery paths, in order of preference</h3>
+  <ol>
+    <li><strong>Recovery codes</strong> — generated at enrollment, shown once, stored by the user. Single-use, verified against a sealed local hash so they work fully offline. The primary mechanism.</li>
+    <li><strong>Admin-generated bypass code</strong> — an admin issues a time-limited code from the console; the user types it at the login window. Requires the user to reach the helpdesk by another channel, which is realistic.</li>
+    <li><strong>MDM-delivered kill switch</strong> — an administrator remotely puts the agent into passthrough mode. Requires the machine to have network and a working daemon, so it's not universal.</li>
+    <li><strong>Local escape</strong> — a documented recovery procedure (safe mode, or removing the mechanism from the auth database via recovery) for the case where nothing else works. Uncomfortable but necessary.</li>
+  </ol>
+
+  <div class="bx st"><span class="l">Lockout is itself an attack surface</span>
+    <p>If failed MFA attempts lock the account, an attacker with physical access can deliberately lock a user out — a denial of service. So: escalating delays rather than hard permanent locks, local rate limiting sealed against tampering, and a recovery path that doesn't depend on the thing that's failing. At an identity company this trade-off is the conversation.</p></div>
+
+  <h3>Failure matrix — have this ready</h3>
+  <table class="tb">
+    <tr><th>Failure</th><th>Behaviour</th></tr>
+    <tr><td>No network</td><td>Fall back to the offline verifier, within its use count and freshness window</td></tr>
+    <tr><td>Offline verifier expired</td><td>Policy decides: deny, or allow with an audit event. Configurable per tenant.</td></tr>
+    <tr><td>Daemon not running</td><td>Mechanism times out fast and applies the fail-open/fail-closed policy — never hangs</td></tr>
+    <tr><td>Daemon crashes mid-flow</td><td>XPC invalidation handler fires; mechanism treats it as unavailable and applies policy</td></tr>
+    <tr><td>Plugin itself crashes</td><td>Worst case — which is why everything is wrapped and timed out. Fleet health telemetry must surface this immediately.</td></tr>
+    <tr><td>User has no enrolled factor</td><td>Policy decides: allow with a grace period and a prompt to enroll, or deny. Grace periods are how you roll this out without an incident.</td></tr>
+    <tr><td>IdP returns an error</td><td>Distinguish "denied" (deny) from "unavailable" (apply the unavailable policy). Conflating these is a real bug.</td></tr>
+  </table>
+</section>
+
+<section id="psync">
+  <div class="sn">10 / PASSWORD SYNC</div>
+  <h2>Desktop Password Sync</h2>
+  <p class="ss">The second product — and a genuinely harder problem than it sounds.</p>
+
+  <h3>The problem</h3>
+  <p>A user has a local macOS account password and a separate IdP password. They drift apart, so the user maintains two credentials, forgets one, and files a ticket. Password Sync keeps them the same: change it in one place and the other follows.</p>
+
+  <h3>Why it's hard</h3>
+  <table class="tb">
+    <tr><th>Constraint</th><th>Why it bites</th></tr>
+    <tr><td><strong>The login keychain is encrypted with the local password</strong></td><td>Changing the local password without going through the proper path <strong>breaks the user's keychain</strong> — every saved credential becomes inaccessible</td></tr>
+    <tr><td><strong>FileVault keys are tied to the account password</strong></td><td>Change it wrongly and the user can't unlock the disk at pre-boot — a bricked machine</td></tr>
+    <tr><td><strong>Secure Token</strong></td><td>On modern macOS, an account needs a Secure Token to unlock FileVault. Changing passwords programmatically must preserve it</td></tr>
+    <tr><td>Two directions of change</td><td>The user may change it in macOS <em>or</em> in the IdP, and the two can conflict</td></tr>
+    <tr><td>Policy mismatch</td><td>macOS and the IdP may have different complexity rules; a valid IdP password may be rejected locally</td></tr>
+    <tr><td>Offline changes</td><td>A password changed while offline must reconcile later</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The core danger</span>
+    <p><strong>You must never change the local password by writing to the account record directly.</strong> Doing so leaves the keychain and FileVault key material encrypted under the old password. The change must go through the OS's own password-change path, which re-wraps the keychain and updates the Secure Token — and that path requires <strong>the old password</strong>. This single fact shapes the entire product.</p></div>
+
+  <h3>The two sync directions</h3>
+  <h4>IdP → macOS (the common case)</h4>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd a" style="min-width:450px"><b>1</b>user changes their password in the IdP (or it expires and is reset)</div>
+      <div class="nd" style="min-width:450px"><b>2</b>agent detects the change — a mismatch at next login attempt, or a signalled event</div>
+      <div class="nd p" style="min-width:450px"><b>3</b>at the <strong>login window</strong>, the user types their <em>new</em> IdP password; the mechanism verifies it against the IdP</div>
+      <div class="nd" style="min-width:450px"><b>4</b>the agent prompts for the <strong>old local password</strong> — required to re-wrap the keychain</div>
+      <div class="nd g" style="min-width:450px"><b>5</b>local password changed via the supported API, keychain re-wrapped, Secure Token preserved; user logs in</div>
+    </div>
+    <div class="cap">Step 4 is the step people forget — and the reason a "silent" sync isn't possible without it.</div>
+  </div>
+
+  <h4>macOS → IdP</h4>
+  <p>The user changes their password in System Settings. The agent detects it (an authorization mechanism on the password-change right, or a directory notification), verifies the new password meets IdP policy, and pushes the change to the IdP. Simpler, because the OS has already handled the keychain correctly.</p>
+
+  <h3>Design details</h3>
+  <ul>
+    <li><strong>Never store either password.</strong> Verify and discard. If you must hold one transiently, keep it out of logs, crash reports, and memory dumps, and zero it.</li>
+    <li><strong>Policy pre-check</strong> — validate the new password against <em>both</em> policies before attempting the change, so you never get a half-applied state.</li>
+    <li><strong>Idempotency and reconciliation</strong> — if the change succeeds locally but the network call fails, the state must converge on next contact rather than diverging silently.</li>
+    <li><strong>Conflict resolution</strong> — if both sides changed, decide which wins (usually the IdP) and be explicit.</li>
+    <li><strong>The keychain prompt is unavoidable</strong> in some flows — better to explain it clearly to the user than to try to hide it.</li>
+    <li><strong>Testing needs real hardware</strong> — Secure Token and FileVault behaviour can't be faked, so this needs an integration matrix across macOS versions.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">The line that shows you understand it</span>
+    <p>"Password Sync sounds like a synchronisation problem but it's really a <strong>key-management</strong> problem. The local password isn't just a credential — it wraps the login keychain and participates in FileVault key material. So you can't just set it; you have to go through the OS's change path with the old password so everything gets re-wrapped. That's why the product needs the old password, and why a truly silent sync isn't achievable."</p></div>
+</section>
+
+<section id="platformsso">
+  <div class="sn">11</div>
+  <h2>Platform SSO — the modern alternative</h2>
+  <p class="ss">Apple's supported mechanism, and where this space is heading. Worth knowing as the contrast to plugins.</p>
+
+  <h3>What it is</h3>
+  <p>An Apple framework letting an identity provider register an <strong>SSO extension</strong> that integrates with macOS login and authentication — rather than injecting into the authorization database. The IdP can link the local account to the IdP account, participate in login, and keep credentials in step through supported APIs.</p>
+
+  <table class="tb">
+    <tr><th></th><th>Authorization plugin</th><th>Platform SSO</th></tr>
+    <tr><td>Mechanism</td><td>Insert into the auth database chain</td><td>Registered SSO extension, supported API</td></tr>
+    <tr><td>Support</td><td>Works, but you're modifying system policy</td><td>Apple-sanctioned and evolving</td></tr>
+    <tr><td>Risk</td><td>Higher — a bug can lock out the fleet</td><td>Lower — the OS mediates</td></tr>
+    <tr><td>Flexibility</td><td>Very high — you control the chain</td><td>Bounded by what Apple exposes</td></tr>
+    <tr><td>OS support</td><td>Long-standing, works on older versions</td><td>Newer macOS only</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The honest assessment to give</span>
+    <p>"Platform SSO is clearly the direction — it's supported, it's lower risk, and Apple keeps extending it. But real fleets run several macOS versions, and early Platform SSO had genuine gaps: password verification behaviour at the login window, and the FileVault pre-boot boundary which no framework can change. So a mature product typically supports <strong>both</strong> — Platform SSO where the OS allows it, the plugin path where it doesn't — and carries the complexity of two code paths until the fleet catches up. That kind of transition is usually the most interesting engineering problem in a product like this."</p></div>
+</section>
+
+<section id="deploy">
+  <div class="sn">12 / OPERATIONS</div>
+  <h2>Deployment &amp; MDM</h2>
+  <p class="ss">How this gets onto thousands of machines without anyone clicking a dialog.</p>
+
+  <h3>What has to be installed and approved</h3>
+  <table class="tb">
+    <tr><th>Component</th><th>Installed to</th><th>Approval needed</th></tr>
+    <tr><td>Authorization plugin</td><td><code>/Library/Security/SecurityAgentPlugins/</code></td><td>Signed; registered by writing to the auth database</td></tr>
+    <tr><td>LaunchDaemon</td><td><code>/Library/LaunchDaemons/</code> or via <code>SMAppService</code></td><td>Root-owned plist with correct permissions</td></tr>
+    <tr><td>LaunchAgent</td><td><code>/Library/LaunchAgents/</code></td><td>—</td></tr>
+    <tr><td>App</td><td><code>/Applications/</code></td><td>Signed and notarized</td></tr>
+    <tr><td>Configuration</td><td>Managed preferences</td><td><strong>MDM configuration profile</strong></td></tr>
+    <tr><td>Any System Extension</td><td>Inside the app bundle</td><td>MDM profile pre-approval, plus TCC grants</td></tr>
+  </table>
+
+  <h3>Registering the mechanism</h3>
+<pre><code><span class="c"># Read the current right, insert the mechanism, write it back.</span>
+security authorizationdb read system.login.console &gt; /tmp/console.plist
+<span class="c"># ... insert "OktaMFA:check,privileged" etc. at the right position ...</span>
+security authorizationdb write system.login.console &lt; /tmp/console.plist</code></pre>
+  <div class="bx st"><span class="l">Installer discipline</span>
+    <p>This is the most dangerous moment in the product's lifecycle. The installer must: <strong>back up the original right</strong> before modifying it, verify the plugin is present and loadable <em>before</em> registering the mechanism, insert at the correct position in the chain (order matters), be <strong>idempotent</strong> so re-running doesn't duplicate entries, and provide a clean uninstall that restores the original chain. A partially-applied install is how you brick a fleet.</p></div>
+
+  <h3>Configuration via MDM</h3>
+  <p>Everything policy-related arrives as managed preferences: which users require MFA, allowed factors, offline use count and freshness window, fail-open vs fail-closed, screensaver gating, grace period for unenrolled users, and the kill switch. Managed preferences are the right channel because they're pushed centrally, can't be edited by the user, and roll back cleanly.</p>
+</section>
+
+<section id="ops">
+  <div class="sn">13</div>
+  <h2>Rollout, telemetry &amp; the kill switch</h2>
+  <p class="ss">The operational machinery that separates a product from a science project — and your strongest ground in the conversation.</p>
+
+  <h3>Staged rollout</h3>
+  <div class="dg">
+    <div class="fl">
+      <div class="nd"><b>ring 0</b>internal<br>engineers</div><span class="ar">→</span>
+      <div class="nd a"><b>ring 1</b>canary<br>tenants</div><span class="ar">→</span>
+      <div class="nd p"><b>ring 2</b>1% of<br>fleet</div><span class="ar">→</span>
+      <div class="nd"><b>ring 3</b>10%</div><span class="ar">→</span>
+      <div class="nd g"><b>ring 4</b>100%</div>
+    </div>
+    <div class="cap">With automatic halt on health-metric regression at every step. No stage advances on a schedule alone.</div>
+  </div>
+
+  <h3>Grace-period rollout — the product-level version</h3>
+  <p>Before enforcing, ship in <strong>audit mode</strong>: evaluate the policy, log what <em>would</em> have happened, but always allow. That surfaces the population who'd be locked out — unenrolled users, edge-case configurations, machines with no network — before any of them is actually blocked. Then enforce for enrolled users only, with a grace window for the rest.</p>
+
+  <h3>Telemetry — what you must emit</h3>
+  <table class="tb">
+    <tr><th>Signal</th><th>Why</th></tr>
+    <tr><td>Every auth outcome with a reason code</td><td>allowed / denied / offline-allowed / failed-open / timed-out. The reason is the whole value.</td></tr>
+    <tr><td><strong>Fail-open rate</strong></td><td>The single most important metric. A spike means something is broken and users are silently unprotected.</td></tr>
+    <tr><td>Mechanism latency distribution</td><td>Login is a user-visible path; p99 matters more than the mean.</td></tr>
+    <tr><td>Daemon health — crashes, restarts, XPC errors</td><td>A bad build spreading shows here first</td></tr>
+    <tr><td>Offline usage counts</td><td>Both a security signal and a sign of connectivity problems in the fleet</td></tr>
+    <tr><td>Enrollment coverage</td><td>Who would be locked out if you enforced today</td></tr>
+    <tr><td>Agent version distribution</td><td>Rollout progress and stragglers</td></tr>
+  </table>
+  <div class="bx wn"><span class="l">The telemetry constraint</span>
+    <p>Events generated at the login window can't be uploaded immediately — there may be no network and no session. So they're <strong>spooled locally in a bounded ring buffer</strong> and uploaded by the daemon when connectivity returns, with jitter so the fleet doesn't upload simultaneously after a regional outage.</p></div>
+
+  <h3>The kill switch</h3>
+  <div class="bx st"><span class="l">Requirements</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>Signed</strong>, so it can't be forged by an attacker to disable MFA fleet-wide.</li>
+      <li>Delivered over a channel that works <strong>even if the plugin is broken</strong> — MDM to the daemon, not through the auth path.</li>
+      <li>Puts the plugin into <strong>passthrough</strong> — always allow, keep logging — rather than uninstalling, because uninstalling is riskier than bypassing.</li>
+      <li><strong>Tested regularly</strong> in staging. An untested kill switch is theatre; you find out it doesn't work during the incident.</li>
+      <li>Available per-tenant and globally, so you can contain a customer-specific problem without disabling everyone.</li>
+    </ul></div>
+</section>
+
+<section id="test">
+  <div class="sn">14</div>
+  <h2>Testing this</h2>
+  <p class="ss">Notoriously difficult — which makes it a great thing to have a clear answer about.</p>
+
+  <h3>The layering that makes it testable</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd g" style="min-width:450px"><b>Core framework — unit tested</b>policy evaluation · offline verifier logic · counters · state machine · reason codes</div>
+      <div class="nd a" style="min-width:450px"><b>Daemon — thin shell</b>XPC plumbing and lifecycle only; almost no logic</div>
+      <div class="nd p" style="min-width:450px"><b>Plugin — thinner shell</b>read context · call daemon with timeout · vote. Under 200 lines of real logic.</div>
+      <div class="nd r" style="min-width:450px"><b>Integration — real hardware</b>login window, FileVault, Secure Token, Secure Enclave. Cannot be faked.</div>
+    </div>
+    <div class="cap">Push logic down into a framework; keep the untestable layers as thin as possible.</div>
+  </div>
+
+  <h3>What gets unit tested</h3>
+  <ul>
+    <li><strong>Policy evaluation</strong> — every combination of user state, enrollment state, network state, and configuration produces a defined decision. Table-driven tests.</li>
+    <li><strong>Offline verifier</strong> — code acceptance, replay rejection, counter increment, expiry at the boundary, exhausted use count. <strong>Inject the clock</strong> so nothing sleeps.</li>
+    <li><strong>Rate limiting</strong> — burst allowed, then blocked, then refilled after time passes. Again with an injected clock.</li>
+    <li><strong>Failure paths</strong> — daemon unavailable, IdP error vs IdP denial (these must not be conflated), timeout, malformed response.</li>
+  </ul>
+
+  <h3>What must be integration tested</h3>
+  <ul>
+    <li>Actual login through the real authorization chain, across every supported macOS version.</li>
+    <li>FileVault enabled and disabled; pass-through behaviour.</li>
+    <li>Secure Token preservation across a password change.</li>
+    <li>Keychain integrity after Password Sync.</li>
+    <li>Secure Enclave operations — you cannot fake the SEP.</li>
+    <li>Network-loss scenarios, including loss <em>mid-authentication</em>.</li>
+    <li>Recovery codes, admin bypass, and the kill switch — each exercised, not assumed.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">The answer to "how do you test this?"</span>
+    <p>"I push everything I can into a framework the daemon links, so policy, the offline verifier, and the state machine are unit tested with an injected clock and a faked IdP client. The daemon and the plugin become thin shells with almost no logic. What's left genuinely requires hardware — the login window, FileVault, Secure Token, the Secure Enclave — so that runs as an integration matrix on a rack of real Macs across supported OS versions, with the recovery paths and the kill switch exercised on every run. You can't unit test the SEP, and pretending you can gives false confidence."</p></div>
+</section>
+
+<section id="qa">
+  <div class="sn">15 / ★</div>
+  <h2>Talking about this in the interview</h2>
+  <p class="ss">He built it. Your goal is a peer conversation, not a recital.</p>
+
+  <div class="bx st"><span class="l">Set the frame first</span>
+    <p>Open with something like: <em>"I haven't built the login-window side myself — my work is the device-agent side, System Extensions and Secure Enclave credentials. But I've thought about how Desktop MFA has to work, and I'd expect the architecture to be roughly this — tell me where I'm wrong."</em></p>
+    <p style="margin-top:8px">That does three things: it's honest, it invites him to correct you (which he'll enjoy), and it turns an examination into a discussion. Claiming familiarity you don't have with someone who wrote the code is the one unrecoverable move.</p></div>
+
+  <h3>The five points that demonstrate real understanding</h3>
+  <ol>
+    <li><strong>The lockout risk governs everything.</strong> "A bug in a login mechanism locks the fleet out with no way in — so fail-open defaults, hard timeouts, a kill switch, and staged rollout aren't nice-to-haves, they're the architecture."</li>
+    <li><strong>The three environments.</strong> Pre-boot, login window, session — and the FileVault pass-through gap that means a naive plugin may never run.</li>
+    <li><strong>The privileged/unprivileged split.</strong> SecurityAgent draws UI without root; authd has root without UI; they talk through the authorization context.</li>
+    <li><strong>Offline is the hard part</strong>, and it's strictly weaker than online — bounded uses, freshness window, sealed counters, local rate limiting, reconciliation on reconnect.</li>
+    <li><strong>Password Sync is key management, not synchronisation</strong> — the local password wraps the keychain and participates in FileVault, so the change must go through the OS path with the old password.</li>
+  </ol>
+
+  <h3>Questions to ask him — genuine ones</h3>
+  <details class="q"><summary><span class="tag hot">STRONG</span>The offline question</summary><div class="bod">
+    <p>"What was harder in practice — the login-window environment itself, or the offline case? I'd guess offline, because you're making a security guarantee you can't verify centrally, but I'd be curious whether the environment constraints turned out to be worse."</p>
+    <p class="lb">Why it works</p><p>It shows you've identified the two hard problems, it's specific enough that only someone who's thought about it would ask, and it invites him to tell a war story.</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">STRONG</span>The Platform SSO transition</summary><div class="bod">
+    <p>"Where are you on Platform SSO versus the authorization-plugin path? I'd expect you're carrying both while the fleet catches up — is that the shape of it, and how do you decide when to drop the older path?"</p>
+    <p class="lb">Why it works</p><p>It shows currency on the platform direction and understanding that real fleets are heterogeneous. It's also a genuine engineering-strategy question, which is the level he operates at.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">GOOD</span>Password Sync &amp; the keychain</summary><div class="bod">
+    <p>"Password Sync seems like the harder of the two products to me, because the local password wraps the keychain and touches FileVault key material — so you can't just set it. How much of the complexity ended up being the keychain and Secure Token, versus the sync logic itself?"</p></div></details>
+
+  <details class="q"><summary><span class="tag med">GOOD</span>Rollout</summary><div class="bod">
+    <p>"How do you stage a rollout for something where the failure mode is locking people out? I'd assume audit mode first, then rings with automatic halt — but I'm curious what the kill switch actually looks like when the broken component is on the auth path."</p></div></details>
+
+  <details class="q"><summary><span class="tag med">GOOD</span>His current focus</summary><div class="bod">
+    <p>"You mentioned you're looking at AI for developer velocity — what's actually worked, and where has it disappointed? My team is doing endpoint AI governance, so I'm interested in it from both directions."</p>
+    <p class="lb">Why it works</p><p>It's his stated current focus, and it's genuinely adjacent to your team's charter — so it's a real conversation rather than a polite question.</p></div></details>
+
+  <div class="bx yo"><span class="l">Where you contribute rather than receive</span>
+    <p>If the conversation opens up, you have things he may not: <strong>Endpoint Security at fleet scale</strong> (the AUTH-deadline design, kernel-side muting, correlation over process trees), <strong>MDM device attestation</strong>, and <strong>telemetry pipelines for millions of endpoints</strong>. Desktop MFA is the user half of device trust; you own the device half. Framing it that way — "you made the user provable, we made the device provable" — positions you as complementary rather than junior.</p></div>
+
+  <div class="bx go"><span class="l">Final note on this document</span>
+    <p>Everything here is reconstructed from public macOS platform mechanisms and general architecture. Treat it as <strong>"how this must work given the platform"</strong>, not as knowledge of Okta's implementation. If he says "actually we did it differently," the right response is curiosity — <em>"interesting, what drove that?"</em> — not defence. You're demonstrating reasoning, not recall.</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Desktop MFA &amp; Password Sync · architectural reconstruction from public macOS mechanisms · authorization plugins, daemons, XPC, Secure Enclave, offline verification, and fleet operations.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightfall AI — Round 2/3 Prep Dossier (macOS Endpoint)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ECEFF2;
+    --panel:#FFFFFF;
+    --ink:#0F1720;
+    --muted:#5A6773;
+    --rule:#C9D2DA;
+    --deny:#B32B3D;
+    --allow:#16624F;
+    --watch:#8A5A00;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --display:'Space Grotesk','IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:15.5px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;max-width:1320px;margin:0 auto}
+
+  /* ---- nav ---- */
+  nav{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    padding:28px 18px 60px;border-right:1px solid var(--rule);
+  }
+  nav .brand{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  nav .sub{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-bottom:22px}
+  nav a{
+    display:block;font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    text-decoration:none;padding:5px 0;border-left:2px solid transparent;padding-left:10px;margin-left:-10px;
+  }
+  nav a:hover{color:var(--ink);border-left-color:var(--ink)}
+  nav a .n{opacity:.5;margin-right:7px}
+
+  /* ---- main ---- */
+  main{padding:44px 46px 140px;min-width:0}
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:26px;margin-bottom:40px}
+  header.top h1{font-family:var(--display);font-size:38px;line-height:1.08;letter-spacing:-.03em;margin:0 0 12px}
+  header.top p{margin:0;color:var(--muted);max-width:70ch}
+  .meta{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px}
+
+  section{margin-bottom:56px;scroll-margin-top:24px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  h2{font-family:var(--display);font-size:25px;letter-spacing:-.02em;margin:0 0 6px;line-height:1.2}
+  h2 + .lede{color:var(--muted);margin:0 0 22px;max-width:74ch}
+  h3{font-family:var(--display);font-size:17.5px;margin:30px 0 8px;letter-spacing:-.01em}
+  h4{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:20px 0 6px}
+  p{margin:0 0 12px}
+  ul,ol{margin:0 0 12px;padding-left:19px}
+  li{margin-bottom:5px}
+  code{font-family:var(--mono);font-size:.86em;background:#DEE4E9;padding:1px 5px;border-radius:3px;word-break:break-word}
+  pre{background:var(--ink);color:#E6EDF3;font-family:var(--mono);font-size:12.4px;line-height:1.55;padding:14px 16px;border-radius:4px;overflow-x:auto;margin:0 0 14px}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  a{color:var(--ink)}
+
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:18px 20px;margin:0 0 16px}
+
+  /* verdict chips — ALLOW / DENY / WATCH, borrowed from the ES auth model */
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;
+        padding:2px 7px;border-radius:3px;text-transform:uppercase;vertical-align:2px}
+  .chip.allow{background:#DDEDE7;color:var(--allow)}
+  .chip.deny{background:#F6DDE0;color:var(--deny)}
+  .chip.watch{background:#F6EBD3;color:var(--watch)}
+
+  .verdict{border-left:3px solid var(--rule);padding:12px 0 12px 16px;margin:0 0 14px}
+  .verdict.allow{border-left-color:var(--allow)}
+  .verdict.deny{border-left-color:var(--deny)}
+  .verdict.watch{border-left-color:var(--watch)}
+  .verdict p:last-child{margin-bottom:0}
+
+  details.q{border:1px solid var(--rule);border-radius:5px;background:var(--panel);margin-bottom:10px;overflow:hidden}
+  details.q summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:12px;align-items:baseline}
+  details.q summary::-webkit-details-marker{display:none}
+  details.q summary::before{content:"▸";font-family:var(--mono);color:var(--muted);font-size:12px}
+  details.q[open] summary::before{content:"▾"}
+  details.q[open] summary{border-bottom:1px solid var(--rule);background:#F7F9FA}
+  details.q .body{padding:14px 16px 6px 16px}
+  details.q .body > :last-child{margin-bottom:10px}
+
+  table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px;background:var(--panel)}
+  th,td{text-align:left;padding:9px 11px;border:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:#F3F6F8;font-weight:600}
+
+  .callout{background:var(--ink);color:#E6EDF3;border-radius:5px;padding:18px 20px;margin:0 0 18px}
+  .callout h4{color:#9FB1BF;margin-top:0}
+  .callout code{background:#26313B;color:#E6EDF3}
+  .callout a{color:#9FD5C4}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .say{font-family:var(--mono);font-size:13px;background:#F7F9FA;border:1px dashed var(--rule);padding:12px 14px;border-radius:4px;margin:0 0 12px}
+  .say::before{content:"SAY THIS →  ";color:var(--muted);font-size:10px;letter-spacing:.1em}
+
+  hr{border:none;border-top:1px solid var(--rule);margin:34px 0}
+  .footnote{font-size:13px;color:var(--muted)}
+
+  @media (max-width:900px){
+    .wrap{grid-template-columns:1fr}
+    nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--rule)}
+    main{padding:28px 20px 90px}
+    header.top h1{font-size:28px}
+    .grid2{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="brand">Nightfall AI</div>
+  <div class="sub">Round 2 · macOS Endpoint</div>
+  <a href="#s0"><span class="n">00</span>Situation brief</a>
+  <a href="#s1"><span class="n">01</span>Read on the interviewer</a>
+  <a href="#s2"><span class="n">02</span>Product intel</a>
+  <a href="#s3"><span class="n">03</span>Consistency risks</a>
+  <a href="#s4"><span class="n">04</span>Narrative spine</a>
+  <a href="#s5"><span class="n">05</span>Endpoint Security</a>
+  <a href="#s6"><span class="n">06</span>System Extensions</a>
+  <a href="#s7"><span class="n">07</span>XPC &amp; IPC trust</a>
+  <a href="#s8"><span class="n">08</span>Clipboard DLP</a>
+  <a href="#s9"><span class="n">09</span>App attribution</a>
+  <a href="#s10"><span class="n">10</span>USB &amp; removable</a>
+  <a href="#s11"><span class="n">11</span>Screen capture</a>
+  <a href="#s12"><span class="n">12</span>Network Extension</a>
+  <a href="#s13"><span class="n">13</span>MCP &amp; AI agents</a>
+  <a href="#s14"><span class="n">14</span>Detection engine</a>
+  <a href="#s15"><span class="n">15</span>Perf &amp; deadlines</a>
+  <a href="#s16"><span class="n">16</span>TCC &amp; privacy</a>
+  <a href="#s17"><span class="n">17</span>Win / Linux parity</a>
+  <a href="#s18"><span class="n">18</span>Architecture round</a>
+  <a href="#s19"><span class="n">19</span>Coding round</a>
+  <a href="#s20"><span class="n">20</span>Rapid-fire bank</a>
+  <a href="#s21"><span class="n">21</span>Your questions</a>
+  <a href="#s22"><span class="n">22</span>48-hour plan</a>
+</nav>
+
+<main>
+<header class="top">
+  <div class="meta">Prep dossier · Chellaprabu V · built 15 Jul 2026</div>
+  <h1>Nightfall AI — macOS Endpoint Agent<br>Rounds 2 &amp; 3</h1>
+  <p>Round 1 with Prasad (Head of Engineering, India R&amp;D) is done. Two rounds remain: <strong>problem-solving / deep macOS endpoint technologies</strong>, then <strong>architecture</strong>. This is the technical ground you need to hold, the story you need to keep straight, and the specific traps in your Round 1 transcript.</p>
+</header>
+
+<!-- ================= 00 ================= -->
+<section id="s0">
+  <div class="eyebrow">§00</div>
+  <h2>Situation brief</h2>
+  <p class="lede">What actually happened in Round 1, and what it sets you up for.</p>
+
+  <div class="card">
+    <h4>What went well</h4>
+    <ul>
+      <li>You held the DLP integration-strategy conversation at a product level (SaaS → cloud storage → endpoint prioritisation) and Prasad essentially confirmed your answer with his own.</li>
+      <li>The macOS depth signal landed: System Extensions, Endpoint Security, Network Extensions, launch daemons, code signing, LLDB/Instruments.</li>
+      <li>The AI-governance angle at JumpCloud is a real bridge to what Nightfall is building. He probed it three separate times — that's interest, not doubt.</li>
+    </ul>
+    <h4>What you left exposed</h4>
+    <ul>
+      <li><strong>The blocking question.</strong> He pushed twice — "ETW is only monitoring, how do you support blocking?" — and both times you answered "not finalised yet." That's the one place he found the floor. §17 fixes it permanently.</li>
+      <li><strong>Everything was framed as design intent, not shipped work.</strong> "RFC stage", "early phase", "still evolving". A sensor engineer's next round will demand a thing you built, debugged, and shipped.</li>
+      <li><strong>Notice period contradiction</strong> — you said 60 days, then 30 days on paper, in the same call. See §03.</li>
+    </ul>
+  </div>
+
+  <div class="callout">
+    <h4>The one sentence to internalise</h4>
+    <p style="margin:0;font-size:17px;line-height:1.5">Round 2 is not about whether you know macOS. It's about whether you've <em>bled</em> on macOS. Every answer needs a scar in it: a deadline you missed, a deadlock you caused, an OS version that broke you, a false positive that woke someone up.</p>
+  </div>
+</section>
+
+<!-- ================= 01 ================= -->
+<section id="s1">
+  <div class="eyebrow">§01</div>
+  <h2>Read on the interviewer</h2>
+  <p class="lede">Almost certainly Aehjaj Ahmed P — the macOS endpoint engineer on the Bengaluru team.</p>
+
+  <table>
+    <tr><th>Signal</th><th>What it means for you</th></tr>
+    <tr><td><strong>CrowdStrike, Engineer III (2023–2025)</strong> — macOS sensor development, C++/Python/Swift</td><td>He has shipped a sensor at the hardest scale in the industry. He knows what ES does under load, what breaks, what Apple's docs don't say. Do not narrate documentation to him.</td></tr>
+    <tr><td><strong>FireEye/Trellix (2019–2023)</strong> — AV for Mac + AV for Linux, on-access scan, client libraries feeding filesystem events using <em>Endpoint Security and fanotify</em></td><td>This is the highest-value fact in the whole dossier. He personally built the event-source layer on both ES and fanotify. He will ask Linux blocking, and he'll know if you're bluffing. §17 is your answer.</td></tr>
+    <tr><td>He built the <strong>Suppression module</strong> for AV</td><td>He thinks in false positives, event volume, and mute strategy. Talk about muting and dedup unprompted — it's his native language.</td></tr>
+    <tr><td><strong>At Nightfall (Aug 2025–)</strong>: macOS DLP agent, Swift, XPC services, ES Extensions; shipped USB exfil monitoring + blocking in 4 weeks; ScreenCaptureKit screenshot/recording capture</td><td>§10 (USB) and §11 (ScreenCaptureKit) are literally his last year of work. He will ask about them. Being sharp there is the single highest-leverage prep you can do.</td></tr>
+    <tr><td>Deep C++ background (C++11/14/20, boost, cmake, conan, coverity)</td><td>If he goes coding, it may be C++-flavoured or language-agnostic systems reasoning, not Swift idioms. Concurrency, lifetime, and blocking-vs-async are his axes.</td></tr>
+  </table>
+
+  <div class="verdict allow">
+    <p><span class="chip allow">Play</span> He's a builder, not a gatekeeper. Peer-to-peer register: "here's what I hit, here's the trade-off I took, what did you do?" Ask him about their ES client's deadline strategy. Engineers like being asked about their hard problems.</p>
+  </div>
+  <div class="verdict deny">
+    <p><span class="chip deny">Avoid</span> The Round 1 register — polished, product-y, hedged bullets. Against an ex-CrowdStrike sensor engineer that reads as "hasn't touched the code in a while." Commit first, caveat second.</p>
+  </div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section id="s2">
+  <div class="eyebrow">§02</div>
+  <h2>Product intel — what Nightfall actually ships</h2>
+  <p class="lede">Pulled from their public posts. Reference these by name; it reads as genuine interest and it's true.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Positioning</h4>
+      <p>"Agentic DLP" — unified DLP across <strong>endpoint + SaaS + AI apps</strong>, with content-aware and domain-aware controls and data lineage. Displacing <strong>Cyberhaven</strong> on unified coverage (Cyberhaven is endpoint-lineage-centric). Legacy DLP framed as dead because OAuth/SaaS/AI paths bypass the perimeter.</p>
+    </div>
+    <div class="card">
+      <h4>MCP Observability (early preview)</h4>
+      <p>Their flagship new bet. Inventory of local + remote MCP servers, <strong>stdio traffic that gateways can't see</strong>, coverage of Claude Code / Cursor / VS Code, who connected what and how often, <code>mcp.json</code> config drift over time, risk scoring of unsanctioned servers.</p>
+    </div>
+    <div class="card">
+      <h4>Claude Compliance API integration</h4>
+      <p>Announced by Anthropic on 12 June 2026; Nightfall was in the launch group. Gives visibility into sensitive data across Claude Enterprise deployments — PII, credentials, source code, regulated data classified in real time.</p>
+    </div>
+    <div class="card">
+      <h4>Endpoint agent surface (from Aehjaj's own profile)</h4>
+      <p>Swift + XPC + ES Extensions. USB exfil monitoring and blocking. Screenshot / screen-recording capture via ScreenCaptureKit for forensics and compliance. Insider threat: departing employees taking Salesforce customer lists, IP out of Google Drive.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <h4>The strategic read to voice in the architecture round</h4>
+    <p>Nightfall's whole thesis is that <strong>the endpoint is the last observable point before data becomes invisible.</strong> Once a prompt is inside a TLS session to an AI provider, or inside an stdio pipe to a local MCP server, no gateway, CASB or proxy will ever see it. That's why their DLP has to live in an ES extension and a network extension on the device. Say this out loud — it proves you understand why the role exists, not just what it does.</p>
+  </div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section id="s3">
+  <div class="eyebrow">§03</div>
+  <h2>Consistency risks from Round 1</h2>
+  <p class="lede">Blunt section. These are things you said that will be repeated back to you.</p>
+
+  <table>
+    <tr><th>You said</th><th>Risk</th><th>Fix</th></tr>
+    <tr>
+      <td>"I'm on a 60-day notice period" … then later "It is 30 days on paper, so my formal notice period is one month."</td>
+      <td><span class="chip deny">High</span> Both statements are in the same 24-minute call. TA will ask again for the offer timeline. A contradiction here is the kind of thing that quietly kills a process — it reads as either carelessness or negotiation games.</td>
+      <td>Decide the true number now and say only that number, every time, to everyone. If you already told them 60, correct it proactively in the next call: "One correction from last time — my notice is 30 days on paper; I said 60 early in the call by mistake."</td>
+    </tr>
+    <tr>
+      <td>"I'm currently at 65 LPA at JumpCloud, fully fixed."</td>
+      <td><span class="chip watch">Medium</span> It's on the record. Nightfall will anchor there, and the role is titled <em>Senior</em>, not Staff — you may be being levelled down from your current Staff title.</td>
+      <td>Never restate a number you can't back with a payslip. When comp returns, redirect to level first: "Before numbers — where does this land in your band, Senior or Lead? I want to make sure we're calibrating the same role."</td>
+    </tr>
+    <tr>
+      <td>"I've been staying in my native place, Madurai, for the last three years" + "planning to move to Bangalore."</td>
+      <td><span class="chip watch">Medium</span> HSR office, 3 days/week Tue–Thu. They will test how real the relocation is, because they've been burned by it.</td>
+      <td>Have a concrete answer: month you'd relocate, and that you'd do it before or at joining. Vagueness here reads as flight risk on a hybrid role.</td>
+    </tr>
+    <tr>
+      <td>"We are expanding into non-human identities… governing agentic AI workflows… monitoring data movement based on content, source IP and destination."</td>
+      <td><span class="chip deny">High</span> You described a JumpCloud initiative at RFC stage in language that sounds like shipped product. Aehjaj <em>builds this exact thing</em>. He will ask what's in the RFC, what you prototyped, what the event source is, what the enforcement point is.</td>
+      <td>Front-load the honesty and it becomes a strength: "It's an RFC I'm driving, not shipped — here's the design and here's the prototype I ran." Then go deep. Design depth on unshipped work is respected. Getting caught inflating is not.</td>
+    </tr>
+    <tr>
+      <td>"Apart from macOS I have also worked on Windows and Linux."</td>
+      <td><span class="chip watch">Medium</span> He'll test it against fanotify and minifilters. He wrote that layer.</td>
+      <td>Downgrade the claim to its true size — "exposure, not depth, on Linux" — then show you can reason about it correctly anyway (§17). Correct reasoning + honest boundary beats a claim that collapses.</td>
+    </tr>
+  </table>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">Rule</span> The transcript reads like real-time assist output — long, balanced, hedged, "I would… I would… I would…". That style is what frustrated the Zscaler interviewer. Round 2 is a hands-on round. If you're running any live assist tool, it will actively hurt you here: it produces breadth where he wants a specific, first-person, concrete war story. Go in clean.</p>
+  </div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section id="s4">
+  <div class="eyebrow">§04</div>
+  <h2>Narrative spine</h2>
+  <p class="lede">Three pillars. Every answer should ladder back to one of them.</p>
+
+  <div class="card">
+    <h3>Pillar 1 — I live at the OS boundary, at fleet scale</h3>
+    <p>macOS security agent deployed across millions of endpoints. System Extensions, ES, launch daemons, code signing/notarisation, MDM. Concretely: a bug at your layer becomes a fleet-wide incident, so you've built the reflexes that a DLP sensor needs — kill switches, staged rollout, fail-open defaults, telemetry before features.</p>
+  </div>
+  <div class="card">
+    <h3>Pillar 2 — I've owned trust decisions, not just telemetry</h3>
+    <p>Device trust and attestation: certificate-backed identity, Secure Enclave / Keychain-backed credentials, MDM attestation. This is exactly the primitive DLP needs to answer "is this process, on this device, allowed to touch this data?" You've been on the identity side of the same equation Nightfall solves from the data side.</p>
+  </div>
+  <div class="card">
+    <h3>Pillar 3 — I'm already pointed at their problem</h3>
+    <p>Tech lead of Endpoint AI Governance. The RFC you're driving is: classify data movement by destination and content, on-device, before it leaves. That is Nightfall's product statement. Your motivation story writes itself: "I'm building a v0 of this inside an identity company. You're building the real version, as the whole company."</p>
+  </div>
+
+  <div class="say">"I've spent a decade on Apple platforms, the last three at JumpCloud on the macOS agent — device trust, attestation, System Extensions, at fleet scale. This year I'm tech-leading our Endpoint AI Governance work: governing what data moves into AI tooling from the device. That's an RFC I'm driving, and honestly the reason I'm talking to you is that it's a side quest where I am and it's the entire mission here. Same problem, more depth, better event sources."</div>
+</section>
+
+<!-- ================= 05 ================= -->
+<section id="s5">
+  <div class="eyebrow">§05 · The core round</div>
+  <h2>Endpoint Security framework</h2>
+  <p class="lede">Assume 30–40% of Round 2 lives here. He built ES event sources at FireEye and a sensor at CrowdStrike. Precision matters more than breadth.</p>
+
+  <h3>The shape of it</h3>
+  <pre><code>es_new_client(&client, ^(es_client_t *c, const es_message_t *msg) { ... })
+  → ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED   // missing TCC Full Disk Access
+  → ES_NEW_CLIENT_RESULT_ERR_NOT_ENTITLED    // missing com.apple.developer.endpoint-security.client
+  → ES_NEW_CLIENT_RESULT_ERR_NOT_PRIVILEGED  // not root
+
+es_subscribe(client, events, count);
+// AUTH events  → must call es_respond_auth_result() / es_respond_flags_result()
+//                BEFORE msg->deadline, or the OS kills your client.
+// NOTIFY events → informational, no response, still counts against your budget.</code></pre>
+
+  <h4>Facts to have cold</h4>
+  <ul>
+    <li>Entitlement <code>com.apple.developer.endpoint-security.client</code> requires Apple approval; plus <strong>Full Disk Access</strong> (TCC) and root. Three separate failure modes, three distinct error codes — knowing which is which is the tell of someone who's actually shipped.</li>
+    <li><code>es_respond_auth_result</code> for most AUTH events; <strong><code>es_respond_flags_result</code> specifically for <code>ES_EVENT_TYPE_AUTH_OPEN</code></strong> — you return the allowed <code>fcntl</code> flags, so you can permit read and deny write on the same open. This is the single most useful DLP primitive in ES and most candidates don't know it.</li>
+    <li>The message is only valid for the callback's lifetime — <code>es_retain_message</code> / <code>es_release_message</code> if you go async (and you must go async for anything non-trivial).</li>
+    <li><code>es_message_t.deadline</code> is a Mach absolute time, not a fixed constant, and it varies by event type. Never assume "I have 20ms." Read it, and budget against it.</li>
+    <li>Muting: <code>es_mute_process</code> (audit token), <code>es_mute_path</code> with <code>ES_MUTE_PATH_TYPE_LITERAL / PREFIX / TARGET_LITERAL / TARGET_PREFIX</code>, and <strong>inverted muting</strong> (<code>es_invert_muting</code>) to flip an allowlist into a watchlist — huge for a DLP agent that only cares about a few thousand sensitive paths.</li>
+    <li><code>es_process_t</code> gives you: <code>audit_token</code>, <code>ppid</code>, <code>original_ppid</code>, <code>signing_id</code>, <code>team_id</code>, <code>cdhash</code>, <code>codesigning_flags</code> (check <code>CS_VALID</code>, <code>CS_PLATFORM_BINARY</code>), <code>is_platform_binary</code>, <code>is_es_client</code>. Identity for policy comes from <em>cdhash / team_id / signing_id</em>, never from the path or the process name.</li>
+    <li><strong>Multiple ES clients coexist</strong> (you, CrowdStrike, Jamf, MDM). All must respond to an AUTH event; the slowest one sets user-visible latency and any DENY wins. On a customer's Mac you are never alone — design for it and say so.</li>
+  </ul>
+
+  <div class="callout">
+    <h4>The DLP-specific insight to lead with</h4>
+    <p><code>NOTIFY_WRITE</code> fires per write and will drown you. The right trigger for content classification is <strong><code>ES_EVENT_TYPE_NOTIFY_CLOSE</code> with <code>modified == true</code></strong> — one event per completed mutation, at the moment the file is coherent enough to scan. Pair it with <code>AUTH_OPEN</code> (flags-result) for the enforcement decision and <code>AUTH_RENAME</code> / <code>AUTH_COPYFILE</code> / <code>AUTH_CLONE</code> for the movement decision. Naming that trio unprompted tells him you've done this.</p>
+  </div>
+
+  <details class="q"><summary>"Walk me through how you'd block a file copy to an unauthorised destination using ES."</summary>
+  <div class="body">
+    <p><strong>Commit:</strong> AUTH on the movement events, not on write. Subscribe to <code>AUTH_OPEN</code>, <code>AUTH_CREATE</code>, <code>AUTH_RENAME</code>, <code>AUTH_COPYFILE</code>, <code>AUTH_CLONE</code>, <code>AUTH_TRUNCATE</code>, <code>AUTH_UNLINK</code>.</p>
+    <ol>
+      <li>On the event, extract the actor: audit token → cdhash / team_id / signing_id, plus the parent chain and whether it's a platform binary.</li>
+      <li>Extract the target: <code>es_file_t</code> → path and <code>stat</code>. Use <code>st_dev</code> to know which volume — that's how you cheaply know "this is the USB volume" without string-matching <code>/Volumes/</code>.</li>
+      <li>Look up the verdict in an in-memory policy cache keyed by (actor identity, destination class, sensitivity label of the source inode). No IPC, no disk, no network on this path.</li>
+      <li>Respond: <code>es_respond_auth_result(ES_AUTH_RESULT_DENY)</code>, or for OPEN, <code>es_respond_flags_result</code> stripping the write bits so read still works — much lower blast radius than a hard deny.</li>
+      <li>Emit the audit event asynchronously on a separate queue after responding. Never before.</li>
+    </ol>
+    <p><strong>Caveat, stated second:</strong> content classification cannot happen inside the auth path. So the label has to already exist — you pre-classify on <code>NOTIFY_CLOSE(modified)</code> and cache the label by (dev, inode, mtime/generation). If the label is unknown at auth time, you have a policy choice: fail-open and log, or block-and-scan with a hard timeout. In a DLP product on a laptop, I'd fail-open by default and let the customer opt into strict mode, because a false block on <code>/usr/bin/ld</code> is an outage and a missed copy is an alert.</p>
+  </div></details>
+
+  <details class="q"><summary>"Your ES client misses a deadline. What happens, and how do you make sure it never does?"</summary>
+  <div class="body">
+    <p><strong>Commit:</strong> the kernel kills your client. Not a warning — the process is terminated, and if it's a system extension you get a restart loop and, on repeat, a very unhappy fleet. It's the number one way to take down every Mac in a customer's org simultaneously.</p>
+    <p>Prevention, in order of value:</p>
+    <ul>
+      <li><strong>Never do unbounded work in the auth path.</strong> No locks that another queue can hold, no XPC round trip, no disk read, no allocation storm, no regex over content.</li>
+      <li><strong>Aggressive muting up front</strong> so the event never reaches you: mute your own audit token (else your scanner reading a file generates the AUTH_OPEN that makes it scan the file — a self-deadlock), mute platform binaries you'll never police, mute noisy build/cache paths (<code>~/Library/Caches</code>, DerivedData), and use target-path muting for the write-heavy trees. Inverted muting if the watchlist is small.</li>
+      <li><strong>A watchdog timer per message</strong> set to a fraction of <code>msg->deadline</code> — say 50% — that fires a default response if the decision path hasn't answered. You choose your own timeout so the OS never chooses for you.</li>
+      <li><strong>Bounded queues with backpressure</strong> and a global drop/fail-open switch. Under overload, degrade to notify-only rather than dying.</li>
+      <li><strong>Measure it in production:</strong> histogram of (respond_time / deadline) per event type, exported as a metric. If p99 crosses a threshold you self-demote to monitor mode and alert. That's the answer that sounds like someone who ran an agent at scale.</li>
+    </ul>
+    <p><strong>The scar to attach:</strong> pick a real one from JumpCloud — a hang, a queue starvation, a lock contention, a stall you found with Instruments — and tell it in 40 seconds with the fix.</p>
+  </div></details>
+
+  <details class="q"><summary>"How do you avoid recursive events from your own agent?"</summary>
+  <div class="body">
+    <p>Mute your own audit token via <code>es_mute_process</code> at startup — audit token, not pid, because pids get reused and the token is the only identity that's actually stable. Same for your helper tools and any scanner subprocess you spawn. Then be careful about the second-order case: your log writes and your database writes generate file events too, so mute your own container/support paths by prefix. If you have multiple XPC-connected components, each one needs muting or you get an event storm between them. At FireEye's OAS this exact problem is why suppression modules exist — call that out to him.</p>
+  </div></details>
+
+  <details class="q"><summary>"What can't ES do?"</summary>
+  <div class="body">
+    <p>Good question to answer confidently, it shows the edges of real experience:</p>
+    <ul>
+      <li><strong>No content.</strong> ES tells you an open happened, not what's in the file. You read it yourself — and that read is subject to TCC and to your own muting.</li>
+      <li><strong>No network.</strong> Sockets are Network Extension territory. ES's process/file view stops at the syscall boundary.</li>
+      <li><strong>No clipboard, no UI, no keystrokes.</strong> Pasteboard is completely invisible to ES (§08).</li>
+      <li><strong>No pipes contents.</strong> Relevant for MCP stdio (§13) — you see the exec and the fds, not the bytes.</li>
+      <li><strong>Not a full syscall audit.</strong> The event set is what Apple ships, versioned per macOS release; you must handle <code>msg-&gt;version</code> and guard newer fields with availability, or you crash on older OSes.</li>
+      <li><strong>You're not first.</strong> Your DENY can't override another client's ALLOW, and vice versa — ES is AND-of-denies, so you can't guarantee you saw the operation before someone else's client did something with it.</li>
+    </ul>
+  </div></details>
+</section>
+
+<!-- ================= 06 ================= -->
+<section id="s6">
+  <div class="eyebrow">§06</div>
+  <h2>System Extensions — lifecycle &amp; deployment</h2>
+  <p class="lede">This is where fleet experience differentiates you from an app developer. It's your home turf. Use it.</p>
+
+  <ul>
+    <li><strong>Anatomy:</strong> a container app in <code>/Applications</code> (must be there — SysExes won't activate from arbitrary paths) → <code>OSSystemExtensionRequest.activationRequest</code> → user approval prompt in System Settings → extension runs as root, out of your app's lifecycle. The container app can be closed; the extension persists.</li>
+    <li><strong>Fleet reality:</strong> nobody clicks approve at scale. You ship an MDM configuration profile: <code>com.apple.system-extension.install</code> (allowed team IDs / bundle IDs) to pre-approve, plus a PPPC profile for Full Disk Access, plus <code>com.apple.webcontent-filter</code> if you also load a network extension. Without MDM, your agent is a support ticket. Say this — it's the practical knowledge Nightfall needs because their customers deploy via Jamf/Kandji/Intune.</li>
+    <li><strong>Upgrades:</strong> replace the container app → request activation again → the system handles the swap, and the old extension is torn down. Version pinning matters: the extension's <code>CFBundleVersion</code> must be strictly greater or the request is ignored. Downgrades are effectively impossible without deactivation — which is why a <strong>remote kill switch inside the extension</strong> matters more than the ability to roll back the binary.</li>
+    <li><strong>Debugging:</strong> <code>systemextensionsctl list</code>, <code>systemextensionsctl developer on</code> (SIP-disabled dev box only), log stream with <code>--predicate 'subsystem == "com.yourco.agent"'</code>, and attaching LLDB to a root extension requires <code>sudo</code> + the right entitlement combination. Crash logs land in <code>/Library/Logs/DiagnosticReports</code>, not the user's.</li>
+    <li><strong>The trap:</strong> a crash-looping system extension with an ES client is the worst failure in this domain. On macOS the system may throttle relaunch, and every relaunch re-subscribes and re-floods. You need a <em>local</em> circuit breaker: on N crashes in M minutes, boot into monitor-only mode with policy disabled, and phone home. Fail-open, always, on an endpoint agent that can wedge a machine.</li>
+  </ul>
+
+  <div class="say">"The thing I've learned running an agent at fleet scale is that the interesting bugs aren't in the code path, they're in the deployment path. Version skew between the container app and the extension, MDM profile ordering, TCC grants that didn't land, users on an OS you didn't test. Ninety percent of my production incidents came from there, not from the ES logic."</div>
+</section>
+
+<!-- ================= 07 ================= -->
+<section id="s7">
+  <div class="eyebrow">§07</div>
+  <h2>XPC &amp; IPC trust</h2>
+  <p class="lede">Aehjaj's profile says "XPC-based architectures" explicitly. Expect at least one question. The security question here is the one people fail.</p>
+
+  <h3>The architecture</h3>
+  <p>Typical macOS DLP agent has three or four processes: a <strong>privileged daemon / system extension</strong> (root, ES client, policy engine), a <strong>LaunchAgent in the GUI session</strong> (user notifications, pasteboard access, screen capture — none of which work from a daemon), a <strong>network extension</strong>, and maybe a menu-bar app. They talk over XPC / <code>NSXPCConnection</code>, or Mach services registered in the launchd plist.</p>
+
+  <div class="callout">
+    <h4>The question that separates people</h4>
+    <p><strong>"How do you know the process connecting to your privileged XPC service is really your agent and not malware?"</strong></p>
+    <p>Wrong answers: check the pid, check the process name, check the path. All spoofable or racy — the classic pid-reuse attack: the caller exits between your check and your action, another process takes the pid, you authorise the wrong one.</p>
+    <p><strong>Right answer:</strong> validate the peer's <em>code signature</em>, not its identity-by-position. Get the peer's <code>audit_token</code> from the connection (<code>NSXPCConnection.auditToken</code>, or <code>xpc_connection_get_audit_token</code> on the C API) and pass it to <code>SecCodeCopyGuestWithAttributes</code> with the <code>kSecGuestAttributeAudit</code> key, then <code>SecCodeCheckValidity</code> against a requirement string pinning your team ID and identifier, plus a minimum signing time so an old vulnerable signed build of yours can't be used against you. <strong>Audit token, never pid</strong> — that's the whole point, and it's why Apple deprecated the pid-based API. Also set <code>NSXPCConnection.setCodeSigningRequirement()</code> on macOS 13+, which does this for you and is the modern answer.</p>
+  </div>
+
+  <ul>
+    <li>Keep the privileged surface tiny: the daemon exposes <em>verbs</em> ("evaluate this event", "fetch policy version"), not primitives ("read this path", "run this command"). A confused-deputy in a DLP agent running as root is a privilege escalation for every Mac in the fleet.</li>
+    <li>Bound everything: message size caps, rate limits per peer, timeouts on every reply block, and never block the ES queue on an XPC reply.</li>
+    <li>Whitelist your interface classes explicitly (<code>setClasses:forSelector:argumentIndex:ofReply:</code>) — an unrestricted <code>NSXPCInterface</code> with <code>NSSecureCoding</code> off is a deserialisation hole.</li>
+  </ul>
+</section>
+
+<!-- ================= 08 ================= -->
+<section id="s8">
+  <div class="eyebrow">§08 · High probability</div>
+  <h2>Clipboard DLP on macOS</h2>
+  <p class="lede">You already answered this in Round 1 at a design level. He will re-ask it at an implementation level, because it's genuinely hard on macOS and it's a core Nightfall feature.</p>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">The truth to lead with</span> macOS gives you <strong>no clipboard event API</strong>. No ES event, no notification, no callback. Anyone who says otherwise hasn't built it. Say this first — it's the commit — then show how you'd work around it.</p>
+  </div>
+
+  <h4>Detection: change-count polling</h4>
+  <pre><code>// From a LaunchAgent in the GUI session — NOT from a root daemon.
+// NSPasteboard is per-session; a daemon sees nothing.
+let pb = NSPasteboard.general
+var last = pb.changeCount
+timer = Timer(timeInterval: 0.25) { _ in
+    guard pb.changeCount != last else { return }   // cheap; no read, no TCC prompt
+    last = pb.changeCount
+    // now: who owns it, what types, how big
+}</code></pre>
+  <ul>
+    <li><code>changeCount</code> is monotonic and free to read — poll it, don't read the contents. 200–500ms is the sane range; that's your CPU/latency trade-off and he'll ask for the number.</li>
+    <li>Inspect <code>pb.types</code> before <code>pb.string(forType:)</code> — a copied 50MB image shouldn't be pulled into memory. Cap the inspection size; classify a prefix.</li>
+    <li><strong>Who copied it:</strong> there's no clean owner API. In practice you correlate with <code>NSWorkspace.shared.frontmostApplication</code> at the instant of the change count bump, plus <code>NSWorkspace.didActivateApplicationNotification</code> to keep a running foreground history. It's inference, not ground truth — say so, it's the honest engineering answer.</li>
+    <li><strong>Privacy landmine (know this):</strong> recent macOS releases surface a user-facing prompt/notification when an app programmatically reads pasteboard contents it didn't put there. A DLP agent that reads the clipboard on every change is a UX incident. Mitigations: <code>NSPasteboard.detectPatterns</code>/type detection to check <em>what kind</em> of data is there without a full read, only read when the type and the destination make it policy-relevant, and get the behaviour blessed via MDM where possible. Bringing this up unprompted is a strong signal you've shipped against modern macOS, not macOS 11.</li>
+  </ul>
+
+  <h4>Enforcement: blocking the paste</h4>
+  <p>Three options, ranked, with honest trade-offs — give all three and pick one:</p>
+  <table>
+    <tr><th>Approach</th><th>How</th><th>Cost</th></tr>
+    <tr><td><strong>Redact at copy time</strong></td><td>On a policy-violating copy, clear or replace pasteboard contents immediately.</td><td>Simple, no extra TCC. But it's a race with a fast paste, and it breaks copy-to-self workflows. Blunt.</td></tr>
+    <tr><td><strong>CGEventTap on ⌘V</strong></td><td>Active tap (<code>kCGEventTapOptionDefault</code>) at <code>kCGHIDEventTap</code>/session level, inspect keyDown for V+cmd, resolve the frontmost app, evaluate policy, return <code>nil</code> to swallow the event.</td><td>Requires <strong>Accessibility</strong> TCC (PPPC-deployable). The tap is <em>synchronous on the input path</em> — you get a hard timeout and macOS will disable your tap (<code>kCGEventTapDisabledByTimeout</code>) if you're slow; you must listen for that event type and re-enable. Misses paste via menu, drag-drop, and AppleScript. Say all of this — it's the detail that proves you've done it.</td></tr>
+    <tr><td><strong>Catch it downstream</strong></td><td>Don't fight the paste; catch the consequence — the file write (ES), the network upload (NE), the browser POST (extension).</td><td>Not prevention at the moment of intent, but far more reliable and no input-path risk. This is why Nightfall has a browser extension <em>and</em> an agent.</td></tr>
+  </table>
+  <div class="say">"I'd commit to change-count polling for detection and a layered enforcement model: redact-on-copy for the highest-severity classes, and downstream ES/network enforcement for everything else. I'd avoid making a CGEventTap the primary control, because putting a policy engine synchronously on the HID input path is how you make the whole Mac feel broken — and when the tap times out macOS silently disables it, so your control fails open without telling you."</div>
+</section>
+
+<!-- ================= 09 ================= -->
+<section id="s9">
+  <div class="eyebrow">§09</div>
+  <h2>Destination attribution — "where is it going?"</h2>
+  <p class="lede">You gave a decent Round 1 answer (frontmost app + correlate + policy). Here's the layer under it.</p>
+  <ul>
+    <li><strong>App:</strong> <code>NSWorkspace.shared.frontmostApplication</code> → bundle ID + pid; then validate with the code signature, because bundle ID is trivially spoofable by an unsigned copy. Keep a rolling window of activation events rather than sampling once, so you can attribute an event that lands a few ms after an app switch.</li>
+    <li><strong>Website:</strong> the frontmost app is "Chrome" — useless for policy. The tab URL is the actual destination. Options: a browser extension (Nightfall ships one — the sanctioned answer), or infer from the network layer via SNI / DNS from a <code>NEFilterDataProvider</code> or <code>NEDNSProxyProvider</code>, correlated by flow → pid. Extension is precise, network is universal; you want both, and the honest reason is that ~80% of real exfil is a browser upload.</li>
+    <li><strong>AI apps specifically:</strong> three destination classes, three sensors — native app (bundle ID via ES exec/NE flow attribution), web app (browser extension / SNI), CLI &amp; IDE agent (ES exec + argv + network flow from the child process). Enumerating those three unprompted is a very good look for this role.</li>
+  </ul>
+</section>
+
+<!-- ================= 10 ================= -->
+<section id="s10">
+  <div class="eyebrow">§10 · He built this</div>
+  <h2>USB &amp; removable media</h2>
+  <p class="lede">Aehjaj shipped USB exfil monitoring + blocking at Nightfall in 4 weeks. High chance he asks. Match his level.</p>
+
+  <h4>Three enforcement points, from blunt to surgical</h4>
+  <ol>
+    <li><strong>Block the mount:</strong> <code>ES_EVENT_TYPE_AUTH_MOUNT</code> — you get the <code>statfs</code>, deny and the volume never appears. Also DiskArbitration: <code>DARegisterDiskMountApprovalCallback</code>, and <code>DADiskUnmount</code> to eject after the fact. Blunt: kills legitimate read-only use, and the user just sees "USB doesn't work on my Mac."</li>
+    <li><strong>Force read-only:</strong> allow the mount, then remount with <code>MNT_RDONLY</code>, or via DA approval callbacks. Good middle ground for "read your files, never write ours."</li>
+    <li><strong>Policy per write (the real DLP answer):</strong> allow the mount, capture the volume's <code>f_mntonname</code> and, crucially, its <strong><code>st_dev</code></strong>. Then on <code>AUTH_CREATE</code> / <code>AUTH_OPEN</code> / <code>AUTH_RENAME</code> / <code>AUTH_COPYFILE</code> / <code>AUTH_CLONE</code>, compare the target's <code>st_dev</code> against your removable-volume set. Match the source file's sensitivity label; deny only sensitive→removable. Everything else flows.</li>
+  </ol>
+  <p><strong>Why <code>st_dev</code> and not the path:</strong> because <code>/Volumes/Untitled</code> is a string an attacker controls, symlinks and firmlinks exist, and <code>/Volumes</code> prefix matching is a bypass waiting to happen. A device number is a kernel fact. That distinction is exactly the kind of thing an ex-CrowdStrike engineer will notice you making.</p>
+
+  <h4>Device identity (allowlisting a corporate USB key)</h4>
+  <p>IOKit: walk the IORegistry from the BSD name (<code>IOBSDNameMatching</code>) up the parent chain to the USB device node and read <code>idVendor</code>, <code>idProduct</code>, <code>kUSBSerialNumberString</code>. Vendor+product alone is not identity — the serial is, and even that is forgeable by a determined attacker with a programmable device. So allowlist on serial, but treat it as a convenience control, not a security boundary, and say that out loud.</p>
+
+  <h4>The cases that catch people</h4>
+  <ul>
+    <li><strong>Not everything is USB.</strong> SD cards, Thunderbolt enclosures, network shares (SMB/AFP), disk images (<code>.dmg</code> mounted from a download), and iCloud/Dropbox sync folders all move data off the machine. A DMG on a removable volume is a nested filesystem with a different <code>st_dev</code>. Ask which classes are in scope.</li>
+    <li><strong>APFS clones.</strong> <code>copyfile</code> with <code>COPYFILE_CLONE</code> and <code>clonefile()</code> aren't reads-then-writes — if you only watch OPEN/WRITE you miss them entirely. Hence <code>AUTH_CLONE</code> and <code>AUTH_COPYFILE</code>.</li>
+    <li><strong>Finder is not the actor.</strong> A drag-copy in Finder means the writing process is Finder, not the user's app. Attribution by process alone lies; you need the source inode's label, not the actor's intent.</li>
+  </ul>
+  <div class="say">"The version I'd build first isn't mount-blocking, it's device-scoped write policy keyed on st_dev, with the sensitivity label carried on the source inode. Mount-blocking is a one-day feature that generates support tickets forever; the st_dev model is the one you can actually tune per-customer."</div>
+</section>
+
+<!-- ================= 11 ================= -->
+<section id="s11">
+  <div class="eyebrow">§11 · He built this too</div>
+  <h2>Screen capture &amp; ScreenCaptureKit</h2>
+  <ul>
+    <li><code>SCShareableContent</code> to enumerate displays/windows/apps; <code>SCContentFilter</code> to scope; <code>SCStream</code> + <code>SCStreamOutput</code> for frames; <code>SCScreenshotManager</code> (macOS 14+) for one-shots. Frames arrive as <code>CMSampleBuffer</code> — you get IOSurface-backed pixel data, so you can go straight to VideoToolbox for H.264 without a CPU copy.</li>
+    <li><strong>Must run in the GUI session</strong> (LaunchAgent), needs <strong>Screen Recording</strong> TCC. A root daemon cannot capture. PPPC profile can pre-grant it via MDM, which is the only way this ships to a fleet.</li>
+    <li><strong>macOS 15 added a recurring user prompt</strong> for screen recording (monthly-ish, and per-app), which is a real product problem for a forensics feature. The mitigation is MDM pre-approval; know that this exists because it burned every vendor in this space, including, probably, him.</li>
+    <li><strong>DLP-relevant design:</strong> don't record continuously — that's a privacy nightmare and a disk/CPU disaster. Trigger on policy events (sensitive file open, blocked paste, exfil attempt), capture a bounded ring buffer of the seconds around it, redact aggressively, upload with the audit event. Retention and worker-council/GDPR constraints are real: screen recording of employees is regulated in the EU and India-based dev teams shipping to EU customers get this wrong.</li>
+    <li>Frames are big. Downscale before encoding, cap fps (2–5 is plenty for forensics), use <code>SCStreamConfiguration.queueDepth</code> and drop frames rather than backpressure the compositor.</li>
+  </ul>
+</section>
+
+<!-- ================= 12 ================= -->
+<section id="s12">
+  <div class="eyebrow">§12</div>
+  <h2>Network Extension — the exfil path</h2>
+  <p class="lede">ES sees files and processes. Everything leaving the machine is here. For an AI-DLP product this is at least half the problem.</p>
+
+  <table>
+    <tr><th>Provider</th><th>What you get</th><th>Limits</th></tr>
+    <tr><td><code>NEFilterDataProvider</code></td><td>Per-flow allow/deny/peek, with <strong>source app attribution</strong> (<code>NEFilterFlow.sourceAppIdentifier</code>, <code>sourceAppAuditToken</code>). Verdicts: allow, drop, needRules, filterData with peek sizes.</td><td>You see bytes, but TLS bytes are ciphertext. Useful for SNI/domain policy and app-level blocking, not content.</td></tr>
+    <tr><td><code>NETransparentProxyProvider</code></td><td>Terminate the connection locally, MITM with a corporate CA pushed by MDM, inspect the plaintext HTTP body, re-originate. This is how content-aware upload DLP actually works.</td><td>Certificate pinning breaks (many native apps pin). Apple's own services bypass. It's a full proxy — you own the perf and every TLS edge case. Heavy.</td></tr>
+    <tr><td><code>NEDNSProxyProvider</code></td><td>Every DNS query with app attribution. Cheap shadow-AI discovery: who's resolving <code>api.anthropic.com</code>, <code>api.openai.com</code>.</td><td>DoH/DoT bypasses it entirely — Chrome and Firefox default to encrypted DNS. Say this, it's the obvious hole.</td></tr>
+  </table>
+
+  <div class="callout">
+    <h4>The strong answer to "how do you see prompts?"</h4>
+    <p>Three layers, and none of them is sufficient alone: <strong>(1)</strong> browser extension for web AI apps — precise, gets the actual prompt text pre-encryption, but only covers browsers you support; <strong>(2)</strong> transparent proxy with a corporate CA for native apps and CLIs that don't pin — gets the body, breaks on pinning; <strong>(3)</strong> provider-side APIs — Nightfall's Claude Compliance API integration is exactly this, and it's the <em>most</em> reliable path because you're not fighting TLS at all, you're reading the sanctioned audit stream. The endpoint agent's job for AI traffic is inventory, attribution, and the unsanctioned tail — not being a proxy for everything.</p>
+    <p style="margin-bottom:0">Saying this positions you as someone who understands their product strategy, not just their sensor.</p>
+  </div>
+</section>
+
+<!-- ================= 13 ================= -->
+<section id="s13">
+  <div class="eyebrow">§13 · Their flagship</div>
+  <h2>MCP &amp; AI agent observability</h2>
+  <p class="lede">This is the thing their CEO is posting about every month. If you have one deeply-prepared answer, make it this one.</p>
+
+  <h4>Why it's hard (state this first — it's the whole product thesis)</h4>
+  <p>Local MCP servers are child processes spawned by Claude Code / Cursor / VS Code, talking over <strong>stdio pipes</strong>. That traffic never touches a socket, never touches DNS, never touches a proxy. Your CASB can't see it. Your gateway can't see it. It's invisible to every network-based control that exists. The only place it's observable is the endpoint — and even there, ES gives you the exec and the fds, not the pipe bytes.</p>
+
+  <h4>What you can actually build (be concrete, this is a design he'll grade)</h4>
+  <ol>
+    <li><strong>Config inventory.</strong> Parse and watch the config files: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>, <code>.mcp.json</code> / <code>mcp.json</code> in repos, Cursor and VS Code settings. FSEvents or ES <code>NOTIFY_CLOSE</code> on those paths gives you <strong>config drift over time</strong> — which is literally a bullet in their product post. Diff it, attribute it to a user, risk-score the server (npm package reputation, is it remote, what scopes/env vars/API keys are in the config block).</li>
+    <li><strong>Runtime inventory from the process tree.</strong> <code>ES_EVENT_TYPE_AUTH_EXEC</code> / <code>NOTIFY_EXEC</code> gives you argv and the parent. An MCP server launch looks like <code>npx -y @modelcontextprotocol/server-filesystem /Users/x</code> or <code>uvx something</code> with <code>ppid</code> = Claude/Cursor/Code. That gives you: what's running, spawned by whom, with which arguments — including the paths and tokens passed on the command line. Correlate exec-time inventory against config-time inventory and you catch the servers that exist but aren't declared.</li>
+    <li><strong>Capability, not just presence.</strong> The risk of an MCP server is what it can reach. A filesystem server rooted at <code>~</code>, a Postgres server with prod creds in env, a browser-automation server — that's the risk model. You derive it from argv + env + subsequent behaviour (what does that child open? what does it connect to?). This is where an endpoint agent beats an inventory tool: you see the <em>actual</em> file opens and flows of the server process, not the declared scope.</li>
+    <li><strong>Remote MCP</strong> is over HTTP/SSE — that one <em>is</em> visible to <code>NEFilterDataProvider</code>, attributed to the runtime's pid. Different sensor, same inventory.</li>
+    <li><strong>Enforcement</strong> (they don't have this yet — this is where you add value in the interview): deny the exec at <code>AUTH_EXEC</code> for unsanctioned servers; or allow the exec but deny the sensitive file opens by that process subtree via <code>AUTH_OPEN</code>. Allowlist by package identity + cdhash of the interpreter is weak (it's all <code>node</code>) — so you have to key policy on the <em>process subtree and argv</em>, which is genuinely a harder identity problem than normal app allowlisting. Naming that problem is what makes this answer good.</li>
+  </ol>
+
+  <div class="verdict watch">
+    <p><span class="chip watch">Honesty</span> The stdio bytes themselves: you cannot read another process's pipe without something like a task port (blocked by SIP/hardened runtime) or an injected shim (which breaks the hardened runtime and is a support nightmare). So the honest position is: <strong>inventory + capability + behavioural attribution at the process level, not content interception on the pipe.</strong> If they claim to see stdio traffic, ask him how — genuinely, it's a great question, and either you learn something real or you've found the boundary of the claim. Either way you look like the person who thinks about this properly.</p>
+  </div>
+  <p>Round 1 already gave you an in: you brought up Claude CLI unprompted and he engaged with it. Come back to that thread deliberately — "last time we touched on the Claude CLI case; I went and thought about it properly, here's where I landed."</p>
+</section>
+
+<!-- ================= 14 ================= -->
+<section id="s14">
+  <div class="eyebrow">§14</div>
+  <h2>Detection &amp; classification engine</h2>
+  <ul>
+    <li><strong>Layers:</strong> regex/pattern for structured secrets (AWS keys, JWTs, PANs with Luhn, Aadhaar/PAN for India customers) → entropy for unstructured secrets → context (proximity, file type, path, repo) → ML/LLM for unstructured sensitive text. Nightfall's whole differentiator historically is the ML detection tier, so acknowledge it: on-device you're doing the cheap deterministic tiers and escalating a hash/snippet to the cloud for the expensive tier.</li>
+    <li><strong>Where it runs matters more than what it is.</strong> On an endpoint you have a laptop's thermal budget and a user who notices. Cheap prefilter on-device (bloom filter of known-sensitive inodes, first-4KB regex scan, file-type gate), escalate only the ambiguous minority. A DLP agent that scans every file on every close is a laptop that never sleeps and a fan that never stops.</li>
+    <li><strong>Label caching:</strong> key by (dev, inode, size, mtime) or the APFS generation counter; invalidate on <code>NOTIFY_CLOSE(modified)</code>. This is what makes AUTH-path decisions O(1). If he asks "how do you make classification fast enough for a synchronous block?" — the answer is you don't; you make the <em>lookup</em> fast and do the classification off the critical path.</li>
+    <li><strong>False positives are the product.</strong> A DLP with a 5% FP rate on a 10k-person fleet is 500 wrong alerts. Talk about tunability: per-detector confidence thresholds, allowlist by path/repo/actor, "monitor first, enforce later" rollout, and shadow mode where the policy runs and logs the verdict it <em>would</em> have made. Given he built the suppression module at FireEye, this will land.</li>
+  </ul>
+</section>
+
+<!-- ================= 15 ================= -->
+<section id="s15">
+  <div class="eyebrow">§15</div>
+  <h2>Performance, concurrency, and the auth path</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4>Queue discipline</h4>
+      <ul style="margin-bottom:0">
+        <li>Dedicated serial queue for the ES client, high QoS (<code>.userInteractive</code>) — you're on a syscall path a human is waiting on.</li>
+        <li>AUTH and NOTIFY on separate queues; never let notify volume starve auth latency.</li>
+        <li><code>es_retain_message</code> + hop off the callback queue for anything that isn't a cache lookup.</li>
+        <li>Zero locks in the auth path that any other queue can acquire. Prefer immutable snapshots of policy, swapped atomically on update.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Overload behaviour</h4>
+      <ul style="margin-bottom:0">
+        <li>Bounded queues, explicit drop policy, and a metric for drops. Silent drops in a security agent are a compliance lie.</li>
+        <li>Self-demotion: p99 latency or queue depth over threshold → notify-only mode → alert.</li>
+        <li>Watchdog per message at a fraction of the deadline.</li>
+        <li>Budget for the fact that a Mac in a build loop generates tens of thousands of file events per second. Xcode is your worst adversary, not malware.</li>
+      </ul>
+    </div>
+  </div>
+  <p><strong>Tooling to name:</strong> Instruments (Time Profiler, System Trace, Points of Interest with <code>os_signpost</code> around the auth path), <code>log stream</code>/<code>log collect</code> with a subsystem predicate, <code>fs_usage</code>, <code>spindump</code> for hangs, <code>sample</code>, LLDB against a root extension, and Malloc/Zombies for the ARC-meets-C-API lifetime bugs you get wrapping <code>es_message_t</code> in Swift.</p>
+  <div class="say">"The Swift-over-ES lifetime bugs are their own genre: es_message_t is a C struct with a manual retain/release, and the moment you capture it in a Swift closure that outlives the callback without es_retain_message, you get a use-after-free that only reproduces under load. I've learned to wrap it in a small RAII-style Swift type at the boundary so ownership is unmissable."</div>
+</section>
+
+<!-- ================= 16 ================= -->
+<section id="s16">
+  <div class="eyebrow">§16</div>
+  <h2>TCC, privacy, and the hostile OS</h2>
+  <ul>
+    <li><strong>Full Disk Access</strong> is required for ES, and is required to <em>read</em> the files you're policing. Without it your ES client won't even instantiate (<code>ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED</code>). At fleet scale it's a PPPC profile over MDM; on an unmanaged Mac it's a support call.</li>
+    <li>Accessibility (event taps), Screen Recording (SCK), Input Monitoring, and Automation are all separate TCC grants with separate PPPC keys. Enumerate them per feature — a DLP agent needs an uncomfortable number of them, and that's a real sales conversation, not just an engineering one.</li>
+    <li><strong>TCC is per-code-signature.</strong> Re-signing or changing the designated requirement resets grants — meaning a botched signing change silently disables your agent's permissions across the fleet. That's a genuine war story class.</li>
+    <li><strong>SIP</strong> means you can't touch protected paths, can't inject, can't get task ports for other processes. Any "just hook it" answer is wrong on modern macOS and he will know.</li>
+    <li><strong>The privacy posture question.</strong> A DLP agent that reads clipboards, records screens, and inspects files is the most invasive software on the machine. Have a position: minimise collection, classify locally and ship labels/metadata rather than content, redact before upload, make the agent's behaviour auditable to the employee, and be explicit about works-council/GDPR/DPDP constraints. Nightfall sells to enterprises with EU staff — this isn't philosophy, it's a deal blocker. A candidate with a considered privacy position is rare and memorable.</li>
+  </ul>
+</section>
+
+<!-- ================= 17 ================= -->
+<section id="s17">
+  <div class="eyebrow">§17 · Fix the Round 1 gap</div>
+  <h2>Windows &amp; Linux — how you actually block</h2>
+  <p class="lede">He asked this twice. You said "not finalised." He built the Linux one at FireEye with fanotify. Do not go in without this.</p>
+
+  <h3>Windows: ETW monitors, drivers block</h3>
+  <table>
+    <tr><th>Need</th><th>Mechanism</th></tr>
+    <tr><td>File I/O interception + block</td><td><strong>Filesystem minifilter driver</strong> (<code>FltRegisterFilter</code>, pre-operation callbacks on <code>IRP_MJ_CREATE</code>/<code>WRITE</code>, return <code>FLT_PREOP_COMPLETE</code> with <code>STATUS_ACCESS_DENIED</code>). The direct analogue of macOS ES AUTH events.</td></tr>
+    <tr><td>Process create + block</td><td><code>PsSetCreateProcessNotifyRoutineEx</code> — you can set <code>CreationStatus</code> to deny. Kernel callback, not ETW.</td></tr>
+    <tr><td>Handle hardening</td><td><code>ObRegisterCallbacks</code> to strip rights from handles to protected processes (requires an ELAM-signed, PPL-eligible driver).</td></tr>
+    <tr><td>Network filter + block</td><td><strong>WFP callout driver</strong>, or <code>NDIS</code> LWF lower down.</td></tr>
+    <tr><td>Removable media</td><td>Volume-level minifilter + <code>SetupAPI</code>/PnP for device identity, or Group Policy for the blunt version.</td></tr>
+    <tr><td>Rich telemetry</td><td><strong>ETW</strong> (incl. Microsoft-Windows-Threat-Intelligence, which needs an ELAM/PPL-protected consumer). Monitoring only. Correct as far as it goes — it just isn't an enforcement point.</td></tr>
+  </table>
+  <div class="say">"You were right to push on this last time and I gave you a soft answer. The correct one: ETW is a telemetry bus, not a control point — if you want prevention on Windows you need a minifilter for file I/O, process-create callbacks for exec, and a WFP callout for network. That's a driver team, WHQL signing, and a totally different risk profile from a macOS system extension, which is exactly why it's a build-vs-buy decision rather than a design detail."</div>
+
+  <h3>Linux: fanotify is the enforcement point — his home turf</h3>
+  <ul>
+    <li><strong><code>fanotify</code> permission events</strong> are the blocking mechanism: <code>FAN_OPEN_PERM</code>, <code>FAN_ACCESS_PERM</code>, and <code>FAN_OPEN_EXEC_PERM</code> (5.0+). You read the event, then write a <code>fanotify_response</code> with <code>FAN_ALLOW</code>/<code>FAN_DENY</code>. Structurally identical to <code>es_respond_auth_result</code> — and if you don't respond, you <em>hang the calling process</em>, which is the Linux version of missing the ES deadline, except worse, because instead of your agent dying, the user's <code>ls</code> hangs forever. Say this comparison; it's the sentence that proves you understand both.</li>
+    <li><code>FAN_MARK_FILESYSTEM</code> (4.20+) for whole-fs marks, <code>FAN_REPORT_FID</code> (5.1+) so you get file handles instead of fds and don't blow your fd budget on a busy filesystem. That fd-exhaustion problem is exactly the kind of thing his OAS client library had to solve.</li>
+    <li><strong>eBPF LSM</strong> (<code>BPF_PROG_TYPE_LSM</code>, 5.7+) — you can return <code>-EPERM</code> from an LSM hook, so it <em>is</em> an enforcement point, with far richer context and lower overhead than fanotify. Downside: kernel version + <code>CONFIG_BPF_LSM</code> + <code>lsm=</code> boot param, so enterprise distro coverage is patchy. Landlock for unprivileged sandboxing. Classic <code>auditd</code> is monitor-only.</li>
+    <li>Network: eBPF (cgroup/sock hooks, TC) or netfilter/nfqueue for verdicts.</li>
+    <li><strong>The honest boundary:</strong> "My depth here is macOS. On Linux I can reason about the design and I know the mechanisms, but I haven't shipped a fanotify-based scanner — you have, so I'd want to learn the operational reality from your team rather than pretend." That sentence costs you nothing and buys enormous credibility with this specific interviewer.</li>
+  </ul>
+
+  <table>
+    <tr><th></th><th>macOS</th><th>Linux</th><th>Windows</th></tr>
+    <tr><td>Monitor</td><td>ES NOTIFY_*</td><td>fanotify (notify), auditd, eBPF</td><td>ETW, ETW-TI</td></tr>
+    <tr><td>Block file</td><td>ES AUTH_OPEN + flags result</td><td>FAN_OPEN_PERM / eBPF LSM</td><td>Minifilter pre-op</td></tr>
+    <tr><td>Block exec</td><td>ES AUTH_EXEC</td><td>FAN_OPEN_EXEC_PERM / LSM bprm_check</td><td>PsSetCreateProcessNotifyRoutineEx</td></tr>
+    <tr><td>Network</td><td>NEFilterDataProvider / transparent proxy</td><td>eBPF, nfqueue</td><td>WFP callout</td></tr>
+    <tr><td>Failure mode</td><td>Miss deadline → your client is killed</td><td>Don't respond → caller hangs</td><td>Bad driver → BSOD</td></tr>
+  </table>
+  <p class="footnote">That last row is the one to say out loud. "Every platform gives you an enforcement point and a way to take the machine down with it. The engineering is in the fail-open path, not the hook."</p>
+</section>
+
+<!-- ================= 18 ================= -->
+<section id="s18">
+  <div class="eyebrow">§18 · Round 3</div>
+  <h2>The architecture round</h2>
+  <p class="lede">Prasad said: a similar problem in this space, come up with a solution. Most likely prompt: <em>"Design a macOS endpoint DLP agent that prevents sensitive data going to AI applications."</em> Here's the whole answer.</p>
+
+  <h3>Step 0 — Clarify before you draw (2 minutes, don't skip)</h3>
+  <ul>
+    <li>Scope: monitor-only v1 or blocking v1? (Their own product is monitor-first — asking this proves you know that.)</li>
+    <li>Channels in scope: web AI apps, native apps, CLI/IDE agents, MCP? All four are different sensors.</li>
+    <li>Managed fleet with MDM, or self-install? Determines whether TCC and SysEx approval are solved or are the project.</li>
+    <li>Fail-open or fail-closed? Non-negotiable to settle early — it's the single biggest architectural fork.</li>
+    <li>Scale: endpoints, events/sec/device, retention, air-gapped/offline behaviour.</li>
+  </ul>
+
+  <h3>Step 1 — The component map</h3>
+  <pre><code>┌──────────────────────── macOS endpoint ────────────────────────┐
+│                                                                │
+│  [Container app /Applications]  ── activation, updates, UI      │
+│                                                                │
+│  ┌── System Extension (root) ─────────────────────────────┐    │
+│  │  ES client        AUTH_EXEC/OPEN/RENAME/COPYFILE/CLONE  │    │
+│  │                   NOTIFY_CLOSE(modified) → classify     │    │
+│  │  Policy engine    immutable snapshot, atomic swap       │    │
+│  │  Label cache      (dev,inode,gen) → sensitivity         │    │
+│  │  Watchdog         respond < 0.5 × deadline              │    │
+│  └────────────────┬────────────────────────────────────────┘    │
+│                   │ XPC (code-signature pinned, audit token)    │
+│  ┌── Network Ext ─┴──────────┐   ┌── LaunchAgent (GUI) ─────┐   │
+│  │ NEFilterDataProvider      │   │ pasteboard change-count   │   │
+│  │  flow → pid → app id      │   │ frontmost app history     │   │
+│  │ SNI/DNS → AI destinations │   │ user notifications        │   │
+│  │ (opt) transparent proxy   │   │ SCK capture on trigger    │   │
+│  └───────────────────────────┘   └──────────────────────────┘   │
+│                   │                                             │
+│  ┌── Browser extension ──────┐   ┌── Local store ───────────┐   │
+│  │ tab URL, paste, upload,   │   │ SQLite/WAL, size-capped,  │   │
+│  │ prompt text pre-TLS       │   │ offline queue, encrypted  │   │
+│  └───────────────────────────┘   └──────────────────────────┘   │
+└───────────────────────────┬────────────────────────────────────┘
+                            │ mTLS, device identity from Secure Enclave
+                    ┌───────┴────────┐
+                    │ Backend        │  policy distribution (versioned,
+                    │ classification │  signed), ML detection tier,
+                    │ audit / lineage│  incident store, admin console
+                    └────────────────┘</code></pre>
+
+  <h3>Step 2 — The four hard decisions (lead with these; this is what a Staff-level answer looks like)</h3>
+  <table>
+    <tr><th>Decision</th><th>Position</th><th>Why</th></tr>
+    <tr><td><strong>Fail-open by default</strong></td><td>If the agent is unhealthy, dead, or overloaded, work continues. Strict mode is opt-in per policy class.</td><td>A DLP agent that can wedge every laptop in a company is a bigger business risk than the leak it prevents. Alert on fail-open; never silently.</td></tr>
+    <tr><td><strong>Classification off the auth path</strong></td><td>Label on <code>NOTIFY_CLOSE(modified)</code>, cache by inode, auth path is an O(1) lookup with a watchdog.</td><td>You cannot scan a file inside a deadline you don't control. Everything else follows from this.</td></tr>
+    <tr><td><strong>Policy is a signed, versioned artifact</strong></td><td>Backend publishes a signed policy bundle with a version; agent caches it, evaluates locally, works offline, and reports which version made each decision.</td><td>Every audit event must be replayable. "Why was this blocked?" must have an answer six months later. This is the difference between a tool and a compliance product.</td></tr>
+    <tr><td><strong>Monitor → shadow → enforce</strong></td><td>Every policy ships in shadow mode first, logging the verdict it would have made, for a tuning window before enforcement.</td><td>FP rate is the product. This is also how you sell into a fleet without a mutiny.</td></tr>
+  </table>
+
+  <h3>Step 3 — Trace one event end-to-end (do this; it's what people forget)</h3>
+  <p>"User copies a customer list out of Salesforce and pastes it into Claude in Chrome":</p>
+  <ol>
+    <li>Browser extension sees the paste into a known AI origin → sends {origin, size, type-hints, content} to the agent over local XPC/native messaging.</li>
+    <li>Agent classifies: PII detectors hit, confidence high, ≥100 records → sensitivity = restricted.</li>
+    <li>Policy snapshot lookup: destination class = unsanctioned-AI, actor = corp user, label = restricted → verdict DENY + coach.</li>
+    <li>Extension blocks the paste and shows the justification UI ("this contains customer PII; use the approved workspace, or provide a business reason").</li>
+    <li>Agent emits an audit event: user, device, source app, destination origin, detector hits, redacted snippet, policy version, verdict. LaunchAgent optionally captures a bounded screen clip.</li>
+    <li>Backend correlates to the earlier ES event where the same records were read out of the Salesforce export in <code>~/Downloads</code> → that's <strong>data lineage</strong>, which is exactly the Cyberhaven-competitive story in their own marketing.</li>
+  </ol>
+  <p>Then say the honest part: <strong>if the user uses the Claude desktop app instead of Chrome, the browser extension is blind</strong> and you're down to the transparent proxy or the provider API. Naming your own design's blind spot before he does is the strongest possible move in an architecture round.</p>
+
+  <h3>Step 4 — Operations (nobody covers this; it's your fleet-scale edge)</h3>
+  <ul>
+    <li>Staged rollout by ring, with a server-side kill switch that the extension honours at startup <em>and</em> on a heartbeat — the extension must be able to disable itself without a new binary.</li>
+    <li>Local circuit breaker: N crashes in M minutes → monitor-only + phone home.</li>
+    <li>Health telemetry as a first-class feature: ES deadline p99, event drop count, queue depth, TCC grant status, policy version, classification latency. If you can't see these, you're flying a fleet blind.</li>
+    <li>Bounded local storage with WAL and a hard disk cap; the agent must never fill a user's disk.</li>
+    <li>OS beta readiness: every WWDC is a potential fleet-wide break. Someone owns running the fleet's agent on the beta from day one. Say that you've lived this.</li>
+  </ul>
+</section>
+
+<!-- ================= 19 ================= -->
+<section id="s19">
+  <div class="eyebrow">§19</div>
+  <h2>If it's a coding / problem-solving round</h2>
+  <p class="lede">Prasad said round 2 is "problem-solving and deeper understanding of Mac endpoint technologies." Given Aehjaj's C++ background, expect systems reasoning, not LeetCode.</p>
+  <ul>
+    <li><strong>Likely shapes:</strong> "write the event-handling loop for an ES client with a deadline budget"; "design the data structure for the label cache"; "dedupe a firehose of file events"; "here's a hang, debug it"; "why does this agent deadlock?"</li>
+    <li><strong>Deadlock question, be ready:</strong> agent's classifier opens a file → ES AUTH_OPEN fires for the agent's own read → the callback queue is already blocked waiting on the classifier → deadline missed → client killed. Fix: mute own audit token; never do I/O on the callback queue; do classification on a separate queue with the message retained.</li>
+    <li><strong>Dedup/rate-limit design:</strong> keyed by (dev, inode, actor cdhash, event type) in an LRU with a time window; count suppressed events and emit a rollup rather than dropping silently. This is his FireEye suppression module — speak his language.</li>
+    <li><strong>Cache design:</strong> concurrent map, but invalidation is the real question: file changed (mtime/generation), policy version bumped (bump a global epoch and treat all entries as stale, don't walk the map), inode reused (include generation or size). Bounded LRU with a memory cap; a cache that grows on a build machine is an OOM.</li>
+    <li><strong>Language:</strong> you offered Swift and that's right. If he pushes C++, take it — concurrency and lifetime reasoning transfer, and you can say "my last four years are Swift + C interop against ES, so I'll write it in Swift but I'm happy to talk about the C++ shape."</li>
+  </ul>
+</section>
+
+<!-- ================= 20 ================= -->
+<section id="s20">
+  <div class="eyebrow">§20</div>
+  <h2>Rapid-fire bank</h2>
+  <p class="lede">One-breath commits. If you can't answer these in 15 seconds, you don't know them yet.</p>
+
+  <details class="q"><summary>Kext vs system extension — why did Apple move?</summary><div class="body"><p>Kexts run in the kernel: a bug is a panic, a vuln is ring-0, and every kext is an attack surface Apple can't patch. System extensions run in userspace with an entitlement, so a crash kills your process, not the machine, and Apple controls the API surface and can version it. Kexts are deprecated and require reduced security on Apple Silicon — which for a security vendor is a non-starter, because you'd be asking customers to weaken the machine to run your security product.</p></div></details>
+
+  <details class="q"><summary>How do you identify a process for policy?</summary><div class="body"><p>cdhash for exact binary identity, team ID + signing ID for "any build from this vendor", and <code>codesigning_flags</code> to check <code>CS_VALID</code> and platform-binary status. Never the path, never the process name, never the pid — all three are attacker-controlled or racy. For scripts and interpreters the identity problem is genuinely unsolved: <code>node</code> is <code>node</code>, so you fall back to the argv + parent chain + the script file's own hash.</p></div></details>
+
+  <details class="q"><summary>What's the difference between AUTH_OPEN and NOTIFY_OPEN for DLP?</summary><div class="body"><p>AUTH_OPEN is synchronous, on the caller's syscall path, deadline-bound, and lets you return a flags result so you can strip write access without failing the open. NOTIFY_OPEN is after the fact — you can't stop anything, but there's no deadline and no risk of wedging the machine. Real agents use AUTH sparingly on a narrow, muted-down path and NOTIFY for everything else.</p></div></details>
+
+  <details class="q"><summary>Why can't your root daemon read the clipboard or capture the screen?</summary><div class="body"><p>Both are per-GUI-session, window-server-mediated resources. A root LaunchDaemon has no session context and no TCC identity tied to a logged-in user. You need a LaunchAgent running in the user's session, which then talks to the daemon over XPC. This split — daemon for kernel-adjacent, agent for session-adjacent — is the fundamental shape of every macOS endpoint agent.</p></div></details>
+
+  <details class="q"><summary>A customer says your agent makes their Mac slow. Walk me through it.</summary><div class="body"><p>First, data: pull the agent's own metrics — ES event rate by type, respond-time p99 vs deadline, queue depth, drop count, CPU by subprocess. Nine times out of ten it's event volume from a build or a sync client, not the policy logic. Then Instruments System Trace and <code>fs_usage</code> on the box to find the generator. Fix order: mute the source (path/process/target muting), then reduce subscription set, then optimise the path. Ship a per-customer mute config so it's a support action, not a release. And the real fix is that the agent should have self-demoted before the customer noticed — if a human told you first, your telemetry failed.</p></div></details>
+
+  <details class="q"><summary>How do you handle a new macOS release?</summary><div class="body"><p>Run the beta from day one on a dedicated ring; the ES event enum and <code>es_message_t</code> version grow every release, so you guard new fields with version checks and compile with the new SDK but keep the deployment target. The recurring breaks: TCC prompts changing (Sequoia's screen-recording nag), new privacy gates (pasteboard), SysEx approval flow changes, and event semantics quietly shifting. Budget for one fire-drill per major release, because there will be one.</p></div></details>
+
+  <details class="q"><summary>Why are you leaving JumpCloud, really?</summary><div class="body"><p>Commit: "I want the endpoint to be the product, not a feature." At JumpCloud the agent serves an identity platform — endpoint depth is instrumentally useful there. At Nightfall the sensor <em>is</em> the company's edge, and the AI-governance problem I'm running as an RFC on the side is your entire roadmap. Don't badmouth. Don't hedge. One sentence, then stop talking.</p></div></details>
+
+  <details class="q"><summary>The title says Senior. You're a Staff. Is that a problem?</summary><div class="body"><p>Don't wave it away and don't get prickly. "Titles compress differently across companies — what I care about is scope: am I owning the macOS agent's architecture and its technical direction, or executing someone else's? If it's the former, the label matters less to me than the mandate. Where does this role sit in your levels?" Then let them answer. That's a Staff-level way to handle it.</p></div></details>
+</section>
+
+<!-- ================= 21 ================= -->
+<section id="s21">
+  <div class="eyebrow">§21</div>
+  <h2>Questions to ask him</h2>
+  <p class="lede">In Round 1 you twice said "no questions." Against a peer engineer that's a miss. Pick three; they're all real, and each one signals something.</p>
+  <ol>
+    <li><strong>"What's your ES deadline strategy? Do you AUTH at all in production, or is v1 notify-only with enforcement at the network layer?"</strong> — signals: I know where the bodies are buried.</li>
+    <li><strong>"On MCP observability — how are you handling the stdio problem? Config-and-process-tree inventory, or have you found a way to actually see the pipe traffic?"</strong> — signals: I read your product posts and thought about the hard part. Best question in the list.</li>
+    <li><strong>"The USB blocking you shipped — did you go mount-level or per-write on st_dev? I'd have expected mount-level for speed to market and pain later."</strong> — signals: I've made this exact trade-off. (He shipped it in 4 weeks; he'll have an opinion.)</li>
+    <li><strong>"What's the FP tuning loop look like today? Shadow mode, or does policy go straight to enforce?"</strong> — signals: I think about the product, not just the code.</li>
+    <li><strong>"How much of the agent is Swift vs C++, and what's the reasoning?"</strong> — he's a C++ person on a Swift codebase; this is a question he has feelings about.</li>
+    <li><strong>"Who owns macOS beta readiness, and how did Sequoia's screen-recording prompt land for the SCK feature?"</strong> — signals: I've run an agent through OS transitions.</li>
+    <li><strong>"Bengaluru builds the endpoint agent end-to-end, or is there a split with Palo Alto? Where does architecture get decided?"</strong> — this one is for <em>you</em>. Given the level question, you need to know if this is an execution site.</li>
+  </ol>
+</section>
+
+<!-- ================= 22 ================= -->
+<section id="s22">
+  <div class="eyebrow">§22</div>
+  <h2>48-hour plan</h2>
+  <table>
+    <tr><th>Priority</th><th>Do</th><th>Why</th></tr>
+    <tr><td>1</td><td>Write out, from memory, on paper: the ES auth loop, the deadline strategy, and the mute strategy. No notes.</td><td>It's 40% of the round and it's the thing he can't be fooled about.</td></tr>
+    <tr><td>2</td><td>Prepare <strong>three concrete war stories</strong> from JumpCloud with numbers: a perf incident, a fleet deployment failure, an OS-version break. 40 seconds each: situation → what you found → what you did → what changed.</td><td>Round 1's fatal weakness was zero specifics. This alone fixes the biggest gap.</td></tr>
+    <tr><td>3</td><td>Rehearse the §17 Windows/Linux answer verbatim. He asked twice; he'll ask a third time.</td><td>It's a known, identified, repairable hole. Leaving it open is unforgivable.</td></tr>
+    <tr><td>4</td><td>Decide the notice-period number. Write it down. Say only that.</td><td>Cheap to fix now, expensive later.</td></tr>
+    <tr><td>5</td><td>Build the MCP answer (§13) into a 3-minute spoken piece.</td><td>It's their flagship bet and your best differentiator.</td></tr>
+    <tr><td>6</td><td>Do one dry run of the §18 architecture out loud, on a whiteboard, timed to 25 minutes.</td><td>Architecture rounds are pacing tests as much as design tests.</td></tr>
+    <tr><td>7</td><td>Decide your position on the JumpCloud AI-governance RFC: exactly what's designed, what's prototyped, what's shipped. Say the true version.</td><td>He will drill it. Design depth is respected; inflation is fatal.</td></tr>
+  </table>
+
+  <div class="callout">
+    <h4>The register</h4>
+    <p style="margin-bottom:0">Commit first. Caveat second. Never both at once. "Here's what I'd do — <em>and</em> here's what breaks about it" reads as senior. "It depends on the requirements, we'd have to evaluate, there are trade-offs" reads as someone who hasn't decided anything in a long time. You've built this stuff at fleet scale. Sound like it.</p>
+  </div>
+</section>
+
+<hr>
+<p class="footnote">Built from your Round 1 transcript, Aehjaj Ahmed P's public profile, and Nightfall's public product posts. Technical details reflect macOS 13–15 era APIs; verify anything version-sensitive against current Apple docs before you quote a specific behaviour in the room. Where this doc says "he will ask X" it's an inference from his background, not a leak.</p>
+</main>
+</div>
+</body>
+</html>

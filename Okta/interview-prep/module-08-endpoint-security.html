@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 08 - macOS Endpoint Security Framework</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 08 of 10</span>
+    <h1>macOS Endpoint Security Framework</h1>
+    <p>Kernel-brokered security events - production ES client, BAN-3495 telemetry pipeline, and interview-critical API semantics.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-07-apple-mdm.html">← Module 07</a>
+    <a href="index.html">Hub</a>
+    <a href="module-09-device-telemetry.html">Module 09 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">Apple Endpoint Security (ES) is a C framework (macOS 10.15+) providing unified security events through a single kernel broker (<code>EndpointSecurity.kext</code>). ES clients must be root, code-signed, and hold Apple's restricted entitlement. JumpCloud uses ES in production (Swift) to protect the service-account keychain; BAN-3495 plans ES as the trigger for near-real-time posture telemetry.</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>planning/ban-3495/context/macos-endpoint-security-guide.html</code> - NOTIFY vs AUTH, entitlement, performance</li>
+        <li><code>planning/ban-3495/context/macos-endpoint-security-technical.html</code> - C API, threading, CGO constraints</li>
+        <li><code>telemetry/hooks/hooks_darwin.go</code> - BAN-3495 planned hook (stub today)</li>
+        <li>Production: <code>jumpcloud-macos-agent-apps</code> - <code>ESClientAuthResponder</code>, <code>RestrictFileAccess</code></li>
+        <li>MDM: ES system extension profile in <code>jumpcloud-apple-mdm/business/templates.go</code></li>
+      </ul>
+      <pre><code>// telemetry/hooks/hooks_darwin.go - BAN-3495 stub
+// TODO: Implement actual Endpoint Security subscription
+// Listen to ES_EVENT_TYPE_NOTIFY_* events</code></pre>
+    </section>
+
+    <section>
+      <h2>Okta Parallel</h2>
+      <div class="card okta">
+        <p>Okta Device Access evaluates device posture signals in auth policies. While Okta Verify collects posture via its own agents, ES is the industry-standard macOS mechanism for <strong>real-time kernel-visible events</strong> - file access, process exec, mount changes. Any mature macOS device identity platform either uses ES or accepts stale polling - key architectural talking point.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>ES Stack Diagram</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph client [ES Client - root signed entitled]
+    App[Swift ESClientAuthResponder or Go DarwinHook]
+    Lib[libEndpointSecurity.dylib]
+    App --> Lib
+  end
+
+  subgraph kernel [Kernel]
+    Broker[EndpointSecurity.kext single broker]
+    XNU[XNU kernel events]
+    XNU --> Broker
+  end
+
+  Lib --> Broker
+  Broker --> Callback[es_handler_t callback]
+
+  subgraph notify [NOTIFY Events - telemetry]
+    N1[NOTIFY_MOUNT disk changes]
+    N2[NOTIFY_EXEC process start]
+    N3[NOTIFY_OPEN file access high volume]
+  end
+
+  subgraph authEvents [AUTH Events - block allow]
+    A1[AUTH_OPEN before file open]
+    A2[AUTH_EXEC before process start]
+  end
+
+  Callback --> notify
+  Callback --> authEvents
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>BAN-3495 Telemetry Pipeline Overlay</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart LR
+  ES[ES NOTIFY event FileVault firewall SIP]
+  Hook[telemetry/hooks DarwinHook]
+  Dedupe[pipeline dedupe]
+  Enrich[enricher targeted osquery]
+  Map[mapper canonical attribute]
+  Pub[publisher PushEvents]
+  UDTL[UDTL Ingestion API]
+
+  ES --> Hook --> Dedupe --> Enrich --> Map --> Pub --> UDTL
+
+  Fallback[FSEvents file watcher fallback]
+  Fallback -.-> Hook
+        </div>
+      </div>
+      <p><strong>Target SLA:</strong> Event-mode attributes (disk_encryption.status, firewall.enabled, sip.enabled) delivered in &lt;30s. Fallback to FSEvents if Apple entitlement approval delayed (4–12+ weeks).</p>
+    </section>
+
+    <section>
+      <h2>Critical ES Rules (Memorize)</h2>
+      <table>
+        <thead><tr><th>Rule</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>NOTIFY for telemetry, AUTH for enforcement</td><td>BAN-3495 uses NOTIFY only - observe, don't block</td></tr>
+          <tr><td>Never retain <code>es_message_t</code> past callback</td><td>Kernel reclaims memory; retention = crash</td></tr>
+          <tr><td>No network I/O in callback</td><td>Blocks kernel broker; copy data, dispatch async</td></tr>
+          <tr><td>Use <code>es_mute_path</code></td><td>File events can exceed 10k/sec on dev machines</td></tr>
+          <tr><td>Root + entitlement required</td><td><code>com.apple.developer.endpoint-security.client</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">NOTIFY vs AUTH - explain like you're in a design review.</div>
+        <div class="qa-a">NOTIFY is post-facto observation - event already happened, client receives metadata (pid, code signing info, path). AUTH is synchronous gate - client must respond allow/deny before action completes. Telemetry pipeline uses NOTIFY to avoid latency and deadlock risk. Production ES client uses AUTH to protect SA keychain files.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Go vs Swift for ES client?</div>
+        <div class="qa-a">ES callback is block-based C (<code>es_handler_t</code>) - awkward from Go via CGO (threading, callback lifetime). Production client is Swift in macos-agent-apps. BAN-3495 Go hook may use C trampoline, separate entitled helper binary + IPC, or Swift dylib wrapper - design decision still open in LLD.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What code signing metadata does ES provide?</div>
+        <div class="qa-a">Team ID, signing ID, cdhash - lets you filter events to trusted processes vs unknown binaries. Essential for EDR-style logic and ignoring self-generated noise from JumpCloud binaries.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">FSEvents fallback?</div>
+        <div class="qa-a">If Apple delays ES entitlement, watch relevant plist/config files (FileVault status, firewall state) via FSEvents. Higher latency, misses some event types, but unblocks MSP preview while entitlement approval proceeds - documented Bandipur risk mitigation.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>Production ES is Swift in sibling repo - Go hook is BAN-3495 planning stub.</li>
+          <li>Entitlement approval timeline is external dependency - have fallback narrative ready.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-07-apple-mdm.html">← Module 07</a> · <a href="module-09-device-telemetry.html">Module 09 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

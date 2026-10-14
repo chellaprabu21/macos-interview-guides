@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF in EDR/DLP Sensors — Complete Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EBEEF1; --card:#FFFFFF; --ink:#0F1419; --muted:#5C6672;
+    --line:#D6DBE1; --probe:#1F4E9C; --probe-soft:#E2EAF6;
+    --strength:#276B4E; --risk:#B0600A; --risk-bg:#FBF2E5;
+    --code-bg:#101720; --code-ink:#D5DDE8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15.5px;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:44px 22px 90px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--probe);font-weight:500;margin-bottom:12px}
+  h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+    font-size:clamp(28px,5vw,44px);line-height:1.05;letter-spacing:-.02em}
+  .dek{color:var(--muted);font-size:16px;margin-top:12px;max-width:66ch}
+
+  /* TOC */
+  .toc{margin-top:30px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px 20px}
+  .toc-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;counter-reset:t;columns:2;column-gap:28px}
+  .toc li{counter-increment:t;font-size:14px;margin-bottom:6px;break-inside:avoid}
+  .toc li::before{content:counter(t,decimal-leading-zero);font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--probe);margin-right:9px}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--probe)}
+
+  section{margin-top:54px;scroll-margin-top:20px}
+  h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:25px;
+    letter-spacing:-.015em;line-height:1.18}
+  h2 .num{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+    color:var(--probe);margin-right:10px;vertical-align:2px}
+  .sub{color:var(--muted);font-size:14.5px;margin:6px 0 18px;max-width:70ch}
+  h3{font-size:16px;font-weight:600;margin:22px 0 9px}
+  h3:first-child{margin-top:0}
+  p{margin-bottom:11px}
+  p:last-child{margin-bottom:0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:20px 22px;margin-bottom:14px}
+  ul{list-style:none}
+  ul.tick li{padding-left:20px;position:relative;margin-bottom:9px}
+  ul.tick li:last-child{margin-bottom:0}
+  ul.tick li::before{content:"›";position:absolute;left:2px;color:var(--probe);font-weight:700}
+  b{font-weight:600}
+  code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:#EAEEF3;
+    padding:1px 5px;border-radius:4px;color:#243447}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+    padding:16px 18px;overflow-x:auto;margin:12px 0 14px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55}
+  pre .c{color:#7C8B9E}
+  pre .k{color:#7FB3FF}
+  pre .s{color:#8FD6A9}
+  pre .w{color:#E8B366}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:12px 0 14px;
+    font-size:13.5px}
+  th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  th{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;background:#F6F8FA}
+  td.mono,th.mono{font-family:'IBM Plex Mono',monospace;font-size:12px}
+
+  .callout{background:var(--risk-bg);border:1px solid #EFDCBE;border-left:3px solid var(--risk);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .callout b{color:var(--risk)}
+  .win{background:#EAF3EE;border:1px solid #C9E0D3;border-left:3px solid var(--strength);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .win b{color:var(--strength)}
+  .key{background:var(--probe-soft);border:1px solid #C6D6EC;border-left:3px solid var(--probe);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .key b{color:var(--probe)}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px;font-family:'IBM Plex Mono',monospace}
+  @media(max-width:640px){.toc ol{columns:1} pre{font-size:11px} table{font-size:12.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Document 1 of 2 · Endpoint sensor internals</div>
+  <h1>Endpoint Security Framework<br>in EDR and DLP sensors</h1>
+  <p class="dek">The complete picture — from the C API contract up to the process topology of a shipping product. This is the layer that answers <em>what happened on this machine, and which process did it.</em> Document 2 covers Network Extension, which answers <em>where the data went.</em></p>
+
+  <nav class="toc">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s1">What ESF is, and what it replaced</a></li>
+      <li><a href="#s2">The API contract</a></li>
+      <li><a href="#s3">AUTH vs NOTIFY — the deadline</a></li>
+      <li><a href="#s4">Event catalogue by product need</a></li>
+      <li><a href="#s5">Muting, caching, inversion</a></li>
+      <li><a href="#s6">Process identity &amp; provenance cache</a></li>
+      <li><a href="#s7">The layered sensor architecture</a></li>
+      <li><a href="#s8">Threading and backpressure</a></li>
+      <li><a href="#s9">Process topology of a real product</a></li>
+      <li><a href="#s10">Deployment: entitlements, TCC, MDM</a></li>
+      <li><a href="#s11">Tamper resistance</a></li>
+      <li><a href="#s12">Failure modes</a></li>
+      <li><a href="#s13">What ESF cannot see</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s1">
+  <h2><span class="num">01</span>What ESF is, and what it replaced</h2>
+  <p class="sub">Context matters here because Aristide lived through the transition — he joined Cyberhaven in 2016, when this was all kernel extensions.</p>
+
+  <div class="card">
+    <h3>The old world (pre-Catalina)</h3>
+    <ul class="tick">
+      <li><b>KAuth</b> — kernel authorisation KPI. Scope-based callbacks on file operations. No process-exec authorisation, coarse, and kext-only.</li>
+      <li><b>MAC framework (TrustedBSD)</b> — private, unsupported, but what most serious EDRs actually used via kexts because KAuth was insufficient.</li>
+      <li><b>OpenBSM audit</b> — <code>/dev/auditpipe</code>, userspace-readable audit trail. Notification only, never blocking, and Apple has been deprecating it.</li>
+      <li><b>Network kexts</b> — socket filters, IP filters, NKEs.</li>
+    </ul>
+    <p style="margin-top:11px">A kext ran in the kernel: a bug was a panic, and a vulnerability was ring-0. Apple deprecated kexts in 10.15 and on Apple Silicon they require reduced security mode and a reboot — commercially dead.</p>
+  </div>
+
+  <div class="card">
+    <h3>The new world</h3>
+    <p><b>EndpointSecurity.framework</b> (macOS 10.15+) is a userspace C API. Your client runs as a normal (root, entitled) process; the kernel does the interception and delivers messages over a mach-based transport. A crash in your logic terminates your process, not the machine.</p>
+    <p>The trade: you are now on the far side of a context switch from the syscall you are gating, and the kernel enforces a deadline on your answer. <b>Every hard problem in ESF engineering descends from that one fact.</b></p>
+  </div>
+
+  <div class="key"><b>Interview line:</b> "ESF moved the interception boundary out of the kernel, which fixed the stability and security story and created a latency story. The entire sensor design is a response to being a userspace process sitting synchronously in a syscall path."</div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s2">
+  <h2><span class="num">02</span>The API contract</h2>
+  <p class="sub">Small surface, brutal semantics. Roughly a dozen functions matter.</p>
+
+  <h3>Client lifecycle</h3>
+<pre><span class="c">// Create. Must be root + entitled + TCC-approved for Full Disk Access.</span>
+es_client_t *client = NULL;
+es_new_client_result_t res = es_new_client(&amp;client, ^(es_client_t *c, const es_message_t *msg) {
+    handle_message(c, msg);          <span class="c">// runs on an ES-owned queue — DO NOT BLOCK</span>
+});
+
+<span class="c">// Failure modes you must handle distinctly — they mean different things:</span>
+<span class="c">//   ES_NEW_CLIENT_RESULT_ERR_NOT_ENTITLED   → missing endpoint-security.client entitlement</span>
+<span class="c">//   ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED  → TCC / Full Disk Access not granted  ← most common in the field</span>
+<span class="c">//   ES_NEW_CLIENT_RESULT_ERR_NOT_PRIVILEGED → not running as root</span>
+<span class="c">//   ES_NEW_CLIENT_RESULT_ERR_TOO_MANY_CLIENTS → system-wide ES client limit hit</span>
+
+es_event_type_t events[] = { ES_EVENT_TYPE_NOTIFY_EXEC,
+                             ES_EVENT_TYPE_NOTIFY_CLOSE,
+                             ES_EVENT_TYPE_AUTH_OPEN };
+es_subscribe(client, events, sizeof(events)/sizeof(*events));
+
+<span class="c">// teardown</span>
+es_unsubscribe_all(client);
+es_delete_client(client);</pre>
+
+  <div class="callout"><b>Field detail worth knowing:</b> <code>ERR_TOO_MANY_CLIENTS</code> is real. macOS caps concurrent ES clients (historically single-digit). On a machine already running CrowdStrike, Jamf Protect and a corporate DLP agent, your client can simply fail to start. Any production sensor needs a clear diagnostic for this, not a generic "failed to initialise".</div>
+
+  <h3>The message struct and versioning</h3>
+<pre>struct es_message_t {
+    uint32_t              version;        <span class="c">// ← check before touching newer fields</span>
+    struct timespec       time;
+    uint64_t              mach_time;
+    uint64_t              deadline;       <span class="c">// mach_absolute_time deadline for AUTH</span>
+    es_process_t         *process;        <span class="c">// the actor</span>
+    uint64_t              seq_num;        <span class="c">// per-event-type sequence → detect drops</span>
+    es_action_type_t      action_type;    <span class="c">// AUTH | NOTIFY</span>
+    es_action_t           action;         <span class="c">// the response handle for AUTH</span>
+    es_event_type_t       event_type;
+    es_events_t           event;          <span class="c">// union — read per event_type</span>
+    uint64_t              global_seq_num; <span class="c">// across all events → detect drops</span>
+    ...
+};</pre>
+
+  <ul class="tick">
+    <li><b><code>version</code> is not optional.</b> The struct has grown every macOS release. <code>responsible_audit_token</code> arrived at v4, thread info at v5, and so on. Reading a field your runtime OS doesn't populate is undefined behaviour. Production code has a version gate on every non-v1 field.</li>
+    <li><b><code>seq_num</code> / <code>global_seq_num</code></b> are your drop detector. Gaps mean the kernel dropped events for you — telemetry that must be reported, because a silent blind spot in an EDR is a security incident, not a perf issue.</li>
+    <li><b><code>es_string_token_t</code> is not a C string.</b> It carries <code>{ length, data }</code> and is not guaranteed NUL-terminated. Copy by length. This is a classic source of over-read bugs in sensors — and exactly the kind of thing an ex-pen-tester interviewer enjoys.</li>
+    <li><b>Message lifetime.</b> The message is valid only inside the handler block. To process asynchronously you must <code>es_retain_message()</code> (10.15 had <code>es_copy_message()</code>, deprecated) and later <code>es_release_message()</code>. Leaking retains is how sensors OOM under load.</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s3">
+  <h2><span class="num">03</span>AUTH vs NOTIFY — the deadline contract</h2>
+  <p class="sub">If you retain one thing from this document, retain this section. It is the axis every ESF design question rotates around.</p>
+
+  <table>
+    <tr><th>Property</th><th>AUTH</th><th>NOTIFY</th></tr>
+    <tr><td>Originating thread</td><td class="mono">Blocked in kernel until you answer</td><td class="mono">Continues immediately</td></tr>
+    <tr><td>You must respond</td><td>Yes, before <code>deadline</code></td><td>No</td></tr>
+    <tr><td>Can you deny the operation</td><td>Yes</td><td>No</td></tr>
+    <tr><td>Miss the deadline</td><td class="mono">Kernel kills your client</td><td>N/A</td></tr>
+    <tr><td>Can you drop under load</td><td><b>Never</b></td><td>Yes, with a counter</td></tr>
+    <tr><td>Cost model</td><td>Adds directly to user-visible syscall latency</td><td>Cost is yours alone</td></tr>
+  </table>
+
+  <h3>Responding</h3>
+<pre><span class="c">// Most AUTH events: binary verdict.</span>
+es_respond_auth_result(client, msg, ES_AUTH_RESULT_ALLOW, <span class="k">true</span> <span class="c">/* cache */</span>);
+
+<span class="c">// AUTH_OPEN is special: you return the *permitted flags*, not a boolean.</span>
+<span class="c">// This is the single most useful primitive in DLP — allow read, strip write:</span>
+uint32_t allowed = msg-&gt;event.open.fflag &amp; ~(FWRITE | O_APPEND);
+es_respond_flags_result(client, msg, allowed, <span class="k">false</span>);</pre>
+
+  <div class="key"><b>Why <code>es_respond_flags_result</code> matters for DLP:</b> it lets you downgrade an operation instead of blocking it. A user opening a classified document on a removable volume can be given read-only access rather than a hard denial. Hard denials generate helpdesk tickets; downgrades generate compliance. Naming this distinction signals you have thought about DLP as a product, not just as a hook.</div>
+
+  <h3>Deadline management — the pattern every sensor implements</h3>
+<pre><span class="c">// The deadline is generous on paper (seconds) but you are competing with</span>
+<span class="c">// the user's perception. Budget in microseconds and enforce your own timer.</span>
+
+<span class="k">void</span> handle_auth(es_client_t *c, const es_message_t *msg) {
+    uint64_t budget = (msg-&gt;deadline - mach_absolute_time()) / 2;   <span class="c">// 50% safety margin</span>
+
+    es_retain_message(msg);
+    __block atomic_bool answered = <span class="k">false</span>;
+
+    <span class="c">// Watchdog: if the decision path stalls for ANY reason, fail open.</span>
+    dispatch_after(budget, watchdog_q, ^{
+        <span class="k">if</span> (!atomic_exchange(&amp;answered, <span class="k">true</span>)) {
+            es_respond_auth_result(c, msg, ES_AUTH_RESULT_ALLOW, <span class="k">false</span>);
+            metrics_inc(<span class="s">"auth.watchdog_fallback"</span>);   <span class="c">// alarm on this in the fleet</span>
+            es_release_message(msg);
+        }
+    });
+
+    dispatch_async(decision_q, ^{
+        es_auth_result_t verdict = policy_evaluate(msg);
+        <span class="k">if</span> (!atomic_exchange(&amp;answered, <span class="k">true</span>)) {
+            es_respond_auth_result(c, msg, verdict, cacheable(msg));
+            es_release_message(msg);
+        }
+    });
+}</pre>
+
+  <div class="callout"><b>The deadlock that kills real products:</b> making a <em>synchronous</em> XPC call from inside an AUTH handler to your daemon — for a policy lookup, say. If the daemon is blocked on anything (a network call, a lock, its own file I/O which generates ES events you are handling), you blow the deadline, get killed, and the machine loses its sensor. Rule: <b>no synchronous IPC, no disk I/O, no network, no unbounded locks in an AUTH path.</b> Everything the fast path needs must already be in memory.</div>
+
+  <div class="win"><b>Say this in the interview:</b> "The first architectural constraint I'd state is that the AUTH path is a real-time path. Everything it needs — policy, process metadata, verdict cache — has to be resident in memory and lock-light, because the alternative is a watchdog fail-open or a dead client."</div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s4">
+  <h2><span class="num">04</span>Event catalogue, grouped by product need</h2>
+  <p class="sub">There are 100+ event types. What separates someone who has shipped from someone who has read the header is knowing which handful you actually subscribe to, and why.</p>
+
+  <h3>Core process telemetry — every EDR subscribes to these</h3>
+  <table>
+    <tr><th>Event</th><th>Why</th></tr>
+    <tr><td class="mono">NOTIFY_EXEC</td><td>The backbone. Gives you the new process, its argv/env, signing identity, and the parent chain. Every provenance graph starts here.</td></tr>
+    <tr><td class="mono">NOTIFY_FORK</td><td>Track pid creation between fork and exec — needed or you attribute a forked child's file writes to the wrong image.</td></tr>
+    <tr><td class="mono">NOTIFY_EXIT</td><td>Evict from the process cache (with a grace period — in-flight events for a dead pid still arrive).</td></tr>
+    <tr><td class="mono">AUTH_EXEC</td><td>Only if you block execution (malware prevention, app allow-listing). Very cacheable, so cheaper than it sounds.</td></tr>
+  </table>
+
+  <h3>Tamper and injection — the EDR self-defence set</h3>
+  <table>
+    <tr><th>Event</th><th>Why</th></tr>
+    <tr><td class="mono">AUTH_GET_TASK<br>AUTH_GET_TASK_READ</td><td>Acquiring another process's task port is <em>the</em> macOS code-injection and memory-scraping primitive. Deny anyone taking a task port on your own agent. This is your anti-tamper cornerstone.</td></tr>
+    <tr><td class="mono">AUTH_SIGNAL</td><td>Deny SIGKILL/SIGSTOP aimed at your own components.</td></tr>
+    <tr><td class="mono">NOTIFY_REMOTE_THREAD_CREATE</td><td>Thread created in another process — near-unambiguous injection signal.</td></tr>
+    <tr><td class="mono">NOTIFY_PROC_CHECK</td><td><code>proc_info</code> calls — process enumeration and reconnaissance.</td></tr>
+    <tr><td class="mono">AUTH_UNLINK / AUTH_RENAME</td><td>Guard your own binaries, config and databases from deletion or replacement.</td></tr>
+  </table>
+
+  <h3>File and data movement — the DLP set</h3>
+  <table>
+    <tr><th>Event</th><th>Why</th></tr>
+    <tr><td class="mono">NOTIFY_CLOSE</td><td><b>The most important DLP event.</b> Carries a <code>modified</code> flag. "File X was written and closed by process Y" is the single edge your lineage graph needs, and it fires once per file rather than once per write.</td></tr>
+    <tr><td class="mono">AUTH_OPEN</td><td>Gate on read/write with flag downgrade. Extremely high volume — subscribe only with aggressive muting, or not at all.</td></tr>
+    <tr><td class="mono">NOTIFY_CREATE</td><td>New file appears; where destination-side lineage nodes are born.</td></tr>
+    <tr><td class="mono">NOTIFY_RENAME</td><td>Critical. A rename is how a file's identity changes without its content changing. Miss these and your lineage graph fragments.</td></tr>
+    <tr><td class="mono">NOTIFY_CLONE<br>NOTIFY_COPYFILE</td><td>APFS clonefile and copyfile — copies that never appear as read+write pairs. A lineage engine that only watches open/close silently misses every Finder copy.</td></tr>
+    <tr><td class="mono">NOTIFY_LINK / AUTH_LINK</td><td>Hard links create a second path to the same inode — an easy lineage evasion if unhandled.</td></tr>
+    <tr><td class="mono">AUTH_MOUNT / NOTIFY_MOUNT</td><td>Removable media. Combine with a <code>/Volumes/</code> path prefix rule to gate exfiltration to USB.</td></tr>
+    <tr><td class="mono">NOTIFY_SETEXTATTR<br>NOTIFY_DELETEEXTATTR</td><td>Extended attributes carry <code>com.apple.quarantine</code> and, in many DLP products, the classification label itself. Watch for someone stripping the label.</td></tr>
+  </table>
+
+  <div class="key"><b>The design point behind that table:</b> a naive DLP watches <code>OPEN</code> and <code>WRITE</code>. A correct one watches <code>CLOSE(modified)</code>, <code>RENAME</code>, <code>CLONE</code>, <code>COPYFILE</code>, <code>LINK</code> and <code>EXCHANGEDATA</code>, because those are the ways a byte-range moves between paths on APFS without a read/write pair. Saying that out loud demonstrates you've thought about evasion, which is the whole job.</div>
+
+  <h3>Newer high-value events (macOS 13+)</h3>
+  <table>
+    <tr><th>Event</th><th>Why</th></tr>
+    <tr><td class="mono">NOTIFY_BTM_LAUNCH_ITEM_ADD</td><td>Background Task Management — a launch agent/daemon/login item was registered. Persistence detection, essentially free.</td></tr>
+    <tr><td class="mono">NOTIFY_LOGIN_LOGIN / LOGOUT<br>NOTIFY_LW_SESSION_LOCK / UNLOCK</td><td>Session context. A DLP policy usually differs for an unattended machine.</td></tr>
+    <tr><td class="mono">NOTIFY_SUDO / NOTIFY_SU</td><td>Privilege escalation attempts, including failures.</td></tr>
+    <tr><td class="mono">NOTIFY_XP_MALWARE_DETECTED</td><td>XProtect verdicts surfaced to you — free signal from Apple's own scanner.</td></tr>
+    <tr><td class="mono">NOTIFY_TCC_MODIFY (14+)</td><td>Privacy grants changing — screen recording or accessibility being granted to something is a strong exfil precursor.</td></tr>
+    <tr><td class="mono">NOTIFY_SCREENSHARING_ATTACH</td><td>Remote session started. Directly relevant to your JumpCloud Remote Assist background.</td></tr>
+  </table>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s5">
+  <h2><span class="num">05</span>Muting, caching, inversion — the three performance levers</h2>
+  <p class="sub">You cannot optimise your way out of event volume in userspace. You have to not receive the events. These three APIs are where the real perf work lives.</p>
+
+  <h3>1 · Muting — stop delivery at the kernel boundary</h3>
+<pre><span class="c">// Coarse (10.15+): mute an entire path or process for ALL subscribed events.</span>
+es_mute_path(client, <span class="s">"/System/Library"</span>, ES_MUTE_PATH_TYPE_PREFIX);
+es_mute_process(client, &amp;my_own_audit_token);        <span class="c">// ← ALWAYS. See below.</span>
+
+<span class="c">// Fine-grained (macOS 12+): mute specific events for a path. Much better.</span>
+es_event_type_t noisy[] = { ES_EVENT_TYPE_NOTIFY_OPEN, ES_EVENT_TYPE_NOTIFY_CLOSE };
+es_mute_path_events(client, <span class="s">"/private/var/folders"</span>, ES_MUTE_PATH_TYPE_PREFIX,
+                    noisy, 2);</pre>
+  <div class="callout"><b>Mute yourself, first line of code.</b> Your sensor writes logs, spool files and a local database. Those writes generate file events, which you handle, which produces log writes. Unmuted, this is an unbounded feedback loop that saturates a core within seconds. Every engineer who has actually built one of these has hit it — which is exactly why mentioning it is credible.</div>
+
+  <h3>2 · Result caching — make the kernel answer for you</h3>
+  <p>The <code>cache</code> parameter on <code>es_respond_auth_result</code> tells the kernel to remember the verdict for that executable and stop asking. For <code>AUTH_EXEC</code> this is transformative: the second launch of the same binary costs you nothing.</p>
+  <ul class="tick">
+    <li>Cache is keyed on the executable and invalidated when it is modified — safe by construction for exec.</li>
+    <li><code>es_clear_cache(client)</code> when policy changes. Cheap, and forgetting it means stale verdicts survive a policy push, which is a compliance bug.</li>
+    <li>Do <b>not</b> cache verdicts that depend on runtime context (user, time, network posture) rather than the binary itself.</li>
+  </ul>
+
+  <h3>3 · Mute inversion — turn the mute list into an allow-list (macOS 13+)</h3>
+<pre>es_invert_muting(client, ES_MUTE_INVERSION_TYPE_PROCESS);
+<span class="c">// Now es_mute_process() means "ONLY deliver events from this process".</span>
+<span class="c">// For targeted DLP — watch Chrome, Slack, Mail, Finder and nothing else —</span>
+<span class="c">// this cuts event volume by orders of magnitude.</span></pre>
+  <div class="win"><b>Strong architectural answer:</b> "For a DLP sensor I'd default to inverted process muting over an allow-list of data-handling applications, and fall back to broad subscription only for the detection use cases that genuinely need whole-system visibility. Most of the event firehose on a developer's Mac is a compiler, and no lineage policy cares about object files."</div>
+
+  <h3>Volume reality check</h3>
+  <table>
+    <tr><th>Workload</th><th>Rough ESF event rate</th></tr>
+    <tr><td>Idle desktop</td><td class="mono">tens/sec</td></tr>
+    <tr><td>Normal office use</td><td class="mono">hundreds to low thousands/sec</td></tr>
+    <tr><td>Xcode build, <code>npm install</code>, Spotlight reindex</td><td class="mono">tens of thousands/sec, sustained</td></tr>
+  </table>
+  <p>Budget: a shipping agent targets low single-digit percent CPU steady-state and a hard memory ceiling (typically 100–250&nbsp;MB). The build-machine case is what breaks naive sensors, and it is the first scenario a serious interviewer will raise.</p>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s6">
+  <h2><span class="num">06</span>Process identity and the provenance cache</h2>
+  <p class="sub">Attribution is the product. If you cannot say <em>which application</em> touched the data, you have telemetry, not security.</p>
+
+  <h3>Never key on PID alone</h3>
+<pre><span class="c">// audit_token_t carries pid AND pidversion. PIDs are reused; pidversion is not.</span>
+pid_t    pid  = audit_token_to_pid(proc-&gt;audit_token);
+uint32_t pidv = audit_token_to_pidversion(proc-&gt;audit_token);
+ProcKey  key  = { pid, pidv };          <span class="c">// ← the only safe identity</span></pre>
+  <div class="callout"><b>Why this is a security bug, not a hygiene issue:</b> a process exits, a PID is recycled, and your cache now attributes the new process's actions to the old one's identity and policy. An attacker who can win that race gets another application's DLP exemption. The same reasoning applies to XPC peer validation — validate by audit token, never by PID.</div>
+
+  <h3>What <code>es_process_t</code> gives you</h3>
+  <table>
+    <tr><th>Field</th><th>Use</th></tr>
+    <tr><td class="mono">signing_id, team_id</td><td>Identity that survives the binary being moved or renamed. Policy should be written against these, not paths.</td></tr>
+    <tr><td class="mono">cdhash</td><td>Exact binary identity. Pin sensitive allow-list entries to it.</td></tr>
+    <tr><td class="mono">codesigning_flags</td><td>Check <code>CS_VALID</code>, <code>CS_HARD</code>, <code>CS_KILL</code>, and notably <code>CS_GET_TASK_ALLOW</code> — a debuggable process is an injection target.</td></tr>
+    <tr><td class="mono">is_platform_binary</td><td>Shipped by Apple. Useful, but <em>not</em> a trust decision on its own — living-off-the-land attacks use <code>curl</code>, <code>osascript</code> and <code>zip</code>, all platform binaries.</td></tr>
+    <tr><td class="mono">is_es_client</td><td>Another security agent. Don't fight it; don't block it.</td></tr>
+    <tr><td class="mono">ppid, original_ppid</td><td>Parent chain. <code>ppid</code> reparents to launchd on parent exit; <code>original_ppid</code> preserves the truth.</td></tr>
+    <tr><td class="mono">responsible_audit_token</td><td><b>The attribution field that matters.</b> See below.</td></tr>
+  </table>
+
+  <h3>Responsible process — the field most people miss</h3>
+  <p>When Chrome spawns a renderer, or an app's XPC service is started by launchd on its behalf, the immediate parent is often <code>launchd</code>. The <b>responsible process</b> is the one macOS holds accountable — the app itself. TCC uses it for privacy prompts, and you should use it for attribution.</p>
+  <div class="win"><b>Concrete DLP consequence:</b> without responsible-process resolution, an upload performed by a browser helper process attributes to a nameless helper rather than to Chrome, and your policy — written against Chrome — never fires. This is exactly the kind of specific, been-there detail that separates candidates.</div>
+
+  <h3>The cache itself</h3>
+<pre>ProcessCache:
+  key    : (pid, pidversion)
+  value  : { signing_id, team_id, cdhash, path, argv_digest,
+             ppid_key, responsible_key, start_time, first_seen,
+             policy_tags }          <span class="c">// pre-resolved policy match, so the</span>
+                                    <span class="c">// AUTH fast path does zero string work</span>
+
+  populate : on NOTIFY_EXEC / NOTIFY_FORK
+  evict    : on NOTIFY_EXIT + grace period (in-flight events outlive the process)
+  bootstrap: enumerate existing processes at startup via libproc —
+             your sensor starts after the machine does</pre>
+  <p>Pre-resolving <code>policy_tags</code> at exec time is the key move: the AUTH hot path then does a hash lookup and a bitmask test, with no path comparison, no code-signing call, and no allocation.</p>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s7">
+  <h2><span class="num">07</span>The layered sensor architecture</h2>
+  <p class="sub">This is the diagram to be able to draw from memory on a whiteboard.</p>
+
+<pre>          ┌──────────────────────── KERNEL ────────────────────────┐
+          │   syscall  →  MAC hooks  →  ES kernel component        │
+          │        (thread BLOCKS here for AUTH events)            │
+          └──────────────────────────┬─────────────────────────────┘
+                                     │ mach transport
+   ╔═════════════════════════════════▼═════════════════════════════════╗
+   ║  SYSTEM EXTENSION  (root, entitled, sandboxed, non-removable)     ║
+   ║                                                                   ║
+   ║  L1  ES CLIENT / TAP                                              ║
+   ║      es_new_client, es_subscribe, mute config                     ║
+   ║      handler block: NO allocation, NO locks, NO I/O               ║
+   ║                    │                                              ║
+   ║         ┌──────────┴──────────┐                                   ║
+   ║   AUTH  │                     │  NOTIFY                           ║
+   ║         ▼                     ▼                                   ║
+   ║  L2  FAST-PATH DECIDER   L3  INGEST QUEUE                         ║
+   ║      • muted? cached?        • bounded MPSC ring                  ║
+   ║      • process-cache hit     • es_retain_message                  ║
+   ║      • bitmask policy test   • drop counter + seq-gap detect      ║
+   ║      • respond in µs         • backpressure = sample, not block   ║
+   ║      • watchdog fail-open              │                          ║
+   ║                                        ▼                          ║
+   ║                              L4  NORMALISER (worker pool)         ║
+   ║                                  • version-gated field access     ║
+   ║                                  • string tokens → owned buffers  ║
+   ║                                  • path canonicalisation          ║
+   ║                                  • → internal Event struct        ║
+   ║                                        │                          ║
+   ║                                        ▼                          ║
+   ║                              L5  PROCESS / PROVENANCE CACHE       ║
+   ║                                  (pid,pidversion) → identity      ║
+   ║                                  parent + responsible chains      ║
+   ║                                        │                          ║
+   ║                                        ▼                          ║
+   ║                              L6  CORRELATION ENGINE               ║
+   ║                                  EDR: behavioural rules, sequences║
+   ║                                  DLP: lineage graph edges         ║
+   ║                                        │                          ║
+   ╚════════════════════════════════════════│══════════════════════════╝
+                                   XPC (audit-token validated)
+   ╔════════════════════════════════════════▼══════════════════════════╗
+   ║  PRIVILEGED DAEMON  (root, LaunchDaemon — network-capable)        ║
+   ║   L7  POLICY STORE      compiled matchers: path trie, signing-ID  ║
+   ║                         set, bloom filters. Pushed to L2 as data. ║
+   ║   L8  SPOOL + TRANSPORT batch → compress → disk spool (capped)    ║
+   ║                         → TLS to backend, retry w/ backoff        ║
+   ║   L9  UPDATER / WATCHDOG staged rollout, kill switch, health      ║
+   ╚════════════════════════════════════════│══════════════════════════╝
+                                            │ XPC
+   ╔════════════════════════════════════════▼══════════════════════════╗
+   ║  USER AGENT  (LaunchAgent, per GUI session, unprivileged)         ║
+   ║   L10  clipboard polling · user justification prompts ·           ║
+   ║        block notifications · tray UI · screenshot signals         ║
+   ╚═══════════════════════════════════════════════════════════════════╝</pre>
+
+  <h3>Why the layer boundaries fall where they do</h3>
+  <ul class="tick">
+    <li><b>L1/L2 are inside the extension</b> because the deadline forbids a hop. Any decision requiring IPC has already lost.</li>
+    <li><b>Policy is compiled in the daemon, evaluated in the extension.</b> The extension never parses policy JSON; it receives a pre-built matcher structure. Parsing untrusted backend data in the component that sits in the syscall path would be both a perf and a security mistake.</li>
+    <li><b>Network lives only in the daemon.</b> Sysexts are sandboxed and the ES extension has no business holding sockets. This also means one component to harden for untrusted backend input.</li>
+    <li><b>The user agent exists because the extension has no session.</b> The pasteboard is per-GUI-session, and so are notifications and prompts. Root daemons cannot see either.</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s8">
+  <h2><span class="num">08</span>Threading and backpressure</h2>
+
+  <h3>Queue topology</h3>
+  <table>
+    <tr><th>Queue</th><th>Concurrency</th><th>Rule</th></tr>
+    <tr><td>ES handler queue (ES-owned)</td><td>serial</td><td>Never block. Enqueue or respond, then return.</td></tr>
+    <tr><td>AUTH decision queue</td><td>concurrent, QoS <code>userInteractive</code></td><td>Pure in-memory work. No locks held across any call you don't own.</td></tr>
+    <tr><td>Watchdog queue</td><td>serial, high priority</td><td>Timers only. Must never be starved.</td></tr>
+    <tr><td>NOTIFY worker pool</td><td>concurrent, QoS <code>utility</code></td><td>Normalisation, correlation, graph updates.</td></tr>
+    <tr><td>Transport queue</td><td>serial, QoS <code>background</code></td><td>Spool and upload. Deliberately lowest priority.</td></tr>
+  </table>
+
+  <h3>Backpressure policy — the honest answer</h3>
+<pre>NOTIFY queue depth
+  &lt; 60%   normal
+  60–85%  shed low-value event classes first (metadata changes,
+          reads of non-sensitive paths); keep exec + file-write
+  85–98%  aggregate: collapse N writes to one path into a single
+          "modified" record with a count
+  &gt; 98%   drop, increment counter, emit a gap record to the backend
+
+AUTH  →  NEVER queue-drop. If saturated: watchdog fires, fail open,
+         and emit a HIGH-SEVERITY telemetry event, because a fleet-wide
+         spike in watchdog fallbacks is a silent policy outage.</pre>
+  <div class="key"><b>The framing that lands:</b> "Dropping is a product decision, not an engineering failure — so it has to be explicit, ordered by information value, and reported. A sensor that silently loses events gives the SOC false confidence, which is worse than a sensor that reports it went partially blind for four seconds."</div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s9">
+  <h2><span class="num">09</span>Process topology of a real product</h2>
+
+<pre>/Applications/Vendor.app
+ └ Contents/
+   ├ MacOS/Vendor                              GUI app — onboarding, sysext activation
+   ├ Library/SystemExtensions/
+   │   ├ com.vendor.esf.systemextension        ← ES client       (doc 1)
+   │   └ com.vendor.netfilter.systemextension  ← NEFilterProvider (doc 2)
+   └ Library/LaunchServices/
+       └ com.vendor.helper                     SMJobBless privileged helper
+
+/Library/LaunchDaemons/com.vendor.agent.plist        root orchestrator + transport
+/Library/LaunchAgents/com.vendor.useragent.plist     per-session UI + pasteboard
+/Library/Application Support/Vendor/                 policy, spool, local graph DB</pre>
+
+  <ul class="tick">
+    <li><b>System extensions must live inside an app bundle in <code>/Applications</code></b> and are activated by the containing app via <code>OSSystemExtensionRequest</code>. They cannot be installed standalone by a package script.</li>
+    <li><b>All XPC endpoints validate their peer</b> by audit token → <code>SecCodeCopyGuestWithAttributes</code> with <code>kSecGuestAttributeAudit</code> → <code>SecCodeCheckValidity</code> against a requirement string pinning Team ID and signing ID. Without this, any local process talks to your privileged daemon.</li>
+    <li><b>Hardened runtime, notarization, and no <code>get-task-allow</code></b> in release builds — otherwise you ship a debuggable root daemon.</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s10">
+  <h2><span class="num">10</span>Deployment: entitlements, TCC, MDM</h2>
+  <p class="sub">This is the part nobody outside a shipping product knows, which makes it high-signal in an interview.</p>
+
+  <table>
+    <tr><th>Requirement</th><th>Detail</th></tr>
+    <tr><td class="mono">com.apple.developer.<br>endpoint-security.client</td><td>Restricted entitlement. Requires a paid Developer Program account and a written justification to Apple; approval takes weeks and is granted per Team ID.</td></tr>
+    <tr><td>Root</td><td>ES clients must run as root. Sysexts do by default.</td></tr>
+    <tr><td>Full Disk Access</td><td>TCC service <code>kTCCServiceSystemPolicyAllFiles</code>. Without it, <code>es_new_client</code> returns <code>ERR_NOT_PERMITTED</code>.</td></tr>
+    <tr><td>User approval</td><td>Unmanaged Macs: the user must approve the system extension <em>and</em> grant FDA manually in System Settings. This is the biggest source of "agent installed but not protecting" in the field.</td></tr>
+    <tr><td>MDM silent approval</td><td><code>com.apple.system-extension-policy</code> (allow by Team ID + bundle ID) plus a PPPC profile (<code>com.apple.TCC.configuration-profile-policy</code>) pre-granting FDA. Both must be delivered before install, or the user still gets prompted.</td></tr>
+    <tr><td>Development</td><td>On a test Mac: <code>csrutil disable</code> and <code>systemextensionsctl developer on</code> to load unsigned/unapproved extensions.</td></tr>
+    <tr><td>Exploration tool</td><td><code>eslogger</code> (macOS 13+, built in) streams live ES events as JSON. Best way to learn the event semantics without writing a client.</td></tr>
+  </table>
+
+  <div class="win"><b>Direct bridge to your experience:</b> the MDM side of this is genuinely yours. Delivering system-extension policy and PPPC profiles ahead of the agent, at fleet scale, so nothing prompts the user — that is JumpCloud's core business and you have shipped it. Most macOS candidates have written an ES client on their laptop and never had to make it install silently on a million managed machines. Lead with that asymmetry.</div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s11">
+  <h2><span class="num">11</span>Tamper resistance</h2>
+  <p class="sub">An EDR/DLP sensor is an adversarial target by definition. Aristide is a CTF finalist; this is the section he will enjoy.</p>
+
+  <table>
+    <tr><th>Attack</th><th>Defence</th></tr>
+    <tr><td>Kill the extension</td><td><code>AUTH_SIGNAL</code> — deny signals targeting your own components. System extensions also cannot be unloaded without approval; MDM can forbid removal entirely.</td></tr>
+    <tr><td>Inject into the agent</td><td><code>AUTH_GET_TASK</code> / <code>AUTH_GET_TASK_READ</code> — deny task-port acquisition on yourself. Ship with hardened runtime and without <code>get-task-allow</code>.</td></tr>
+    <tr><td>Delete or replace binaries and policy</td><td><code>AUTH_UNLINK</code>, <code>AUTH_RENAME</code>, <code>AUTH_TRUNCATE</code> guarded on your own install paths; sign and verify policy blobs.</td></tr>
+    <tr><td>Talk to the daemon directly</td><td>XPC peer validation by audit token + code requirement. Never by PID.</td></tr>
+    <tr><td>Starve the sensor to force fail-open</td><td>Watchdog fallbacks are telemetry, not just a local recovery. A machine emitting a burst of them is itself a detection.</td></tr>
+    <tr><td>Race the DLP check on a file</td><td>Prefer <code>AUTH</code> at the operation boundary over "scan then allow"; TOCTOU is the classic DLP bypass.</td></tr>
+    <tr><td>Evade lineage via clone/hardlink/rename</td><td>Subscribe to the full APFS movement set (§04), not just open/write.</td></tr>
+  </table>
+
+  <div class="win"><b>The one sentence to volunteer:</b> "If I were attacking this agent I'd start at the XPC boundary between the extension and the privileged daemon, because that's where an unprivileged local process can reach root-owned logic — which is why peer validation there is by audit token and code requirement rather than PID."</div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s12">
+  <h2><span class="num">12</span>Failure modes worth naming out loud</h2>
+  <div class="card">
+    <ul class="tick">
+      <li><b>Deadline overrun → client killed.</b> Sysextd restarts you, but in-flight state is gone and the machine was unprotected for the gap. Detect, report, and treat as a sev.</li>
+      <li><b>Synchronous XPC in an AUTH handler → deadlock → mass kill.</b> The single most common architectural mistake.</li>
+      <li><b>Self-monitoring feedback loop.</b> Unmuted agent writes saturate a core.</li>
+      <li><b>Retain leak on messages.</b> Under a build storm, unreleased messages OOM the extension within minutes.</li>
+      <li><b>PID-keyed cache.</b> Misattribution and a real privilege-confusion bug.</li>
+      <li><b>Version-blind field access.</b> Works on your Mac, crashes on an older or newer OS in the fleet.</li>
+      <li><b>New macOS major release.</b> Event semantics and struct versions shift; sysext approval and entitlements need revalidation. Testing against betas from the first developer seed is not optional at this layer.</li>
+      <li><b>ES client limit reached</b> because the customer already runs two other security agents.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section id="s13">
+  <h2><span class="num">13</span>What ESF cannot see</h2>
+  <p class="sub">The bridge to document 2. Knowing the boundary of the framework is as important as knowing the framework.</p>
+
+  <table>
+    <tr><th>Blind spot</th><th>Covered by</th></tr>
+    <tr><td>Network connections and egress</td><td><b>Network Extension</b> — content filter, transparent proxy, DNS proxy → document 2</td></tr>
+    <tr><td>File <em>content</em></td><td>ESF gives you the operation, not the bytes. You read the file yourself (carefully — your read generates events) or inspect at the egress point.</td></tr>
+    <tr><td>Clipboard / pasteboard</td><td>No API notification exists. A per-session user agent polls <code>NSPasteboard.general.changeCount</code>.</td></tr>
+    <tr><td>In-browser actions (upload to a web app, paste into a chatbot)</td><td>Browser extension. This is precisely why Cyberhaven staffs a browser-extension team alongside the endpoint team.</td></tr>
+    <tr><td>Screenshots and screen recording</td><td>Indirectly: TCC grants for screen capture, file creation on Desktop, <code>NOTIFY_SCREENSHARING_ATTACH</code>.</td></tr>
+    <tr><td>USB device identity</td><td>IOKit matching notifications and DiskArbitration, joined to ESF <code>NOTIFY_MOUNT</code> and <code>/Volumes/</code> path events.</td></tr>
+    <tr><td>Printing</td><td>CUPS spool directory monitoring.</td></tr>
+    <tr><td>AirDrop</td><td><code>sharingd</code> process activity plus file events in its staging directories.</td></tr>
+  </table>
+
+  <div class="key"><b>The synthesis sentence for the interview:</b> "ESF answers <em>who touched what, on disk</em>. Network Extension answers <em>who sent what, off the box</em>. The join key between them is the audit token, and the lineage graph is what you build once you can perform that join reliably."</div>
+</section>
+
+<footer>Document 1 of 2 · Endpoint Security framework · continue to document 2: Network Extension</footer>
+</div>
+</body>
+</html>

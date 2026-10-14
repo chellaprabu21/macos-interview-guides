@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 09 - Device Telemetry &amp; UDTL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 09 of 10</span>
+    <h1>Device Telemetry &amp; Unified Device Trust Layer (BAN-3495)</h1>
+    <p>From fragmented posture silos to event-driven deltas - the architectural problem both JumpCloud and Okta must solve for true Zero Trust.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-08-endpoint-security.html">← Module 08</a>
+    <a href="index.html">Hub</a>
+    <a href="module-10-zero-trust-synthesis.html">Module 10 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">Zero Trust fails when posture data is stale. JumpCloud today has 3–4 silos (SI osquery snapshots, Mongo system report, ephemeral DURT signals, MDM Postgres) with 5 min–2 hr latency. BAN-3495 proposes near-real-time <strong>attribute deltas</strong> via <code>PushEvents</code> into UDTL (ZR-2375 platform), consumed by CAP and BeyondCorp (BAN-3496).</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>planning/ban-3495/udtl_ingestion_api_contract.md</code> - PushEvents schema, 18-attribute registry</li>
+        <li><code>planning/ban-3495/BAN-3495-delivery-plan.html</code> - architecture, sequence flows, LLD</li>
+        <li><code>planning/ban-3495/device-trust-attribute-registry-review.md</code> - CAP condition mapping</li>
+        <li><code>planning/ban-3495/concept-approval/ban-3496-beyondcorp.html</code> - UDTL consumer</li>
+        <li><code>planning/ban-3495/device_telemetry_architecture.drawio.xml</code> - draw.io swimlanes</li>
+        <li><code>telemetry/</code> - planned hooks, enricher, mapper, publisher pipeline</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Design Principles</h2>
+      <table>
+        <thead><tr><th>Principle</th><th>Implementation</th></tr></thead>
+        <tbody>
+          <tr><td>Deltas, not snapshots</td><td>One JSON message per attribute change - not 60 SI table rows</td></tr>
+          <tr><td>Canonical namespace</td><td><code>disk_encryption.status</code>, <code>os.version</code> - one key across sources</td></tr>
+          <tr><td>Tiered authority</td><td>MDM &gt; Agent at precedence engine (FileVault from MDM wins)</td></tr>
+          <tr><td>Explicit ack</td><td>HTTP 202 Accepted - unlike SI fire-and-forget 200</td></tr>
+          <tr><td>Bootstrap + delta</td><td><code>change_type: created</code> on enroll, then <code>updated</code></td></tr>
+          <tr><td>Delivery modes</td><td>Event (&lt;30s), On-change (&lt;60s), Bootstrap</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Okta Parallel</h2>
+      <div class="card okta">
+        <p>Okta auth policies evaluate device risk signals at authentication time - device trust must be continuously updated as posture changes. Okta's device object in Universal Directory with risk signals parallels UDTL's <code>device_attribute_state</code> + <code>compliance_verdicts</code>. The interview insight: both vendors move from point-in-time login checks to continuous evaluation architectures.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Current vs Target Architecture</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph current [Current State - Fragmented Silos]
+    SI[Agent SI snapshots 5min to 1hr]
+    Mongo[Mongo system report ~2hr]
+    DURTsig[Ephemeral DURT signals Go only]
+    MDMdata[MDM Postgres not in CAP path]
+  end
+
+  subgraph target [Target State - BAN-3495 plus ZR-2375]
+    ES[macOS ES hooks]
+    ETW[Windows ETW hooks]
+    MDMfwd[Apple MS MDM forwarders]
+    Ingest[UDTL PushEvents Ingestion]
+    Store[5 Postgres tables]
+    Prec[Precedence Engine MDM greater than Agent]
+    Eval[Evaluation Engine]
+    Verdict[compliance_verdicts]
+    CAP[CAP consumer]
+    BC[BeyondCorp consumer BAN-3496]
+
+    ES --> Ingest
+    ETW --> Ingest
+    MDMfwd --> Ingest
+    Ingest --> Store --> Prec --> Eval --> Verdict
+    Verdict --> CAP
+    Verdict --> BC
+  end
+
+  SI -.->|replaced by| ES
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>UDTL Storage Model (ZR-2375)</h2>
+      <table>
+        <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>telemetry_events</code></td><td>Immutable envelope log</td></tr>
+          <tr><td><code>telemetry_event_items</code></td><td>Per-attribute deltas</td></tr>
+          <tr><td><code>device_attribute_audit</code></td><td>Change history</td></tr>
+          <tr><td><code>device_attribute_state</code></td><td>Latest value after precedence merge</td></tr>
+          <tr><td><code>compliance_verdicts</code></td><td>What CAP and BeyondCorp read</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>v1 Priority Attributes (Study These)</h2>
+      <table>
+        <thead><tr><th>Priority</th><th>Attributes</th><th>CAP Relevance</th></tr></thead>
+        <tbody>
+          <tr><td>P0</td><td>disk_encryption.status, os.version, mdm.enrolled, device.serial_number</td><td>Core managed-device + FDE gates</td></tr>
+          <tr><td>P1</td><td>CrowdStrike attrs, firewall.enabled, passcode.*, os.family</td><td>Go/EDR conditions</td></tr>
+          <tr><td>P2</td><td>sip.enabled, secure_boot.enabled, mdm.enrollment_type</td><td>Hardening signals</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>PushEvents Flow</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant ES as ES Hook
+  participant Agent as telemetry pipeline
+  participant Osquery as targeted osquery
+  participant UDTL as UDTL Ingestion
+  participant Eval as Evaluation Engine
+  participant CAP as CAP PDP
+
+  ES->>Agent: FileVault config change NOTIFY
+  Agent->>Agent: Dedupe within window
+  Agent->>Osquery: Enrich disk_encryption
+  Osquery-->>Agent: Canonical value
+  Agent->>UDTL: PushEvents change_type updated
+  UDTL-->>Agent: 202 Accepted
+  UDTL->>Eval: Merge precedence update state
+  Eval->>CAP: compliance_verdict changed
+  CAP->>CAP: Re-evaluate active sessions optional step-up
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">Why not just poll osquery more frequently?</div>
+        <div class="qa-a">Polling is still snapshot-based - you discover changes only at poll interval, burn CPU/battery, and SI path is fire-and-forget HTTP 200 with no ack. Zero Trust needs push deltas with explicit delivery confirmation and sub-minute SLA for critical attrs like FDE status.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">MDM &gt; Agent precedence - example?</div>
+        <div class="qa-a">FileVault reported in both Apple MDM SecurityInfo and agent osquery. MDM is authoritative for enrollment state and Apple-native security attrs; agent enriches firewall and EDR where MDM lacks visibility. Precedence engine resolves conflicts to single <code>device_attribute_state</code>.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Producer vs consumer split?</div>
+        <div class="qa-a">Bandipur (BAN-3495) owns producers only - agent + MDM forwarders. Zirconium (ZR-2375) owns UDTL platform. CAP and BeyondCorp are parallel consumers of same 19 attributes - avoids N duplicate telemetry pipelines. Strong system design answer for staff-level interviews.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What's shipped vs in flight?</div>
+        <div class="qa-a">Shipped: signal collectors for Go, CAP PDP, MDM ES profile provisioning. In flight: telemetry/ pipeline, PushEvents contract, UDTL platform, BeyondCorp consumer. Frame as: "I've worked producer-side contracts and cross-team RFCs; platform storage is Zirconium scope."</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>UDTL platform is ZR-2375 - BAN-3495 uses MockPublisher until ingestion API in staging.</li>
+          <li>BAN-3496 BeyondCorp consumer blocked on ZR consumption API (~Oct 2026 optimistic).</li>
+          <li>v1 scope: macOS + Windows only - no Linux producers.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-08-endpoint-security.html">← Module 08</a> · <a href="module-10-zero-trust-synthesis.html">Module 10 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

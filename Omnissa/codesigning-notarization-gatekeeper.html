@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Signing, Notarization & Gatekeeper — From Scratch</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a20; --panel2:#1c2028; --ink:#e2e5ea; --dim:#9aa0ab;
+    --blue:#6cb2eb; --teal:#57cbb0; --amber:#e6b673; --red:#e07a86; --green:#a3cf8a; --gold:#d9b26f;
+    --line:#282d36; --code-bg:#0c0e12;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:flex}
+  nav{width:290px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{padding:0 22px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  nav .brand span{font:600 11px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  nav .brand b{display:block;color:var(--gold);font-size:15px;margin-top:4px;font-weight:600}
+  nav a{display:block;padding:7px 22px;color:var(--dim);font-size:13.5px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none;border-left-color:var(--gold)}
+  nav a .num{color:#565c66;font:600 11px var(--mono);margin-right:8px}
+  nav .grp{padding:12px 22px 3px;font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#4b5158}
+
+  main{flex:1;min-width:0;max-width:820px;padding:44px 52px 140px;margin:0 auto}
+  header.hero{margin-bottom:12px}
+  .crumb{font:600 12px var(--mono);color:var(--gold);letter-spacing:.12em;text-transform:uppercase}
+  h1{font-size:32px;line-height:1.2;margin:12px 0 10px;font-weight:700;letter-spacing:-.02em}
+  .hero p{color:var(--dim);font-size:16px;max-width:62ch}
+
+  h2{font-size:15px;font-family:var(--mono);color:var(--amber);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+  .chapter{border-top:1px solid var(--line);margin-top:58px;padding-top:38px}
+  .chapter-title{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+  .chapter-tag{color:var(--dim);font-size:15px;margin-bottom:8px}
+  h3{font-size:19px;margin:36px 0 8px;font-weight:650;letter-spacing:-.01em}
+  h4{font-size:15px;margin:22px 0 4px;color:var(--teal);font-family:var(--mono);font-weight:600}
+  p{margin:12px 0} strong{color:#fff;font-weight:650}
+  .lead{font-size:17px;color:var(--ink)}
+  ul,ol{margin:12px 0;padding-left:24px} li{margin:7px 0}
+
+  code{font:13.5px var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1.5px 6px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font:13px/1.6 var(--mono);color:#cbd0d8;margin:16px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  pre.ascii{color:#8b93a1;line-height:1.4}
+  .c{color:#5c6470}.k{color:#c99ee0}.s{color:#a3cf8a}.f{color:#6cb2eb}.t{color:#57cbb0}.n{color:#e6b673}.str{color:#a3cf8a}
+
+  .plain{background:linear-gradient(180deg,#1a1e26,#171a20);border:1px solid var(--line);border-radius:12px;padding:4px 20px;margin:18px 0}
+  .plain .tag{font:600 11px var(--mono);color:var(--gold);letter-spacing:.08em;text-transform:uppercase;display:block;margin-top:14px}
+
+  .qa{border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden;background:var(--panel)}
+  .qa .q{padding:14px 18px;font-weight:600;font-size:15.5px;background:var(--panel2);cursor:pointer;list-style:none;position:relative;padding-left:46px}
+  .qa .q::before{content:'Q';position:absolute;left:18px;top:14px;color:var(--bg);background:var(--blue);width:20px;height:20px;border-radius:5px;font:700 12px var(--mono);text-align:center;line-height:20px}
+  .qa .q::after{content:'+';position:absolute;right:18px;color:var(--dim);font-size:18px}
+  .qa[open] .q::after{content:'\2212'}
+  .qa .a{padding:4px 18px 16px;font-size:14.5px;border-top:1px solid var(--line)}
+
+  .note{border-left:3px solid var(--amber);padding:2px 16px;margin:16px 0;font-size:14.5px}
+  .note.gotcha{border-left-color:var(--red)} .note.key{border-left-color:var(--teal)}
+  .note b:first-child{display:block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;color:var(--amber)}
+  .note.gotcha b:first-child{color:var(--red)} .note.key b:first-child{color:var(--teal)}
+
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600;font-size:13px}
+  .tt{font-family:var(--mono);font-size:12.5px;color:var(--teal)}
+  @media(max-width:900px){nav{display:none}main{padding:28px 20px 90px}}
+  @media print{nav{display:none}body{background:#fff;color:#111}.qa,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand"><span>Deep Dive · macOS distribution</span><b>Signing · Notarization · Gatekeeper</b></div>
+  <a href="#intro"><span class="num">00</span>Start here</a>
+  <a href="#picture"><span class="num">01</span>The big picture</a>
+  <div class="grp">Signing</div>
+  <a href="#crypto"><span class="num">02</span>Foundations: hashes &amp; signatures</a>
+  <a href="#signature"><span class="num">03</span>Inside a code signature</a>
+  <a href="#certs"><span class="num">04</span>Certificates &amp; identities</a>
+  <a href="#entitlements"><span class="num">05</span>Entitlements</a>
+  <a href="#hardened"><span class="num">06</span>Hardened Runtime</a>
+  <a href="#signing"><span class="num">07</span>Signing in practice</a>
+  <div class="grp">Distribution</div>
+  <a href="#notarization"><span class="num">08</span>Notarization</a>
+  <a href="#stapling"><span class="num">09</span>Stapling</a>
+  <a href="#gatekeeper"><span class="num">10</span>Gatekeeper &amp; quarantine</a>
+  <div class="grp">Applied</div>
+  <a href="#verify"><span class="num">11</span>Verifying &amp; debugging</a>
+  <a href="#pipeline"><span class="num">12</span>The full pipeline</a>
+  <a href="#related"><span class="num">13</span>Related: TCC, SIP, XPC</a>
+  <a href="#pitfalls"><span class="num">14</span>Common pitfalls</a>
+  <a href="#interview"><span class="num">15</span>Interview question bank</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">JD requirement · macOS code signing, notarization &amp; Gatekeeper</div>
+  <h1>Code Signing, Notarization &amp; Gatekeeper</h1>
+  <p>The complete chain that decides whether your Mac app is allowed to run — from cryptographic first principles, in the order the concepts build. No prior knowledge assumed, ending with a full CI pipeline and an interview question bank.</p>
+</header>
+
+<section id="intro" style="margin-top:40px">
+<h2>Start here</h2>
+<p class="lead">These three things get blurred together constantly — including by experienced engineers. The most valuable thing this guide gives you is knowing <strong>exactly which question each one answers</strong>.</p>
+<table>
+<tr><th>Mechanism</th><th>Answers the question…</th><th>Who does it, when</th></tr>
+<tr><td><strong>Code signing</strong></td><td>"Who made this, and has it been tampered with?"</td><td>You, at build time</td></tr>
+<tr><td><strong>Notarization</strong></td><td>"Did Apple scan this for malware?"</td><td>Apple, when you submit</td></tr>
+<tr><td><strong>Gatekeeper</strong></td><td>"May this run on <em>this</em> Mac, right now?"</td><td>macOS, at launch time</td></tr>
+</table>
+<p>Read straight through. Chapter 2 gives you the crypto you need; everything after builds on it. By Chapter 12 you can write the whole pipeline, and Chapter 15 has the interview bank.</p>
+<div class="note key"><b>The one sentence to hold onto</b>You <strong>sign</strong> your app to prove who built it, you <strong>notarize</strong> it so Apple can vouch it isn't malware, and <strong>Gatekeeper</strong> checks both before letting a downloaded app launch for the first time.</div>
+</section>
+
+
+<!-- ================= 01 ================= -->
+<section class="chapter" id="picture">
+<h2>Chapter 01</h2>
+<div class="chapter-title">The big picture</div>
+<div class="chapter-tag">See the whole journey before zooming into any one part.</div>
+
+<h3>The problem macOS is solving</h3>
+<p>You download an app from the internet. Your Mac has no idea what it is. Three dangers:</p>
+<ol>
+<li><strong>Impersonation</strong> — is this really from the developer it claims to be from?</li>
+<li><strong>Tampering</strong> — did someone modify the app after the developer built it, injecting malware into an otherwise legitimate app?</li>
+<li><strong>Outright malware</strong> — the developer is real, but the software is malicious.</li>
+</ol>
+<p><strong>Signing solves #1 and #2. Notarization addresses #3. Gatekeeper is the guard at the door</strong> who checks the results of both before letting the app in.</p>
+
+<h3>The journey of an app, end to end</h3>
+<pre class="ascii">
+ DEVELOPER'S MAC                       APPLE                    USER'S MAC
+ ───────────────                       ─────                    ──────────
+ 1. build the app
+ 2. enable Hardened Runtime
+ 3. SIGN with your
+    Developer ID certificate
+        │
+        └── 4. submit for NOTARIZATION ─▶ automated malware scan
+                                                 │
+            5. Apple issues a TICKET   ◀─────────┘
+        │
+ 6. STAPLE the ticket to the app
+ 7. distribute (dmg/pkg/zip) ──────────────────────────▶ user downloads
+                                                          (browser attaches a
+                                                           QUARANTINE flag)
+                                                                │
+                                                                ▼
+                                                     8. GATEKEEPER checks:
+                                                        · valid signature?
+                                                        · notarization ticket?
+                                                        · not revoked?
+                                                          ✓ → runs
+                                                          ✗ → blocked
+</pre>
+
+<h3>What each step buys you</h3>
+<table>
+<tr><td><strong>1–3 Sign</strong></td><td>Cryptographic proof of identity and integrity. Nobody can alter one byte without breaking the signature.</td></tr>
+<tr><td><strong>4–5 Notarize</strong></td><td>Apple's automated scan checks for known malware and issues a ticket for that exact build.</td></tr>
+<tr><td><strong>6 Staple</strong></td><td>Attach the ticket to the app so it verifies even if the user is offline at first launch.</td></tr>
+<tr><td><strong>8 Gatekeeper</strong></td><td>The user's Mac verifies everything before first launch of a downloaded app.</td></tr>
+</table>
+
+<div class="note key"><b>Notice the ordering constraints</b>You must <em>sign before notarizing</em> (Apple only notarizes signed code), and <em>notarize before stapling</em> (there's no ticket otherwise). And notarization <strong>requires</strong> the Hardened Runtime. These dependencies are exactly why the pipeline in Chapter 12 has the order it does — the order isn't arbitrary, it's forced.</div>
+</section>
+
+
+<!-- ================= 02 ================= -->
+<section class="chapter" id="crypto">
+<h2>Chapter 02 · Foundations</h2>
+<div class="chapter-title">Hashes &amp; digital signatures</div>
+<div class="chapter-tag">Three ideas. Get these and code signing becomes obvious rather than mysterious.</div>
+
+<h3>Idea 1 — A hash is a fingerprint of data</h3>
+<p>A <strong>hash function</strong> (like SHA-256) takes any amount of data and produces a fixed-size fingerprint. Three properties matter:</p>
+<ul>
+<li>The same input always gives the same hash.</li>
+<li>Change even <strong>one bit</strong> and the hash changes completely.</li>
+<li>You can't reverse it, and you can't find two inputs with the same hash.</li>
+</ul>
+<p>So if you know the correct hash of a file, you can <strong>detect any tampering</strong> by re-hashing and comparing. That's the integrity half of code signing.</p>
+
+<h3>Idea 2 — A digital signature proves who created something</h3>
+<p>You have a <strong>key pair</strong>: a <em>private key</em> (secret, only you) and a <em>public key</em> (published). The math works so that:</p>
+<pre class="ascii">
+ SIGNING (you, private key)            VERIFYING (anyone, public key)
+ ─────────────────────────            ─────────────────────────────
+ hash the data      → H                hash the data        → H'
+ encrypt H with                        decrypt signature
+ your private key   → SIGNATURE        with the public key  → H
+
+                                       H == H' ?
+                                         ✓ untampered AND signed by the
+                                           holder of that private key
+</pre>
+<p>Only your private key could produce a signature that your public key correctly decrypts. So a valid signature proves <strong>the data hasn't changed</strong> and <strong>you signed it</strong> — both at once.</p>
+
+<h3>Idea 3 — Certificates: who vouches for the public key?</h3>
+<p>One gap remains: anyone can generate a key pair and claim to be "Acme Corp." A <strong>certificate</strong> closes it. A trusted authority — here, <strong>Apple</strong> — signs a document saying "this public key belongs to Acme Corp, Team ID ABC123." Every Mac already trusts Apple's root, so it can verify that chain.</p>
+<pre class="ascii">
+ Apple Root CA ──signs──▶ Apple Developer ID CA ──signs──▶ Your certificate
+ (pre-trusted by             (intermediate)                (your public key +
+  every Mac)                                                your Team ID)
+
+ The CHAIN OF TRUST. Verification walks up it to a root the Mac trusts.
+</pre>
+
+<div class="note key"><b>Code signing is just these three ideas applied</b>Hash the code (integrity) → sign the hashes with your private key (identity) → include your Apple-issued certificate so anyone can verify the chain (trust). Everything in the next chapters is a detail of <em>how Apple structures</em> this.</div>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">At a cryptographic level, what does code signing actually do?</summary>
+<div class="a"><p><strong>Commit:</strong> It hashes the code, encrypts those hashes with the developer's private key to produce a signature, and bundles the developer's certificate alongside. To verify, the system re-hashes the code, decrypts the signature using the public key from that certificate, and compares — a match proves both that the code is unmodified and that it was signed by the holder of the private key.</p>
+<p><strong>Nuance:</strong> the certificate is itself signed by Apple, chaining to a root every Mac already trusts, which is what binds the public key to a real developer identity. So signing gives integrity and authenticity together — but it says nothing about whether the code is <em>safe</em>. That's precisely why notarization exists as a separate step.</p></div></details>
+</section>
+<!-- ================= 03 ================= -->
+<section class="chapter" id="signature">
+<h2>Chapter 03</h2>
+<div class="chapter-title">Inside a code signature</div>
+<div class="chapter-tag">What Apple actually stores when you sign — and the term you'll hear constantly: CDHash.</div>
+
+<h3>A signature isn't one hash — it's a tree of them</h3>
+<p>An app isn't one file; it's a bundle with an executable, resources, frameworks, plists. Apple hashes everything, in layers:</p>
+<pre class="ascii">
+ ┌──────────────────────────────────────────────────────┐
+ │  CODE DIRECTORY  (the heart of the signature)        │
+ │                                                      │
+ │   · identifier    com.corp.myapp                     │
+ │   · Team ID       ABC123XYZ                          │
+ │   · page hashes   [h1][h2][h3]… ← the executable is  │
+ │                                   hashed PAGE BY PAGE│
+ │   · hash of the resource seal (CodeResources file)   │
+ │   · entitlements hash                                │
+ └──────────────────────────────────────────────────────┘
+              │
+              │  hash the whole Code Directory
+              ▼
+         ★ CDHash ★   ← the app's unique cryptographic identity
+              │
+              │  sign this with your private key
+              ▼
+      SIGNATURE + your certificate chain
+</pre>
+
+<h3>Three things to remember from that diagram</h3>
+<ul>
+<li><strong>Page hashes.</strong> The executable is hashed in small pages, not as one blob. Why? So the kernel can verify each page <em>as it's loaded into memory</em>. If someone modifies code on disk while the app runs, the next page load fails validation and the process is killed. Signing protects code at runtime, not just at launch.</li>
+<li><strong>The CDHash</strong> (Code Directory hash) is the fingerprint of the whole signature structure. It's the binary's true identity — it's what Endpoint Security events report, what verdict caches key on, and how you refer to "this exact build" unambiguously.</li>
+<li><strong>The resource seal.</strong> Non-code files (images, plists, nibs) are hashed into a <code>CodeResources</code> file, which is itself hashed into the Code Directory. That's why adding a file to a signed bundle breaks the signature.</li>
+</ul>
+
+<h3>Where the signature lives</h3>
+<p>For a Mach-O executable, the signature is embedded <em>inside the binary</em> as a special segment (<code>LC_CODE_SIGNATURE</code>). For a bundle, the resource hashes live in <code>Contents/_CodeSignature/CodeResources</code>. So a signed app carries its own proof — no external file needed.</p>
+
+<div class="note key"><b>Why CDHash matters to you specifically</b>In an endpoint agent, ES events give you each process's CDHash. It's a stable, forgery-proof identifier for "exactly this binary." Caching an allow/deny verdict keyed on CDHash is how you meet ES's deadline (a memory lookup instead of re-verifying). If someone asks "how do you identify a binary?" — CDHash, not path, not name, both of which are trivially changed.</div>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">What is a CDHash?</summary>
+<div class="a"><p><strong>Commit:</strong> It's the hash of the Code Directory — the structure inside a code signature that contains the binary's identifier, Team ID, page-by-page hashes of the executable, and hashes of its resources and entitlements. Because it covers all of that, the CDHash uniquely and unforgeably identifies one exact build of a binary.</p>
+<p><strong>Nuance:</strong> it's the identifier I'd use in a security agent, since Endpoint Security reports it per process — path and name are trivially spoofed, but you can't produce a different binary with the same CDHash. It's also what I'd key a verdict cache on to answer authorization events within their deadline.</p></div></details>
+<details class="qa"><summary class="q">Why does the signature hash the executable page by page instead of as a whole?</summary>
+<div class="a"><p><strong>Commit:</strong> So the kernel can verify code lazily, as each page is paged into memory at runtime. Hashing the whole binary once would only let you validate at launch; page hashes let macOS check every page on load, so modifying code on disk after launch causes the next page fault to fail validation and the process gets killed.</p>
+<p><strong>Nuance:</strong> that's what makes code signing a runtime protection and not just a launch-time check, and it's the foundation the Hardened Runtime builds on when it blocks unsigned executable memory and code injection.</p></div></details>
+</section>
+
+
+<!-- ================= 04 ================= -->
+<section class="chapter" id="certs">
+<h2>Chapter 04</h2>
+<div class="chapter-title">Certificates &amp; identities</div>
+<div class="chapter-tag">Which certificate for which purpose — a genuinely common source of confusion and build failures.</div>
+
+<h3>The certificates you'll encounter</h3>
+<table>
+<tr><th>Certificate</th><th>Signs</th><th>Distribution channel</th></tr>
+<tr><td><strong>Developer ID Application</strong></td><td>Apps, binaries, .dmg</td><td>Outside the App Store (your website, MDM). <strong>The one you need for notarization.</strong></td></tr>
+<tr><td><strong>Developer ID Installer</strong></td><td><code>.pkg</code> installer packages</td><td>Outside the App Store</td></tr>
+<tr><td><strong>Apple Development</strong></td><td>Local dev builds</td><td>Your machines only</td></tr>
+<tr><td><strong>Apple Distribution</strong></td><td>App Store submissions</td><td>Mac App Store (Apple re-signs it)</td></tr>
+<tr><td><strong>Mac Installer Distribution</strong></td><td>App Store <code>.pkg</code></td><td>Mac App Store</td></tr>
+</table>
+
+<div class="note gotcha"><b>The classic build failure</b>Using <strong>Developer ID Application</strong> to sign a <code>.pkg</code>, or <strong>Developer ID Installer</strong> to sign an app. They're not interchangeable. <em>App/binary → Application cert. Installer package → Installer cert.</em> If <code>productsign</code> mysteriously fails, this is usually why.</div>
+
+<h3>Team ID and Signing Identifier — two different names</h3>
+<ul>
+<li><strong>Team ID</strong> — a 10-character code identifying your <em>organization</em> (e.g. <code>ABC123XYZ9</code>). Every certificate your team gets carries it. It's the "who" in "who signed this."</li>
+<li><strong>Signing Identifier</strong> (bundle identifier) — identifies the <em>specific app</em>, like <code>com.corp.agent</code>.</li>
+</ul>
+<p>Together they say "app <code>com.corp.agent</code>, made by team <code>ABC123XYZ9</code>." That pair is what you pin in security checks — such as validating an XPC caller.</p>
+
+<h3>Designated Requirement (DR) — a rule about acceptable signatures</h3>
+<p>A <strong>requirement string</strong> is a tiny language for expressing "what must be true of a signature." Every signed binary has a default one, and you write your own when validating others:</p>
+<pre><code><span class="c"># "signed by Apple's chain, and the leaf cert's OU is my Team ID"</span>
+anchor apple generic and certificate leaf[subject.OU] = <span class="str">"ABC123XYZ9"</span>
+
+<span class="c"># tighter: also require a specific app identifier</span>
+identifier <span class="str">"com.corp.agent"</span> and anchor apple generic
+  and certificate leaf[subject.OU] = <span class="str">"ABC123XYZ9"</span></code></pre>
+<p>This is the exact string you'd hand to <code>setCodeSigningRequirement</code> when securing an XPC listener, or to <code>SecRequirementCreateWithString</code> when verifying a peer process. Chapter 13 connects the dots.</p>
+
+<h3>Timestamps &amp; revocation</h3>
+<ul>
+<li><strong>Secure timestamp</strong> (<code>--timestamp</code>) — a trusted third-party record of <em>when</em> you signed. Without it, your app stops validating when the certificate expires. With it, the signature stays valid because it proves you signed while the cert was live. <strong>Required for notarization.</strong></li>
+<li><strong>Revocation</strong> — Apple can revoke a Developer ID certificate (e.g. it was used for malware). Revocation kills <em>all</em> apps signed with it, retroactively. This is why certificates are guarded carefully and CI signing keys live in secured keychains.</li>
+</ul>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">Which certificate signs an app vs a .pkg?</summary>
+<div class="a"><p><strong>Commit:</strong> Developer ID <em>Application</em> signs the app and its binaries; Developer ID <em>Installer</em> signs the <code>.pkg</code>. They're distinct certificates for distinct artifacts, and swapping them is a common cause of signing failures. Both are for distribution outside the App Store.</p>
+<p><strong>Nuance:</strong> if I were shipping through the Mac App Store I'd instead use Apple Distribution and Mac Installer Distribution, and Apple re-signs the app on delivery. For a fleet agent distributed via MDM or download, it's the Developer ID pair plus notarization.</p></div></details>
+<details class="qa"><summary class="q">Why use --timestamp when signing?</summary>
+<div class="a"><p><strong>Commit:</strong> It records a trusted, independent proof of when the signature was made. Without a secure timestamp, the signature becomes invalid once the signing certificate expires; with one, the app keeps validating because the system can see it was signed while the certificate was still valid.</p>
+<p><strong>Nuance:</strong> it's also mandatory for notarization, so it isn't really optional for anything you distribute. It matters practically for long-lived software like an agent that stays deployed on fleets for years past its build date.</p></div></details>
+</section>
+
+
+<!-- ================= 05 ================= -->
+<section class="chapter" id="entitlements">
+<h2>Chapter 05</h2>
+<div class="chapter-title">Entitlements</div>
+<div class="chapter-tag">Capabilities baked into the signature — how macOS knows your app is allowed to do powerful things.</div>
+
+<div class="plain">
+<span class="tag">In plain words</span>
+<p>An entitlement is a permission your app <em>claims</em>, written into a plist and then sealed inside its code signature. Because it's inside the signature, it can't be added or edited afterwards without invalidating the signature — so the system can trust it.</p>
+</div>
+
+<h3>Why sealing them inside the signature is the whole point</h3>
+<p>Imagine entitlements were a separate file. Malware could just add "give me Endpoint Security access" to any app's file and gain kernel-level visibility. Instead, entitlements are hashed into the Code Directory (Chapter 3). Change them → the CDHash changes → the signature breaks → macOS refuses to run it. <strong>An entitlement is an unforgeable claim, which is why the OS can grant real power based on it.</strong></p>
+
+<h3>What they look like</h3>
+<pre><code><span class="c">&lt;!-- app.entitlements --&gt;</span>
+&lt;dict&gt;
+  &lt;key&gt;com.apple.security.app-sandbox&lt;/key&gt;               &lt;true/&gt;
+  &lt;key&gt;com.apple.security.network.client&lt;/key&gt;           &lt;true/&gt;
+  &lt;key&gt;com.apple.developer.endpoint-security.client&lt;/key&gt;&lt;true/&gt;  <span class="c">&lt;!-- restricted! --&gt;</span>
+&lt;/dict&gt;</code></pre>
+
+<h3>The three tiers of entitlement</h3>
+<table>
+<tr><th>Tier</th><th>Examples</th><th>How you get it</th></tr>
+<tr><td><strong>Free</strong></td><td>network client, file access, sandbox</td><td>Just declare them</td></tr>
+<tr><td><strong>Capability</strong></td><td>iCloud, push notifications, App Groups</td><td>Enable in your developer account; provisioning profile grants them</td></tr>
+<tr><td><strong>Restricted</strong></td><td><code>endpoint-security.client</code>, <code>system-extension.install</code></td><td><strong>Apple must approve you</strong> — you request it and justify the use case</td></tr>
+</table>
+
+<div class="note key"><b>The one your JD cares about</b><code>com.apple.developer.endpoint-security.client</code> is a <em>restricted</em> entitlement — Apple individually approves companies to have it, because it grants visibility into every process launch and file operation on the machine. That approval process is why endpoint security vendors are a small club. Knowing this detail signals real familiarity with the space.</div>
+
+<h3>Reading entitlements from a binary</h3>
+<pre><code>codesign -d --entitlements :- /Applications/MyApp.app</code></pre>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">What are entitlements and why can't they be forged?</summary>
+<div class="a"><p><strong>Commit:</strong> Entitlements are capabilities an app declares — network access, sandbox membership, Endpoint Security access — and they're sealed inside the code signature. Because they're hashed into the Code Directory, editing them changes the CDHash and invalidates the signature, so the app won't run. That unforgeability is what lets the OS grant genuinely privileged capabilities based on them.</p>
+<p><strong>Nuance:</strong> some entitlements are free to declare, some require enabling a capability in your developer account, and a few — like the Endpoint Security client entitlement — are restricted and require Apple's explicit approval per developer. So an entitlement is simultaneously a claim by the app and, for restricted ones, an authorization from Apple.</p></div></details>
+</section>
+
+
+<!-- ================= 06 ================= -->
+<section class="chapter" id="hardened">
+<h2>Chapter 06</h2>
+<div class="chapter-title">Hardened Runtime</div>
+<div class="chapter-tag">Opt-in runtime protections. Required for notarization — so effectively mandatory.</div>
+
+<div class="plain">
+<span class="tag">In plain words</span>
+<p>Hardened Runtime is a flag you enable at signing time that tells macOS to enforce a set of runtime protections on your process — blocking code injection, debugger attachment, and loading unsigned libraries — unless you explicitly declare an exception.</p>
+</div>
+
+<h3>What it actually blocks</h3>
+<table>
+<tr><th>Protection</th><th>What it prevents</th></tr>
+<tr><td>Library validation</td><td>Loading libraries not signed by you or Apple — blocks dylib hijacking / injection</td></tr>
+<tr><td>No <code>DYLD_INSERT_LIBRARIES</code></td><td>Injecting code via environment variables</td></tr>
+<tr><td>No unsigned executable memory</td><td>Writing code into memory and running it (JIT-style attacks)</td></tr>
+<tr><td>No debugger attachment</td><td>Another process attaching to and inspecting yours</td></tr>
+<tr><td>Resource-access prompts</td><td>Camera, mic, etc. require declared entitlements</td></tr>
+</table>
+
+<h3>Exceptions — when your app legitimately needs one</h3>
+<p>Some apps genuinely need these behaviors. You declare an exception <em>as an entitlement</em>, which means it's visible in the signature and Apple sees it at notarization:</p>
+<pre><code>&lt;key&gt;com.apple.security.cs.allow-jit&lt;/key&gt;                        &lt;true/&gt;
+&lt;key&gt;com.apple.security.cs.allow-unsigned-executable-memory&lt;/key&gt; &lt;true/&gt;
+&lt;key&gt;com.apple.security.cs.disable-library-validation&lt;/key&gt;       &lt;true/&gt;
+&lt;key&gt;com.apple.security.cs.debugger&lt;/key&gt;                         &lt;true/&gt;</code></pre>
+<p>Example: a browser or a language runtime needs JIT. A plugin host needs to load third-party libraries, so it disables library validation. <strong>Each exception weakens your security, so declare only what you need</strong> — and be able to say <em>why</em> in an interview.</p>
+
+<div class="note gotcha"><b>Sandbox ≠ Hardened Runtime</b>These are different and independent. The <strong>App Sandbox</strong> restricts what resources your app can <em>reach</em> (files, network, hardware) — it's about containment. The <strong>Hardened Runtime</strong> protects your process's <em>integrity</em> from tampering and injection. App Store apps must be sandboxed; notarized apps must use Hardened Runtime. An app can have both, either, or (for local dev) neither.</div>
+
+<h3>How to enable it</h3>
+<pre><code>codesign --options runtime --sign <span class="str">"Developer ID Application: Corp (ABC123XYZ9)"</span> MyApp.app
+<span class="c">#          ^^^^^^^^^^^^^^^^^ this is what turns on Hardened Runtime</span></code></pre>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">What is the Hardened Runtime and how is it different from the sandbox?</summary>
+<div class="a"><p><strong>Commit:</strong> The Hardened Runtime is a set of runtime protections you opt into at signing with <code>--options runtime</code> — it blocks code injection, <code>DYLD_INSERT_LIBRARIES</code>, unsigned executable memory, debugger attachment, and loading unsigned libraries. The sandbox is a different thing: it restricts which resources the app can reach, like files and network. Hardened Runtime protects the process's integrity; the sandbox contains what it can touch.</p>
+<p><strong>Nuance:</strong> they're independent — you can have one, both, or neither. In practice notarization requires Hardened Runtime, and the App Store requires the sandbox. If my app legitimately needs JIT or third-party plugins, I declare a specific exception entitlement, which Apple sees at notarization, and I'd only add the ones I actually need since each one weakens the protection.</p></div></details>
+</section>
+
+
+<!-- ================= 07 ================= -->
+<section class="chapter" id="signing">
+<h2>Chapter 07</h2>
+<div class="chapter-title">Signing in practice</div>
+<div class="chapter-tag">The commands, and the one ordering rule that trips everyone up.</div>
+
+<h3>The basic command, dissected</h3>
+<pre><code>codesign --sign <span class="str">"Developer ID Application: Corp (ABC123XYZ9)"</span> \
+         --options runtime \                     <span class="c"># enable Hardened Runtime</span>
+         --entitlements app.entitlements \       <span class="c"># seal capabilities into signature</span>
+         --timestamp \                           <span class="c"># secure timestamp (required to notarize)</span>
+         --force \                               <span class="c"># replace any existing signature</span>
+         MyApp.app</code></pre>
+
+<h3>The ordering rule: sign inside-out</h3>
+<p class="lead">This is the single most common source of "why is my signature invalid?"</p>
+<p>Because a bundle's signature includes hashes of everything inside it, you must sign <strong>nested items first</strong>, then the outer bundle. If you sign the app first and then a framework inside it, you've just changed the app's contents after sealing them — the outer signature is now broken.</p>
+<pre class="ascii">
+ WRONG                              RIGHT (inside-out)
+ ─────                              ──────────────────
+ sign MyApp.app                     1. sign each embedded framework
+ sign frameworks inside it          2. sign each helper / XPC service
+ → outer signature broken           3. sign the main executable
+                                    4. sign MyApp.app  (seals everything)
+</pre>
+<p><code>codesign --deep</code> exists but Apple <strong>discourages it</strong> — it applies the same entitlements everywhere and skips nuance. Sign each component explicitly with its own entitlements.</p>
+
+<h3>Signing a .pkg — a different tool and a different certificate</h3>
+<pre><code><span class="c"># build the component package (payload + scripts)</span>
+pkgbuild --root ./payload --identifier com.corp.agent --version 2.4.0 \
+         --scripts ./scripts --install-location / Agent.pkg
+
+<span class="c"># wrap into a distribution package</span>
+productbuild --distribution Distribution.xml --package-path . Installer.pkg
+
+<span class="c"># sign it with the INSTALLER certificate (not Application!)</span>
+productsign --sign <span class="str">"Developer ID Installer: Corp (ABC123XYZ9)"</span> \
+            Installer.pkg Installer-signed.pkg</code></pre>
+
+<div class="note key"><b>Remember the pairing</b><code>codesign</code> + <strong>Developer ID Application</strong> → apps, binaries, .dmg.<br><code>productsign</code> + <strong>Developer ID Installer</strong> → .pkg installers.</div>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">In what order do you sign a bundle with embedded frameworks, and why?</summary>
+<div class="a"><p><strong>Commit:</strong> Inside-out: sign the embedded frameworks and helper tools first, then the main executable, then the outer app bundle last. Because the bundle's signature seals hashes of everything inside it, signing a nested item after the outer bundle changes the bundle's contents and invalidates its signature.</p>
+<p><strong>Nuance:</strong> I avoid <code>codesign --deep</code> even though it looks convenient — Apple discourages it because it applies the same entitlements to every nested component, which is wrong when a helper needs different entitlements than the app. Explicit per-component signing is the correct approach.</p></div></details>
+</section>
+
+<!-- ================= 08 ================= -->
+<section class="chapter" id="notarization">
+<h2>Chapter 08</h2>
+<div class="chapter-title">Notarization</div>
+<div class="chapter-tag">Apple scans your signed app for malware and issues a ticket. Not a code review — an automated scan.</div>
+
+<div class="plain">
+<span class="tag">In plain words</span>
+<p>You upload your signed app to Apple. An automated service scans it for known malware and checks it was signed correctly with Hardened Runtime. If it passes, Apple issues a <strong>ticket</strong> — a signed record saying "Apple examined this exact build and found nothing malicious."</p>
+</div>
+
+<h3>What notarization is NOT</h3>
+<p>Beginners assume it's a human review like App Store review. It isn't:</p>
+<ul>
+<li><strong>Not App Store review.</strong> No human looks at your app. No design guidelines, no rejection for UX.</li>
+<li><strong>Not a security audit.</strong> It's an automated scan for known malicious content and misconfiguration.</li>
+<li><strong>Not a signature.</strong> Apple doesn't sign your app; it issues a separate ticket referencing your app's CDHash.</li>
+</ul>
+<p>It's fast — typically minutes.</p>
+
+<h3>What Apple checks</h3>
+<table>
+<tr><td>Malware scan</td><td>Known malicious content</td></tr>
+<tr><td>Valid Developer ID signature</td><td>Signed with a real, unrevoked cert</td></tr>
+<tr><td>Hardened Runtime enabled</td><td><strong>Mandatory</strong> — fails without it</td></tr>
+<tr><td>Secure timestamp</td><td><strong>Mandatory</strong></td></tr>
+<tr><td>No overly-broad entitlements</td><td>Suspicious exception entitlements get flagged</td></tr>
+</table>
+
+<h3>The commands (notarytool — the modern tool)</h3>
+<pre><code><span class="c"># One-time: store credentials in the keychain so CI doesn't hold secrets in scripts</span>
+xcrun notarytool store-credentials <span class="str">"notary-profile"</span> \
+      --apple-id <span class="str">"dev@corp.com"</span> --team-id ABC123XYZ9 --password &lt;app-specific-password&gt;
+
+<span class="c"># Submit and wait for the result</span>
+xcrun notarytool submit Installer-signed.pkg \
+      --keychain-profile <span class="str">"notary-profile"</span> --wait
+
+<span class="c"># If it fails, get the detailed log — this tells you exactly what's wrong</span>
+xcrun notarytool log &lt;submission-id&gt; --keychain-profile <span class="str">"notary-profile"</span></code></pre>
+
+<div class="note gotcha"><b>altool is gone</b>The old <code>altool</code> notarization workflow is deprecated and no longer accepted. If you see it in a tutorial, it's outdated — <code>notarytool</code> is the current tool, and it's much faster. Mentioning this shows you're current.</div>
+
+<h3>What you submit</h3>
+<p>Notarization accepts a container: a <code>.zip</code>, <code>.dmg</code>, or <code>.pkg</code>. Everything signable inside it must already be signed. Apple examines all nested code.</p>
+
+<div class="note key"><b>The ticket is tied to the exact build</b>The ticket references your app's <strong>CDHash</strong>. Change one byte, rebuild, and the CDHash changes — the old ticket no longer applies and you must notarize again. There's no "notarize once, ship forever" for changed builds.</div>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">What is notarization and how does it differ from code signing?</summary>
+<div class="a"><p><strong>Commit:</strong> Code signing is something I do — it proves who built the app and that it hasn't been altered. Notarization is something Apple does: I upload the signed app, Apple runs an automated malware scan and checks it uses a valid Developer ID and the Hardened Runtime, and if it passes, Apple issues a ticket for that exact build. Signing says who made it; notarization says Apple scanned it.</p>
+<p><strong>Nuance:</strong> notarization isn't App Store review — no human looks at it, it takes minutes, and Apple doesn't sign my app; the ticket is a separate record keyed to my binary's CDHash. It requires Hardened Runtime and a secure timestamp, which is why those two come earlier in the pipeline.</p></div></details>
+<details class="qa"><summary class="q">Notarization fails. How do you debug it?</summary>
+<div class="a"><p><strong>Commit:</strong> I fetch the detailed log with <code>xcrun notarytool log &lt;submission-id&gt;</code>, which lists exactly which files failed and why. The most common causes are a nested binary or framework that wasn't signed, Hardened Runtime not enabled, or a missing secure timestamp.</p>
+<p><strong>Nuance:</strong> the log points at individual paths inside the bundle, which usually reveals I missed signing a helper tool or an embedded dylib. That connects back to the inside-out signing order — if a nested component is unsigned or signed after the outer bundle, notarization catches it even when local verification looked fine.</p></div></details>
+</section>
+
+
+<!-- ================= 09 ================= -->
+<section class="chapter" id="stapling">
+<h2>Chapter 09</h2>
+<div class="chapter-title">Stapling</div>
+<div class="chapter-tag">A small step with an important reason: offline users.</div>
+
+<h3>The problem stapling solves</h3>
+<p>After notarization, Apple has a ticket for your app on <em>their servers</em>. When a user launches your app, Gatekeeper can ask Apple's servers "is there a ticket for this CDHash?" — but only <strong>if the user is online</strong>. What if they're not?</p>
+
+<h3>The fix</h3>
+<p><strong>Stapling</strong> attaches a copy of the ticket to your app (or dmg/pkg) so it travels with the artifact. Now Gatekeeper finds the ticket locally — no network needed.</p>
+<pre><code>xcrun stapler staple Installer-signed.pkg
+xcrun stapler validate Installer-signed.pkg   <span class="c"># confirm it worked</span></code></pre>
+<pre class="ascii">
+ WITHOUT stapling                       WITH stapling
+ ────────────────                       ─────────────
+ user launches app                      user launches app
+   Gatekeeper → asks Apple's servers      Gatekeeper → finds ticket inside the app
+   offline? → may fail / warn             works offline. Always.
+</pre>
+
+<div class="note key"><b>The one-line reason to staple</b>So your app validates even when the user has no internet. It's technically optional (Gatekeeper can check online) but you should always do it — first launches often happen right after install, on flaky networks, or on machines behind restrictive firewalls. For a fleet-deployed agent, offline validation is essential.</div>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">What is stapling and is it required?</summary>
+<div class="a"><p><strong>Commit:</strong> Stapling attaches the notarization ticket to the app or installer so it ships with the artifact. It's not strictly required — Gatekeeper can query Apple's servers for the ticket at launch — but you should always staple, because otherwise a user who's offline at first launch may see a failure or warning.</p>
+<p><strong>Nuance:</strong> for software deployed across a fleet, offline first-launch is common — machines behind firewalls, freshly imaged laptops, restricted networks. Stapling makes verification fully local and deterministic, which removes an entire class of "it works on my machine" install failures.</p></div></details>
+</section>
+
+
+<!-- ================= 10 ================= -->
+<section class="chapter" id="gatekeeper">
+<h2>Chapter 10</h2>
+<div class="chapter-title">Gatekeeper &amp; the quarantine flag</div>
+<div class="chapter-tag">The guard at the door. Understand quarantine and Gatekeeper's behavior stops being mysterious.</div>
+
+<div class="plain">
+<span class="tag">In plain words</span>
+<p>Gatekeeper is the macOS feature that checks, before an app runs for the first time, that it's properly signed and notarized. If it isn't, macOS blocks it and shows the user a warning.</p>
+</div>
+
+<h3>The key that unlocks everything: the quarantine flag</h3>
+<p class="lead">Gatekeeper doesn't check <em>every</em> app on every launch. It checks apps that arrived from the internet. How does it know? <strong>The quarantine flag.</strong></p>
+<p>When a browser, email client, or messaging app downloads a file, it attaches an <strong>extended attribute</strong> to it: <code>com.apple.quarantine</code>. This is a marker meaning "this came from outside — treat it with suspicion." Gatekeeper's checks trigger on <em>quarantined</em> files at first launch.</p>
+<pre><code><span class="c"># see the quarantine flag on a downloaded file</span>
+xattr -l ~/Downloads/MyApp.app
+<span class="c"># com.apple.quarantine: 0081;65f0a1b2;Safari;...</span>
+
+<span class="c"># remove it (for local testing only — never tell users to do this)</span>
+xattr -dr com.apple.quarantine ~/Downloads/MyApp.app</code></pre>
+
+<div class="note key"><b>This explains the #1 confusing symptom</b>"It runs fine on my machine but users get 'app is damaged and can't be opened'." Your locally-built app has <em>no</em> quarantine flag, so Gatekeeper never checks it. The downloaded copy <em>does</em> have one, so Gatekeeper checks — and finds it unsigned or un-notarized. To reproduce a user's experience, download your own artifact (or set the flag manually) rather than testing the build directory.</div>
+
+<h3>What Gatekeeper checks at first launch</h3>
+<ol>
+<li>Is the file quarantined? (If not, generally no check.)</li>
+<li>Is the code signature valid and intact?</li>
+<li>Is the signing certificate valid and <strong>not revoked</strong>?</li>
+<li>Is there a valid <strong>notarization ticket</strong> — stapled locally, or found online?</li>
+</ol>
+<p>All pass → the app launches, and macOS removes the quarantine flag so subsequent launches are fast. Any fail → blocked, with a dialog.</p>
+
+<h3>The error messages, decoded</h3>
+<table>
+<tr><th>User sees</th><th>Actually means</th></tr>
+<tr><td>"…is damaged and can't be opened"</td><td>Usually <em>not</em> corruption — the signature is invalid, or it's not notarized</td></tr>
+<tr><td>"…can't be opened because Apple cannot check it for malicious software"</td><td>Signed but <strong>not notarized</strong></td></tr>
+<tr><td>"…can't be opened because it is from an unidentified developer"</td><td>Not signed with a Developer ID at all</td></tr>
+</table>
+<div class="note gotcha"><b>"Damaged" almost never means damaged</b>This misleading message is the most common Gatekeeper confusion. If a user reports it, check signing and notarization — not file corruption. Being able to say this in an interview shows you've actually shipped Mac software.</div>
+
+<h3>Related notions worth knowing</h3>
+<ul>
+<li><strong>The user override.</strong> A user can right-click → Open, or approve in System Settings → Privacy &amp; Security, to run a blocked app. Newer macOS versions have made this deliberately harder.</li>
+<li><strong>XProtect</strong> — Apple's built-in signature-based malware scanner. It runs independently of Gatekeeper and blocks known-malicious files at launch. Distinct from notarization.</li>
+<li><strong><code>spctl --master-disable</code></strong> — turns Gatekeeper off entirely (the "Anywhere" option). Useful in a test VM, never on user machines.</li>
+</ul>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">What is Gatekeeper and when does it run?</summary>
+<div class="a"><p><strong>Commit:</strong> Gatekeeper is macOS's launch-time check that a downloaded app is validly signed with a Developer ID and has a notarization ticket. It triggers on the <em>first launch of a quarantined file</em> — the <code>com.apple.quarantine</code> extended attribute that browsers and other apps attach to downloads. If the checks pass, the app runs and the flag is cleared; if not, macOS blocks it.</p>
+<p><strong>Nuance:</strong> this is why an app runs fine locally but fails for users — a locally-built app has no quarantine flag, so Gatekeeper never inspects it. To reproduce a user's experience I download my own artifact or set the flag manually. Gatekeeper is also distinct from XProtect, which is Apple's separate signature-based malware scanner.</p></div></details>
+<details class="qa"><summary class="q">A user says your app "is damaged and can't be opened." What's wrong?</summary>
+<div class="a"><p><strong>Commit:</strong> Almost certainly not damage. That message usually means the code signature is invalid or the app isn't notarized, and Gatekeeper is blocking it on first launch because it's quarantined. I'd verify with <code>codesign --verify --deep --strict</code> and <code>spctl -a -vvv</code> on the downloaded copy, and check whether the ticket is stapled with <code>stapler validate</code>.</p>
+<p><strong>Nuance:</strong> a common root cause is that the artifact was modified after signing — for example, a build script touched a file inside the bundle, or the zip was rebuilt after notarization, which invalidates the seal. The message is misleading; the fix is nearly always in the signing or notarization pipeline, not the file transfer.</p></div></details>
+</section>
+
+<!-- ================= 11 ================= -->
+<section class="chapter" id="verify">
+<h2>Chapter 11</h2>
+<div class="chapter-title">Verifying &amp; debugging</div>
+<div class="chapter-tag">The commands you'll actually type when something breaks. Memorize the first three.</div>
+
+<h3>The essential four</h3>
+<pre><code><span class="c"># 1. What is this signed with? (identity, Team ID, CDHash)</span>
+codesign -dvvv /Applications/MyApp.app
+
+<span class="c"># 2. Is the signature intact and internally consistent?</span>
+codesign --verify --deep --strict --verbose=4 /Applications/MyApp.app
+
+<span class="c"># 3. Would GATEKEEPER let it run? (the real user-facing answer)</span>
+spctl -a -vvv -t execute /Applications/MyApp.app     <span class="c"># for apps</span>
+spctl -a -vvv -t install Installer.pkg               <span class="c"># for pkgs</span>
+
+<span class="c"># 4. Is the notarization ticket stapled?</span>
+xcrun stapler validate /Applications/MyApp.app</code></pre>
+
+<h3>Reading the output</h3>
+<pre><code><span class="c"># codesign -dvvv output, annotated</span>
+Identifier=com.corp.agent                <span class="c">← signing identifier (bundle ID)</span>
+TeamIdentifier=ABC123XYZ9                <span class="c">← your Team ID</span>
+CDHash=a1b2c3...                         <span class="c">← the build's unique fingerprint</span>
+Authority=Developer ID Application: Corp <span class="c">← the leaf certificate</span>
+Authority=Developer ID Certification Authority   <span class="c">← intermediate</span>
+Authority=Apple Root CA                  <span class="c">← the chain terminates at Apple ✓</span>
+Timestamp=...                            <span class="c">← secure timestamp present ✓</span>
+Runtime Version=...                      <span class="c">← Hardened Runtime enabled ✓</span></code></pre>
+<p>A healthy signature shows all three Authority lines (chain to Apple Root), a Timestamp, and a Runtime Version. Missing Timestamp or Runtime Version → notarization will fail.</p>
+
+<h3>Other useful checks</h3>
+<pre><code>codesign -d --entitlements :- MyApp.app     <span class="c"># show entitlements</span>
+xattr -l MyApp.app                          <span class="c"># is it quarantined?</span>
+xcrun notarytool log &lt;id&gt; --keychain-profile p  <span class="c"># why notarization failed</span>
+codesign -dr - MyApp.app                    <span class="c"># show its designated requirement</span></code></pre>
+
+<div class="note key"><b>The debugging order</b>Work outward: (1) <code>codesign --verify</code> — is the signature itself sound? (2) <code>stapler validate</code> — is the ticket attached? (3) <code>spctl -a -vvv</code> — would Gatekeeper accept it? Each answers a different layer, so whichever fails first tells you which stage of the pipeline broke.</div>
+</section>
+
+
+<!-- ================= 12 ================= -->
+<section class="chapter" id="pipeline">
+<h2>Chapter 12</h2>
+<div class="chapter-title">The full pipeline</div>
+<div class="chapter-tag">Everything assembled. This is the CI script — and the answer to "walk me through shipping a Mac app."</div>
+
+<pre><code><span class="c">#!/bin/bash</span>
+<span class="k">set</span> -e
+APP=<span class="str">"MyApp.app"</span>
+PKG=<span class="str">"Installer.pkg"</span>
+APP_CERT=<span class="str">"Developer ID Application: Corp (ABC123XYZ9)"</span>
+INST_CERT=<span class="str">"Developer ID Installer: Corp (ABC123XYZ9)"</span>
+
+<span class="c"># ── 1. SIGN, inside-out: nested code first, bundle last ─────────────</span>
+<span class="k">for</span> f <span class="k">in</span> <span class="str">"$APP"</span>/Contents/Frameworks/*; <span class="k">do</span>
+  codesign --force --options runtime --timestamp --sign <span class="str">"$APP_CERT"</span> <span class="str">"$f"</span>
+<span class="k">done</span>
+codesign --force --options runtime --timestamp \
+         --entitlements helper.entitlements --sign <span class="str">"$APP_CERT"</span> \
+         <span class="str">"$APP"</span>/Contents/XPCServices/Helper.xpc          <span class="c"># own entitlements!</span>
+codesign --force --options runtime --timestamp \
+         --entitlements app.entitlements --sign <span class="str">"$APP_CERT"</span> <span class="str">"$APP"</span>
+
+<span class="c"># ── 2. VERIFY locally before wasting a notarization round-trip ──────</span>
+codesign --verify --deep --strict --verbose=4 <span class="str">"$APP"</span>
+
+<span class="c"># ── 3. PACKAGE ──────────────────────────────────────────────────────</span>
+pkgbuild --root ./payload --identifier com.corp.agent --version 2.4.0 \
+         --scripts ./scripts --install-location / Component.pkg
+productbuild --distribution Distribution.xml --package-path . <span class="str">"$PKG"</span>
+
+<span class="c"># ── 4. SIGN THE PKG with the INSTALLER cert ─────────────────────────</span>
+productsign --sign <span class="str">"$INST_CERT"</span> <span class="str">"$PKG"</span> <span class="str">"signed-$PKG"</span>
+
+<span class="c"># ── 5. NOTARIZE (blocks until Apple answers) ────────────────────────</span>
+xcrun notarytool submit <span class="str">"signed-$PKG"</span> --keychain-profile <span class="str">"notary-profile"</span> --wait
+
+<span class="c"># ── 6. STAPLE the ticket so it validates offline ────────────────────</span>
+xcrun stapler staple <span class="str">"signed-$PKG"</span>
+xcrun stapler validate <span class="str">"signed-$PKG"</span>
+
+<span class="c"># ── 7. FINAL CHECK: would Gatekeeper accept it? ─────────────────────</span>
+spctl -a -vvv -t install <span class="str">"signed-$PKG"</span></code></pre>
+
+<div class="note key"><b>Why the order is forced, not arbitrary</b>Sign inside-out (outer seal covers inner contents) → verify locally (cheap, before a slow round-trip) → package → sign the pkg with the <em>installer</em> cert → notarize (needs a signed artifact with Hardened Runtime + timestamp) → staple (needs a ticket to exist) → spctl (the final "would a real user's Mac accept this?"). Each step depends on the one before. Say this dependency chain out loud in an interview and you've demonstrated real understanding, not memorization.</div>
+
+<h3>CI considerations</h3>
+<ul>
+<li>Signing certificates live in a dedicated <strong>keychain</strong> on the build machine; unlock it in the script rather than embedding secrets.</li>
+<li><code>notarytool store-credentials</code> keeps the Apple ID and app-specific password out of your scripts.</li>
+<li>Always run <code>spctl</code> as the last gate — it's the only check that mimics the actual user experience.</li>
+</ul>
+</section>
+
+
+<!-- ================= 13 ================= -->
+<section class="chapter" id="related">
+<h2>Chapter 13</h2>
+<div class="chapter-title">Related: TCC, SIP, and XPC</div>
+<div class="chapter-tag">Where signing connects to the rest of macOS security — the "so what" for an agent engineer.</div>
+
+<h3>TCC — a different question again</h3>
+<p><strong>TCC</strong> (Transparency, Consent, and Control) is the privacy layer: the prompts asking "MyApp wants to access your Camera / Full Disk / Screen Recording." It's keyed to your <em>signing identity</em>, which is why re-signing an app can reset its permissions.</p>
+<p>Now you can place all four layers cleanly — each answers a distinct question:</p>
+<table>
+<tr><th>Layer</th><th>The question</th></tr>
+<tr><td>Code signing</td><td>Who made this, and is it unmodified?</td></tr>
+<tr><td>Notarization</td><td>Did Apple scan it for malware?</td></tr>
+<tr><td>Gatekeeper</td><td>May it launch on this Mac?</td></tr>
+<tr><td>TCC</td><td>What may it <em>access</em> once running?</td></tr>
+</table>
+<p>For fleets, TCC permissions are pre-granted by MDM using <strong>PPPC profiles</strong> (Privacy Preferences Policy Control), which reference your app's signing requirement — no user prompts. That's how an agent gets Full Disk Access silently on 10,000 Macs.</p>
+
+<h3>SIP — System Integrity Protection</h3>
+<p>Protects system files and processes from modification even by root. Unrelated to your app's signature, but often mentioned alongside — it's why you can't just write into <code>/System</code>.</p>
+
+<h3>Where signing meets XPC (the tie-back)</h3>
+<p>Everything in Chapter 4 about <strong>requirement strings</strong> pays off here. When your privileged helper validates who's connecting to it, it checks the caller's code signature against a requirement pinning your Team ID:</p>
+<pre><code><span class="c">// macOS 13+: one line, XPC enforces it for you</span>
+listener.setCodeSigningRequirement(
+    <span class="str">"anchor apple generic and certificate leaf[subject.OU] = \"ABC123XYZ9\""</span>)</code></pre>
+<p>And Endpoint Security events carry each process's <strong>Team ID, signing ID, and CDHash</strong> (Chapter 3), so an agent can make policy decisions like "only allow binaries signed by approved teams."</p>
+
+<div class="note key"><b>The insight that ties this document to your work</b>Code signing isn't just a distribution chore — it's the <strong>identity system for code on macOS</strong>. Every security decision (can this XPC client talk to my root helper? should I allow this process to exec? which app gets Full Disk Access?) is ultimately answered by "what signature does this code carry?" That's why an endpoint engineer needs this material cold.</div>
+</section>
+
+
+<!-- ================= 14 ================= -->
+<section class="chapter" id="pitfalls">
+<h2>Chapter 14</h2>
+<div class="chapter-title">Common pitfalls</div>
+<div class="chapter-tag">The failures you'll actually hit — and the one-line cause of each.</div>
+
+<table>
+<tr><th>Symptom</th><th>Real cause</th><th>Fix</th></tr>
+<tr><td>"App is damaged"</td><td>Invalid signature or not notarized (rarely actual damage)</td><td><code>codesign --verify</code> then <code>spctl -a -vvv</code></td></tr>
+<tr><td>Works locally, fails for users</td><td>Local build has no quarantine flag, so Gatekeeper never checks it</td><td>Test the <em>downloaded</em> artifact, or set the xattr manually</td></tr>
+<tr><td>Outer signature invalid</td><td>Signed a nested framework <em>after</em> the app bundle</td><td>Sign inside-out (Ch 7)</td></tr>
+<tr><td>Notarization rejected</td><td>Missing Hardened Runtime, no timestamp, or an unsigned nested binary</td><td><code>notarytool log</code> names the exact file</td></tr>
+<tr><td><code>productsign</code> fails</td><td>Used the Application cert on a .pkg</td><td>Use Developer ID <strong>Installer</strong></td></tr>
+<tr><td>Ticket not found offline</td><td>Notarized but never stapled</td><td><code>xcrun stapler staple</code></td></tr>
+<tr><td>Modifying app after notarization</td><td>Any change breaks the CDHash → ticket no longer matches</td><td>Never touch the artifact post-notarization; re-notarize instead</td></tr>
+<tr><td>TCC permissions reset after update</td><td>Signing identity changed</td><td>Keep a stable signing identity; use PPPC profiles for fleets</td></tr>
+<tr><td>App won't run after cert expiry</td><td>Signed without <code>--timestamp</code></td><td>Always pass <code>--timestamp</code></td></tr>
+<tr><td>Used <code>codesign --deep</code></td><td>Applies one entitlement set to all nested code</td><td>Sign each component explicitly</td></tr>
+</table>
+
+<div class="note gotcha"><b>The single most instructive one</b><strong>Never modify the artifact after notarization.</strong> Rebuilding a zip, touching a file, or re-compressing changes the CDHash, and the ticket — which references the old CDHash — no longer applies. Teams lose hours to this. Notarize the <em>final</em> artifact, staple it, and ship exactly that file.</div>
+</section>
+
+
+<!-- ================= 15 ================= -->
+<section class="chapter" id="interview">
+<h2>Chapter 15</h2>
+<div class="chapter-title">Interview question bank</div>
+<div class="chapter-tag">Everything above, as the questions you'll be asked. Commit first, then caveat.</div>
+
+<details class="qa"><summary class="q">Explain the difference between code signing, notarization, and Gatekeeper.</summary>
+<div class="a"><p><strong>Commit:</strong> They answer three different questions. Code signing is done by me at build time and proves who built the app and that it hasn't been tampered with. Notarization is done by Apple — I upload the signed app, Apple scans it for malware and issues a ticket for that exact build. Gatekeeper runs on the user's Mac at first launch of a downloaded app and verifies both: valid signature, valid notarization ticket.</p>
+<p><strong>Nuance:</strong> the ordering is forced — signing must precede notarization, notarization requires the Hardened Runtime and a secure timestamp, and you staple the resulting ticket so Gatekeeper can verify offline. People conflate the three, but each is a distinct check performed by a different party at a different time.</p></div></details>
+
+<details class="qa"><summary class="q">Walk me through shipping a signed, notarized Mac app.</summary>
+<div class="a"><p><strong>Commit:</strong> Build, then sign inside-out — embedded frameworks and helpers first with their own entitlements, then the main bundle — using a Developer ID Application certificate with <code>--options runtime</code> and <code>--timestamp</code>. Verify locally with <code>codesign --verify --deep --strict</code>. Package with <code>pkgbuild</code> and <code>productbuild</code>, sign the pkg with the Developer ID <em>Installer</em> cert via <code>productsign</code>. Submit to <code>notarytool</code> and wait, then <code>stapler staple</code> the ticket, and finally confirm with <code>spctl -a -vvv</code>.</p>
+<p><strong>Nuance:</strong> the order isn't arbitrary — the outer signature seals inner contents so nested code must be signed first; notarization requires an already-signed artifact with Hardened Runtime and a timestamp; stapling needs a ticket to exist. And nothing may touch the artifact after notarization, since any byte change alters the CDHash and orphans the ticket.</p></div></details>
+
+<details class="qa"><summary class="q">What is the quarantine flag and why does it matter?</summary>
+<div class="a"><p><strong>Commit:</strong> It's an extended attribute, <code>com.apple.quarantine</code>, that browsers and other apps attach to files downloaded from the internet. Gatekeeper's checks trigger on quarantined files at first launch — that's how macOS distinguishes something that came from outside from something you built locally.</p>
+<p><strong>Nuance:</strong> this explains the most common confusion in Mac distribution — an app runs fine on the developer's machine because the local build has no quarantine flag, so Gatekeeper never inspects it, but the downloaded copy is blocked. To reproduce a user's experience I test the actual downloaded artifact, or set the attribute manually with <code>xattr</code>.</p></div></details>
+
+<details class="qa"><summary class="q">Why is the Hardened Runtime required for notarization?</summary>
+<div class="a"><p><strong>Commit:</strong> Because Apple wants notarized software to be resistant to tampering at runtime, not just at install. The Hardened Runtime blocks code injection, <code>DYLD_INSERT_LIBRARIES</code>, unsigned executable memory, and debugger attachment — so a notarized app can't be easily hijacked into running malicious code after Apple scanned it.</p>
+<p><strong>Nuance:</strong> without it, a scan at notarization time would prove little, since an attacker could inject code into the running process afterwards. If my app legitimately needs one of those behaviors — JIT for a runtime, or loading third-party plugins — I declare a specific exception entitlement, which is sealed into the signature and visible to Apple during notarization.</p></div></details>
+
+<details class="qa"><summary class="q">How would you verify that another running process is trustworthy?</summary>
+<div class="a"><p><strong>Commit:</strong> I'd verify its code signature against a requirement string pinning my Team ID and signing identifier — using its kernel-provided audit token to build a <code>SecCode</code> and calling <code>SecCodeCheckValidity</code>. On macOS 13+ for XPC specifically, <code>setCodeSigningRequirement</code> does this in one line.</p>
+<p><strong>Nuance:</strong> I never trust the PID, because PIDs are recycled — a malicious process can inherit one I previously trusted. The audit token is kernel-verified and unforgeable. This is the same identity mechanism Endpoint Security uses when it reports each process's Team ID, signing ID, and CDHash, which is what makes code signing the real identity system for code on macOS.</p></div></details>
+
+<details class="qa"><summary class="q">What happens if Apple revokes your Developer ID certificate?</summary>
+<div class="a"><p><strong>Commit:</strong> Every app signed with it stops passing Gatekeeper — retroactively, across all users. Revocation is checked at launch, so previously working apps get blocked. It's the nuclear option Apple uses when a certificate has been used to sign malware.</p>
+<p><strong>Nuance:</strong> that's why signing certificates and private keys are guarded like production secrets — kept in a locked keychain on a dedicated build machine, never in a repo. It's also an argument for stable, well-controlled CI signing rather than developers signing release builds from their laptops.</p></div></details>
+
+<details class="qa"><summary class="q">What's a CDHash, and why not just identify a binary by its path?</summary>
+<div class="a"><p><strong>Commit:</strong> The CDHash is the hash of the Code Directory — covering the binary's identifier, Team ID, page hashes, and entitlements — so it's an unforgeable fingerprint of one exact build. A path is just a string: anyone can name a malicious binary anything and put it anywhere, so path-based identity is meaningless for security decisions.</p>
+<p><strong>Nuance:</strong> in an Endpoint Security agent, the CDHash is what I key verdict caches on, because the kernel hands it to me per process and it can't be spoofed. That lets me answer an authorization event from memory within its deadline rather than re-evaluating the signature each time.</p></div></details>
+
+<h3>The 60-second summary to have ready</h3>
+<p><em>"Code signing hashes the app and signs those hashes with my Developer ID private key, sealing in the Team ID and entitlements — that gives integrity and identity, and the CDHash uniquely fingerprints the build. Notarization is Apple's automated malware scan of that signed app; it requires the Hardened Runtime and a secure timestamp, and produces a ticket which I staple to the artifact so it verifies offline. Gatekeeper is the check on the user's Mac at first launch of any file carrying the quarantine flag — it validates the signature, the certificate's revocation status, and the notarization ticket. Signing says who made it, notarization says Apple scanned it, Gatekeeper decides whether it runs."</em></p>
+
+<h3>2-day plan to own this</h3>
+<table>
+<tr><th>Day</th><th>Do</th><th>Ready when…</th></tr>
+<tr><td>1</td><td>Read Ch 1–7. Sign a toy app with entitlements and Hardened Runtime; run <code>codesign -dvvv</code> and read every line of output.</td><td>You can explain CDHash, entitlements sealing, and inside-out signing without notes.</td></tr>
+<tr><td>2</td><td>Read Ch 8–15. Notarize and staple the toy app; break it on purpose (remove the timestamp, modify a file post-notarization) and watch each failure mode.</td><td>You can recite the pipeline with its dependency reasons and debug any failure with the four commands.</td></tr>
+</table>
+
+<div class="note key"><b>The framing that lands</b>Don't present this as build trivia. Present it as <strong>the identity system for code on macOS</strong> — the thing that lets a privileged helper decide who may talk to it, lets an ES agent decide what may execute, and lets MDM grant an agent Full Disk Access without a prompt. That's the level this JD is hiring for.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

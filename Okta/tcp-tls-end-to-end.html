@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TCP &amp; TLS — an end-to-end connection</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;
+  --tcp:#1c4f7c;--tcpT:#e3edf5;
+  --tls:#6b3fa0;--tlsT:#eee7f7;
+  --go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;
+  --stop:#a03a2a;--stopT:#f9e7e2;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--tcp),var(--tls));z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:280px;flex:0 0 280px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#0f1418;color:#c5ccd7;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#848fa2;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#848fa2;margin:15px 4px 6px;border-top:1px solid #212a30;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#5f6a7d;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a8b0be;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#6c7789;min-width:20px}
+  nav a:hover{background:#182029;color:#fff}nav a.active{background:var(--tcp);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:846px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tls);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--tcp)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.3px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .tc{border-left-color:var(--tcp);background:var(--tcpT)}.tc .l{color:var(--tcp)}
+  .tl{border-left-color:var(--tls);background:var(--tlsT)}.tl .l{color:var(--tls)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.7px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.7px;color:var(--tcp)}
+
+  .stage{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:18px 16px 14px;margin:18px 0}
+  .stage .ttl{font-family:'Sora';font-weight:700;font-size:14.5px;margin-bottom:4px}
+  .stage .sub{font-size:13px;color:var(--faint);margin-bottom:14px}
+  .ctrls{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .btn{font-family:'Inter';font-size:13px;font-weight:500;padding:6px 14px;border-radius:7px;border:1px solid var(--lineS);background:var(--surf2);color:var(--ink);cursor:pointer}
+  .btn:hover{background:var(--line)}
+  .btn.pri{background:var(--tcp);color:#fff;border-color:var(--tcp)}
+  .btn.pri:hover{filter:brightness(1.12)}
+  .btn.tlsb{background:var(--tls);border-color:var(--tls);color:#fff}
+  .btn:disabled{opacity:.4;cursor:default}
+  .narr{font-size:13.4px;color:var(--soft);margin-left:auto;text-align:right;max-width:56%;line-height:1.45}
+  svg .lbl{font-family:'Inter';font-size:11px;fill:var(--soft)}
+  svg .lblb{font-family:'Sora';font-size:12px;font-weight:700;fill:var(--ink)}
+  svg .mono{font-family:'JetBrains Mono';font-size:10px;fill:var(--faint)}
+  svg .pkt{font-family:'JetBrains Mono';font-size:10.5px;font-weight:500}
+  .fade{opacity:0;transition:opacity .4s ease}
+  .fade.on{opacity:1}
+  .mv{transition:transform 1s cubic-bezier(.4,0,.2,1), opacity .35s ease}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}.narr{max-width:100%;text-align:left;margin-left:0;margin-top:8px}}
+  @media (prefers-reduced-motion:reduce){.mv,.fade{transition:none}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">TCP &amp; TLS</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">TCP &amp; TLS<span class="s">what actually happens when<br>you open an https:// URL</span></div>
+  <div class="ct">14 sections · 5 animations</div>
+  <nav id="toc">
+    <div class="grp">Setting up</div>
+    <a href="#overview"><span class="n">01</span><span>The whole journey</span></a>
+    <a href="#stack"><span class="n">02</span><span>The layers</span></a>
+    <a href="#dns"><span class="n">03</span><span>DNS resolution</span></a>
+    <div class="grp">TCP</div>
+    <a href="#tcp"><span class="n">04</span><span>What TCP gives you</span></a>
+    <a href="#handshake"><span class="n">05</span><span>Three-way handshake ▶</span></a>
+    <a href="#reliable"><span class="n">06</span><span>Reliability &amp; flow control</span></a>
+    <div class="grp">TLS</div>
+    <a href="#tlswhy"><span class="n">07</span><span>What TLS adds</span></a>
+    <a href="#tls13"><span class="n">08</span><span>TLS 1.3 handshake ▶</span></a>
+    <a href="#certs"><span class="n">09</span><span>Certificate validation ▶</span></a>
+    <a href="#keys"><span class="n">10</span><span>Key derivation</span></a>
+    <div class="grp">Live &amp; closing</div>
+    <a href="#data"><span class="n">11</span><span>Sending data ▶</span></a>
+    <a href="#close"><span class="n">12</span><span>Teardown ▶</span></a>
+    <a href="#failures"><span class="n">13</span><span>Failure modes</span></a>
+    <a href="#qa"><span class="n">14</span><span>Interview answers</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">End to end · DNS → TCP → TLS → data → teardown</p>
+  <h1>What actually happens when you open an https:// URL.</h1>
+  <p class="led">Every layer, in order, with animated packet flows. By the end you should be able to narrate a connection from a cold DNS cache to the encrypted first byte of HTML — and explain what breaks at each step.</p>
+</header>
+
+<!-- 01 -->
+<section id="overview">
+  <div class="sn">01</div>
+  <h2>The whole journey</h2>
+  <p class="ss">Five phases. Everything in this document expands one of them.</p>
+
+  <div class="stage">
+    <div class="ttl">The complete sequence</div>
+    <div class="sub">Roughly what each phase costs on a typical connection with ~30 ms round-trip time.</div>
+    <svg viewBox="0 0 700 200" width="100%">
+      <g><rect x="14" y="60" width="118" height="52" rx="9" fill="var(--warnT)" stroke="var(--warn)" stroke-width="1.5"/>
+        <text class="lblb" x="73" y="80" text-anchor="middle">1 · DNS</text>
+        <text class="lbl" x="73" y="97" text-anchor="middle">name → IP</text>
+        <text class="mono" x="73" y="130" text-anchor="middle">0–100 ms</text></g>
+      <path d="M136 86 L152 86" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar)"/>
+      <g><rect x="156" y="60" width="118" height="52" rx="9" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.5"/>
+        <text class="lblb" x="215" y="80" text-anchor="middle">2 · TCP</text>
+        <text class="lbl" x="215" y="97" text-anchor="middle">3-way handshake</text>
+        <text class="mono" x="215" y="130" text-anchor="middle">1 RTT ≈ 30 ms</text></g>
+      <path d="M278 86 L294 86" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar)"/>
+      <g><rect x="298" y="60" width="118" height="52" rx="9" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.5"/>
+        <text class="lblb" x="357" y="80" text-anchor="middle">3 · TLS</text>
+        <text class="lbl" x="357" y="97" text-anchor="middle">handshake</text>
+        <text class="mono" x="357" y="130" text-anchor="middle">1 RTT (TLS 1.3)</text></g>
+      <path d="M420 86 L436 86" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar)"/>
+      <g><rect x="440" y="60" width="118" height="52" rx="9" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="lblb" x="499" y="80" text-anchor="middle">4 · Data</text>
+        <text class="lbl" x="499" y="97" text-anchor="middle">HTTP over TLS</text>
+        <text class="mono" x="499" y="130" text-anchor="middle">1 RTT + transfer</text></g>
+      <path d="M562 86 L578 86" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar)"/>
+      <g><rect x="582" y="60" width="104" height="52" rx="9" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.5"/>
+        <text class="lblb" x="634" y="80" text-anchor="middle">5 · Close</text>
+        <text class="lbl" x="634" y="97" text-anchor="middle">FIN / RST</text></g>
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--faint)" stroke-width="1.5"/></marker></defs>
+      <text class="mono" x="350" y="172" text-anchor="middle" fill="var(--soft)">Cold connection to first byte of HTML: roughly 3 round trips + DNS</text>
+    </svg>
+  </div>
+
+  <div class="bx go"><span class="l">The framing that makes this stick</span>
+    <p>Each layer solves exactly one problem the layer below doesn't. <strong>IP</strong> can deliver a packet somewhere but may lose, duplicate, or reorder it. <strong>TCP</strong> turns that into a reliable, ordered byte stream — but in plaintext, to whoever happens to answer. <strong>TLS</strong> adds confidentiality, integrity, and proof of identity. <strong>HTTP</strong> then defines what the bytes mean.</p></div>
+</section>
+
+<!-- 02 -->
+<section id="stack">
+  <div class="sn">02</div>
+  <h2>The layers</h2>
+  <p class="ss">Where TLS actually sits, and why that placement matters.</p>
+
+  <div class="stage">
+    <div class="ttl">Encapsulation</div>
+    <div class="sub">Your data gets wrapped by each layer on the way down, unwrapped on the way up.</div>
+    <svg viewBox="0 0 700 250" width="100%">
+      <rect x="60" y="14" width="580" height="34" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+      <text class="lblb" x="350" y="36" text-anchor="middle">HTTP — GET /index.html</text>
+
+      <rect x="90" y="58" width="520" height="34" rx="7" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.5"/>
+      <text class="lblb" x="350" y="80" text-anchor="middle">TLS record — encrypted + authenticated</text>
+
+      <rect x="120" y="102" width="460" height="34" rx="7" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.5"/>
+      <text class="lblb" x="350" y="124" text-anchor="middle">TCP segment — ports, seq, ack, flags</text>
+
+      <rect x="150" y="146" width="400" height="34" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.5"/>
+      <text class="lblb" x="350" y="168" text-anchor="middle">IP packet — source &amp; destination address</text>
+
+      <rect x="180" y="190" width="340" height="34" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.5"/>
+      <text class="lblb" x="350" y="212" text-anchor="middle">Ethernet / Wi-Fi frame — MAC addresses</text>
+
+      <text class="mono" x="352" y="242" text-anchor="middle">each layer adds a header; the payload below is opaque to it</text>
+    </svg>
+  </div>
+
+  <div class="bx tl"><span class="l">Why TLS sits above TCP</span>
+    <p>TLS assumes a <strong>reliable, ordered byte stream</strong> — it needs its records to arrive intact and in sequence, because decryption and integrity checking depend on order. TCP provides exactly that, so TLS doesn't have to reimplement retransmission or sequencing. The cost is layering: a lost TCP packet stalls the TLS stream even if later data has arrived, which is head-of-line blocking.</p>
+    <p style="margin-top:8px">This is precisely what <strong>QUIC</strong> changes — it runs over UDP and integrates the transport with the crypto, so a lost packet only blocks its own stream, and connection setup takes fewer round trips. HTTP/3 is HTTP over QUIC.</p></div>
+
+  <h3>What an observer sees at each layer</h3>
+  <table class="tb">
+    <tr><th>Visible to an eavesdropper</th><th>Hidden by TLS</th></tr>
+    <tr><td>Your IP and the server's IP</td><td>The URL path and query string</td></tr>
+    <tr><td>Port numbers (443 → it's HTTPS)</td><td>Headers, cookies, tokens</td></tr>
+    <tr><td>Packet timing and sizes</td><td>Request and response bodies</td></tr>
+    <tr><td>The hostname, via SNI or DNS (unless ECH/DoH)</td><td>The certificate itself, in TLS 1.3</td></tr>
+  </table>
+  <p>Worth knowing: <strong>TLS hides content, not metadata.</strong> Traffic analysis on sizes and timing can reveal a surprising amount even without decryption.</p>
+</section>
+
+<!-- 03 -->
+<section id="dns">
+  <div class="sn">03</div>
+  <h2>DNS resolution — before any connection exists</h2>
+  <p class="ss">You typed a name. TCP needs an address.</p>
+
+  <h3>The lookup chain</h3>
+  <ol>
+    <li><strong>Browser cache</strong> → <strong>OS cache</strong> → <strong>hosts file</strong> — all local, microseconds.</li>
+    <li><strong>Recursive resolver</strong> (your ISP, or 1.1.1.1 / 8.8.8.8) — if it has the answer cached, you're done in one round trip.</li>
+    <li>Otherwise the resolver walks the hierarchy: <strong>root</strong> servers → <strong>TLD</strong> servers (.com) → <strong>authoritative</strong> nameserver for the domain.</li>
+    <li>The answer comes back with a <strong>TTL</strong> and is cached at every level on the way.</li>
+  </ol>
+
+  <div class="bx wn"><span class="l">Why it matters operationally</span>
+    <p>A cold DNS lookup can add 20–100 ms before a single packet reaches the server. TTLs control how long stale answers persist — which is why a DNS-based failover is only as fast as the TTL you set <em>before</em> the incident. And DNS is traditionally <strong>unencrypted UDP</strong>, so it leaks every hostname you visit; DoH and DoT fix that, and <strong>Encrypted Client Hello</strong> closes the matching leak in TLS's SNI field.</p></div>
+
+  <p>Modern browsers also run <strong>Happy Eyeballs</strong> — resolving both A (IPv4) and AAAA (IPv6) records and racing connection attempts, so a broken IPv6 path doesn't stall the page.</p>
+</section>
+
+<!-- 04 -->
+<section id="tcp">
+  <div class="sn">04</div>
+  <h2>What TCP gives you</h2>
+  <p class="ss">IP delivers packets unreliably. TCP builds a reliable stream on top.</p>
+
+  <table class="tb">
+    <tr><th>Guarantee</th><th>Mechanism</th></tr>
+    <tr><td>Delivery</td><td>Acknowledgements plus retransmission on timeout or duplicate ACKs</td></tr>
+    <tr><td>Ordering</td><td>Sequence numbers; the receiver buffers and reorders</td></tr>
+    <tr><td>No duplicates</td><td>Sequence numbers let the receiver discard repeats</td></tr>
+    <tr><td>Flow control</td><td>Receive window — don't overwhelm a slow receiver</td></tr>
+    <tr><td>Congestion control</td><td>Congestion window — don't overwhelm the network</td></tr>
+    <tr><td>Integrity (weak)</td><td>16-bit checksum — catches corruption, not tampering</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">What TCP does NOT give you</span>
+    <p><strong>No confidentiality</strong> — every byte is readable by anyone on the path. <strong>No authentication</strong> — you're connected to whatever answered at that IP, which may not be who you intended. <strong>No real integrity</strong> — the checksum catches accidental corruption but an attacker can recompute it trivially. Those three gaps are precisely what TLS fills.</p></div>
+
+  <h3>The header fields that matter</h3>
+  <table class="tb">
+    <tr><th>Field</th><th>Purpose</th></tr>
+    <tr><td>Source / dest port</td><td>Which process on each machine. 443 = HTTPS by convention.</td></tr>
+    <tr><td>Sequence number</td><td>Position of this segment's first byte in the stream</td></tr>
+    <tr><td>Ack number</td><td>Next byte expected — implicitly acknowledges everything before it</td></tr>
+    <tr><td>Flags</td><td><code>SYN</code> synchronise · <code>ACK</code> acknowledge · <code>FIN</code> finish · <code>RST</code> reset · <code>PSH</code> push</td></tr>
+    <tr><td>Window</td><td>How many more bytes the receiver can accept right now</td></tr>
+  </table>
+  <p>A connection is identified by the <strong>four-tuple</strong>: source IP, source port, destination IP, destination port. That's why one client can hold many simultaneous connections to the same server — each gets a different source port.</p>
+</section>
+
+<!-- 05 -->
+<section id="handshake">
+  <div class="sn">05</div>
+  <h2>The TCP three-way handshake</h2>
+  <p class="ss">Before any data flows, both sides must agree they're connected and synchronise sequence numbers.</p>
+
+  <div class="stage">
+    <div class="ttl">SYN → SYN-ACK → ACK</div>
+    <div class="sub">Step through it. Watch the connection state change on each side.</div>
+    <svg id="h1" viewBox="0 0 700 300" width="100%">
+      <text class="lblb" x="90" y="24" text-anchor="middle">Client</text>
+      <text class="lblb" x="610" y="24" text-anchor="middle">Server</text>
+      <line x1="90" y1="34" x2="90" y2="272" stroke="var(--lineS)" stroke-width="1.5"/>
+      <line x1="610" y1="34" x2="610" y2="272" stroke="var(--lineS)" stroke-width="1.5"/>
+
+      <g id="h1cs"><rect x="20" y="44" width="140" height="24" rx="6" fill="var(--surf2)" stroke="var(--lineS)"/>
+        <text class="mono" x="90" y="60" text-anchor="middle" id="h1cst">CLOSED</text></g>
+      <g id="h1ss"><rect x="540" y="44" width="140" height="24" rx="6" fill="var(--surf2)" stroke="var(--lineS)"/>
+        <text class="mono" x="610" y="60" text-anchor="middle" id="h1sst">LISTEN</text></g>
+
+      <g id="h1p1" class="mv fade"><rect x="106" y="92" width="200" height="30" rx="7" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.5"/>
+        <text class="pkt" x="206" y="112" text-anchor="middle" fill="var(--tcp)">SYN · seq=x</text></g>
+      <g id="h1p2" class="mv fade"><rect x="394" y="152" width="200" height="30" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="pkt" x="494" y="172" text-anchor="middle" fill="var(--go)">SYN-ACK · seq=y ack=x+1</text></g>
+      <g id="h1p3" class="mv fade"><rect x="106" y="212" width="200" height="30" rx="7" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.5"/>
+        <text class="pkt" x="206" y="232" text-anchor="middle" fill="var(--tcp)">ACK · ack=y+1</text></g>
+
+      <g id="h1done" class="fade"><rect x="220" y="262" width="260" height="26" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="lbl" x="350" y="280" text-anchor="middle" fill="var(--go)">connection established — data may flow</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="h1go">Step</button>
+      <button class="btn" id="h1rs">Reset</button>
+      <div class="narr" id="h1n">Server is listening on port 443. Client has nothing yet.</div>
+    </div>
+  </div>
+
+  <h3>Why three messages, not two</h3>
+  <p>Each side must know that <em>its own</em> sequence number was received. Message 1 tells the server the client's starting sequence. Message 2 acknowledges it and carries the server's own. Message 3 acknowledges the server's. Two messages would leave the server unsure whether its sequence number arrived.</p>
+
+  <div class="bx tc"><span class="l">Sequence numbers are random, and that's a security control</span>
+    <p>Initial sequence numbers are randomised. If they were predictable, an off-path attacker could forge segments that the receiver would accept as part of an existing connection — <strong>TCP sequence prediction</strong>, a real historical attack. Randomisation means an attacker must be on-path to inject.</p></div>
+
+  <div class="bx st"><span class="l">SYN flood — the classic DoS</span>
+    <p>The server allocates state when it receives a SYN and sends SYN-ACK, then waits. An attacker sends thousands of SYNs from spoofed addresses and never completes the handshake, exhausting the server's half-open connection table. The defence is <strong>SYN cookies</strong>: the server encodes the connection state into its own sequence number and allocates <em>nothing</em> until the final ACK arrives — which proves the client actually received the SYN-ACK, so the address wasn't spoofed.</p></div>
+
+  <h3>The socket API mapping</h3>
+<pre><code><span class="c">// Server                          // Client</span>
+socket()                           socket()
+bind()      <span class="c">// port 443</span>
+listen()    <span class="c">// → LISTEN</span>
+                                   connect()   <span class="c">// → sends SYN, blocks</span>
+accept()    <span class="c">// returns once the</span>
+            <span class="c">// handshake completes</span>
+<span class="c">// Both now have a connected socket; read()/write() move bytes.</span></code></pre>
+</section>
+
+<!-- 06 -->
+<section id="reliable">
+  <div class="sn">06</div>
+  <h2>Reliability, flow control &amp; congestion</h2>
+  <p class="ss">What TCP does continuously once the connection is up.</p>
+
+  <h3>Retransmission</h3>
+  <p>The sender keeps unacknowledged data buffered. If an ACK doesn't arrive within the <strong>retransmission timeout</strong> — derived from measured round-trip time plus variance — it resends. It also resends early on <strong>three duplicate ACKs</strong> (fast retransmit), because repeated ACKs for the same byte mean later segments arrived but one is missing.</p>
+
+  <h3>Flow control vs congestion control — don't conflate them</h3>
+  <table class="tb">
+    <tr><th></th><th>Flow control</th><th>Congestion control</th></tr>
+    <tr><td>Protects</td><td>The <strong>receiver</strong> from being overwhelmed</td><td>The <strong>network</strong> from being overwhelmed</td></tr>
+    <tr><td>Mechanism</td><td>Receive window advertised in every ACK</td><td>Congestion window, inferred from loss and delay</td></tr>
+    <tr><td>Signal</td><td>Explicit — the receiver tells you</td><td>Implicit — you deduce it from packet loss or rising latency</td></tr>
+  </table>
+  <p>The sender may have in flight only the <em>minimum</em> of the two windows.</p>
+
+  <h3>Slow start — why the first bytes are slow</h3>
+  <p>A new connection doesn't know the network's capacity, so it starts conservatively (typically 10 segments, about 14 KB) and <strong>doubles the congestion window every round trip</strong> until it detects loss. That means a fresh connection cannot deliver a large response at full speed immediately — it has to ramp.</p>
+  <div class="bx go"><span class="l">The practical consequence</span>
+    <p>This is why <strong>connection reuse matters so much</strong>. A warm connection has already discovered the network capacity; a cold one restarts slow start. It's the argument for HTTP keep-alive, connection pooling, and HTTP/2 multiplexing — and why your agent's daemon should hold a warm connection rather than opening one per request.</p></div>
+
+  <h3>Head-of-line blocking</h3>
+  <p>Because TCP guarantees ordering, one lost segment stalls delivery of everything behind it — even data that already arrived. With HTTP/2 multiplexing many streams over one TCP connection, a single loss stalls <em>all</em> of them. QUIC solves this by tracking streams independently over UDP.</p>
+</section>
+
+<!-- 07 -->
+<section id="tlswhy">
+  <div class="sn">07</div>
+  <h2>What TLS adds</h2>
+  <p class="ss">Three guarantees, layered onto TCP's reliable stream.</p>
+
+  <table class="tb">
+    <tr><th>Guarantee</th><th>Meaning</th><th>Mechanism</th></tr>
+    <tr><td><strong>Confidentiality</strong></td><td>Observers see only ciphertext</td><td>AES-GCM or ChaCha20-Poly1305 with a session key</td></tr>
+    <tr><td><strong>Integrity</strong></td><td>Tampering is detected</td><td>AEAD authentication tag on every record</td></tr>
+    <tr><td><strong>Authentication</strong></td><td>You're talking to who you think</td><td>X.509 certificate chain signed by a trusted CA</td></tr>
+  </table>
+
+  <div class="bx tl"><span class="l">Authentication is the one people undervalue</span>
+    <p>Encryption without authentication is nearly worthless — you'd have a perfectly private conversation with an attacker. That's why <strong>certificate validation is the load-bearing part of TLS</strong>, and why "disable certificate checking to make it work" is one of the most damaging things a developer can ship.</p></div>
+
+  <h3>The handshake's job, in one line</h3>
+  <p>Prove the server's identity, agree on a shared symmetric key without transmitting it, and negotiate which algorithms to use — all over a channel the attacker can read and modify.</p>
+
+  <div class="bx go"><span class="l">Why both crypto families appear</span>
+    <p>Asymmetric crypto solves identity and key agreement but is far too slow for bulk data and size-limited. Symmetric is fast and unlimited but can't distribute its own key. So TLS uses <strong>asymmetric briefly to authenticate and derive a session key, then symmetric for every byte after</strong>. That's hybrid encryption, and it's the entire architecture of the protocol.</p></div>
+</section>
+
+<!-- 08 -->
+<section id="tls13">
+  <div class="sn">08</div>
+  <h2>The TLS 1.3 handshake</h2>
+  <p class="ss">One round trip. Step through what's in each flight and when encryption begins.</p>
+
+  <div class="stage">
+    <div class="ttl">TLS 1.3 — full handshake</div>
+    <div class="sub">Note the moment the connection goes encrypted: earlier than you might expect.</div>
+    <svg id="h2" viewBox="0 0 700 360" width="100%">
+      <text class="lblb" x="86" y="22" text-anchor="middle">Client</text>
+      <text class="lblb" x="614" y="22" text-anchor="middle">Server</text>
+      <line x1="86" y1="32" x2="86" y2="330" stroke="var(--lineS)" stroke-width="1.5"/>
+      <line x1="614" y1="32" x2="614" y2="330" stroke="var(--lineS)" stroke-width="1.5"/>
+
+      <g id="h2p1" class="mv fade"><rect x="100" y="48" width="256" height="46" rx="7" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.5"/>
+        <text class="pkt" x="228" y="66" text-anchor="middle" fill="var(--tls)">ClientHello</text>
+        <text class="mono" x="228" y="83" text-anchor="middle">versions · ciphers · SNI · key_share</text></g>
+
+      <g id="h2p2" class="mv fade"><rect x="344" y="114" width="256" height="58" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="pkt" x="472" y="132" text-anchor="middle" fill="var(--go)">ServerHello</text>
+        <text class="mono" x="472" y="148" text-anchor="middle">chosen cipher · key_share</text>
+        <text class="mono" x="472" y="163" text-anchor="middle">{Certificate · CertVerify · Finished}</text></g>
+
+      <g id="h2enc" class="fade"><rect x="196" y="186" width="308" height="24" rx="6" fill="var(--warnT)" stroke="var(--warn)" stroke-width="1.2"/>
+        <text class="mono" x="350" y="203" text-anchor="middle" fill="var(--warn)">everything in braces is already encrypted</text></g>
+
+      <g id="h2p3" class="mv fade"><rect x="100" y="226" width="256" height="30" rx="7" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.5"/>
+        <text class="pkt" x="228" y="246" text-anchor="middle" fill="var(--tls)">{Finished}</text></g>
+
+      <g id="h2p4" class="mv fade"><rect x="100" y="272" width="256" height="30" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="pkt" x="228" y="292" text-anchor="middle" fill="var(--go)">{GET /index.html}</text></g>
+
+      <g id="h2done" class="fade"><rect x="200" y="318" width="300" height="26" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="lbl" x="350" y="336" text-anchor="middle" fill="var(--go)">1 round trip — application data flowing</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn tlsb" id="h2go">Step</button>
+      <button class="btn" id="h2rs">Reset</button>
+      <div class="narr" id="h2n">TCP is established. TLS now negotiates on top of it.</div>
+    </div>
+  </div>
+
+  <h3>What's inside each flight</h3>
+  <table class="tb">
+    <tr><th>Message</th><th>Contents &amp; purpose</th></tr>
+    <tr><td><strong>ClientHello</strong></td><td>Supported TLS versions, cipher suites, a random nonce, <strong>SNI</strong> (which hostname — needed because one IP hosts many sites), ALPN (which protocol: h2, http/1.1), and <strong>key_share</strong> — the client's ephemeral public key, sent optimistically to save a round trip.</td></tr>
+    <tr><td><strong>ServerHello</strong></td><td>Chosen version and cipher suite, server random, and the server's <strong>key_share</strong>. After this message both sides can derive keys — so everything following is encrypted.</td></tr>
+    <tr><td><strong>{Certificate}</strong></td><td>The server's certificate chain. <strong>Encrypted in TLS 1.3</strong>, unlike 1.2 where it was sent in the clear.</td></tr>
+    <tr><td><strong>{CertificateVerify}</strong></td><td>A signature over the handshake transcript using the certificate's private key. This is what proves the server actually <em>holds</em> the key, not just a copy of someone's certificate.</td></tr>
+    <tr><td><strong>{Finished}</strong></td><td>A MAC over the entire handshake transcript. If any earlier message was tampered with, this check fails — which is what defeats downgrade attacks.</td></tr>
+  </table>
+
+  <div class="bx tl"><span class="l">The trick that makes it one round trip</span>
+    <p>The client <strong>guesses</strong> which key-exchange group the server will pick and sends its ephemeral public key in the very first message. Usually it guesses right, so the server can immediately compute the shared secret and send its own key share back — key agreement completes in one exchange. If the guess is wrong, the server sends a <code>HelloRetryRequest</code> and you pay an extra round trip. TLS 1.2 always needed two, because key exchange only began after the hellos.</p></div>
+
+  <h3>TLS 1.2 vs 1.3 — what changed and why</h3>
+  <table class="tb">
+    <tr><th>Aspect</th><th>TLS 1.2</th><th>TLS 1.3</th></tr>
+    <tr><td>Round trips</td><td>2</td><td><strong>1</strong> (0 on resumption)</td></tr>
+    <tr><td>Key exchange</td><td>RSA transport or (EC)DHE</td><td><strong>Ephemeral only</strong> — forward secrecy mandatory</td></tr>
+    <tr><td>Cipher suites</td><td>Dozens, many weak</td><td>Five, all AEAD</td></tr>
+    <tr><td>Certificate</td><td>Sent in plaintext</td><td><strong>Encrypted</strong></td></tr>
+    <tr><td>Removed</td><td>—</td><td>RC4, 3DES, CBC modes, MD5/SHA-1 signatures, compression, renegotiation</td></tr>
+  </table>
+  <div class="bx st"><span class="l">Why static RSA key transport had to go</span>
+    <p>In old TLS, the client could encrypt a pre-master secret with the server's RSA public key. Simple — but it means <strong>anyone who later obtains the server's private key can decrypt every recorded session, retroactively</strong>. Removing it makes forward secrecy non-optional, which is the single most important change in TLS 1.3.</p></div>
+
+  <div class="bx wn"><span class="l">0-RTT resumption — and its caveat</span>
+    <p>On a repeat connection the client can send application data in its very first packet using a pre-shared key from the previous session. Zero round trips. The catch: <strong>0-RTT data is replayable</strong> — an attacker can capture and resend it, and the server has no way to tell. So it's only safe for idempotent requests. Naming that trade-off is a strong signal.</p></div>
+</section>
+
+<!-- 09 -->
+<section id="certs">
+  <div class="sn">09</div>
+  <h2>Certificate validation — the part that actually protects you</h2>
+  <p class="ss">Encryption without this is a private conversation with an attacker.</p>
+
+  <div class="stage">
+    <div class="ttl">Walking the chain of trust</div>
+    <div class="sub">Step through what the client checks before it will proceed.</div>
+    <svg id="h3" viewBox="0 0 700 290" width="100%">
+      <g id="h3leaf" class="fade"><rect x="40" y="40" width="170" height="62" rx="9" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="lblb" x="125" y="60" text-anchor="middle">Leaf</text>
+        <text class="mono" x="125" y="77" text-anchor="middle">CN: bank.com</text>
+        <text class="mono" x="125" y="92" text-anchor="middle">SAN: bank.com, *.bank.com</text></g>
+      <path d="M214 71 L262 71" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar3)"/>
+      <text class="mono" x="238" y="62" text-anchor="middle">signed by</text>
+
+      <g id="h3int" class="fade"><rect x="266" y="40" width="170" height="62" rx="9" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.5"/>
+        <text class="lblb" x="351" y="60" text-anchor="middle">Intermediate CA</text>
+        <text class="mono" x="351" y="77" text-anchor="middle">operational</text>
+        <text class="mono" x="351" y="92" text-anchor="middle">revocable</text></g>
+      <path d="M440 71 L488 71" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar3)"/>
+      <text class="mono" x="464" y="62" text-anchor="middle">signed by</text>
+
+      <g id="h3root" class="fade"><rect x="492" y="40" width="170" height="62" rx="9" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.5"/>
+        <text class="lblb" x="577" y="60" text-anchor="middle">Root CA</text>
+        <text class="mono" x="577" y="77" text-anchor="middle">offline, air-gapped</text>
+        <text class="mono" x="577" y="92" text-anchor="middle">in your OS trust store</text></g>
+      <defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--faint)" stroke-width="1.5"/></marker></defs>
+
+      <g id="h3c1" class="fade"><rect x="40" y="126" width="620" height="26" rx="6" fill="var(--surf2)" stroke="var(--lineS)"/>
+        <text class="lbl" x="52" y="144">1 · Signature chain verifies all the way to a root already in the trust store</text></g>
+      <g id="h3c2" class="fade"><rect x="40" y="158" width="620" height="26" rx="6" fill="var(--surf2)" stroke="var(--lineS)"/>
+        <text class="lbl" x="52" y="176">2 · Every certificate is within its validity period — not expired, not future-dated</text></g>
+      <g id="h3c3" class="fade"><rect x="40" y="190" width="620" height="26" rx="6" fill="var(--surf2)" stroke="var(--lineS)"/>
+        <text class="lbl" x="52" y="208">3 · The hostname matches a SAN entry — CN is legacy and no longer used for matching</text></g>
+      <g id="h3c4" class="fade"><rect x="40" y="222" width="620" height="26" rx="6" fill="var(--surf2)" stroke="var(--lineS)"/>
+        <text class="lbl" x="52" y="240">4 · Not revoked — OCSP stapling, CRL, or short-lived certificates</text></g>
+      <g id="h3c5" class="fade"><rect x="40" y="254" width="620" height="26" rx="6" fill="var(--goT)" stroke="var(--go)"/>
+        <text class="lbl" x="52" y="272" fill="var(--go)">5 · CertificateVerify signature proves the server HOLDS the private key — not just a copy of the cert</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn tlsb" id="h3go">Step</button>
+      <button class="btn" id="h3rs">Reset</button>
+      <div class="narr" id="h3n">The server has presented a certificate chain. The client must decide whether to trust it.</div>
+    </div>
+  </div>
+
+  <div class="bx st"><span class="l">Step 5 is the one people miss</span>
+    <p>A certificate is public — anyone can download bank.com's certificate. So presenting it proves nothing. <strong>CertificateVerify</strong> is a signature over the handshake transcript made with the certificate's private key, which only the legitimate server holds. That's what turns "I have a certificate" into "I am the entity this certificate names."</p></div>
+
+  <h3>Revocation — the weakest link</h3>
+  <table class="tb">
+    <tr><th>Method</th><th>Problem</th></tr>
+    <tr><td>CRL</td><td>A list of every revoked certificate — large, slow, often stale</td></tr>
+    <tr><td>OCSP</td><td>A live query per certificate — adds latency, leaks browsing to the CA, and typically <em>fails open</em> if unreachable</td></tr>
+    <tr><td><strong>OCSP stapling</strong></td><td>The server presents a recent signed status itself — fixes latency and privacy. The practical answer.</td></tr>
+    <tr><td><strong>Short-lived certs</strong></td><td>Validity measured in days, so revocation matters less. Increasingly the direction of travel.</td></tr>
+  </table>
+
+  <h3>Pinning &amp; mTLS</h3>
+  <p><strong>Certificate pinning</strong> — trust only a specific certificate or public key rather than any valid chain. It defeats a rogue or compromised CA, which matters for an agent talking to a known backend. The costs are real: rotation must be planned far ahead or you brick clients, and pinning breaks under corporate TLS inspection. Pin an intermediate or include a backup key.</p>
+  <p><strong>mTLS</strong> — the server also requests a client certificate, so both sides authenticate. This is the natural pattern for a device with a hardware-backed key, and the basis of service-to-service auth in zero-trust networks.</p>
+</section>
+
+<!-- 10 -->
+<section id="keys">
+  <div class="sn">10</div>
+  <h2>How the session keys are derived</h2>
+  <p class="ss">No key is ever transmitted. Both sides compute the same values independently.</p>
+
+  <div class="stage">
+    <div class="ttl">From key shares to traffic keys</div>
+    <div class="sub">The pipeline both sides run in parallel.</div>
+    <svg viewBox="0 0 700 240" width="100%">
+      <g><rect x="30" y="24" width="180" height="44" rx="8" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.5"/>
+        <text class="lbl" x="120" y="43" text-anchor="middle">client key_share</text>
+        <text class="mono" x="120" y="59" text-anchor="middle">ephemeral public key</text></g>
+      <g><rect x="490" y="24" width="180" height="44" rx="8" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="lbl" x="580" y="43" text-anchor="middle">server key_share</text>
+        <text class="mono" x="580" y="59" text-anchor="middle">ephemeral public key</text></g>
+      <path d="M210 46 L296 46" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar4)"/>
+      <path d="M490 46 L404 46" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar4)"/>
+      <defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--faint)" stroke-width="1.5"/></marker></defs>
+
+      <g><rect x="250" y="86" width="200" height="40" rx="8" fill="var(--warnT)" stroke="var(--warn)" stroke-width="1.5"/>
+        <text class="lbl" x="350" y="104" text-anchor="middle" fill="var(--warn)">ECDHE shared secret</text>
+        <text class="mono" x="350" y="119" text-anchor="middle">never transmitted</text></g>
+      <path d="M350 126 L350 146" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar4)"/>
+
+      <g><rect x="230" y="150" width="240" height="40" rx="8" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.5"/>
+        <text class="lbl" x="350" y="168" text-anchor="middle" fill="var(--tcp)">HKDF — extract &amp; expand</text>
+        <text class="mono" x="350" y="183" text-anchor="middle">mixed with the handshake transcript</text></g>
+      <path d="M350 190 L350 206" stroke="var(--faint)" stroke-width="1.5" marker-end="url(#ar4)"/>
+
+      <g><rect x="120" y="210" width="180" height="26" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.2"/>
+        <text class="mono" x="210" y="228" text-anchor="middle" fill="var(--go)">client→server traffic key</text></g>
+      <g><rect x="400" y="210" width="180" height="26" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.2"/>
+        <text class="mono" x="490" y="228" text-anchor="middle" fill="var(--go)">server→client traffic key</text></g>
+    </svg>
+  </div>
+
+  <ul>
+    <li><strong>ECDHE</strong> produces a shared secret from the two key shares. Neither side transmits it; both compute it.</li>
+    <li><strong>HKDF</strong> expands that into several distinct keys — separate handshake keys and application keys, and separate keys per direction. Using one key everywhere would be a weakness.</li>
+    <li>The derivation mixes in the <strong>handshake transcript</strong>, so if any handshake message was altered, the two sides derive different keys and the Finished check fails.</li>
+    <li><strong>Key update</strong> lets long-lived connections rotate traffic keys without a new handshake.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">Why forward secrecy falls out of this</span>
+    <p>The key shares are <strong>ephemeral</strong> — generated for this connection and discarded afterwards. The server's certificate private key <em>authenticates</em> the exchange but never <em>encrypts</em> anything. So stealing that long-term key later gives an attacker no way to recover past session keys: the ephemeral keys that produced them no longer exist. Recorded traffic stays unreadable.</p></div>
+</section>
+
+<!-- 11 -->
+<section id="data">
+  <div class="sn">11</div>
+  <h2>Sending data over the established connection</h2>
+  <p class="ss">What happens to a single HTTP request on its way down and back up the stack.</p>
+
+  <div class="stage">
+    <div class="ttl">One request, all the way down and back</div>
+    <div class="sub">Step through the encapsulation and reversal.</div>
+    <svg id="h4" viewBox="0 0 700 300" width="100%">
+      <text class="lblb" x="150" y="20" text-anchor="middle">Client — going down</text>
+      <text class="lblb" x="550" y="20" text-anchor="middle">Server — coming up</text>
+
+      <g id="h4a" class="fade"><rect x="40" y="34" width="220" height="30" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.4"/>
+        <text class="mono" x="150" y="53" text-anchor="middle">GET /index.html HTTP/2</text></g>
+      <g id="h4b" class="fade"><rect x="40" y="74" width="220" height="30" rx="7" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.4"/>
+        <text class="mono" x="150" y="93" text-anchor="middle">TLS: encrypt + auth tag</text></g>
+      <g id="h4c" class="fade"><rect x="40" y="114" width="220" height="30" rx="7" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.4"/>
+        <text class="mono" x="150" y="133" text-anchor="middle">TCP: seq, ack, checksum</text></g>
+      <g id="h4d" class="fade"><rect x="40" y="154" width="220" height="30" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.4"/>
+        <text class="mono" x="150" y="173" text-anchor="middle">IP + Ethernet → the wire</text></g>
+
+      <g id="h4wire" class="fade"><path d="M266 170 Q350 240 434 170" stroke="var(--faint)" stroke-width="1.5" fill="none" stroke-dasharray="4 4"/>
+        <text class="mono" x="350" y="222" text-anchor="middle">across the internet</text></g>
+
+      <g id="h4e" class="fade"><rect x="440" y="154" width="220" height="30" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.4"/>
+        <text class="mono" x="550" y="173" text-anchor="middle">strip frame + IP header</text></g>
+      <g id="h4f" class="fade"><rect x="440" y="114" width="220" height="30" rx="7" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.4"/>
+        <text class="mono" x="550" y="133" text-anchor="middle">TCP: reorder, ack, buffer</text></g>
+      <g id="h4g" class="fade"><rect x="440" y="74" width="220" height="30" rx="7" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.4"/>
+        <text class="mono" x="550" y="93" text-anchor="middle">TLS: verify tag, decrypt</text></g>
+      <g id="h4h" class="fade"><rect x="440" y="34" width="220" height="30" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.4"/>
+        <text class="mono" x="550" y="53" text-anchor="middle">GET /index.html HTTP/2</text></g>
+
+      <g id="h4note" class="fade"><rect x="150" y="256" width="400" height="30" rx="7" fill="var(--warnT)" stroke="var(--warn)" stroke-width="1.2"/>
+        <text class="lbl" x="350" y="276" text-anchor="middle" fill="var(--warn)">verify the tag BEFORE decrypting — never process unauthenticated data</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="h4go">Step</button>
+      <button class="btn" id="h4rs">Reset</button>
+      <div class="narr" id="h4n">The application hands an HTTP request to the TLS layer.</div>
+    </div>
+  </div>
+
+  <h3>TLS records</h3>
+  <p>TLS doesn't encrypt a byte stream continuously — it splits data into <strong>records</strong> (up to 16 KB), each independently encrypted with its own nonce and carrying its own authentication tag. A sequence number is mixed into the nonce, which is what prevents an attacker <strong>reordering or replaying</strong> records even though each is individually valid.</p>
+
+  <div class="bx tl"><span class="l">Record boundaries leak information</span>
+    <p>Sizes and timing are visible even though contents aren't. Traffic analysis on record sizes has been used to infer which page was loaded, or even which characters were typed in an interactive session. TLS 1.3 supports <strong>record padding</strong> to blunt this, though most deployments don't use it aggressively.</p></div>
+
+  <h3>What the application actually experiences</h3>
+<pre><code><span class="c">// Everything above is invisible at this level.</span>
+<span class="k">let</span> (data, response) = <span class="k">try await</span> URLSession.shared.data(from: url)
+
+<span class="c">// URLSession has already: resolved DNS, opened TCP, completed the</span>
+<span class="c">// TLS handshake, validated the certificate chain, and decrypted</span>
+<span class="c">// the response — possibly reusing a pooled warm connection.</span></code></pre>
+  <p>Which is why the settings that matter are the ones controlling that machinery: <code>timeoutIntervalForRequest</code>, <code>waitsForConnectivity</code>, <code>httpMaximumConnectionsPerHost</code>, and a <code>URLSessionDelegate</code> if you need pinning.</p>
+</section>
+
+<!-- 12 -->
+<section id="close">
+  <div class="sn">12</div>
+  <h2>Closing the connection</h2>
+  <p class="ss">Graceful and abrupt, and why one socket state lingers.</p>
+
+  <div class="stage">
+    <div class="ttl">Four-way teardown</div>
+    <div class="sub">TCP connections close in each direction independently.</div>
+    <svg id="h5" viewBox="0 0 700 290" width="100%">
+      <text class="lblb" x="90" y="20" text-anchor="middle">Client</text>
+      <text class="lblb" x="610" y="20" text-anchor="middle">Server</text>
+      <line x1="90" y1="30" x2="90" y2="268" stroke="var(--lineS)" stroke-width="1.5"/>
+      <line x1="610" y1="30" x2="610" y2="268" stroke="var(--lineS)" stroke-width="1.5"/>
+
+      <g id="h5p0" class="mv fade"><rect x="106" y="40" width="200" height="28" rx="7" fill="var(--tlsT)" stroke="var(--tls)" stroke-width="1.4"/>
+        <text class="pkt" x="206" y="59" text-anchor="middle" fill="var(--tls)">TLS close_notify</text></g>
+      <g id="h5p1" class="mv fade"><rect x="106" y="82" width="200" height="28" rx="7" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.4"/>
+        <text class="pkt" x="206" y="101" text-anchor="middle" fill="var(--tcp)">FIN</text></g>
+      <g id="h5p2" class="mv fade"><rect x="394" y="124" width="200" height="28" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.4"/>
+        <text class="pkt" x="494" y="143" text-anchor="middle" fill="var(--go)">ACK</text></g>
+      <g id="h5p3" class="mv fade"><rect x="394" y="166" width="200" height="28" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.4"/>
+        <text class="pkt" x="494" y="185" text-anchor="middle" fill="var(--go)">FIN</text></g>
+      <g id="h5p4" class="mv fade"><rect x="106" y="208" width="200" height="28" rx="7" fill="var(--tcpT)" stroke="var(--tcp)" stroke-width="1.4"/>
+        <text class="pkt" x="206" y="227" text-anchor="middle" fill="var(--tcp)">ACK</text></g>
+      <g id="h5tw" class="fade"><rect x="20" y="246" width="200" height="30" rx="7" fill="var(--warnT)" stroke="var(--warn)" stroke-width="1.4"/>
+        <text class="mono" x="120" y="266" text-anchor="middle" fill="var(--warn)">TIME_WAIT — 2×MSL</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="h5go">Step</button>
+      <button class="btn" id="h5rs">Reset</button>
+      <div class="narr" id="h5n">The client has finished. It closes TLS first, then TCP.</div>
+    </div>
+  </div>
+
+  <h3>Why close_notify matters</h3>
+  <p>TLS sends an explicit <strong><code>close_notify</code></strong> alert before the TCP close. Without it, a receiver can't distinguish a legitimate end-of-data from an attacker cutting the connection early — a <strong>truncation attack</strong>, where the attacker removes the tail of a response and you accept the truncated version as complete.</p>
+
+  <h3>TIME_WAIT — the state everyone asks about</h3>
+  <div class="bx wn"><span class="l">Why it exists</span>
+    <p>The side that closes first waits <strong>2× the maximum segment lifetime</strong> (typically 60 s) before releasing the socket. Two reasons: a delayed duplicate packet from this connection must not be delivered to a <em>new</em> connection reusing the same four-tuple; and if the final ACK is lost, the peer will retransmit its FIN and someone must still be there to answer.</p>
+    <p style="margin-top:8px">The practical consequence: a server that closes many connections accumulates thousands of sockets in TIME_WAIT and can exhaust its port range. Fixes: let the <em>client</em> close where possible, use connection reuse so you close far less often, and tune <code>SO_REUSEADDR</code> / kernel parameters carefully rather than blindly.</p></div>
+
+  <h3>FIN vs RST</h3>
+  <ul>
+    <li><strong>FIN</strong> — graceful. "I have no more data to send," while still able to receive. That's why it's four messages: each direction closes independently.</li>
+    <li><strong>RST</strong> — abrupt. "This connection is dead, discard everything." Sent on error, on connecting to a closed port, or when an application aborts. Any buffered data is lost.</li>
+  </ul>
+</section>
+
+<!-- 13 -->
+<section id="failures">
+  <div class="sn">13</div>
+  <h2>Failure modes &amp; debugging</h2>
+  <p class="ss">Knowing where each failure lives is what makes you fast at diagnosis.</p>
+
+  <table class="tb">
+    <tr><th>Symptom</th><th>Layer</th><th>Likely cause</th></tr>
+    <tr><td>Name not resolved</td><td>DNS</td><td>Wrong record, stale cache, resolver unreachable</td></tr>
+    <tr><td>Connection refused (instant)</td><td>TCP</td><td>RST — nothing listening on that port</td></tr>
+    <tr><td>Connection times out (slow)</td><td>TCP</td><td>Firewall dropping silently, or host unreachable</td></tr>
+    <tr><td>Handshake fails: unknown authority</td><td>TLS</td><td>Missing intermediate, or a private CA not in the trust store</td></tr>
+    <tr><td>Handshake fails: expired</td><td>TLS</td><td>Certificate expired — or the client's clock is wrong</td></tr>
+    <tr><td>Handshake fails: hostname mismatch</td><td>TLS</td><td>SAN doesn't cover the name you connected to</td></tr>
+    <tr><td>Handshake fails: no shared cipher</td><td>TLS</td><td>Client too old, or server hardened past what the client supports</td></tr>
+    <tr><td>Pinning failure after a rotation</td><td>TLS</td><td>Cert rotated without updating pins — self-inflicted outage</td></tr>
+    <tr><td>Works everywhere except corporate network</td><td>TLS</td><td>TLS inspection proxy vs a pinned client</td></tr>
+    <tr><td>Slow first byte, fast afterwards</td><td>TCP</td><td>Slow start on a cold connection; no connection reuse</td></tr>
+    <tr><td>Stalls under packet loss</td><td>TCP</td><td>Head-of-line blocking, retransmission timeouts</td></tr>
+    <tr><td>Port exhaustion on a busy server</td><td>TCP</td><td>TIME_WAIT accumulation; server closing rather than client</td></tr>
+  </table>
+
+  <h3>Tools worth naming</h3>
+<pre><code><span class="c"># Where does the TLS handshake fail, and what chain is served?</span>
+openssl s_client -connect example.com:443 -servername example.com
+
+<span class="c"># Full timing breakdown — DNS, connect, TLS, first byte</span>
+curl -w "dns:%{time_namelookup} conn:%{time_connect} tls:%{time_appconnect} ttfb:%{time_starttransfer}\n" \
+     -o /dev/null -s https://example.com
+
+<span class="c"># Packet level — handshakes are visible even when payloads aren't</span>
+tcpdump -i any -n 'host example.com and port 443'
+
+<span class="c"># macOS: connection states, TIME_WAIT counts</span>
+netstat -an | grep 443 | awk '{print $6}' | sort | uniq -c</code></pre>
+  <div class="bx go"><span class="l">The debugging instinct to state</span>
+    <p>"I isolate the layer first. Does DNS resolve? Does TCP connect — refused instantly is a different problem from timing out. Does the TLS handshake complete, and if not, which check failed? Only then do I look at the application. <code>curl</code>'s timing breakdown gives me all four boundaries in one command, which usually points straight at the layer before I've opened a packet capture."</p></div>
+</section>
+
+<!-- 14 -->
+<section id="qa">
+  <div class="sn">14</div>
+  <h2>Interview answers</h2>
+  <p class="ss">Two or three sentences each, then depth if invited.</p>
+
+  <details class="q" open><summary>Walk me through what happens when I type an https:// URL and press enter.</summary><div class="bod">
+    <p>The browser resolves the hostname to an IP via DNS — checking local caches first, then a recursive resolver that may walk from root to TLD to authoritative servers. Then TCP's three-way handshake: SYN, SYN-ACK, ACK, which synchronises sequence numbers and establishes a reliable ordered byte stream.</p>
+    <p>Then the TLS handshake on top. The client sends a ClientHello with supported ciphers, SNI, and an ephemeral key share; the server replies with its chosen cipher, its own key share, and — already encrypted in TLS 1.3 — its certificate, a signature over the transcript, and Finished. The client validates the chain to a trusted root, checks expiry and hostname, and verifies that signature to confirm the server actually holds the private key. Both sides derive the same session keys via ECDHE and HKDF without transmitting them.</p>
+    <p>From there it's HTTP over symmetric AES-GCM. Roughly three round trips plus DNS to the first byte of HTML.</p></div></details>
+
+  <details class="q"><summary>Why is the TCP handshake three messages rather than two?</summary><div class="bod">
+    <p>Each side needs confirmation that its own sequence number was received. The SYN carries the client's initial sequence; the SYN-ACK acknowledges it and carries the server's; the final ACK acknowledges the server's. With only two messages the server would never know its sequence number arrived. The sequence numbers are randomised, incidentally, because predictable ones historically allowed off-path attackers to inject forged segments.</p></div></details>
+
+  <details class="q"><summary>What does TLS actually give you that TCP doesn't?</summary><div class="bod">
+    <p>Three things. Confidentiality — TCP is entirely plaintext to anyone on the path. Authentication — TCP connects you to whatever answered at that IP, with no proof of identity, whereas TLS validates a certificate chain. And real integrity — TCP's 16-bit checksum catches accidental corruption but an attacker can recompute it, while TLS uses an AEAD authentication tag per record. Of those, authentication is the one people undervalue: encryption without it just means a private conversation with an attacker.</p></div></details>
+
+  <details class="q"><summary>How does TLS 1.3 manage one round trip?</summary><div class="bod">
+    <p>The client guesses which key-exchange group the server will choose and sends its ephemeral public key in the ClientHello. Usually it guesses correctly, so the server can compute the shared secret immediately and send its own key share plus the certificate and Finished in one flight — all encrypted, since keys are derivable after the ServerHello. TLS 1.2 needed two round trips because key exchange only started after the hellos. If the guess is wrong you get a HelloRetryRequest and pay the extra trip.</p></div></details>
+
+  <details class="q"><summary>What is forward secrecy and why did TLS 1.3 mandate it?</summary><div class="bod">
+    <p>Session keys are derived from ephemeral key pairs generated per connection and discarded afterwards, so the server's long-term certificate key authenticates the exchange but never encrypts anything. An attacker who records traffic today and steals that key later still can't decrypt the recordings, because the keys that protected them no longer exist. TLS 1.2 permitted static RSA key transport, where the pre-master secret was encrypted to the server's public key — meaning one stolen key retroactively decrypted every recorded session. Removing that is the most important change in 1.3.</p></div></details>
+
+  <details class="q"><summary>How does certificate validation work?</summary><div class="bod">
+    <p>The client verifies the signature chain from the leaf up through intermediates to a root already in the OS trust store, checks each certificate is within its validity period, checks the hostname matches a SAN entry — CN is legacy — and checks revocation, ideally via OCSP stapling. Then the crucial step people forget: CertificateVerify is a signature over the handshake transcript using the certificate's private key, which proves the server actually holds it rather than just presenting a public certificate anyone could download.</p></div></details>
+
+  <details class="q"><summary>What is TIME_WAIT and why does it exist?</summary><div class="bod">
+    <p>The side that closes first holds the socket for twice the maximum segment lifetime before releasing it. Two reasons: a delayed duplicate from the old connection must not be delivered to a new one reusing the same four-tuple, and if the final ACK is lost the peer retransmits its FIN and someone must still be there to answer. Operationally it means a server that closes many short-lived connections can exhaust its port range, which is an argument for connection reuse and for letting the client close where you can.</p></div></details>
+
+  <details class="q"><summary>What's head-of-line blocking?</summary><div class="bod">
+    <p>TCP guarantees ordered delivery, so a single lost segment stalls everything behind it even though that data already arrived. With HTTP/2 multiplexing many streams over one TCP connection, one loss stalls all of them — you removed application-level blocking but inherited transport-level blocking. QUIC fixes it by running over UDP and tracking streams independently, so a loss only affects its own stream. That's the main motivation for HTTP/3.</p></div></details>
+
+  <details class="q"><summary>How would you debug a TLS handshake failure?</summary><div class="bod">
+    <p>Isolate the layer first — <code>curl</code> with a timing breakdown tells me whether DNS, TCP connect, or TLS is where it stops. If it's TLS, <code>openssl s_client</code> shows the served chain and the exact verification error. The common causes in order: a missing intermediate certificate so the chain can't be built, an expired certificate or a wrong client clock, a hostname not covered by the SAN, no shared cipher because one side is old or the other is hardened, and pinning failures after a rotation. Also worth checking whether a corporate TLS-inspection proxy is in the path, since that breaks pinned clients specifically.</p></div></details>
+
+  <details class="q"><summary>Why is 0-RTT resumption risky?</summary><div class="bod">
+    <p>The client sends application data in its very first packet using a pre-shared key from a previous session, so there's no round trip at all. But that data isn't tied to a fresh handshake exchange, so an attacker who captures it can replay it and the server can't distinguish the replay from the original. It's therefore only safe for idempotent requests — a GET is fine, a POST that transfers money is not. Most implementations restrict which requests may use it.</p></div></details>
+
+  <div class="bx go"><span class="l">The compressed version</span>
+    <p><strong>DNS turns a name into an address. TCP turns unreliable packets into a reliable ordered stream. TLS turns a reliable stream into a private, tamper-evident, authenticated one — using asymmetric crypto briefly to prove identity and agree a key, then symmetric crypto for everything after. HTTP then decides what the bytes mean.</strong></p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  TCP &amp; TLS · DNS → three-way handshake → TLS 1.3 → certificate validation → key derivation → data → teardown.
+</p>
+
+</div></main>
+</div>
+<script>
+(function(){
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=[].slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+
+  function $(i){return document.getElementById(i)}
+  function on(e){e.classList.add('on')} function off(e){e.classList.remove('on')}
+
+  /* ---- 1: TCP handshake ---- */
+  (function(){
+    var p1=$('h1p1'),p2=$('h1p2'),p3=$('h1p3'),done=$('h1done'),
+        cst=$('h1cst'),sst=$('h1sst'),n=$('h1n'),go=$('h1go'),rs=$('h1rs');
+    var s=0;
+    function reset(){s=0;off(p1);off(p2);off(p3);off(done);
+      p1.style.transform='translate(0,0)';p2.style.transform='translate(0,0)';p3.style.transform='translate(0,0)';
+      cst.textContent='CLOSED';sst.textContent='LISTEN';
+      n.textContent='Server is listening on port 443. Client has nothing yet.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(p1);cst.textContent='SYN_SENT';
+        n.textContent='Client sends SYN with a random initial sequence number x. It now waits.';}
+      else if(s===2){p1.style.transform='translate(300px,0)';sst.textContent='SYN_RECEIVED';
+        n.textContent='Server receives it and allocates connection state — this allocation is what a SYN flood abuses.';}
+      else if(s===3){on(p2);
+        n.textContent='Server replies SYN-ACK: its own sequence y, plus ack=x+1 confirming it got the client\u2019s.';}
+      else if(s===4){p2.style.transform='translate(-300px,0)';cst.textContent='ESTABLISHED';
+        n.textContent='Client receives it. From the client\u2019s point of view the connection is now open.';}
+      else if(s===5){on(p3);
+        n.textContent='Client sends the final ACK confirming the server\u2019s sequence number.';}
+      else if(s===6){p3.style.transform='translate(300px,0)';sst.textContent='ESTABLISHED';on(done);
+        n.textContent='Both sides established after one and a half round trips. Data — including the TLS ClientHello — can now flow.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* ---- 2: TLS handshake ---- */
+  (function(){
+    var p1=$('h2p1'),p2=$('h2p2'),enc=$('h2enc'),p3=$('h2p3'),p4=$('h2p4'),done=$('h2done'),
+        n=$('h2n'),go=$('h2go'),rs=$('h2rs');
+    var s=0;
+    function reset(){s=0;[p1,p2,enc,p3,p4,done].forEach(off);
+      p1.style.transform='translate(0,0)';p2.style.transform='translate(0,0)';
+      p3.style.transform='translate(0,0)';p4.style.transform='translate(0,0)';
+      n.textContent='TCP is established. TLS now negotiates on top of it.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(p1);
+        n.textContent='ClientHello: supported versions and ciphers, SNI naming the host, and a key_share — the client\u2019s ephemeral public key, sent optimistically to save a round trip.';}
+      else if(s===2){p1.style.transform='translate(258px,0)';
+        n.textContent='Server picks a cipher suite and now has both key shares — so it can already compute the shared secret.';}
+      else if(s===3){on(p2);on(enc);
+        n.textContent='ServerHello with its key share, then — already encrypted — its certificate, CertificateVerify, and Finished.';}
+      else if(s===4){p2.style.transform='translate(-258px,0)';
+        n.textContent='Client validates the chain, checks expiry and hostname, and verifies CertificateVerify to confirm the server holds the private key.';}
+      else if(s===5){on(p3);p3.style.transform='translate(258px,0)';
+        n.textContent='Client sends its own Finished — a MAC over the whole transcript, which is what defeats any tampering or downgrade attempt.';}
+      else if(s===6){on(p4);p4.style.transform='translate(258px,0)';on(done);
+        n.textContent='Application data flows immediately. One round trip since TCP was up — and every byte from here is AES-GCM.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* ---- 3: cert validation ---- */
+  (function(){
+    var leaf=$('h3leaf'),int_=$('h3int'),root=$('h3root'),
+        c=[$('h3c1'),$('h3c2'),$('h3c3'),$('h3c4'),$('h3c5')],n=$('h3n'),go=$('h3go'),rs=$('h3rs');
+    var s=0;
+    function reset(){s=0;[leaf,int_,root].concat(c).forEach(off);
+      n.textContent='The server has presented a certificate chain. The client must decide whether to trust it.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(leaf);n.textContent='The leaf certificate names bank.com and carries its public key.';}
+      else if(s===2){on(int_);n.textContent='It was signed by an intermediate CA — operational, and revocable if compromised.';}
+      else if(s===3){on(root);n.textContent='Which was signed by a root CA whose certificate is already in your OS trust store. Roots stay offline; intermediates do the daily signing.';}
+      else if(s===4){on(c[0]);on(c[1]);n.textContent='Check one: the signature chain verifies to a trusted root. Check two: nothing has expired.';}
+      else if(s===5){on(c[2]);on(c[3]);n.textContent='Check three: the hostname matches a SAN entry. Check four: not revoked — ideally via OCSP stapling.';}
+      else if(s===6){on(c[4]);n.textContent='And the step people forget: a certificate is public, so presenting one proves nothing. CertificateVerify signs the transcript with the private key — that is what proves identity.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* ---- 4: data path ---- */
+  (function(){
+    var a=$('h4a'),b=$('h4b'),c=$('h4c'),d=$('h4d'),w=$('h4wire'),
+        e=$('h4e'),f=$('h4f'),g=$('h4g'),h=$('h4h'),note=$('h4note'),
+        n=$('h4n'),go=$('h4go'),rs=$('h4rs');
+    var s=0,all=[a,b,c,d,w,e,f,g,h,note];
+    function reset(){s=0;all.forEach(off);
+      n.textContent='The application hands an HTTP request to the TLS layer.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(a);n.textContent='HTTP request in plaintext — this is all the application ever sees.';}
+      else if(s===2){on(b);n.textContent='TLS splits it into records, encrypts each with the session key, and appends an authentication tag. A sequence number goes into the nonce, which prevents reordering or replay.';}
+      else if(s===3){on(c);n.textContent='TCP adds ports, sequence and ack numbers, and a checksum — and keeps a copy buffered until acknowledged.';}
+      else if(s===4){on(d);on(w);n.textContent='IP and link headers get added and it goes onto the wire, possibly split across several packets.';}
+      else if(s===5){on(e);on(f);n.textContent='At the server, headers are stripped and TCP reassembles the byte stream in order, acknowledging as it goes.';}
+      else if(s===6){on(g);on(note);n.textContent='TLS verifies the authentication tag FIRST, then decrypts. Verifying before decrypting matters — you never want to process data you have not authenticated.';}
+      else if(s===7){on(h);n.textContent='The server application receives exactly the bytes the client sent. Every layer in between was invisible to both.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* ---- 5: teardown ---- */
+  (function(){
+    var p0=$('h5p0'),p1=$('h5p1'),p2=$('h5p2'),p3=$('h5p3'),p4=$('h5p4'),tw=$('h5tw'),
+        n=$('h5n'),go=$('h5go'),rs=$('h5rs');
+    var s=0;
+    function reset(){s=0;[p0,p1,p2,p3,p4,tw].forEach(off);
+      [p0,p1,p2,p3,p4].forEach(function(p){p.style.transform='translate(0,0)'});
+      n.textContent='The client has finished. It closes TLS first, then TCP.';
+      go.disabled=false;go.textContent='Step';}
+    function next(){s++;
+      if(s===1){on(p0);p0.style.transform='translate(300px,0)';
+        n.textContent='TLS close_notify — an explicit end-of-data marker. Without it, a receiver cannot tell a clean finish from an attacker truncating the response.';}
+      else if(s===2){on(p1);p1.style.transform='translate(300px,0)';
+        n.textContent='FIN: "I have no more data to send." The client can still receive.';}
+      else if(s===3){on(p2);p2.style.transform='translate(-300px,0)';
+        n.textContent='Server acknowledges. This direction is now closed, but the server may still be sending.';}
+      else if(s===4){on(p3);p3.style.transform='translate(-300px,0)';
+        n.textContent='When the server is done it sends its own FIN. Each direction closes independently — which is why teardown takes four messages.';}
+      else if(s===5){on(p4);p4.style.transform='translate(300px,0)';on(tw);
+        n.textContent='Client ACKs, then holds the socket in TIME_WAIT for twice the maximum segment lifetime — so a stray duplicate cannot land in a new connection reusing the same four-tuple, and so a retransmitted FIN still gets answered.';
+        go.disabled=true;go.textContent='Complete';}
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+})();
+</script>
+</body>
+</html>

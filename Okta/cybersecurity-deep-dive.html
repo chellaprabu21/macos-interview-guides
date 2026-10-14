@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cybersecurity — deep dive for interviews</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;--brand:#1c4f7c;--brandT:#e3edf5;--go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;--stop:#a03a2a;--stopT:#f9e7e2;--pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:var(--stop);z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:280px;flex:0 0 280px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#151016;color:#d3c8cc;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#a2848c;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#a2848c;margin:15px 4px 6px;border-top:1px solid #362a2e;padding-top:12px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#bea8ae;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#89696f;min-width:20px}
+  nav a:hover{background:#2b1f23;color:#fff}nav a.active{background:var(--stop);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:850px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--stop);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--stop)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.4px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .yo{border-left-color:var(--brand);background:var(--brandT)}.yo .l{color:var(--brand)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .tag{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.hot{background:var(--stopT);color:var(--stop)}
+  .tag.med{background:var(--brandT);color:var(--brand)}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.8px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.8px;color:var(--stop)}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.a{border-color:var(--brand);background:var(--brandT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .nd.p{border-color:var(--pur);background:var(--purT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Cybersecurity</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Cybersecurity<span class="s">attacks · appsec ·<br>secure design · Q&amp;A</span></div>
+  <div class="ct">12 sections</div>
+  <nav id="toc">
+    <a href="#model"><span class="n">01</span><span>The mental model</span></a>
+    <a href="#malware"><span class="n">02</span><span>Malware</span></a>
+    <a href="#phishing"><span class="n">03</span><span>Phishing</span></a>
+    <a href="#brute"><span class="n">04</span><span>Brute force &amp; credentials</span></a>
+    <a href="#ddos"><span class="n">05</span><span>DDoS</span></a>
+    <a href="#mitm"><span class="n">06</span><span>Man in the middle</span></a>
+    <a href="#sqli"><span class="n">07</span><span>SQL injection</span></a>
+    <a href="#xss"><span class="n">08</span><span>XSS</span></a>
+    <a href="#csrf"><span class="n">09</span><span>CSRF</span></a>
+    <a href="#owasp"><span class="n">10</span><span>OWASP &amp; other vulns</span></a>
+    <a href="#design"><span class="n">11</span><span>Secure design &amp; shift left ★</span></a>
+    <a href="#qa"><span class="n">12</span><span>Interview Q&amp;A</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Attacks · application security · secure design · threat modelling</p>
+  <h1>Cybersecurity, from mechanism to defence.</h1>
+  <p class="led">Every named attack explained by <em>how it actually works</em>, not just what it's called — because an interviewer at a security company can tell the difference immediately. Each section ends with the defence and the trade-off, and section 11 covers the design principles that tie it all together.</p>
+</header>
+
+<section id="model">
+  <div class="sn">01 / FOUNDATION</div>
+  <h2>The mental model</h2>
+  <p class="ss">Frame everything with these and individual attacks become instances rather than facts to memorise.</p>
+
+  <h3>CIA triad</h3>
+  <table class="tb">
+    <tr><th>Property</th><th>Violated by</th></tr>
+    <tr><td><strong>Confidentiality</strong> — only authorised parties can read</td><td>Data breach, eavesdropping, MITM</td></tr>
+    <tr><td><strong>Integrity</strong> — data isn't altered without detection</td><td>Tampering, injection, MITM modification</td></tr>
+    <tr><td><strong>Availability</strong> — the system works when needed</td><td>DDoS, ransomware, lockout abuse</td></tr>
+  </table>
+  <p>Add <strong>authentication</strong> (who are you), <strong>authorization</strong> (what may you do), and <strong>non-repudiation</strong> (you can't deny it) and you have the full vocabulary.</p>
+
+  <h3>Vulnerability, threat, risk — use these precisely</h3>
+  <ul>
+    <li><strong>Vulnerability</strong> — a weakness in the system (an unpatched library).</li>
+    <li><strong>Threat</strong> — an actor or event that could exploit it (a ransomware crew).</li>
+    <li><strong>Exploit</strong> — the technique that turns the vulnerability into a compromise.</li>
+    <li><strong>Risk</strong> — likelihood × impact. This is what you actually prioritise on; a critical vulnerability in an unreachable component may be lower risk than a moderate one on your login path.</li>
+  </ul>
+
+  <h3>The attack chain</h3>
+  <div class="dg">
+    <div class="fl">
+      <div class="nd">recon</div><span class="ar">→</span>
+      <div class="nd r">initial access</div><span class="ar">→</span>
+      <div class="nd r">execution</div><span class="ar">→</span>
+      <div class="nd r">persistence</div><span class="ar">→</span>
+      <div class="nd r">privilege<br>escalation</div><span class="ar">→</span>
+      <div class="nd r">lateral<br>movement</div><span class="ar">→</span>
+      <div class="nd r">exfiltration</div>
+    </div>
+    <div class="cap">Defence in depth means breaking the chain at multiple links — you don't have to catch stage one.</div>
+  </div>
+  <div class="bx go"><span class="l">Why this framing helps</span>
+    <p>"I think in terms of the kill chain rather than individual attacks. Phishing is initial access; malware is execution and persistence; a MITM might be either recon or exfiltration. The value of that framing is that <strong>you don't need to stop stage one</strong> — you need multiple opportunities to detect and break the chain. It's also how endpoint detection actually works: individual events are noise, and the sequence is the signal."</p></div>
+</section>
+
+<section id="malware">
+  <div class="sn">02 / NAMED</div>
+  <h2>Malware</h2>
+  <p class="ss">Know the taxonomy, but spend your words on detection and containment — that's your actual expertise.</p>
+
+  <h3>Taxonomy</h3>
+  <table class="tb">
+    <tr><th>Type</th><th>Defining behaviour</th></tr>
+    <tr><td>Virus</td><td>Attaches to a host file; needs the user to run it</td></tr>
+    <tr><td>Worm</td><td><strong>Self-propagating</strong> across a network without user action</td></tr>
+    <tr><td>Trojan</td><td>Disguised as legitimate software; the user installs it willingly</td></tr>
+    <tr><td>Ransomware</td><td>Encrypts data and extorts. Modern variants also exfiltrate first — "double extortion" — so backups alone aren't sufficient</td></tr>
+    <tr><td>Spyware / keylogger</td><td>Covert monitoring and credential theft</td></tr>
+    <tr><td>Rootkit</td><td>Hides at a privileged layer (kernel or firmware) to evade detection</td></tr>
+    <tr><td>RAT</td><td>Remote access — interactive control by an operator</td></tr>
+    <tr><td>Cryptominer</td><td>Steals compute. Low harm, high prevalence, often the first sign of a broader compromise</td></tr>
+    <tr><td>Fileless</td><td>Lives in memory, abuses legitimate tools (living off the land) — leaves no file to scan</td></tr>
+  </table>
+
+  <h3>Detection approaches — the trade-offs</h3>
+  <table class="tb">
+    <tr><th>Approach</th><th>Strength</th><th>Weakness</th></tr>
+    <tr><td>Signature / hash</td><td>Precise, no false positives</td><td>Useless against anything new or repacked</td></tr>
+    <tr><td>Heuristic / static analysis</td><td>Catches variants</td><td>False positives; defeated by packing and obfuscation</td></tr>
+    <tr><td>Behavioural</td><td>Catches novel and fileless malware</td><td>Needs correlation and tuning; noisier</td></tr>
+    <tr><td>Reputation / cloud</td><td>Fleet-wide intelligence</td><td>Needs connectivity; latency on the decision path</td></tr>
+  </table>
+
+  <div class="bx yo"><span class="l">Your ground — say this</span>
+    <p>"This is what our agent does. The <strong>Endpoint Security framework</strong> gives me process-execution events carrying the binary's code-signing identity and CDHash, so I can enforce deny-listing at exec time, and file events let me spot ransomware behaviour — a process rapidly rewriting many files across directories. The detection value is in <strong>correlation, not individual events</strong>: an Office app spawning a shell that spawns curl to a rare domain, then writing an executable to a user directory, is an incident. Each of those events alone is noise. So I maintain a process tree from fork/exec/exit and evaluate chains, not points."</p></div>
+
+  <h3>Defences worth naming</h3>
+  <ul>
+    <li><strong>Code signing and notarization</strong> — on macOS, unsigned or un-notarized code doesn't launch by default. That's a platform-level control, not something each app implements.</li>
+    <li><strong>Least privilege</strong> — a compromised unprivileged process is a much smaller problem than a compromised root one.</li>
+    <li><strong>Application allow-listing</strong> — strong but operationally heavy.</li>
+    <li><strong>Network egress control</strong> — even if execution succeeds, command-and-control and exfiltration need the network.</li>
+    <li><strong>Rapid patching</strong> — most successful compromises use known vulnerabilities, not zero-days.</li>
+    <li><strong>Isolation and response</strong> — the ability to remotely cut a machine off while keeping your own management channel alive.</li>
+  </ul>
+</section>
+
+<section id="phishing">
+  <div class="sn">03 / NAMED</div>
+  <h2>Phishing</h2>
+  <p class="ss">Directly Okta's problem space. The defence answer here matters more than the taxonomy.</p>
+
+  <h3>Variants</h3>
+  <ul>
+    <li><strong>Phishing</strong> — mass, generic. <strong>Spear phishing</strong> — targeted with personal detail. <strong>Whaling</strong> — executives.</li>
+    <li><strong>Smishing / vishing</strong> — SMS and voice, increasingly with synthetic audio.</li>
+    <li><strong>Business email compromise</strong> — no malware at all, just a convincing instruction to transfer money. Often the most costly.</li>
+    <li><strong>Adversary-in-the-middle (AiTM)</strong> — the critical modern variant: a reverse-proxy phishing site relays credentials <em>and</em> the MFA code to the real site in real time, then steals the resulting session cookie. This defeats most MFA.</li>
+    <li><strong>Consent phishing</strong> — no credentials stolen at all; the user is tricked into granting an OAuth app persistent access.</li>
+  </ul>
+
+  <div class="bx st"><span class="l">The point that matters most</span>
+    <p><strong>Most MFA is still phishable.</strong> SMS and TOTP are just typed secrets a real-time relay can forward. Push-approve is vulnerable to MFA fatigue — spam prompts until the user taps to make it stop. The step change is <strong>origin-bound hardware crypto</strong>: with FIDO2/WebAuthn the credential is cryptographically scoped to the legitimate origin, so a look-alike domain cannot elicit a usable assertion and there is nothing to relay. That's why the industry is converging on passkeys and device-bound factors.</p></div>
+
+  <h3>The layered defence</h3>
+  <table class="tb">
+    <tr><th>Layer</th><th>Control</th></tr>
+    <tr><td>Prevent delivery</td><td>SPF, DKIM, DMARC; attachment sandboxing; external-sender banners</td></tr>
+    <tr><td>Prevent the click</td><td>DNS filtering, newly-registered-domain blocking, URL rewriting</td></tr>
+    <tr><td><strong>Prevent the harm</strong></td><td><strong>Phishing-resistant MFA (FIDO2), device trust, conditional access</strong></td></tr>
+    <tr><td>Limit the blast radius</td><td>Least privilege, short session lifetimes, token binding, re-auth for sensitive actions</td></tr>
+    <tr><td>Detect after the fact</td><td>Impossible-travel and anomaly detection, session-token anomaly monitoring</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The framing to use</span>
+    <p>"User training helps at the margins but doesn't scale — a sufficiently good pretext beats anyone on a bad day. So I treat phishing as a <strong>design problem, not a training problem</strong>: make the credential unphishable, and the attack stops working regardless of how convincing the pretext is. Then add device trust so a stolen session from an unmanaged device still fails the access check."</p></div>
+</section>
+
+<section id="brute">
+  <div class="sn">04 / NAMED</div>
+  <h2>Brute force &amp; credential attacks</h2>
+  <p class="ss">Distinguish the variants — they need different defences, and most people conflate them.</p>
+
+  <table class="tb">
+    <tr><th>Attack</th><th>Mechanism</th><th>Why standard defences miss it</th></tr>
+    <tr><td>Brute force</td><td>Try every combination</td><td>Rate limiting handles it</td></tr>
+    <tr><td>Dictionary</td><td>Try likely passwords</td><td>Rate limiting handles it</td></tr>
+    <tr><td><strong>Credential stuffing</strong></td><td>Replay username/password pairs from other breaches</td><td>Each attempt may be a <em>valid</em> credential — no per-account failure spike. By far the most common in practice.</td></tr>
+    <tr><td><strong>Password spraying</strong></td><td>One common password against thousands of accounts</td><td><strong>Per-account lockout never triggers</strong> — each account sees one or two failures. You must monitor across accounts.</td></tr>
+    <tr><td>Offline cracking</td><td>Attack a stolen hash database</td><td>No online defence applies at all — only slow KDFs help</td></tr>
+  </table>
+
+  <h3>Defences, matched to the attack</h3>
+  <ul>
+    <li><strong>Slow password hashing</strong> (Argon2id/bcrypt) — the only defence against offline cracking.</li>
+    <li><strong>Rate limiting</strong> per account and per IP — token bucket with exponential backoff.</li>
+    <li><strong>Lockout</strong> with escalating duration — but see the warning below.</li>
+    <li><strong>MFA</strong> — makes a correct password insufficient, which is the actual answer to credential stuffing.</li>
+    <li><strong>Breached-password checks</strong> at registration and reset.</li>
+    <li><strong>Cross-account failure monitoring</strong> — the only way to see spraying.</li>
+    <li><strong>Device and behavioural signals</strong> — a login from a never-seen device in a new country should step up, not just pass.</li>
+  </ul>
+
+  <div class="bx st"><span class="l">The insight that will land at an identity company</span>
+    <p><strong>Lockout is itself a denial-of-service vector.</strong> If I can lock any account by failing five times, I can deny service to your entire user base — and at an enterprise IdP that's an outage. Mitigations: key on <strong>IP + account</strong> rather than account alone, prefer <strong>progressive delays</strong> over hard locks, and require a CAPTCHA before locking. And responses must be <strong>identical for wrong-password and unknown-user, including timing</strong> — otherwise your lockout behaviour becomes a user-enumeration oracle.</p></div>
+
+  <div class="bx wn"><span class="l">The distributed caveat</span>
+    <p>Per-process counters mean an attacker who lands on different servers gets N times the allowed attempts. A real guarantee needs shared state — Redis with atomic operations — which puts a network hop on the auth path. That's a genuine trade-off worth naming.</p></div>
+</section>
+
+<section id="ddos">
+  <div class="sn">05 / NAMED</div>
+  <h2>DDoS</h2>
+  <p class="ss">Know the three layers — the defences differ completely.</p>
+
+  <table class="tb">
+    <tr><th>Layer</th><th>Mechanism</th><th>Examples</th></tr>
+    <tr><td><strong>Volumetric</strong></td><td>Saturate bandwidth</td><td>UDP flood; DNS/NTP/memcached <strong>amplification</strong> — a small spoofed request produces a huge response aimed at the victim</td></tr>
+    <tr><td><strong>Protocol</strong></td><td>Exhaust connection state</td><td>SYN flood (half-open connections), Slowloris (holding connections open with partial requests)</td></tr>
+    <tr><td><strong>Application</strong></td><td>Expensive requests</td><td>HTTP flood on a search endpoint, GraphQL query complexity abuse. <strong>Hardest</strong> — traffic looks legitimate</td></tr>
+  </table>
+
+  <h3>Defences</h3>
+  <ul>
+    <li><strong>Absorb</strong> — CDN and scrubbing providers with capacity far beyond yours; anycast to distribute load geographically.</li>
+    <li><strong>Filter</strong> — rate limiting, connection limits, SYN cookies (no state until the handshake completes), geo/ASN blocking as a blunt instrument.</li>
+    <li><strong>Cache</strong> — every request served from cache is one that never reaches origin. Often the highest-leverage control.</li>
+    <li><strong>Scale</strong> — autoscaling with a cost ceiling, because "scale infinitely" is also a way to lose (economic denial of service).</li>
+    <li><strong>Degrade gracefully</strong> — shed non-essential features to keep the core alive. Decide in advance what's essential.</li>
+    <li><strong>Prioritise</strong> — authenticated known-good traffic over anonymous during an attack.</li>
+  </ul>
+
+  <div class="bx yo"><span class="l">Your angle — the self-inflicted version</span>
+    <p>"There's also the DDoS you do to yourself. Millions of agents that all wake at the same moment after an OS update are a thundering herd against your own backend — which is why <strong>every timer in our fleet carries jitter</strong>, why ingestion sits behind a queue that absorbs spikes rather than passing them to the database, and why retries use exponential backoff with randomisation. A synchronised retry storm after a brief outage will re-create the outage; that's a real operational scar."</p></div>
+</section>
+
+<section id="mitm">
+  <div class="sn">06 / NAMED</div>
+  <h2>Man in the middle</h2>
+  <p class="ss">An attacker between two parties, reading or modifying traffic.</p>
+
+  <h3>How they get in position</h3>
+  <ul>
+    <li><strong>Rogue Wi-Fi</strong> — an evil-twin access point, or an open network the attacker controls.</li>
+    <li><strong>ARP spoofing</strong> — claiming another host's IP on a local network.</li>
+    <li><strong>DNS poisoning / hijack</strong> — sending the victim to the wrong address entirely.</li>
+    <li><strong>BGP hijack</strong> — rerouting traffic at internet scale.</li>
+    <li><strong>Compromised or rogue CA</strong> — issuing a certificate for a domain the attacker doesn't own.</li>
+    <li><strong>SSL stripping</strong> — downgrading an HTTPS link to HTTP before the user notices.</li>
+    <li><strong>Malicious proxy on the device</strong> — malware installing its own trusted root.</li>
+  </ul>
+
+  <h3>Defences</h3>
+  <table class="tb">
+    <tr><th>Control</th><th>What it stops</th></tr>
+    <tr><td>TLS with proper validation</td><td>The baseline. Chain to a trusted root, valid dates, hostname matches SAN. <strong>Never disable validation to make something work.</strong></td></tr>
+    <tr><td><strong>Certificate pinning</strong></td><td>A rogue or compromised CA. Cost: rotation must be planned, and it breaks under corporate TLS inspection.</td></tr>
+    <tr><td>HSTS</td><td>SSL stripping and protocol downgrade</td></tr>
+    <tr><td>Certificate Transparency</td><td>Detects mis-issued certificates after the fact</td></tr>
+    <tr><td><strong>mTLS</strong></td><td>Both sides authenticate — the natural fit for a device with a hardware-bound key</td></tr>
+    <tr><td>Forward secrecy (ECDHE)</td><td>Recorded traffic stays safe even if the long-term key later leaks</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The nuance to volunteer</span>
+    <p>"Enterprise TLS inspection is a <strong>sanctioned MITM</strong> — the organisation installs its own CA on managed devices so a proxy can decrypt and inspect traffic. It's legitimate and common, but it means pinned clients break, which is why some security agents must be explicitly exempted from inspection. It's a good illustration that 'MITM' describes a position, not necessarily malice — and that a control which helps one team can break another's product."</p></div>
+</section>
+
+<section id="sqli">
+  <div class="sn">07 / NAMED</div>
+  <h2>SQL injection</h2>
+  <p class="ss">The mechanism in one sentence: user input becomes <em>code</em> instead of <em>data</em>.</p>
+
+<pre><code><span class="c">// ✗ Vulnerable — the input is concatenated into the query text</span>
+<span class="k">let</span> sql = <span class="s">"SELECT * FROM users WHERE email = '\(email)'"</span>
+
+<span class="c">// Attacker supplies:  x' OR '1'='1</span>
+<span class="c">// Resulting query:    SELECT * FROM users WHERE email = 'x' OR '1'='1'</span>
+<span class="c">//                     → returns every row</span>
+
+<span class="c">// Or worse:           x'; DROP TABLE users; --</span></code></pre>
+
+<pre><code><span class="c">// ✓ Parameterised — the input can never be interpreted as SQL</span>
+<span class="k">let</span> sql = <span class="s">"SELECT * FROM users WHERE email = ?"</span>
+statement.bind(1, email)
+
+<span class="c">// The database parses the query structure FIRST, then binds</span>
+<span class="c">// values into placeholders. Structure and data are separated.</span></code></pre>
+
+  <div class="bx go"><span class="l">Why parameterisation is the answer and escaping isn't</span>
+    <p>"Parameterised queries work because the database <strong>parses the query structure before the data is supplied</strong> — so the input can never change the meaning of the statement. Manual escaping tries to sanitise data into a form that <em>looks</em> safe inside a string, which is fragile: character-set edge cases, nested quoting, and second-order injection all defeat it. The structural fix beats the filtering fix."</p></div>
+
+  <h3>Variants and depth</h3>
+  <ul>
+    <li><strong>Blind SQLi</strong> — no error output, so the attacker infers data one bit at a time from boolean differences in the response, or from timing (<code>SLEEP()</code>). Slow but completely effective.</li>
+    <li><strong>Second-order</strong> — the payload is stored safely, then used unsafely later by a different code path. Input validation at entry doesn't catch it.</li>
+    <li><strong>NoSQL injection</strong> — the same class in a different syntax. Passing an unvalidated object where a scalar is expected can produce <code>{$ne: null}</code> style operator injection.</li>
+    <li><strong>ORM escape hatches</strong> — ORMs protect you until someone uses a raw fragment, which reintroduces the risk in a codebase everyone assumes is safe.</li>
+  </ul>
+
+  <h3>Defence in depth</h3>
+  <ul>
+    <li><strong>Parameterised queries everywhere</strong> — non-negotiable.</li>
+    <li><strong>Least-privilege database accounts</strong> — the application does not need <code>DROP</code> or <code>GRANT</code>. This turns a catastrophic injection into a limited one.</li>
+    <li><strong>Input validation</strong> as an additional layer, allow-list based.</li>
+    <li><strong>Never expose raw database errors</strong> — they hand the attacker a schema map.</li>
+    <li><strong>Static analysis in CI</strong> to catch string concatenation into query builders.</li>
+  </ul>
+</section>
+
+<section id="xss">
+  <div class="sn">08 / NAMED</div>
+  <h2>Cross-site scripting</h2>
+  <p class="ss">Same root cause as SQLi — data interpreted as code — but the interpreter is the browser.</p>
+
+  <h3>The mechanism</h3>
+  <p>Attacker-controlled input is rendered into a page, and the browser executes it as script <strong>in the victim's origin</strong>. That means it runs with the victim's session: it can read cookies (unless HttpOnly), read the DOM, make authenticated requests, keylog the page, or rewrite what the user sees.</p>
+
+  <table class="tb">
+    <tr><th>Type</th><th>Where the payload lives</th><th>Impact</th></tr>
+    <tr><td><strong>Stored</strong></td><td>Persisted server-side — a comment, a profile field</td><td>Highest — served to every viewer, no delivery needed</td></tr>
+    <tr><td><strong>Reflected</strong></td><td>In the request, echoed into the response</td><td>Needs a crafted link, so it's a delivery problem</td></tr>
+    <tr><td><strong>DOM-based</strong></td><td>Client-side JS writes untrusted data into the DOM</td><td>Server never sees the payload — server-side filtering can't help</td></tr>
+  </table>
+
+  <h3>Defences</h3>
+  <ul>
+    <li><strong>Context-aware output encoding</strong> — the crucial nuance. HTML body, HTML attribute, JavaScript, CSS, and URL contexts each need <em>different</em> escaping. Encoding for one context inside another is still vulnerable. Use the framework's context-aware escaping; don't hand-roll.</li>
+    <li><strong>Content Security Policy</strong> — restrict which origins scripts may load from, and disallow inline script. Strong defence in depth, though it takes effort to deploy on an existing app.</li>
+    <li><strong><code>HttpOnly</code> cookies</strong> so JavaScript cannot read the session token; <code>Secure</code> so it's HTTPS-only.</li>
+    <li><strong>Avoid dangerous sinks</strong> — <code>innerHTML</code>, <code>document.write</code>, <code>eval</code>. Prefer text-setting APIs. Use a vetted sanitiser (DOMPurify) if you genuinely must render user HTML.</li>
+    <li><strong>Framework auto-escaping</strong> — React, Vue and similar escape by default; the vulnerabilities come from the deliberate escape hatches like <code>dangerouslySetInnerHTML</code>.</li>
+  </ul>
+
+  <div class="bx yo"><span class="l">The Apple-platform angle — worth raising</span>
+    <p>"XSS isn't only a web problem. A <code>WKWebView</code> inside a native app has the same exposure, and it's more dangerous because of the <strong>native bridge</strong>: if I inject unvalidated data into JavaScript, or expose a broad message handler, an XSS becomes a path into native code and whatever entitlements my app holds. So I'd keep the bridge surface minimal and strongly typed, validate everything crossing it in both directions, avoid <code>evaluateJavaScript</code> with interpolated input, and disable JavaScript entirely if the view doesn't need it."</p></div>
+</section>
+
+<section id="csrf">
+  <div class="sn">09 / NAMED</div>
+  <h2>Cross-site request forgery</h2>
+  <p class="ss">The subtlest of the three. The attacker never reads anything — they borrow authority.</p>
+
+  <h3>The mechanism</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:9px">
+      <div class="nd" style="min-width:440px"><b>1</b>victim is logged into bank.com — the browser holds a session cookie</div>
+      <div class="nd r" style="min-width:440px"><b>2</b>victim visits evil.com, which contains a form or image auto-submitting to bank.com</div>
+      <div class="nd r" style="min-width:440px"><b>3</b>the browser <strong>automatically attaches the bank.com cookie</strong> — because that's what browsers do</div>
+      <div class="nd r" style="min-width:440px"><b>4</b>bank.com sees a properly authenticated request and performs the action</div>
+    </div>
+    <div class="cap">The attacker never sees the response. They don't need to — the side effect is the goal.</div>
+  </div>
+
+  <h3>Defences</h3>
+  <ul>
+    <li><strong><code>SameSite</code> cookies</strong> — <code>Lax</code> (the modern browser default) blocks cookies on cross-site POSTs; <code>Strict</code> blocks them on all cross-site requests. This is now the primary defence.</li>
+    <li><strong>Anti-CSRF token</strong> — an unpredictable per-session value required on state-changing requests. The attacker can't read it because of the same-origin policy. Still the belt-and-braces control.</li>
+    <li><strong>Never use GET for state changes</strong> — a GET can be triggered by an <code>&lt;img&gt;</code> tag with no user interaction at all.</li>
+    <li><strong>Verify <code>Origin</code>/<code>Referer</code></strong> headers as a secondary check.</li>
+    <li><strong>Re-authenticate for sensitive actions</strong> — password change, payment, adding an MFA factor.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">The distinction to draw — this is the good answer</span>
+    <p>"XSS and CSRF are often confused but they're different problems. <strong>XSS is a code-execution problem</strong> — the attacker runs script in your origin and can therefore read anything. <strong>CSRF is an authority problem</strong> — the attacker can't read anything, they just cause the browser to send a request that carries the user's ambient credentials. That's why the defences differ: XSS is fixed by output encoding, CSRF by ensuring requests can't be forged blind.</p>
+    <p>Worth adding: <strong>token-based auth in an <code>Authorization</code> header is naturally CSRF-resistant</strong>, because the browser doesn't attach it automatically — the application has to. So a pure-API architecture with bearer tokens largely sidesteps CSRF, while cookie-based sessions need explicit protection. Note that XSS defeats <em>everything</em> — if an attacker can run script in your origin, they can read the CSRF token too."</p></div>
+</section>
+
+<section id="owasp">
+  <div class="sn">10</div>
+  <h2>OWASP &amp; the wider vulnerability landscape</h2>
+  <p class="ss">Beyond the named three. Know the categories that dominate real findings.</p>
+
+  <table class="tb">
+    <tr><th>Category</th><th>What it means</th></tr>
+    <tr><td><strong>Broken access control</strong></td><td>Consistently the top category. Authenticating a user then failing to check they own the resource — <strong>IDOR</strong>, where changing an ID in a URL returns someone else's data. Fix: authorize <em>every</em> access, server-side, against the acting principal.</td></tr>
+    <tr><td>Cryptographic failures</td><td>Data unencrypted in transit or at rest, weak algorithms, hardcoded keys, secrets in logs.</td></tr>
+    <tr><td>Injection</td><td>SQL, NoSQL, command, LDAP, XPath — all the same root cause.</td></tr>
+    <tr><td><strong>Insecure design</strong></td><td>A flaw in the design itself, not the implementation — no amount of clean code fixes a missing control. This is what threat modelling addresses.</td></tr>
+    <tr><td>Security misconfiguration</td><td>Default credentials, verbose errors, unnecessary features, open storage buckets, permissive CORS.</td></tr>
+    <tr><td>Vulnerable components</td><td>Outdated dependencies with known CVEs. Needs an SBOM and automated scanning.</td></tr>
+    <tr><td>Auth failures</td><td>Weak passwords permitted, no MFA, session fixation, tokens that don't expire or can't be revoked.</td></tr>
+    <tr><td>Software &amp; data integrity</td><td><strong>Supply chain</strong> — compromised dependencies, unsigned updates, poisoned CI. Increasingly the dominant threat.</td></tr>
+    <tr><td>Logging &amp; monitoring failures</td><td>You can't respond to what you can't see. Also: don't log secrets or PII while fixing this.</td></tr>
+    <tr><td><strong>SSRF</strong></td><td>The server fetches a URL the attacker controls, reaching internal services or cloud metadata endpoints. Fix: allow-list destinations, block internal ranges, no redirects.</td></tr>
+  </table>
+
+  <h3>Mobile and macOS-specific</h3>
+  <ul>
+    <li><strong>Insecure local storage</strong> — secrets in <code>UserDefaults</code> or plist files instead of the Keychain.</li>
+    <li><strong>Improper platform usage</strong> — disabling certificate validation, over-broad entitlements, exported interfaces that shouldn't be.</li>
+    <li><strong>Reverse engineering and tampering</strong> — a shipped binary is in the attacker's hands. Never rely on client-side checks for security; enforce server-side.</li>
+    <li><strong>IPC exposure</strong> — an XPC interface that takes an arbitrary path or command is a privilege-escalation API. Validate the peer by <strong>audit token</strong>, never by pid.</li>
+    <li><strong>Supply chain</strong> — every dependency ships under your signature with your entitlements.</li>
+  </ul>
+
+  <div class="bx yo"><span class="l">Your credibility line</span>
+    <p>"In a security agent the supply-chain angle is sharpest: <strong>every dependency I take ships signed by me, with my entitlements, onto machines I don't own.</strong> A compromised upstream package becomes a root-privileged compromise on a customer fleet. So I pin versions, commit the resolved file, review update diffs rather than floating, and I'm especially wary of build-time plugins — that's arbitrary code executing where the signing identity lives."</p></div>
+</section>
+
+<section id="design">
+  <div class="sn">11 / ★ THE SYNTHESIS</div>
+  <h2>Secure design &amp; shift left</h2>
+  <p class="ss">Explicitly on your focus list. This is where you demonstrate judgment rather than knowledge.</p>
+
+  <h3>What shift left actually means</h3>
+  <p>Security work moves <strong>earlier</strong> — into requirements, design, and development — rather than a penetration test the week before release, where every finding is expensive and half get deferred. The economics drive it: a design flaw caught in a whiteboard session costs an hour; the same flaw found in production costs an incident.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd g"><b>requirements</b>security<br>requirements</div><span class="ar">→</span>
+      <div class="nd g"><b>design</b>threat<br>modelling</div><span class="ar">→</span>
+      <div class="nd a"><b>develop</b>secure coding,<br>security in review</div><span class="ar">→</span>
+      <div class="nd a"><b>CI</b>SAST, dependency<br>scanning, secrets</div><span class="ar">→</span>
+      <div class="nd"><b>test</b>DAST,<br>pentest</div><span class="ar">→</span>
+      <div class="nd r"><b>prod</b>monitoring,<br>response</div>
+    </div>
+    <div class="cap">Cost of remediation rises sharply left to right. Shift left moves the work to where it's cheap.</div>
+  </div>
+
+  <h3>Threat modelling — STRIDE</h3>
+  <table class="tb">
+    <tr><th>Threat</th><th>Property violated</th><th>Mitigated by</th></tr>
+    <tr><td><strong>S</strong>poofing</td><td>Authentication</td><td>Strong auth, mTLS, code-signature verification of peers</td></tr>
+    <tr><td><strong>T</strong>ampering</td><td>Integrity</td><td>Signatures, MACs, checksums, immutable logs</td></tr>
+    <tr><td><strong>R</strong>epudiation</td><td>Non-repudiation</td><td>Signed audit logs</td></tr>
+    <tr><td><strong>I</strong>nformation disclosure</td><td>Confidentiality</td><td>Encryption, access control, minimising what you store</td></tr>
+    <tr><td><strong>D</strong>enial of service</td><td>Availability</td><td>Rate limiting, quotas, graceful degradation</td></tr>
+    <tr><td><strong>E</strong>levation of privilege</td><td>Authorization</td><td>Least privilege, privilege separation, input validation</td></tr>
+  </table>
+  <p>The method: draw the data flow, mark the <strong>trust boundaries</strong>, and walk STRIDE at each boundary. Trust boundaries are where the interesting threats live — that's where data crosses from a less-trusted to a more-trusted context.</p>
+
+  <h3>The design principles</h3>
+  <table class="tb">
+    <tr><th>Principle</th><th>In practice</th></tr>
+    <tr><td><strong>Least privilege</strong></td><td>Every process, token, and account gets the minimum for the minimum time</td></tr>
+    <tr><td><strong>Defence in depth</strong></td><td>Multiple independent controls — assume any one will fail</td></tr>
+    <tr><td><strong>Fail securely</strong></td><td>An error path denies. Default deny, and be deliberate about any fail-open</td></tr>
+    <tr><td><strong>Complete mediation</strong></td><td>Check authorization on <em>every</em> access, not just the first — this is what broken access control violates</td></tr>
+    <tr><td><strong>Separation of privilege</strong></td><td>Split a system so compromising one part isn't enough</td></tr>
+    <tr><td><strong>Minimise attack surface</strong></td><td>Fewer entry points, narrower interfaces, features off by default</td></tr>
+    <tr><td><strong>Secure defaults</strong></td><td>The out-of-the-box configuration is the safe one; insecurity requires deliberate action</td></tr>
+    <tr><td><strong>No security through obscurity</strong></td><td>Assume the attacker has your source. Kerckhoffs's principle</td></tr>
+    <tr><td><strong>Economy of mechanism</strong></td><td>Simple designs are auditable; complex ones hide flaws</td></tr>
+  </table>
+
+  <div class="bx yo"><span class="l">The worked example that proves you live this</span>
+    <p>"Our agent architecture is these principles made concrete. The UI process is large and parses untrusted input, so it gets <strong>no privilege</strong>. The daemon has root, so it stays <strong>small and boring</strong> with a narrow XPC interface — the client <em>requests</em>, the daemon <em>decides</em>, and no method ever takes an arbitrary path or command. Every XPC connection is validated by <strong>audit token against a code-signing requirement</strong>, not by pid, because pids recycle and can be raced. That's <strong>separation of privilege</strong> and <strong>minimised attack surface</strong> as a design choice — the architecture limits what a compromise can reach, rather than relying on the code being bug-free."</p></div>
+
+  <h3>Secure coding practices</h3>
+  <ul>
+    <li><strong>Never trust input</strong> — validate at the trust boundary, allow-list based, server-side. Client-side validation is UX, not a control.</li>
+    <li><strong>Parameterise</strong>, don't concatenate — SQL, shell commands, everything.</li>
+    <li><strong>Context-aware output encoding</strong>.</li>
+    <li><strong>Constant-time comparison</strong> for secrets and tokens.</li>
+    <li><strong>Don't roll your own crypto</strong>; use vetted libraries and safe modes.</li>
+    <li><strong>No secrets in source, logs, or URLs</strong> — URLs land in proxies, browser history, and referrer headers.</li>
+    <li><strong>Bounds and integer-overflow discipline</strong>, especially at C boundaries — directly relevant when working against the Endpoint Security C API.</li>
+    <li><strong>Fail closed on error paths</strong>, and make error handling explicit rather than incidental.</li>
+    <li><strong>Dependency hygiene</strong> — pin, scan, audit, and treat every dependency as code you sign.</li>
+  </ul>
+
+  <h3>Security in the pipeline</h3>
+  <ul>
+    <li><strong>SAST</strong> — static analysis on every PR. <strong>DAST</strong> — running-app scanning. <strong>SCA</strong> — dependency/CVE scanning with an SBOM.</li>
+    <li><strong>Secrets scanning</strong> to stop credentials being committed.</li>
+    <li><strong>Sanitizers in CI</strong> — Thread Sanitizer and Address Sanitizer on scheduled runs eliminate whole classes of memory and concurrency bugs.</li>
+    <li><strong>Security review as part of code review</strong> rather than a separate gate — the gate is where velocity dies and findings get deferred.</li>
+    <li><strong>Fuzzing</strong> for parsers and anything handling untrusted input.</li>
+  </ul>
+
+  <div class="bx go"><span class="l">The closing framing</span>
+    <p>"I work on the enforcement side of this — the agent that detects and blocks — so I think about attacks from both directions: what an attacker does, and what telemetry would reveal it. Threat modelling is the same exercise done <em>before</em> the code exists rather than after the incident, and it's cheaper in exactly the same way that writing a test before the bug is cheaper than debugging in production."</p></div>
+</section>
+
+<section id="qa">
+  <div class="sn">12</div>
+  <h2>Interview Q&amp;A</h2>
+  <p class="ss">Two or three sentences each, then depth if invited.</p>
+
+  <details class="q"><summary><span class="tag hot">CERTAIN</span>Explain SQL injection and how you prevent it.</summary><div class="bod">
+    <p>User input gets concatenated into a query, so the input is interpreted as SQL rather than data — an attacker can then change what the query means, returning all rows or executing other statements. The fix is parameterised queries: the database parses the query structure first and binds values into placeholders, so input can never alter the statement. Manual escaping is fragile and gets bypassed. Defence in depth: least-privilege database accounts so the app can't <code>DROP</code>, allow-list input validation, and never returning raw database errors.</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">CERTAIN</span>What's XSS and how does it differ from CSRF?</summary><div class="bod">
+    <p>XSS is when attacker input gets rendered into a page and the browser executes it as script in the victim's origin — so it can read cookies, the DOM, and act as the user. CSRF is different in kind: the attacker can't read anything, they just cause the victim's browser to send a request that automatically carries the session cookie. XSS is a code-execution problem fixed by context-aware output encoding and CSP; CSRF is an authority problem fixed by SameSite cookies and anti-CSRF tokens. And note XSS defeats CSRF protection entirely — script in your origin can read the token.</p></div></details>
+
+  <details class="q"><summary><span class="tag hot">CERTAIN</span>How would you defend against brute-force attacks?</summary><div class="bod">
+    <p>Depends which variant. Classic brute force yields to rate limiting and lockout. Credential stuffing needs MFA and breached-password checks, since each attempt may be a valid credential. Password spraying evades per-account lockout entirely — you only see it by monitoring failures <em>across</em> accounts. And offline cracking of a stolen database is unaffected by any online control; only a slow memory-hard KDF like Argon2id helps there. The caveat I'd raise: lockout is itself a DoS vector, so I'd key on IP-plus-account and prefer progressive delays over hard locks.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>What is a man-in-the-middle attack and how do you prevent it?</summary><div class="bod">
+    <p>An attacker positioned between two parties, reading or modifying traffic — via rogue Wi-Fi, ARP or DNS spoofing, BGP hijack, or a compromised CA. TLS with proper certificate validation is the baseline: chain to a trusted root, valid dates, hostname matching the SAN. For a controlled client like an agent I'd add certificate pinning to defeat a rogue CA, while planning rotation carefully and knowing it breaks under corporate TLS inspection. HSTS prevents downgrade, forward secrecy protects recorded traffic, and mTLS authenticates the client too.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>How do you protect against phishing?</summary><div class="bod">
+    <p>Treat it as a design problem, not a training problem. Training helps at the margins but a good pretext beats anyone eventually. The structural fix is phishing-resistant credentials: FIDO2/WebAuthn binds the credential to the legitimate origin, so a look-alike domain can't elicit a usable assertion and there's nothing to relay. That matters because most MFA is still phishable — SMS and TOTP are typed secrets an adversary-in-the-middle proxy forwards in real time, and push-approve falls to MFA fatigue. Then layer device trust and conditional access so a stolen session from an unmanaged device still fails.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>What does "shift left" mean?</summary><div class="bod">
+    <p>Moving security work earlier in the lifecycle — into requirements, design, and development — instead of a penetration test before release where findings are expensive and often deferred. In practice: threat modelling at design time using STRIDE across trust boundaries, security requirements written alongside functional ones, security as part of ordinary code review rather than a separate gate, and automated SAST, dependency scanning, and secrets scanning in CI. The driver is economics — a design flaw caught on a whiteboard costs an hour; the same flaw in production costs an incident.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>What are the most important secure design principles?</summary><div class="bod">
+    <p>Least privilege, defence in depth, fail securely, and complete mediation — checking authorization on every access, not just the first, which is exactly what broken access control violates. I'd add minimising attack surface and secure defaults. The concrete example I'd give is our agent: an unprivileged UI process talking over a narrow XPC interface to a small root daemon, with every connection validated by audit token against a code-signing requirement. The design limits what a compromise can reach, rather than depending on the code being bug-free.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">LIKELY</span>How would you secure an API?</summary><div class="bod">
+    <p>Authentication and authorization are separate checks and both happen on every request — authenticating the user then failing to verify they own the resource is broken object-level authorization, consistently the top vulnerability category. TLS everywhere with proper validation. Validate and bound every input server-side. Rate limit by user and IP, hardest on auth endpoints. Never put secrets or PII in URLs, because they land in logs and proxies. Short-lived tokens with a revocation path, and audit logging of security-relevant events without logging the secrets themselves.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>Walk me through how you'd threat model a feature.</summary><div class="bod">
+    <p>Draw the data flow — components, data stores, and the paths between them — then mark the <strong>trust boundaries</strong>, because that's where the interesting threats live. Walk STRIDE at each boundary: can an attacker spoof this identity, tamper with this data, deny this action happened, read what they shouldn't, deny service, or escalate privilege? Then rank by risk — likelihood times impact — and decide for each: mitigate, accept, transfer, or eliminate. Write the accepted risks down explicitly, because an undocumented accepted risk is indistinguishable from an oversight.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>How do you handle a dependency with a known CVE?</summary><div class="bod">
+    <p>First establish real exposure — is the vulnerable code path actually reachable from our usage? A critical CVE in an unused function is lower risk than a moderate one on our auth path. Then patch if an update exists; if not, assess whether we can pin to a safe version, vendor and fix, or mitigate at another layer. Ship it through the normal release process unless it's actively exploited, in which case it's an incident. And structurally: SBOM plus automated scanning so we learn about these from a pipeline rather than from a customer.</p></div></details>
+
+  <details class="q"><summary><span class="tag med">POSSIBLE</span>What's the biggest security risk in a macOS agent?</summary><div class="bod">
+    <p>Privilege escalation through the IPC surface. The agent runs a root daemon by necessity, and the UI process — which parses untrusted input and is the realistic compromise target — talks to it. So every XPC method is a potential escalation path. Mitigations: the narrowest possible interface where the client requests and the daemon decides, never a method taking an arbitrary path or command, peer validation by audit token against a code-signing requirement rather than pid, and treating every parameter as hostile. Second biggest is supply chain, because everything I ship carries my signature and entitlements.</p></div></details>
+
+  <div class="bx go"><span class="l">The posture</span>
+    <p>You work on the defensive side of this daily, so speak from that: what an attacker does <em>and</em> what telemetry reveals it. Where you hit your limit — exploit development, cryptanalysis, red-team tradecraft — say so cleanly and pivot to reasoning. At a security company, honest boundaries plus sound judgment reads far better than a confident approximation, and an interviewer with a security background will spot the difference immediately.</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Cybersecurity · attacks → application security → secure design → threat modelling → interview Q&amp;A.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

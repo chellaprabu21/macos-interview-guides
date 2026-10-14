@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Security &amp; Identity, from scratch — for the Okta interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1f2632;
+    --ink-soft:#4c5462;
+    --ink-faint:#7b8492;
+    --paper:#eef0ec;
+    --surface:#ffffff;
+    --surface-2:#f5f6f2;
+    --line:#dfe1da;
+    --line-strong:#cbcec3;
+    --teal:#0c6e69;          /* primary — trust / secure */
+    --teal-deep:#0a514d;
+    --teal-tint:#e2f0ee;
+    --gold:#9a6f1e;          /* keys, seals, module numbers */
+    --gold-tint:#f6efdf;
+    --safe:#256d45;          /* now protected / verified */
+    --safe-tint:#e3f1e8;
+    --danger:#b1442b;        /* the attack / what breaks */
+    --danger-tint:#f8e7e0;
+    --slate-tint:#eceef1;    /* interview words */
+    --code-bg:#1b2330;
+    --code-ink:#e9ecf2;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16.5px;line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--gold);z-index:60;transition:width .1s linear;}
+
+  .shell{display:flex;min-height:100vh;}
+  #sidebar{
+    width:280px;flex:0 0 280px;position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:var(--surface);border-right:1px solid var(--line);padding:26px 16px 50px;
+  }
+  .brand{font-family:'Fraunces';font-weight:600;font-size:20px;line-height:1.15;color:var(--ink);letter-spacing:-.01em;}
+  .brand .sub{display:block;font-family:'IBM Plex Mono';font-weight:400;font-size:11px;color:var(--ink-faint);letter-spacing:.02em;margin-top:8px;line-height:1.5;}
+  .counter{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-faint);margin:20px 4px 10px;border-top:1px solid var(--line);padding-top:16px;}
+  .counter b{color:var(--teal);}
+  nav a{
+    display:flex;gap:11px;align-items:baseline;text-decoration:none;color:var(--ink-soft);
+    font-size:13.5px;padding:7px 9px;border-radius:8px;line-height:1.3;
+  }
+  nav a .n{font-family:'IBM Plex Mono';font-size:11px;color:var(--gold);min-width:22px;}
+  nav a:hover{background:var(--surface-2);color:var(--ink);}
+  nav a.active{background:var(--teal-tint);color:var(--teal-deep);font-weight:500;}
+  nav a.active .n{color:var(--teal-deep);}
+
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 36px 130px;}
+  .col{width:100%;max-width:760px;}
+
+  header.hero{padding:70px 0 34px;}
+  .kicker{font-family:'IBM Plex Mono';font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:0 0 18px;}
+  h1{font-family:'Fraunces';font-weight:600;font-size:clamp(32px,5.5vw,50px);line-height:1.03;letter-spacing:-.02em;margin:0 0 18px;}
+  .lede{font-size:18.5px;color:var(--ink-soft);max-width:60ch;margin:0 0 8px;}
+  .start{margin-top:26px;padding:16px 18px;border:1px solid var(--gold);background:var(--gold-tint);border-radius:12px;font-size:15px;color:var(--ink-soft);}
+  .start b{color:var(--ink);}
+
+  section{padding:58px 0 6px;border-top:1px solid var(--line);margin-top:34px;}
+  section:first-of-type{border-top:none;margin-top:0;}
+  .modnum{font-family:'IBM Plex Mono';font-size:12px;color:var(--gold);letter-spacing:.08em;}
+  h2{font-family:'Fraunces';font-weight:600;font-size:31px;letter-spacing:-.015em;margin:6px 0 4px;line-height:1.08;}
+  .modsub{color:var(--ink-faint);font-size:15px;margin:0 0 22px;font-style:italic;font-family:'Fraunces';}
+  h3{font-family:'Fraunces';font-weight:600;font-size:20px;margin:32px 0 8px;letter-spacing:-.01em;}
+  p{margin:0 0 15px;}
+  ul,ol{margin:0 0 16px;padding-left:22px;}
+  li{margin:6px 0;}
+  strong{font-weight:600;color:var(--ink);}
+  em{color:var(--ink);}
+  code{font-family:'IBM Plex Mono';font-size:.85em;background:var(--surface-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;color:#34384a;}
+
+  /* layered callouts */
+  .box{border-radius:12px;padding:15px 17px;margin:16px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surface);}
+  .box .lbl{font-family:'IBM Plex Mono';font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;}
+  .box p:last-child{margin-bottom:0;}
+  .why{border-left-color:var(--teal);background:var(--teal-tint);}      .why .lbl{color:var(--teal-deep);}
+  .picture{border-left-color:var(--gold);background:var(--gold-tint);}  .picture .lbl{color:var(--gold);}
+  .words{border-left-color:#6b7280;background:var(--slate-tint);}        .words .lbl{color:#4b5563;}
+  .attack{border-left-color:var(--danger);background:var(--danger-tint);} .attack .lbl{color:var(--danger);}
+  .safe{border-left-color:var(--safe);background:var(--safe-tint);}       .safe .lbl{color:var(--safe);}
+  .bridge{border-left-color:var(--teal-deep);background:#dfeeec;}         .bridge .lbl{color:var(--teal-deep);}
+
+  /* diagrams */
+  .diagram{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 18px;margin:20px 0;}
+  .diagram .cap{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-faint);text-align:center;margin-top:14px;letter-spacing:.03em;}
+  .flow{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;}
+  .node{
+    background:var(--surface-2);border:1.5px solid var(--line-strong);border-radius:10px;
+    padding:10px 13px;font-size:13px;text-align:center;min-width:74px;line-height:1.35;
+  }
+  .node.k{border-color:var(--gold);background:var(--gold-tint);}
+  .node.t{border-color:var(--teal);background:var(--teal-tint);}
+  .node.d{border-color:var(--danger);background:var(--danger-tint);}
+  .node.g{border-color:var(--safe);background:var(--safe-tint);}
+  .node b{font-family:'IBM Plex Mono';font-size:11px;display:block;color:var(--ink-faint);font-weight:500;margin-bottom:2px;}
+  .arr{font-family:'IBM Plex Mono';color:var(--ink-faint);font-size:18px;padding:0 2px;}
+  .arr small{display:block;font-size:9.5px;line-height:1;margin-top:2px;}
+  .stack{display:flex;flex-direction:column;gap:10px;}
+  .step{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .step .num{font-family:'IBM Plex Mono';font-weight:600;color:var(--gold);font-size:13px;min-width:22px;}
+  .step .txt{font-size:14.5px;}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px;overflow-x:auto;font-family:'IBM Plex Mono';font-size:12.5px;line-height:1.6;margin:14px 0;}
+
+  .tbl{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;}
+  .tbl th,.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .tbl th{font-family:'Fraunces';font-weight:600;font-size:14px;border-bottom:1.5px solid var(--line-strong);}
+  .tbl td:first-child{font-family:'IBM Plex Mono';font-size:12.5px;color:var(--teal-deep);white-space:nowrap;}
+
+  .review{display:flex;align-items:center;gap:10px;margin:28px 0 0;padding:13px 15px;border:1px dashed var(--line-strong);border-radius:10px;background:var(--surface);}
+  .review input{width:18px;height:18px;accent-color:var(--teal);cursor:pointer;}
+  .review label{font-size:14px;color:var(--ink-soft);cursor:pointer;}
+
+  .topbar{display:none;}
+  @media (max-width:920px){
+    .shell{flex-direction:column;}
+    #sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s;z-index:50;}
+    #sidebar.open{transform:translateX(0);}
+    .topbar{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:12px 18px;z-index:40;}
+    .topbar .burger{font-size:22px;background:none;border:none;cursor:pointer;}
+    .topbar .t{font-family:'Fraunces';font-weight:600;font-size:15px;}
+    main{padding:0 20px 100px;}
+    header.hero{padding:34px 0 24px;}
+    #scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:45;display:none;}
+    #scrim.show{display:block;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important;}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar">
+  <button class="burger" id="burger" aria-label="Open menu">☰</button>
+  <span class="t">Security, from scratch</span>
+</div>
+<div id="scrim"></div>
+
+<div class="shell">
+  <aside id="sidebar">
+    <div class="brand">Security &amp; Identity<span class="sub">from zero → interview-ready · no prior knowledge assumed</span></div>
+    <div class="counter">Modules done · <b><span id="done">0</span></b> / 16</div>
+    <nav id="toc">
+      <a href="#m0"><span class="n">00</span><span>What security is even for</span></a>
+      <a href="#m1"><span class="n">01</span><span>Hashing — one-way fingerprints</span></a>
+      <a href="#m2"><span class="n">02</span><span>Symmetric — the shared lock</span></a>
+      <a href="#m3"><span class="n">03</span><span>Public-key crypto (the big one)</span></a>
+      <a href="#m4"><span class="n">04</span><span>Digital signatures</span></a>
+      <a href="#m5"><span class="n">05</span><span>Certificates &amp; trust chains</span></a>
+      <a href="#m6"><span class="n">06</span><span>TLS / HTTPS / mTLS</span></a>
+      <a href="#m7"><span class="n">07</span><span>Secure Enclave</span></a>
+      <a href="#m8"><span class="n">08</span><span>Keychain</span></a>
+      <a href="#m9"><span class="n">09</span><span>Why passwords are weak</span></a>
+      <a href="#m10"><span class="n">10</span><span>OAuth — the valet key</span></a>
+      <a href="#m11"><span class="n">11</span><span>OIDC &amp; JWT — proving who</span></a>
+      <a href="#m12"><span class="n">12</span><span>FIDO / WebAuthn / passkeys</span></a>
+      <a href="#m13"><span class="n">13</span><span>MDM &amp; device attestation</span></a>
+      <a href="#m14"><span class="n">14</span><span>Zero trust &amp; conditional access</span></a>
+      <a href="#m15"><span class="n">15</span><span>It all fits together + glossary</span></a>
+    </nav>
+  </aside>
+
+  <main>
+  <div class="col">
+
+    <header class="hero">
+      <p class="kicker">Start here · read top to bottom</p>
+      <h1>Security &amp; identity, explained from scratch.</h1>
+      <p class="lede">Sixteen short modules that build on each other. We start with one simple idea — fingerprints and locks — and end at exactly the systems Okta builds. No step is skipped.</p>
+      <div class="start">Each module follows the same rhythm: <b>why it exists</b> → <b>an everyday picture</b> → <b>how it actually works</b> → <b>the words you'll say in the interview</b> → <b>what attack it stops</b>. Read in order; module 03 is the hinge everything later depends on.</div>
+    </header>
+
+    <!-- 00 -->
+    <section id="m0">
+      <div class="modnum">00 / Foundation</div>
+      <h2>What is security even trying to do?</h2>
+      <p class="modsub">Before any math, know the four questions. Every tool in this guide is an answer to one of them.</p>
+      <p>Forget cryptography for a second. "Security" sounds vague, but in practice it's four very concrete promises a system tries to keep. Hold these in your head — when you meet a new tool later, ask "which of these four is it solving?"</p>
+      <table class="tbl">
+        <tr><th>The everyday question</th><th>The name for it</th><th>Answered later by</th></tr>
+        <tr><td>Can a stranger read this?</td><td>Confidentiality</td><td>Encryption (02, 03)</td></tr>
+        <tr><td>Was this changed in transit?</td><td>Integrity</td><td>Hashing &amp; signatures (01, 04)</td></tr>
+        <tr><td>Are you really who you claim?</td><td>Authentication</td><td>Signatures, certs, FIDO (04, 05, 12)</td></tr>
+        <tr><td>Are you allowed to do this?</td><td>Authorization</td><td>OAuth (10)</td></tr>
+      </table>
+      <div class="box why"><span class="lbl">Why this matters for your interview</span><p>People constantly mix up <strong>authentication</strong> (proving <em>who you are</em>) and <strong>authorization</strong> (proving <em>what you're allowed to do</em>). Keeping them separate is one of the easiest ways to sound like you actually know identity. Okta's whole world lives in these two words.</p></div>
+      <div class="review"><input type="checkbox" id="r0"><label for="r0">Got it — onto fingerprints</label></div>
+    </section>
+
+    <!-- 01 -->
+    <section id="m1">
+      <div class="modnum">01 / Building block</div>
+      <h2>Hashing — a one-way fingerprint</h2>
+      <p class="modsub">The simplest cryptographic tool. Start here because signatures and passwords both rely on it.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>Sometimes you need to ask "is this <em>exactly</em> the same as before?" or "was this tampered with?" without storing or revealing the whole thing. You need a compact, reliable fingerprint.</p></div>
+      <div class="box picture"><span class="lbl">Picture it</span><p>A human fingerprint. It's tiny compared to a whole person, the same person always leaves the same print, and two different people leave totally different prints. Critically: you <em>cannot</em> rebuild the person from the fingerprint. A hash is a fingerprint for data.</p></div>
+      <p><strong>How it works:</strong> a hash function takes any input — a word, a file, a 4 GB video — and produces a fixed-size string of characters (the <em>digest</em>). Properties that make it useful:</p>
+      <ul>
+        <li><strong>Deterministic</strong> — same input always gives the same digest.</li>
+        <li><strong>Fixed size</strong> — "hi" and a movie both produce, say, a 64-character SHA-256 digest.</li>
+        <li><strong>One-way</strong> — you can't reverse a digest back into the original. That's the whole point.</li>
+        <li><strong>Avalanche</strong> — change one character of input and the entire digest changes unrecognizably.</li>
+        <li><strong>Collision-resistant</strong> — it's practically impossible to find two different inputs with the same digest.</li>
+      </ul>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node">"hello"</div>
+          <span class="arr">→</span>
+          <div class="node t"><b>hash fn</b>SHA-256</div>
+          <span class="arr">→</span>
+          <div class="node">2cf24dba…9824</div>
+          <span class="arr">✗<small>no way back</small></span>
+        </div>
+        <div class="cap">Any input in, fixed-size fingerprint out, and no path backwards.</div>
+      </div>
+      <p><strong>Where it's used:</strong> verifying a downloaded file wasn't corrupted or swapped (compare digests), storing passwords (a site stores the <em>hash</em> of your password, not the password), and fingerprinting a program so you can recognize it again (you'll use this idea in endpoint security — a binary's hash identifies it).</p>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"A cryptographic hash like <strong>SHA-256</strong> is a deterministic, one-way function producing a fixed-length <strong>digest</strong>; it's collision-resistant, so it works for integrity checks and fingerprinting. For passwords you never use a plain hash — you use a <strong>salt</strong> plus a deliberately slow key-derivation function (bcrypt, scrypt, PBKDF2) so attackers can't precompute or brute-force."</p></div>
+      <div class="box attack"><span class="lbl">The gotcha</span><p>Hashing is <strong>not</strong> encryption. Encryption is reversible <em>if</em> you have the key; hashing is one-way <em>on purpose</em> and has no key. Mixing these up is a classic tell that someone learned security from headlines.</p></div>
+      <div class="review"><input type="checkbox" id="r1"><label for="r1">I can explain hashing</label></div>
+    </section>
+
+    <!-- 02 -->
+    <section id="m2">
+      <div class="modnum">02 / Building block</div>
+      <h2>Symmetric encryption — one shared lock</h2>
+      <p class="modsub">The intuitive kind of encryption. It works, but it has one big problem that sets up the next module.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>You want to send a message so that only the intended person can read it. Anyone who intercepts it should see gibberish.</p></div>
+      <div class="box picture"><span class="lbl">Picture it</span><p>A lockbox with one key. You lock your message inside and send the box. Your friend has an identical copy of that key and unlocks it. The <em>same</em> key both locks and unlocks — that's why it's called "symmetric."</p></div>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node">Alice<br>message</div>
+          <span class="arr">→</span>
+          <div class="node k"><b>same key</b>🔑 lock</div>
+          <span class="arr">→</span>
+          <div class="node">🔒 gibberish<br>(sent over wire)</div>
+          <span class="arr">→</span>
+          <div class="node k"><b>same key</b>🔑 unlock</div>
+          <span class="arr">→</span>
+          <div class="node g">Bob<br>message</div>
+        </div>
+        <div class="cap">One secret key, shared by both sides, used to both encrypt and decrypt.</div>
+      </div>
+      <p>This is fast and great for bulk data. The standard algorithm is <strong>AES</strong>, usually in a mode called <strong>AES-GCM</strong> that also detects tampering (encryption + integrity in one).</p>
+      <div class="box attack"><span class="lbl">The problem it can't solve alone</span><p>Two problems, actually. <strong>(1) Key distribution:</strong> how do Alice and Bob both get the same secret key in the first place, without an eavesdropper grabbing it on the way? <strong>(2) Identity:</strong> the key proves nothing about <em>who</em> you are — anyone holding it can read and write. These two gaps are exactly what the next module fixes.</p></div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"Symmetric encryption — <strong>AES-GCM</strong> — is fast and gives confidentiality plus integrity, but it has the <strong>key-distribution problem</strong>: both parties need the same secret, and sharing it securely is hard. That's why real systems use asymmetric crypto to exchange the symmetric key."</p></div>
+      <div class="review"><input type="checkbox" id="r2"><label for="r2">I get symmetric &amp; its limit</label></div>
+    </section>
+
+    <!-- 03 -->
+    <section id="m3">
+      <div class="modnum">03 / The hinge — read slowly</div>
+      <h2>Public-key (asymmetric) crypto</h2>
+      <p class="modsub">If you only deeply understand one module, make it this one. Everything from here — signatures, certificates, TLS, Secure Enclave, passkeys — is built on it.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>To fix the two gaps from module 02: how to communicate securely with someone you've never met (no pre-shared secret), and how to prove identity.</p></div>
+      <p><strong>The core idea:</strong> instead of one shared key, every person gets a <em>pair</em> of keys that are mathematically linked:</p>
+      <ul>
+        <li>a <strong>public key</strong> — you hand it to everyone, publish it, put it on a billboard;</li>
+        <li>a <strong>private key</strong> — you guard it and never, ever share it.</li>
+      </ul>
+      <p>The magic property: <strong>whatever one key does, only the other key can undo.</strong> This gives you two completely different superpowers depending on which key you start with.</p>
+
+      <h3>Superpower 1 — privacy (encrypt to someone)</h3>
+      <div class="box picture"><span class="lbl">Picture it</span><p>A mailbox with a public slot. <em>Anyone</em> can drop mail in (encrypt with your public key), but only the person with the private key can open the box and read it (decrypt with the private key).</p></div>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node">Anyone</div>
+          <span class="arr">→</span>
+          <div class="node k"><b>Bob's</b>🔑 PUBLIC</div>
+          <span class="arr">→</span>
+          <div class="node">🔒 encrypted</div>
+          <span class="arr">→</span>
+          <div class="node k"><b>Bob's</b>🔑 PRIVATE</div>
+          <span class="arr">→</span>
+          <div class="node g">only Bob<br>reads it</div>
+        </div>
+        <div class="cap">Encrypt with the recipient's PUBLIC key; only their PRIVATE key can decrypt.</div>
+      </div>
+
+      <h3>Superpower 2 — authenticity (prove it's you)</h3>
+      <div class="box picture"><span class="lbl">Picture it</span><p>A wax seal only you can stamp. You sign with your <em>private</em> key (only you can do this). Anyone can check the seal with your <em>public</em> key and confirm "yes, this really came from you and wasn't altered." This is the basis of identity.</p></div>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node">Alice</div>
+          <span class="arr">→</span>
+          <div class="node k"><b>Alice's</b>🔑 PRIVATE</div>
+          <span class="arr">→</span>
+          <div class="node">✶ signed</div>
+          <span class="arr">→</span>
+          <div class="node k"><b>Alice's</b>🔑 PUBLIC</div>
+          <span class="arr">→</span>
+          <div class="node g">anyone confirms<br>"this is Alice"</div>
+        </div>
+        <div class="cap">Sign with YOUR private key; anyone verifies with your public key. The reverse of superpower 1.</div>
+      </div>
+
+      <div class="box safe"><span class="lbl">Why this is so powerful</span><p>Public keys can be shared freely (no distribution problem), and signing proves identity without revealing your secret. The one catch — it's mathematically heavy and slow — so in practice asymmetric crypto is used briefly to <em>authenticate and agree on a symmetric key</em>, then the fast symmetric encryption from module 02 carries the actual data. That handoff is exactly what TLS does (module 06).</p></div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"Asymmetric crypto uses a <strong>public/private key pair</strong>. Encrypting with the public key gives confidentiality to the private-key holder; signing with the private key gives authenticity and integrity, verifiable by anyone with the public key. Common algorithms are <strong>RSA</strong> and <strong>elliptic-curve (ECC, e.g. P-256)</strong> — ECC gives equivalent strength with much smaller keys, which is why hardware like Apple's Secure Enclave uses it."</p></div>
+      <div class="review"><input type="checkbox" id="r3"><label for="r3">I understand the key pair (the hinge!)</label></div>
+    </section>
+
+    <!-- 04 -->
+    <section id="m4">
+      <div class="modnum">04 / Building block</div>
+      <h2>Digital signatures, properly</h2>
+      <p class="modsub">Superpower 2 in detail — because signed tokens and certificates run the identity world.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>You want a way to prove a message (a token, a certificate, a software update) genuinely came from a specific source and wasn't altered by even one byte.</p></div>
+      <p><strong>How it actually works</strong> — it combines modules 01 and 03:</p>
+      <div class="diagram">
+        <div class="stack">
+          <div class="step"><span class="num">Sign</span><span class="txt">Take the message → <strong>hash</strong> it (module 01) → encrypt that hash with your <strong>private key</strong> (module 03). The result is the <em>signature</em>, attached to the message.</span></div>
+          <div class="step"><span class="num">Verify</span><span class="txt">The receiver hashes the message themselves, decrypts your signature with your <strong>public key</strong> to reveal the hash you computed, and compares the two. <strong>Match → authentic + untampered.</strong></span></div>
+        </div>
+        <div class="cap">Hashing makes it efficient; the private key makes it unforgeable.</div>
+      </div>
+      <p>A valid signature gives you three things at once: <strong>authentication</strong> (it came from the private-key holder), <strong>integrity</strong> (any change breaks the match), and <strong>non-repudiation</strong> (they can't later deny signing it).</p>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"A digital signature is the hash of the message encrypted with the signer's private key; verification re-hashes and checks against the public key. It delivers integrity, authentication, and non-repudiation. JWTs, X.509 certificates, and WebAuthn assertions are all just signed data — once you see signing, you see them all."</p></div>
+      <div class="review"><input type="checkbox" id="r4"><label for="r4">Signatures make sense</label></div>
+    </section>
+
+    <!-- 05 -->
+    <section id="m5">
+      <div class="modnum">05 / Trust</div>
+      <h2>Certificates &amp; the chain of trust</h2>
+      <p class="modsub">Public keys prove identity only if you know whose key it is. This module solves "how do I trust a stranger's public key?"</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>Signatures prove a message came from "whoever owns this private key." But how do you know that key really belongs to <code>bank.com</code> and not an impostor who also has a key pair? You need someone trustworthy to vouch.</p></div>
+      <div class="box picture"><span class="lbl">Picture it</span><p>A passport. You believe a stranger's passport not because you know them, but because a government you trust issued it, stamped it, and is hard to forge. A <strong>certificate</strong> is a passport for a public key: a trusted authority signs a statement saying "this public key belongs to bank.com."</p></div>
+      <p><strong>How it works — the chain:</strong> your operating system ships with a small, pre-trusted list of <strong>root Certificate Authorities (CAs)</strong>. A root signs <em>intermediate</em> CAs, and intermediates sign the actual website's <em>leaf</em> certificate. When you visit a site, your device walks the chain upward and checks each signature until it reaches a root it already trusts.</p>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node t"><b>Root CA</b>pre-trusted<br>by your OS</div>
+          <span class="arr">→<small>signs</small></span>
+          <div class="node k"><b>Intermediate</b>CA</div>
+          <span class="arr">→<small>signs</small></span>
+          <div class="node g"><b>Leaf</b>bank.com<br>+ its public key</div>
+        </div>
+        <div class="cap">Trust flows down from a root your device already trusts to the site's certificate.</div>
+      </div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"This is <strong>PKI</strong> — public-key infrastructure. An <strong>X.509 certificate</strong> binds an identity to a public key, signed by a <strong>CA</strong>. Trust derives from a <strong>chain</strong> up to a root in the OS trust store. The same machinery issues <em>device</em> certificates, which is how an endpoint proves its identity to a backend."</p></div>
+      <div class="box bridge"><span class="lbl">Your bridge to the role</span><p>This is the foundation of <em>device identity</em>: an enterprise can issue a certificate to a managed device, binding the device's hardware key to a trusted identity. You've worked near this with MDM and device trust — it's PKI applied to machines instead of websites.</p></div>
+      <div class="review"><input type="checkbox" id="r5"><label for="r5">Chain of trust is clear</label></div>
+    </section>
+
+    <!-- 06 -->
+    <section id="m6">
+      <div class="modnum">06 / It assembles</div>
+      <h2>TLS / HTTPS / mTLS — the padlock</h2>
+      <p class="modsub">The little padlock in your browser is modules 01–05 working together in under a second.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>When you talk to a website, you want to know (a) you're really talking to that site, not an impostor, and (b) nobody in between can read or change the conversation. TLS delivers both.</p></div>
+      <p><strong>The handshake, step by step:</strong></p>
+      <div class="diagram">
+        <div class="stack">
+          <div class="step"><span class="num">1</span><span class="txt">Your browser connects to the server and says "let's set up a secure channel."</span></div>
+          <div class="step"><span class="num">2</span><span class="txt">The server sends its <strong>certificate</strong> (its public key + the CA chain from module 05).</span></div>
+          <div class="step"><span class="num">3</span><span class="txt">Your browser <strong>verifies the chain</strong> — is this really the right site, vouched for by a trusted CA? If not, you get the scary warning page.</span></div>
+          <div class="step"><span class="num">4</span><span class="txt">Using <strong>asymmetric</strong> crypto (module 03), the two sides agree on a fresh <strong>symmetric session key</strong>.</span></div>
+          <div class="step"><span class="num">5</span><span class="txt">They switch to fast <strong>symmetric</strong> encryption (module 02) for the rest of the conversation.</span></div>
+        </div>
+        <div class="cap">Authenticate with certificates → exchange a key with asymmetric crypto → encrypt the data with symmetric. All four guarantees from module 00, at once.</div>
+      </div>
+      <p><strong>Mutual TLS (mTLS):</strong> normally only the <em>server</em> proves its identity. In mTLS, the <em>client</em> also presents a certificate, so <strong>both</strong> sides prove who they are. This is the natural way for a device to authenticate to a backend using a hardware-bound key — a pattern central to this role.</p>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"The TLS handshake uses the server's certificate for authentication, asymmetric crypto to establish a shared <strong>session key</strong>, then symmetric encryption for throughput. <strong>mTLS</strong> adds a client certificate so the device authenticates too. <strong>Certificate pinning</strong> hardens an agent against a rogue CA by trusting only a specific cert/key — at the cost of rotation complexity."</p></div>
+      <div class="review"><input type="checkbox" id="r6"><label for="r6">I can walk through TLS</label></div>
+    </section>
+
+    <!-- 07 -->
+    <section id="m7">
+      <div class="modnum">07 / Hardware</div>
+      <h2>Secure Enclave — a key that can't be stolen</h2>
+      <p class="modsub">Your strongest area. Now you'll see exactly why it's the foundation of modern device identity.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>All the crypto above assumes your private key stays secret. But if that key sits in a file or in a program's memory, malware — or anyone with root — can copy it and impersonate you forever. We need a place a key can live where <em>nothing</em>, not even the operating system, can read it.</p></div>
+      <div class="box picture"><span class="lbl">Picture it</span><p>A sealed vault with a mail slot but no door. You can pass a document <em>in</em> and the vault stamps it and passes it back <em>out</em> — but you can never reach inside to take the stamp itself. The Secure Enclave is that vault for your private key.</p></div>
+      <p><strong>How it works:</strong> the Secure Enclave is a separate, isolated chip. It can <em>generate</em> a private key inside itself, and that key's material <strong>never leaves the chip</strong>. Your app can't read it; the OS can't read it. All you can do is <em>ask</em> the Enclave to perform an operation (sign this, decrypt this) with the key. You can also require that the user prove presence — Face ID, Touch ID, or passcode — before the Enclave will act.</p>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node">your app:<br>"sign this"</div>
+          <span class="arr">→</span>
+          <div class="node t" style="border-style:dashed;"><b>Secure Enclave</b>🔒 private key<br>(never exits)</div>
+          <span class="arr">→</span>
+          <div class="node g">signature<br>comes out</div>
+        </div>
+        <div class="cap">Requests go in, results come out — the private key never crosses the boundary.</div>
+      </div>
+      <div class="box bridge"><span class="lbl">Why this is your edge</span><p>A Secure-Enclave key that is <strong>non-exportable</strong>, <strong>user-presence-gated</strong>, and <strong>origin-bound</strong> is, mechanically, exactly what a modern passkey (module 12) and a device-attestation key (module 13) are. You've already built this primitive. The rest of the identity world is just different product wrappers around it.</p></div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"The Secure Enclave generates and stores a <strong>non-exportable</strong> private key; the application processor can only request operations, never read the key, and use can be gated on <strong>user presence</strong> (biometric/passcode). It typically uses ECC (P-256). That hardware binding is what makes a credential phishing-resistant and tied to a specific device."</p></div>
+      <div class="review"><input type="checkbox" id="r7"><label for="r7">Secure Enclave clicks</label></div>
+    </section>
+
+    <!-- 08 -->
+    <section id="m8">
+      <div class="modnum">08 / Storage</div>
+      <h2>Keychain — the system's secret vault</h2>
+      <p class="modsub">Where the OS keeps passwords, keys, and tokens — and how it differs from the Enclave.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>Apps need somewhere safe to store secrets (passwords, tokens, certificates) instead of in plain files. The Keychain is the OS-managed, encrypted, access-controlled store for that.</p></div>
+      <p><strong>How it works:</strong> items are encrypted at rest, unlocked with the device, and an app can normally only read its <em>own</em> items. You can tune <em>when</em> an item is readable (only while the device is unlocked, only on this device so it never syncs to backups) and require authentication to access it.</p>
+      <div class="box attack"><span class="lbl">The key distinction — interviewers love this</span><p>The Keychain protects a secret <em>at rest</em>, but to <em>use</em> it the secret is loaded into the app's memory — where a compromised process could grab it. The <strong>Secure Enclave never lets the key out at all.</strong> So the strongest design keeps secrets out of memory entirely: store a non-exportable key in the Enclave and only ask it to sign, rather than storing a usable secret in the Keychain.</p></div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"Keychain Services is the system credential store with per-item <strong>accessibility</strong> (e.g. <em>WhenUnlocked</em>, <em>ThisDeviceOnly</em>) and access-control gating. Use it for retrievable secrets, but prefer a <strong>Secure-Enclave key</strong> when the secret should never be exportable or live in process memory."</p></div>
+      <div class="review"><input type="checkbox" id="r8"><label for="r8">Keychain vs Enclave is clear</label></div>
+    </section>
+
+    <!-- 09 -->
+    <section id="m9">
+      <div class="modnum">09 / Pivot to identity</div>
+      <h2>Why passwords are weak</h2>
+      <p class="modsub">This is the motivation for the entire second half. Once you feel why passwords fail, OAuth, OIDC, and FIDO all make sense.</p>
+      <p>Passwords are a <em>shared secret</em>: you and the server both know it. That creates four chronic problems:</p>
+      <ul>
+        <li><strong>Reuse</strong> — people use the same password everywhere, so one breach unlocks many accounts.</li>
+        <li><strong>Guessable</strong> — weak passwords fall to dictionaries and brute force.</li>
+        <li><strong>Breachable</strong> — if a server is hacked, the secrets can leak.</li>
+        <li><strong>Phishable</strong> — and this is the big one: a fake look-alike site can simply ask you to type your password, and you hand it over.</li>
+      </ul>
+      <div class="box why"><span class="lbl">What about MFA?</span><p>Multi-factor authentication adds a second proof — <em>something you have</em> (your phone) or <em>something you are</em> (your fingerprint) on top of <em>something you know</em> (the password). It's much better. But many common forms are <strong>still phishable</strong>: a convincing fake site can ask for your SMS or authenticator code and instantly replay it to the real site before it expires.</p></div>
+      <div class="box safe"><span class="lbl">The goal we're building toward</span><p>A credential with <strong>no secret to type</strong>, <strong>bound to the real site's address</strong>, so a fake site literally cannot obtain anything usable. That's <strong>phishing-resistant</strong> authentication — modules 10–12 — and it's built entirely on the public-key crypto and Secure Enclave you now understand.</p></div>
+      <div class="review"><input type="checkbox" id="r9"><label for="r9">I see why passwords fail</label></div>
+    </section>
+
+    <!-- 10 -->
+    <section id="m10">
+      <div class="modnum">10 / Identity protocol</div>
+      <h2>OAuth — letting an app act for you</h2>
+      <p class="modsub">Okta's core. OAuth is about authorization — what an app may do on your behalf — not about proving who you are.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>A photo-printing app wants access to your Google Photos. You should absolutely <em>not</em> give it your Google password — that would let it do anything, forever. You need to grant <em>limited, revocable</em> access without ever sharing your password.</p></div>
+      <div class="box picture"><span class="lbl">Picture it</span><p>A valet key. It lets the valet park your car — but not open the glovebox or drive 200 miles. Limited powers, and you can take it back. OAuth hands apps a "valet key" to specific parts of your account.</p></div>
+      <p><strong>How it works:</strong> you log in directly with Google (never with the app), Google asks "allow this app to view your photos?", and on your yes, Google gives the <em>app</em> a limited <strong>token</strong> — not your password. The app uses that token to call the Photos API. You can revoke it anytime.</p>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node">You<br>(owner)</div>
+          <span class="arr">→</span>
+          <div class="node t"><b>Google</b>auth server</div>
+          <span class="arr">→<small>limited token</small></span>
+          <div class="node">Print app<br>(client)</div>
+          <span class="arr">→</span>
+          <div class="node g">Photos API<br>(resource)</div>
+        </div>
+        <div class="cap">You authorize once; the app gets a scoped token, never your password.</div>
+      </div>
+      <ul>
+        <li><strong>Access token</strong> — the valet key. Short-lived, scoped, used on each API call.</li>
+        <li><strong>Refresh token</strong> — used to get a new access token when it expires. Long-lived and powerful, so it must be stored very securely.</li>
+        <li><strong>Scopes</strong> — exactly what the token may do ("view photos," not "delete account").</li>
+      </ul>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"OAuth 2.0 is an <strong>authorization</strong> framework. The <strong>authorization-code flow with PKCE</strong> is the modern default, even for native apps. <strong>PKCE</strong> binds the flow to a one-time secret the real client generated, so an intercepted authorization code is useless to an attacker — it closes the code-interception attack for clients that can't keep a secret."</p></div>
+      <div class="box attack"><span class="lbl">Don't mix it up</span><p>OAuth tells an app <em>what it's allowed to do</em>. It does <strong>not</strong> cleanly tell the app <em>who you are</em>. That gap is filled by the next module — and conflating the two is the mistake interviewers probe for.</p></div>
+      <div class="review"><input type="checkbox" id="r10"><label for="r10">OAuth = authorization, got it</label></div>
+    </section>
+
+    <!-- 11 -->
+    <section id="m11">
+      <div class="modnum">11 / Identity protocol</div>
+      <h2>OIDC &amp; JWT — proving who you are</h2>
+      <p class="modsub">OpenID Connect adds identity on top of OAuth. The token format is the JWT — and it's just signed data (module 04).</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>OAuth gives an app access but doesn't reliably answer "who is the logged-in user?" <strong>OpenID Connect (OIDC)</strong> is a thin layer on OAuth that adds exactly that: after login, you also receive an <strong>ID token</strong> — a signed statement of who you are.</p></div>
+      <p><strong>The ID token is a JWT.</strong> A JWT has three parts joined by dots: <code>header.payload.signature</code>.</p>
+      <div class="diagram">
+        <div class="stack">
+          <div class="step"><span class="num">H</span><span class="txt"><strong>Header</strong> — which signature algorithm (e.g. ES256, RS256) and which key was used.</span></div>
+          <div class="step"><span class="num">P</span><span class="txt"><strong>Payload</strong> — the <em>claims</em>: who issued it (<code>iss</code>), who it's for (<code>aud</code>), who you are (<code>sub</code>), when it expires (<code>exp</code>). <strong>This part is readable by anyone.</strong></span></div>
+          <div class="step"><span class="num">S</span><span class="txt"><strong>Signature</strong> — the issuer signs the header+payload with its private key (module 04), so anyone can verify with the issuer's public key that it's genuine and untampered.</span></div>
+        </div>
+        <div class="cap">A JWT is signed data. Verification = the signature check you already learned.</div>
+      </div>
+      <div class="box attack"><span class="lbl">Two mistakes interviewers fish for</span><p><strong>(1)</strong> A JWT is <em>signed, not encrypted</em> — anyone can read the payload, so never put secrets in it. <strong>(2)</strong> You must <em>verify</em> the token (check signature, issuer, audience, expiry), not merely <em>decode</em> it. Decoding is not validation.</p></div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"OIDC adds an <strong>ID token</strong> (a JWT) and a userinfo endpoint to OAuth. To validate a JWT I verify the signature against the issuer's published keys (<strong>JWKS</strong>) matching the <code>kid</code>, then check <code>iss</code>, <code>aud</code>, <code>exp</code>/<code>nbf</code>, and the <code>nonce</code> for replay protection. The payload is base64url, not encrypted."</p></div>
+      <div class="review"><input type="checkbox" id="r11"><label for="r11">OIDC &amp; JWT make sense</label></div>
+    </section>
+
+    <!-- 12 -->
+    <section id="m12">
+      <div class="modnum">12 / The payoff</div>
+      <h2>FIDO / WebAuthn / passkeys</h2>
+      <p class="modsub">The unphishable login. This is where modules 03, 04, 07, and 09 all come together — and where your Secure Enclave experience becomes identity expertise.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>To kill the password and its phishability (module 09) once and for all, using public-key crypto (module 03) and hardware keys (module 07).</p></div>
+      <p><strong>The idea:</strong> instead of a password, your device holds a <strong>private key</strong> (typically generated in the Secure Enclave). To register, your device makes a new key pair for that specific website and sends the website the <em>public</em> key. To log in, the website sends a random <strong>challenge</strong>; your device signs it with the private key after you prove presence (Face/Touch ID); the website verifies the signature with your public key. <strong>No secret is ever typed or transmitted.</strong></p>
+      <div class="diagram">
+        <div class="stack">
+          <div class="step"><span class="num">Reg</span><span class="txt">Device generates a key pair <em>bound to this site's address</em>, stores the private key in the Enclave, and sends the <strong>public key</strong> to the site, which saves it for your account.</span></div>
+          <div class="step"><span class="num">Login</span><span class="txt">Site sends a random <strong>challenge</strong> → you confirm with biometric → device <strong>signs</strong> the challenge with the private key → site <strong>verifies</strong> with your stored public key. Done.</span></div>
+        </div>
+        <div class="cap">Registration shares a public key; login is a signed challenge. The private key never leaves the device.</div>
+      </div>
+      <div class="box safe"><span class="lbl">Why it can't be phished</span><p>The credential is cryptographically <strong>bound to the real site's origin</strong>. A fake look-alike domain can't elicit a usable signature — the browser/device simply won't sign for the wrong origin, and there's no secret to capture and replay. This is the property SMS and TOTP codes lack.</p></div>
+      <div class="box bridge"><span class="lbl">Say this in the interview — it's your strongest move</span><p>"A <strong>platform authenticator</strong> is, mechanically, the Secure Enclave work I've shipped: a non-exportable, user-presence-gated, origin-bound key that signs a challenge. WebAuthn standardizes that primitive for user login. I've built the hard part; the protocol is the wrapper." This turns endpoint depth into credible identity fluency — without claiming hands-on FIDO stack work you don't have.</p></div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"<strong>FIDO2 / WebAuthn</strong> uses three actors: the <strong>relying party</strong> (the service), the client/browser, and the <strong>authenticator</strong> (<em>platform</em> = built-in via Secure Enclave/TPM; <em>roaming</em> = a security key over <strong>CTAP</strong>). Registration produces an <strong>attestation</strong>; login produces an <strong>assertion</strong>. <strong>Passkeys</strong> are WebAuthn credentials, often synced across a user's devices for convenience and recovery."</p></div>
+      <div class="review"><input type="checkbox" id="r12"><label for="r12">WebAuthn — the big one — clicks</label></div>
+    </section>
+
+    <!-- 13 -->
+    <section id="m13">
+      <div class="modnum">13 / Trusting the machine</div>
+      <h2>MDM &amp; device attestation</h2>
+      <p class="modsub">We can now trust a user (module 12). Can we trust the device they're on? Same crypto, applied to hardware.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>A company wants to allow access only from devices it manages and trusts — not from an attacker's laptop or a cloned machine. So it needs to (a) manage company devices and (b) let a device <em>prove</em> it's a genuine, specific, healthy machine.</p></div>
+      <p><strong>MDM (Mobile Device Management)</strong> is how an organization configures and controls devices: it installs settings, certificates, and rules, and can lock or wipe a lost device. A neat detail: a server can't reach a sleeping device behind a home router, so Apple's <strong>push service (APNs)</strong> acts as a doorbell — it silently tells the device "wake up and check in," and the device then connects out and pulls its commands.</p>
+      <p><strong>Device attestation</strong> is the device's version of a passkey: using a <strong>Secure Enclave key</strong>, the device produces hardware-backed proof that it's a real Apple device with a specific identity and a non-exportable key — not a spoof or clone. That proof, bound into a device certificate (module 05), is what lets a backend <em>trust</em> the machine.</p>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node t"><b>MDM server</b></div>
+          <span class="arr">→<small>APNs wake</small></span>
+          <div class="node">Device<br>"checks in"</div>
+          <span class="arr">→<small>SE attestation</small></span>
+          <div class="node g">proven genuine<br>+ device cert</div>
+        </div>
+        <div class="cap">Wake the device, it checks in, and proves its hardware identity with a Secure-Enclave-backed attestation.</div>
+      </div>
+      <div class="box bridge"><span class="lbl">Your home turf</span><p>You've done MDM attestation and device trust. Frame it as: "I built the device end of the device-identity contract" — the hardware-backed proof that makes a machine a credential the identity platform can rely on. That is precisely this team's mission.</p></div>
+      <div class="box words"><span class="lbl">Say it in interview words</span><p>"MDM uses <strong>APNs</strong> as a wake channel — it carries no command payload, just a signal to check in over an authenticated session. <strong>Managed device attestation</strong> (ACME-based, using a Secure Enclave key) proves the device is genuine with a non-exportable key, defeating cloned or spoofed enrollments."</p></div>
+      <div class="review"><input type="checkbox" id="r13"><label for="r13">Device attestation makes sense</label></div>
+    </section>
+
+    <!-- 14 -->
+    <section id="m14">
+      <div class="modnum">14 / The synthesis</div>
+      <h2>Zero trust &amp; conditional access</h2>
+      <p class="modsub">Everything so far, assembled into the model Okta sells — and the literal job you're interviewing for.</p>
+      <div class="box why"><span class="lbl">Why it exists</span><p>The old model was "inside the corporate network = trusted." That fails the moment an attacker gets inside or work happens from anywhere. <strong>Zero trust</strong> flips it: trust nothing by default, and verify <em>every</em> access request.</p></div>
+      <p>A <strong>conditional access</strong> engine decides each request by combining three things you now understand:</p>
+      <table class="tbl">
+        <tr><th>Signal</th><th>How it's proven</th><th>Module</th></tr>
+        <tr><td>WHO (user)</td><td>Phishing-resistant login — ideally a passkey</td><td>12</td></tr>
+        <tr><td>WHAT (device)</td><td>Managed &amp; attested via MDM + Secure Enclave</td><td>13</td></tr>
+        <tr><td>CONTEXT (risk)</td><td>Location, time, anomaly/risk signals</td><td>—</td></tr>
+      </table>
+      <p>Based on all three, the engine decides: <strong>allow</strong>, <strong>deny</strong>, or <strong>step up</strong> (ask for more proof). If it allows, it issues a short-lived signed token (module 11) the app trusts.</p>
+      <div class="box safe"><span class="lbl">Okta FastPass — a real example</span><p>FastPass is a passwordless, phishing-resistant, device-bound factor that uses the platform's hardware-backed crypto. It is, in one product, modules 03 + 07 + 12 + 13 working together — the exact intersection of your background and Okta's mission.</p></div>
+      <div class="box bridge"><span class="lbl">Your one-line positioning</span><p>"I've spent my career on the device end of zero trust — System Extensions, Endpoint Security, Secure-Enclave-backed credentials, MDM attestation, conditional access. That's exactly the primitive Okta turns into a trusted identity factor, and I want to build the macOS side of it at their scale."</p></div>
+      <div class="review"><input type="checkbox" id="r14"><label for="r14">Zero trust ties it all together</label></div>
+    </section>
+
+    <!-- 15 -->
+    <section id="m15">
+      <div class="modnum">15 / Recap</div>
+      <h2>One walk-through &amp; glossary</h2>
+      <p class="modsub">See every module fire in a single real login, then keep the glossary handy.</p>
+      <h3>A single secure login, narrated</h3>
+      <div class="diagram">
+        <div class="stack">
+          <div class="step"><span class="num">1</span><span class="txt">An employee opens a work app. The app redirects to Okta to authenticate (<strong>OAuth/OIDC</strong>, mod 10–11).</span></div>
+          <div class="step"><span class="num">2</span><span class="txt">Okta asks the user to confirm with a <strong>passkey</strong>: the device signs a challenge with a Secure-Enclave key after Face ID (<strong>WebAuthn + Secure Enclave</strong>, mod 12, 07, 03–04). Phishing-resistant.</span></div>
+          <div class="step"><span class="num">3</span><span class="txt"><strong>Conditional access</strong> also checks the device is managed and <strong>attested</strong> (mod 13) and the context looks normal (mod 14).</span></div>
+          <div class="step"><span class="num">4</span><span class="txt">All good → Okta issues a short-lived signed <strong>JWT</strong> (mod 11, 04). The app verifies the signature and grants access. The whole conversation rode over <strong>TLS</strong> (mod 06).</span></div>
+        </div>
+        <div class="cap">Sixteen modules; one login. That's the system you'd be building.</div>
+      </div>
+
+      <h3>Glossary — the terms to own</h3>
+      <table class="tbl">
+        <tr><td>Hash / digest</td><td>One-way fixed-size fingerprint of data (SHA-256). Integrity &amp; fingerprinting.</td></tr>
+        <tr><td>Symmetric (AES)</td><td>One shared key encrypts and decrypts. Fast; needs secure key sharing.</td></tr>
+        <tr><td>Asymmetric</td><td>Public/private key pair. Public encrypts → private decrypts; private signs → public verifies.</td></tr>
+        <tr><td>RSA / ECC (P-256)</td><td>Asymmetric algorithms. ECC = smaller keys, used by Secure Enclave.</td></tr>
+        <tr><td>Signature</td><td>Hash encrypted with a private key. Proves authenticity + integrity.</td></tr>
+        <tr><td>Certificate / X.509</td><td>A public key bound to an identity, signed by a CA. A "passport" for a key.</td></tr>
+        <tr><td>CA / PKI / chain</td><td>Authorities that vouch for keys; trust flows from a root through intermediates to a leaf.</td></tr>
+        <tr><td>TLS / mTLS</td><td>Secure channel: authenticate (certs) + key exchange (asymmetric) + encrypt (symmetric). mTLS = both sides present certs.</td></tr>
+        <tr><td>Secure Enclave</td><td>Isolated chip holding a non-exportable private key; sign/decrypt only, gated on user presence.</td></tr>
+        <tr><td>Keychain</td><td>OS credential store; protects secrets at rest but they can enter memory to be used.</td></tr>
+        <tr><td>OAuth 2.0</td><td>Authorization: scoped, revocable tokens so an app acts for you without your password.</td></tr>
+        <tr><td>PKCE</td><td>Add-on that makes an intercepted authorization code useless. For public clients.</td></tr>
+        <tr><td>OIDC / ID token</td><td>Authentication layer on OAuth; issues a signed JWT saying who you are.</td></tr>
+        <tr><td>JWT</td><td>header.payload.signature. Signed (readable), not encrypted. Verify, don't just decode.</td></tr>
+        <tr><td>FIDO2 / WebAuthn</td><td>Phishing-resistant login via origin-bound public-key challenge/response.</td></tr>
+        <tr><td>Passkey</td><td>A WebAuthn credential, often synced across a user's devices.</td></tr>
+        <tr><td>Relying party</td><td>The service a user authenticates to in WebAuthn.</td></tr>
+        <tr><td>Authenticator</td><td>What holds the key: platform (Secure Enclave/TPM) or roaming (security key, via CTAP).</td></tr>
+        <tr><td>MDM / APNs</td><td>Device management; APNs is the silent "check in" wake signal.</td></tr>
+        <tr><td>Attestation</td><td>Hardware-backed proof a device (or key) is genuine and specific.</td></tr>
+        <tr><td>Zero trust</td><td>Trust nothing by default; verify who + what + context on every access.</td></tr>
+        <tr><td>Conditional access</td><td>The engine that allows/denies/steps-up based on those signals.</td></tr>
+      </table>
+
+      <h3>You can now explain, out loud:</h3>
+      <ul>
+        <li>The difference between hashing and encryption, and between symmetric and asymmetric.</li>
+        <li>How a digital signature proves identity, and why a certificate is needed on top.</li>
+        <li>What actually happens in the TLS padlock, and what mTLS adds.</li>
+        <li>Why a Secure Enclave key can't be stolen, and how that differs from the Keychain.</li>
+        <li>Why passwords (and even SMS/TOTP) are phishable, and why WebAuthn isn't.</li>
+        <li>The difference between OAuth (authorization) and OIDC (authentication), and how to validate a JWT.</li>
+        <li>How device attestation + passkeys + conditional access combine into zero trust — Okta's whole thesis.</li>
+      </ul>
+      <div class="box bridge"><span class="lbl">Where to go next</span><p>You now have the foundation. Re-read your main study guide's Section 06 (Identity) — it'll read completely differently now. The honest interview move remains: you've built the <em>hardware primitive</em> (Secure Enclave, attestation) that all of this rests on; speak from that depth and bridge outward.</p></div>
+      <div class="review"><input type="checkbox" id="r15"><label for="r15">I made it through — foundation built</label></div>
+    </section>
+
+    <p style="margin-top:60px;color:var(--ink-faint);font-size:13.5px;font-family:'IBM Plex Mono';border-top:1px solid var(--line);padding-top:20px;">
+      Security &amp; identity from zero · built for the Okta Principal macOS Engineer interview · no prior knowledge assumed.
+    </p>
+
+  </div>
+  </main>
+</div>
+
+<script>
+  const prog = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    prog.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  };
+  document.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+
+  const links = Array.from(document.querySelectorAll('#toc a'));
+  const sections = links.map(a => document.querySelector(a.getAttribute('href')));
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.getAttribute('id');
+        links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, {rootMargin: '-18% 0px -72% 0px', threshold: 0});
+  sections.forEach(s => s && spy.observe(s));
+
+  const sidebar = document.getElementById('sidebar');
+  const scrim = document.getElementById('scrim');
+  const burger = document.getElementById('burger');
+  const toggle = (open) => { sidebar.classList.toggle('open', open); scrim.classList.toggle('show', open); };
+  burger && burger.addEventListener('click', () => toggle(!sidebar.classList.contains('open')));
+  scrim && scrim.addEventListener('click', () => toggle(false));
+  links.forEach(l => l.addEventListener('click', () => toggle(false)));
+
+  const boxes = Array.from(document.querySelectorAll('.review input'));
+  const done = document.getElementById('done');
+  const recount = () => { done.textContent = boxes.filter(b => b.checked).length; };
+  boxes.forEach(b => b.addEventListener('change', recount));
+  recount();
+</script>
+</body>
+</html>

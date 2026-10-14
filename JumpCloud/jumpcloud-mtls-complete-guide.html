@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JumpCloud mTLS &amp; Certificates — Complete Layman's Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #fffdf8;
+      --surface: #ffffff;
+      --surface2: #f7f4ee;
+      --border: #e8e2d6;
+      --text: #292524;
+      --muted: #57534e;
+      --accent: #1d4ed8;
+      --accent-bg: #eff6ff;
+      --green: #047857;
+      --green-bg: #ecfdf5;
+      --amber: #b45309;
+      --amber-bg: #fffbeb;
+      --red: #b91c1c;
+      --red-bg: #fef2f2;
+      --purple: #6d28d9;
+      --purple-bg: #f5f3ff;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 19px; }
+    body { font-family: "Source Sans 3", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    header {
+      background: linear-gradient(180deg, #eff6ff, var(--bg));
+      border-bottom: 2px solid var(--border);
+      padding: 3rem 2rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-family: "Source Serif 4", Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.6rem); margin-bottom: .75rem; color: #0f172a; }
+    header p { color: var(--muted); font-size: 1.15rem; max-width: 700px; margin: 0 auto 1rem; }
+    .nav-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: 1.5rem; }
+    .nav-pills a {
+      text-decoration: none; color: var(--muted); font-size: .92rem; font-weight: 600;
+      padding: .5rem 1rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+    }
+    .nav-pills a:hover { color: var(--accent); border-color: #93c5fd; background: var(--accent-bg); }
+
+    main { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.75rem 5rem; }
+    section { margin-bottom: 3.5rem; }
+    h2 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.65rem; color: #0f172a; margin-bottom: 1rem;
+      padding-bottom: .5rem; border-bottom: 3px solid var(--accent);
+    }
+    h3 { font-size: 1.25rem; font-weight: 700; color: #1e3a5f; margin: 2rem 0 .75rem; }
+    h4 { font-size: 1.05rem; font-weight: 700; color: var(--muted); margin: 1.25rem 0 .5rem; }
+    p { margin-bottom: 1.1rem; }
+
+    .analogy {
+      background: var(--accent-bg); border: 1px solid #bfdbfe; border-radius: var(--radius);
+      padding: 1.35rem 1.5rem; margin: 1.5rem 0;
+    }
+    .analogy-label { font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: .4rem; }
+
+    .important {
+      background: var(--amber-bg); border-left: 5px solid var(--amber);
+      padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0;
+    }
+    .truth {
+      background: var(--green-bg); border-left: 5px solid var(--green);
+      padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0;
+    }
+    .myth {
+      background: var(--red-bg); border-left: 5px solid var(--red);
+      padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0;
+    }
+
+    .step {
+      display: flex; gap: 1.1rem; margin-bottom: 1.5rem; align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0; width: 2.2rem; height: 2.2rem; background: var(--accent); color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1rem;
+    }
+    .step-body h4 { margin: 0 0 .35rem; color: #0f172a; font-size: 1.08rem; }
+    .step-body p { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
+
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+    @media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
+    .box-card {
+      border-radius: var(--radius); padding: 1.25rem; border: 2px solid var(--border);
+    }
+    .box-card.bad { background: #fef2f2; border-color: #fecaca; }
+    .box-card.good { background: var(--green-bg); border-color: #a7f3d0; }
+    .box-card h4 { margin-top: 0; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: .98rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin: 1.5rem 0;
+    }
+    th, td { padding: .9rem 1.1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; }
+    th { background: var(--surface2); font-weight: 700; font-size: .85rem; text-transform: uppercase; color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+
+    code { font-family: ui-monospace, monospace; font-size: .88em; background: #f5f5f4; padding: .12rem .4rem; border-radius: 4px; color: var(--purple); }
+
+    .diagram { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+
+    .file-tree {
+      font-family: ui-monospace, monospace; font-size: .92rem; background: #fafaf9;
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem;
+      line-height: 1.9; margin: 1.25rem 0;
+    }
+    .secret { color: var(--red); font-weight: 700; }
+    .public { color: var(--green); font-weight: 600; }
+
+    .glossary-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.3rem; margin-bottom: .75rem; }
+    .glossary-item dt { font-weight: 700; font-size: 1.05rem; margin-bottom: .3rem; }
+    .glossary-item dd { color: var(--muted); margin: 0; font-size: .98rem; }
+
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: .95rem; border-top: 2px solid var(--border); background: var(--surface); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>mTLS &amp; Certificates Explained</h1>
+  <p>A complete, plain-language guide to how the JumpCloud agent proves its identity — from first principles to organization binding and hardware security.</p>
+  <div class="nav-pills">
+    <a href="#basics">Basics</a>
+    <a href="#mtls">What is mTLS?</a>
+    <a href="#actors">Who talks to whom?</a>
+    <a href="#birth">Certificate birth</a>
+    <a href="#org">Org binding</a>
+    <a href="#handshake">TLS handshake</a>
+    <a href="#every-call">Every API call</a>
+    <a href="#enclave">Secure Enclave?</a>
+    <a href="#renewal">Renewal</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</header>
+
+<main>
+
+<!-- SECTION: BASICS -->
+<section id="basics">
+  <h2>Start Here: The Problem We're Solving</h2>
+  <p>
+    Your laptop runs the <strong>JumpCloud agent</strong> — a small program that talks to JumpCloud's cloud servers
+    all day long. It fetches policies, syncs users, reports inventory, and more.
+  </p>
+  <p>
+    Every time the agent calls the cloud, JumpCloud must answer one question:
+  </p>
+  <p style="font-size:1.2rem; font-weight:600; color:#0f172a; text-align:center; margin:1.5rem 0;">
+    "Is this really one of our customer's devices — or is an attacker pretending?"
+  </p>
+  <p>
+    Passwords don't work here — the agent can't type a password on every poll (every few minutes, forever).
+    Instead, JumpCloud uses <strong>digital certificates</strong> and <strong>mutual TLS (mTLS)</strong>
+    so the device proves its identity automatically, cryptographically, with no human involved.
+  </p>
+
+  <h3>Three ideas you need first</h3>
+
+  <dl>
+    <div class="glossary-item">
+      <dt>1. HTTPS — the locked tunnel</dt>
+      <dd>
+        When you visit a bank website, you see a padlock. Data travels inside an <strong>encrypted tunnel</strong>
+        so nobody on the Wi-Fi can read it. The website shows <em>its</em> certificate so your browser knows
+        it's really the bank, not a fake site. This is <strong>one-way</strong> trust: you check the server, but
+        the server doesn't check you (unless you log in separately).
+      </dd>
+    </div>
+    <div class="glossary-item">
+      <dt>2. Digital certificate — a computer's ID card</dt>
+      <dd>
+        A certificate is like a government ID card for a device. It says: "This is device ABC123,
+        issued by JumpCloud, valid until next year." It comes in two parts: a <strong>public certificate</strong>
+        (the ID card you can show anyone) and a <strong>private key</strong> (a secret PIN that never leaves the device).
+      </dd>
+    </div>
+    <div class="glossary-item">
+      <dt>3. mTLS — both sides show ID</dt>
+      <dd>
+        <strong>Mutual TLS</strong> means <em>both</em> the server and the client show certificates before talking.
+        JumpCloud proves it's really JumpCloud. The agent proves it's really a registered device. No certificate? No connection.
+      </dd>
+    </div>
+  </dl>
+
+  <div class="analogy">
+    <div class="analogy-label">Everyday analogy</div>
+    <p>
+      <strong>Regular HTTPS</strong> is like calling a company and hearing their hold music prove you're on the right number —
+      but they don't know who you are.<br><br>
+      <strong>mTLS</strong> is like entering a secure building where <em>you</em> show your employee badge
+      <em>and</em> the guard shows their official credentials. Both sides verify each other before anyone speaks.
+    </p>
+  </div>
+</section>
+
+<!-- SECTION: mTLS -->
+<section id="mtls">
+  <h2>What Exactly Is mTLS? (Client vs Server)</h2>
+
+  <p>In every connection, there are two parties:</p>
+  <ul>
+    <li><strong>Client</strong> = the JumpCloud agent on your device (it initiates the connection)</li>
+    <li><strong>Server</strong> = JumpCloud's cloud (agent.jumpcloud.com, kickstart.jumpcloud.com)</li>
+  </ul>
+
+  <div class="compare">
+    <div class="box-card bad">
+      <h4>Normal HTTPS (websites)</h4>
+      <p>Server shows certificate ✓<br>Client stays anonymous ✗<br><br>You prove identity later by logging in with username/password.</p>
+    </div>
+    <div class="box-card good">
+      <h4>mTLS (JumpCloud agent)</h4>
+      <p>Server shows certificate ✓<br>Client shows certificate ✓<br><br>Identity proven <em>before</em> any data is sent. No separate login for the device itself.</p>
+    </div>
+  </div>
+
+  <h3>What happens in mTLS — in plain English</h3>
+  <ol style="padding-left:1.4rem;">
+    <li>Agent says: "I want to talk to agent.jumpcloud.com"</li>
+    <li>Server says: "Here's my certificate — I'm really JumpCloud" (signed by JumpCloud CA)</li>
+    <li>Agent checks that certificate against its <code>ca.crt</code> trust file — "Yes, this is really JumpCloud"</li>
+    <li>Server says: "Now show me <em>your</em> certificate"</li>
+    <li>Agent sends <code>client.crt</code> (the public ID card)</li>
+    <li>Server sends a random challenge: "Prove you own the matching private key"</li>
+    <li>Agent signs the challenge with <code>client.key</code> (the secret) — without sending the key itself</li>
+    <li>Server verifies the signature — if valid, the encrypted tunnel opens and API data flows inside it</li>
+  </ol>
+
+  <div class="important">
+    <strong>Key point:</strong> The private key (<code>client.key</code>) is <em>never</em> sent over the network.
+    Only a mathematical signature proving you own it travels over the wire. This is the same principle as
+    proving you know your PIN without telling anyone the PIN.
+  </div>
+</section>
+
+<!-- SECTION: ACTORS -->
+<section id="actors">
+  <h2>Who Is Involved? (Complete Picture)</h2>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  subgraph Device["Your Device"]
+    Key["client.key<br/>(secret, stays on disk)"]
+    Cert["client.crt<br/>(ID card)"]
+    Agent["JumpCloud Agent"]
+    Conf["jcagent.conf<br/>(systemKey, URLs)"]
+    Agent --> Key
+    Agent --> Cert
+    Agent --> Conf
+  end
+
+  subgraph Edge["Front Door"]
+    LB["Load Balancer<br/>Verifies mTLS"]
+  end
+
+  subgraph Cloud["JumpCloud Cloud"]
+    KS["Kickstart<br/>(enrollment only)"]
+    AS["Agent Server<br/>(daily API calls)"]
+    CA["JumpCloud CA<br/>(signs certificates)"]
+    Redis["Redis<br/>(pending certs)"]
+    DB["MongoDB<br/>(system records)"]
+    Auth["jumpcloud-auth<br/>(Connect Keys)"]
+  end
+
+  Agent -->|"mTLS HTTPS"| LB
+  LB --> AS
+  Agent -->|"HTTPS + Connect Key<br/>(first install only)"| KS
+  KS --> CA
+  KS --> Redis
+  KS --> Auth
+  AS --> DB
+  AS --> Auth
+    </pre>
+  </div>
+
+  <table>
+    <thead><tr><th>Who</th><th>Role in mTLS story</th></tr></thead>
+    <tbody>
+      <tr><td><strong>JumpCloud Agent</strong></td><td>Generates keys, holds certificates, initiates mTLS connections, sends x-system-id header</td></tr>
+      <tr><td><strong>Load Balancer (HAProxy)</strong></td><td>Terminates TLS, verifies client cert against JumpCloud CA, injects X-SSL-CLIENT-CN headers</td></tr>
+      <tr><td><strong>Kickstart Server</strong></td><td>Signs CSRs during enrollment and renewal. Like the DMV that prints ID cards.</td></tr>
+      <tr><td><strong>JumpCloud CA</strong></td><td>Certificate Authority — the "government" whose signature makes certificates trustworthy</td></tr>
+      <tr><td><strong>Agent Server</strong></td><td>Handles poll, config, auth after enrollment. Checks certuuid + systemKey match in database.</td></tr>
+      <tr><td><strong>jumpcloud-auth</strong></td><td>Validates Connect Keys during enrollment (proves device is allowed to join an org)</td></tr>
+      <tr><td><strong>MongoDB</strong></td><td>Stores the system record: systemKey, certuuid, orgId, hardware info — binds cert to org</td></tr>
+      <tr><td><strong>Redis</strong></td><td>Temporarily stores "pending" signed certs between CSR signing and registration completion</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- SECTION: BIRTH -->
+<section id="birth">
+  <h2>How the Certificate Is Born (Step by Step)</h2>
+  <p>This happens once, during first install, when an admin (or MDM) provides a <strong>Connect Key</strong>.</p>
+
+  <h3>Files created on your device</h3>
+  <div class="file-tree">
+    /opt/jc/ &nbsp;(macOS/Linux) or C:\Program Files\JumpCloud\ &nbsp;(Windows)<br>
+    ├── <span class="secret">client.key</span> &nbsp; ← PRIVATE KEY (secret, never sent to cloud)<br>
+    ├── <span class="public">client.crt</span> &nbsp; ← CERTIFICATE (public ID card)<br>
+    ├── <span class="public">ca.crt</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ← TRUST BUNDLE (how to verify JumpCloud servers)<br>
+    └── jcagent.conf &nbsp;&nbsp; ← CONFIG (systemKey, server URLs, poll settings)
+  </div>
+
+  <h3>Phase 1 — On the device (agent does this alone)</h3>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Generate a unique device ID (certuuid)</h4>
+      <p>The agent creates a random UUID, e.g. <code>a3f8b2c1d4e5f678...</code> (32 hex characters). This becomes the device's permanent name. It is embedded in the certificate as the <strong>Common Name (CN)</strong> and never changes — even when the certificate is renewed years later.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Generate the private key — entirely on the device</h4>
+      <p>The agent uses RSA 2048-bit cryptography (<code>registration/certificate_utils.go</code>) to create a key pair. The <strong>private key</strong> is written to <code>client.key</code> with file permissions <code>0600</code> (only root/admin can read). <strong>JumpCloud never sees this key. It never leaves the machine.</strong></p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Create a Certificate Signing Request (CSR)</h4>
+      <p>The agent builds a "please issue me an ID card" request. The CSR says: "Issue a certificate for device ID <code>a3f8b2c1...</code>, organization JumpCloud." It mathematically proves the requester owns the private key — but the private key itself is <em>not included</em> in the CSR.</p>
+    </div>
+  </div>
+
+  <h3>Phase 2 — Agent talks to Kickstart (still enrolling)</h3>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Download config template — POST /GetRegistrationConf</h4>
+      <p>Agent sends the <strong>Connect Key</strong> in the <code>x-connect-key</code> header. Server validates the key and returns an initial <code>jcagent.conf</code> with server URLs. Connection is HTTPS but <em>not yet mTLS</em> — the device doesn't have a certificate yet.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>Submit CSR — POST /SignCsr</h4>
+      <p>Agent uploads the CSR + certuuid + Connect Key to Kickstart. JumpCloud's CA signs it and returns <code>client.crt</code>. Server stores the signed cert temporarily in <strong>Redis</strong> (pending until registration finishes) and verifies certuuid isn't already used by another device.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h4>Download trust bundle — GET /GetCACerts</h4>
+      <p>Agent downloads JumpCloud's CA certificates into <code>ca.crt</code>. From now on, the agent can verify it's talking to real JumpCloud servers — not an impostor.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <h4>Test mTLS — GET /CheckAccess</h4>
+      <p>Agent makes its <strong>first mTLS connection</strong> using the new <code>client.crt</code> + <code>client.key</code>. This confirms the certificate works before proceeding.</p>
+    </div>
+  </div>
+
+  <h3>Phase 3 — Register with Agent Server</h3>
+
+  <div class="step">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <h4>Register system — POST /registernewsystem (mTLS)</h4>
+      <p>Agent sends: Connect Key, certuuid, and a <strong>system report</strong> (hostname, serial number, OS version, network interfaces). Server validates Connect Key via jumpcloud-auth, fetches pending cert from Redis, creates a <strong>system record</strong> in MongoDB, and returns the <strong>systemKey</strong> (a MongoDB ObjectId like <code>507f1f77bcf86cd799439011</code>). This is saved in <code>jcagent.conf</code>.</p>
+    </div>
+  </div>
+
+  <div class="truth">
+    <strong>Enrollment complete.</strong> The Connect Key's job is done forever. From this moment on,
+    every API call uses only: <code>client.crt</code> + <code>client.key</code> (mTLS) + <code>x-system-id</code> (systemKey).
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant A as Agent (your device)
+  participant K as Kickstart
+  participant R as Redis
+  participant S as Agent Server
+  participant M as MongoDB
+
+  Note over A: Steps 1-3: Generate certuuid,<br/>private key, CSR (all local)
+
+  A->>K: GetRegistrationConf + Connect Key
+  K-->>A: jcagent.conf template
+
+  A->>K: SignCsr (CSR + certuuid + Connect Key)
+  K->>R: Store pending cert
+  K-->>A: client.crt (signed certificate)
+
+  A->>K: GetCACerts
+  K-->>A: ca.crt (trust bundle)
+
+  A->>K: CheckAccess (first mTLS test)
+  K-->>A: OK
+
+  A->>S: registernewsystem (mTLS + system report)
+  S->>R: Verify pending cert exists
+  S->>M: Create system record (certuuid + orgId + hardware)
+  S-->>A: systemKey
+
+  Note over A: Connect Key retired.<br/>mTLS + systemKey forever.
+    </pre>
+  </div>
+
+  <h3>What's printed on the certificate?</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Value</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Common Name (CN)</td><td><code>a3f8b2c1...</code> (certuuid)</td><td>Unique device identity — permanent</td></tr>
+      <tr><td>Organization (O)</td><td><code>JumpCloud</code></td><td>Certificate issuer identity (not your company's name)</td></tr>
+      <tr><td>Issuer</td><td>JumpCloud CA</td><td>Who signed this ID card</td></tr>
+      <tr><td>Valid from / until</td><td>Dates</td><td>Certificate expires; agent renews automatically</td></tr>
+    </tbody>
+  </table>
+
+  <div class="important">
+    <strong>Common confusion:</strong> Your company's organization name (e.g. "Acme Corp") is <em>not</em> printed
+    on the agent's mTLS certificate. The cert only says "JumpCloud" as Organization and a random certuuid as the device name.
+    Your company is bound through the <strong>database record</strong> created during registration — explained next.
+  </div>
+</section>
+
+<!-- SECTION: ORG -->
+<section id="org">
+  <h2>How Is the Device Bound to Your Organization?</h2>
+  <p>This is one of the most important parts to understand. There are <strong>three layers</strong> of org binding:</p>
+
+  <h3>Layer 1: Connect Key (enrollment gate)</h3>
+  <p>
+    Before any certificate exists, the <strong>Connect Key</strong> proves: "This device is allowed to join
+    <em>Organization X</em>." The key is issued by:
+  </p>
+  <ul>
+    <li>Admin Console (for manual installs) — admin must have "Manage Devices" permission for that org</li>
+    <li>jumpcloud-auth (for MDM or User Portal installs) — key is scoped to org + device/user</li>
+  </ul>
+  <p>Kickstart and Agent Server validate the Connect Key with jumpcloud-auth before signing the CSR or creating the system record. <strong>No valid Connect Key = no certificate = no registration.</strong></p>
+
+  <h3>Layer 2: Pending cert in Redis (temporary lock)</h3>
+  <p>
+    When Kickstart signs the CSR, it stores the signed certificate in Redis keyed by
+    <code>orgId + certuuid</code>. During registration, the server checks: "Does a pending cert exist for this org and this certuuid?"
+    This prevents someone from using a CSR signed for Org A to register in Org B.
+  </p>
+
+  <h3>Layer 3: System record in MongoDB (permanent binding)</h3>
+  <p>
+    When registration succeeds, MongoDB stores a <strong>system document</strong> containing:
+  </p>
+  <table>
+    <thead><tr><th>Field</th><th>What it stores</th></tr></thead>
+    <tbody>
+      <tr><td><code>_id</code> (systemKey)</td><td>Unique account number for this device — agent sends this as <code>x-system-id</code> on every request</td></tr>
+      <tr><td><code>certuuid</code></td><td>Must match the CN on the client certificate</td></tr>
+      <tr><td><code>organizationId</code></td><td>Which JumpCloud customer org owns this device</td></tr>
+      <tr><td>Hardware metadata</td><td>Hostname, serial, OS — shown in Admin Console</td></tr>
+    </tbody>
+  </table>
+
+  <div class="analogy">
+    <div class="analogy-label">Think of it like…</div>
+    <p>
+      <strong>Connect Key</strong> = invitation to join the company (one-time).<br>
+      <strong>certuuid</strong> = your employee badge number (permanent).<br>
+      <strong>systemKey</strong> = your employee record ID in HR database.<br>
+      <strong>organizationId</strong> = which company you work for (stored in HR, not printed on the badge).<br><br>
+      Every day at the gate (mTLS), you show your badge (cert). Security looks up badge number + employee ID
+      in the database and confirms you still work for the right company.
+    </p>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  CK["Connect Key<br/>(scoped to Org X)"] -->|"validates during enrollment"| KS["Kickstart signs CSR"]
+  KS --> Redis["Redis: pending cert<br/>orgId + certuuid"]
+  Redis --> Reg["POST /registernewsystem"]
+  Reg --> Mongo["MongoDB system record:<br/>systemKey + certuuid + organizationId"]
+  Mongo --> Runtime["Every future request:<br/>mTLS cert CN = certuuid<br/>x-system-id = systemKey<br/>Server checks both match same row"]
+    </pre>
+  </div>
+</section>
+
+<!-- SECTION: HANDSHAKE -->
+<section id="handshake">
+  <h2>The mTLS Handshake — What Happens on Every Connection</h2>
+  <p>Before any poll, config fetch, or login proxy happens, the TLS handshake runs. This is invisible to users — it takes milliseconds.</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Agent opens connection to agent.jumpcloud.com</h4>
+      <p>The jchttp client loads <code>client.crt</code>, <code>client.key</code>, and <code>ca.crt</code> into the TLS stack (minimum TLS 1.2).</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Server proves itself</h4>
+      <p>JumpCloud sends its server certificate. Agent checks it against <code>ca.crt</code> — "Is this really JumpCloud, or a fake server?" If the CA doesn't match, connection aborts. This prevents man-in-the-middle attacks.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Server asks for the device's certificate</h4>
+      <p>Because this is mTLS, the server says: "Now show me your ID card." Regular websites skip this step.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Agent sends client.crt</h4>
+      <p>The public certificate travels over the wire. The private key does not.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>Server sends a random challenge</h4>
+      <p>"Prove you own the private key that matches this certificate <em>right now</em>." Showing the certificate alone isn't enough — anyone could copy the public file.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h4>Agent signs the challenge with client.key</h4>
+      <p>The agent uses the private key to create a cryptographic signature and sends only the signature back. This is like entering your PIN without revealing the PIN.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <h4>Server verifies → tunnel opens</h4>
+      <p>If the signature matches the certificate, the encrypted tunnel is established. If not → connection rejected (401).</p>
+    </div>
+  </div>
+
+  <h3>After TLS — the second check (application layer)</h3>
+  <p>mTLS gets you through the front door. The application does one more check:</p>
+  <ol style="padding-left:1.4rem;">
+    <li>Load balancer extracts <strong>certuuid</strong> from the certificate CN → forwards as <code>X-SSL-CLIENT-CN</code> header</li>
+    <li>Agent also sends <code>x-system-id</code> header (= systemKey from jcagent.conf)</li>
+    <li>Agent Server queries MongoDB: <code>find({ _id: systemKey, certuuid: CN })</code></li>
+    <li>Match found and system active → request proceeds</li>
+    <li>No match → 401 Unauthorized</li>
+    <li>System deleted → agent receives <code>uninstall_agent</code> directive</li>
+  </ol>
+
+  <div class="analogy">
+    <div class="analogy-label">Two locks on the door</div>
+    <p>
+      <strong>Lock 1 (mTLS):</strong> Cryptography proves you physically hold the private key matching a valid JumpCloud-issued certificate.<br><br>
+      <strong>Lock 2 (database):</strong> The systemKey and certuuid must match the same active row in MongoDB — proving this cert belongs to this registered device in this org.<br><br>
+      An attacker needs to steal the private key file <em>and</em> know the systemKey, and the device must still be registered.
+    </p>
+  </div>
+</section>
+
+<!-- SECTION: EVERY CALL -->
+<section id="every-call">
+  <h2>What Happens on Every API Call (After Enrollment)</h2>
+  <p>Once enrolled, the agent never uses the Connect Key again. Every poll, config fetch, and login proxy follows this pattern:</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant A as Agent
+  participant LB as Load Balancer
+  participant AS as Agent Server
+  participant DB as MongoDB
+
+  A->>A: Load client.crt + client.key + ca.crt
+  A->>A: Attach headers: x-system-id, checksums, version
+  A->>LB: HTTPS request (TLS handshake + mTLS challenge)
+  LB->>LB: Verify client cert vs JumpCloud CA
+  LB->>AS: Forward + X-SSL-CLIENT-CN (= certuuid)
+  AS->>DB: Match systemKey + certuuid
+  alt Valid active system
+    AS-->>A: 200 + data (directive, config, etc.)
+  else Invalid
+    AS-->>A: 401
+  end
+    </pre>
+  </div>
+
+  <h3>Connect Key vs Certificate — two jobs, two phases</h3>
+  <table>
+    <thead><tr><th></th><th>Connect Key</th><th>mTLS Certificate</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Analogy</strong></td><td>One-time invitation code</td><td>Permanent employee badge</td></tr>
+      <tr><td><strong>When used</strong></td><td>Only during first install (enrollment)</td><td>Every API call, forever</td></tr>
+      <tr><td><strong>Who issues it</strong></td><td>Admin Console or jumpcloud-auth</td><td>JumpCloud CA (via Kickstart)</td></tr>
+      <tr><td><strong>Proves</strong></td><td>"Allowed to join org X"</td><td>"I am device certuuid ABC, registered as systemKey XYZ"</td></tr>
+      <tr><td><strong>Sent how</strong></td><td><code>x-connect-key</code> HTTP header</td><td>TLS layer (client cert + challenge signature)</td></tr>
+      <tr><td><strong>After enrollment</strong></td><td>Never used again</td><td>Used on every request until device is decommissioned</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- SECTION: ENCLAVE -->
+<section id="enclave">
+  <h2>Secure Enclave &amp; Hardware Security — The Honest Answer</h2>
+
+  <div class="myth">
+    <strong>Common misconception:</strong> "The JumpCloud agent stores its mTLS private key in the Secure Enclave / TPM."
+    <br><br>
+    <strong>Reality for the main agent mTLS certificate:</strong> The private key is generated in software
+    (<code>rsa.GenerateKey</code> in Go) and stored as a <strong>file on disk</strong> (<code>client.key</code> with 0600 permissions).
+    It is <em>not</em> stored in Apple Secure Enclave, Windows TPM, or a hardware security module for the standard agent enrollment flow.
+  </div>
+
+  <h3>What is a Secure Enclave / TPM?</h3>
+  <p>
+    Modern devices have a <strong>separate secure chip</strong> designed to protect cryptographic keys:
+  </p>
+  <ul>
+    <li><strong>Apple Secure Enclave</strong> (iPhone, Mac with T2/M-series) — isolated processor; keys never leave the chip</li>
+    <li><strong>Windows TPM</strong> (Trusted Platform Module) — hardware chip storing keys; used by BitLocker, Windows Hello</li>
+    <li><strong>Linux TPM 2.0</strong> — similar hardware root of trust on many enterprise laptops</li>
+  </ul>
+  <p>
+    If a key lives inside these chips, even an attacker with admin access or malware cannot easily extract the raw private key —
+    the chip performs signing operations internally without revealing the key material.
+  </p>
+
+  <h3>What JumpCloud agent actually does today</h3>
+  <table>
+    <thead><tr><th>Security measure</th><th>How it works</th><th>Limitation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Software RSA key generation</td>
+        <td>2048-bit key created with Go crypto on device (<code>registration/certificate_utils.go</code>)</td>
+        <td>Key material exists in memory during generation; stored as a file afterward</td>
+      </tr>
+      <tr>
+        <td>File permissions 0600</td>
+        <td>Only root (Linux/macOS) or LocalSystem (Windows) can read <code>client.key</code></td>
+        <td>Privileged malware or admin could still read the file</td>
+      </tr>
+      <tr>
+        <td>Private key never sent over network</td>
+        <td>Only TLS challenge signatures leave the device — not the key itself</td>
+        <td>Strong protection in transit; doesn't help if key is stolen from disk</td>
+      </tr>
+      <tr>
+        <td>Key never rotated on renewal</td>
+        <td>Same <code>client.key</code> kept forever for FileVault/FDE secret continuity</td>
+        <td>Long-lived key increases exposure window if stolen</td>
+      </tr>
+      <tr>
+        <td>Privileged service context</td>
+        <td>Agent runs as root/LocalSystem to manage users and policies</td>
+        <td>High-value target if compromised</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Where JumpCloud DOES use hardware security (different products)</h3>
+  <p>The agent's mTLS cert is separate from these — but it's worth knowing for interviews:</p>
+  <table>
+    <thead><tr><th>Product</th><th>Hardware security</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>JumpCloud Go</strong> (mobile/desktop SSO)</td>
+        <td>Uses device TPM on Windows (requires TPM present); WebAuthn keys may use platform authenticators (Secure Enclave on Mac, TPM on Windows)</td>
+      </tr>
+      <tr>
+        <td><strong>JumpCloud Protect</strong> (push MFA)</td>
+        <td>Mobile app stores signing keys in device secure storage; WebAuthn-derived protocol (ADR-008)</td>
+      </tr>
+      <tr>
+        <td><strong>Device Trust certs</strong> (user-agent, macOS)</td>
+        <td>Separate certificates with OU field for device trust — may use macOS Keychain, not the agent's <code>client.key</code></td>
+      </tr>
+      <tr>
+        <td><strong>Agent mTLS (this guide)</strong></td>
+        <td>File-based <code>client.key</code> — software-generated, disk-stored</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="important">
+    <strong>Interview honesty:</strong> If asked "Does the agent use Secure Enclave?" — answer:
+    "The standard agent mTLS client certificate uses a software-generated RSA key stored on disk with restricted permissions.
+    JumpCloud Go and Protect use TPM/WebAuthn/platform authenticators for user/device trust flows, which is a separate
+    key hierarchy. Hardware-backed agent keys would be a security hardening improvement but aren't the current implementation."
+  </div>
+
+  <h3>What would hardware-backed keys improve?</h3>
+  <ul>
+    <li>Private key could not be extracted even by root/admin malware — signing happens inside TPM/Secure Enclave</li>
+    <li>Stolen disk images wouldn't contain extractable key material (if key never left hardware)</li>
+    <li>Tradeoff: key recovery on hardware failure is harder; renewal flows more complex; cross-platform consistency challenging</li>
+  </ul>
+</section>
+
+<!-- SECTION: RENEWAL -->
+<section id="renewal">
+  <h2>Certificate Renewal — Same Identity, New Expiry Date</h2>
+  <p>Certificates expire (typically after ~1 year). The agent renews automatically — you don't notice.</p>
+
+  <h3>What changes vs what stays the same</h3>
+  <table>
+    <thead><tr><th>Item</th><th>On renewal</th></tr></thead>
+    <tbody>
+      <tr><td><code>client.key</code> (private key)</td><td><strong>UNCHANGED</strong> — same file, same key material</td></tr>
+      <tr><td><code>certuuid</code> (CN)</td><td><strong>UNCHANGED</strong> — same device identity</td></tr>
+      <tr><td><code>systemKey</code></td><td><strong>UNCHANGED</strong> — same database record</td></tr>
+      <tr><td><code>client.crt</code> (certificate)</td><td><strong>REPLACED</strong> — new expiry date</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>Why keep the same private key?</strong> The agent uses it to protect locally encrypted secrets (e.g., FileVault recovery keys). Changing the key would break access to those secrets. Source: <code>registration/seal_renew.go</code> explicitly avoids generating a new key on renewal.</p>
+
+  <h3>Renewal steps</h3>
+  <ol style="padding-left:1.4rem;">
+    <li>Agent detects cert approaching expiry (~31 days before, with probabilistic spreading to avoid renewal storms)</li>
+    <li>Creates new CSR with <em>same</em> private key and <em>same</em> certuuid</li>
+    <li>Connects to <strong>private</strong> Kickstart (<code>private-kickstart.jumpcloud.com</code>) using existing mTLS cert</li>
+    <li>POST /Renew with systemKey in <code>x-system-id</code> header</li>
+    <li>Receives new <code>client.crt</code>, replaces old file</li>
+    <li>Or: server sends <code>renew_certs</code> directive on poll to trigger renewal proactively</li>
+  </ol>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant A as Agent
+  participant K as Private Kickstart
+
+  Note over A: Cert nearing expiry
+  A->>A: New CSR (same key, same certuuid)
+  A->>K: POST /Renew (mTLS + systemKey)
+  K->>K: Verify existing cert + systemKey
+  K-->>A: New client.crt (new expiry)
+  A->>A: Replace client.crt on disk
+  Note over A: client.key unchanged
+    </pre>
+  </div>
+</section>
+
+<!-- SECTION: FAQ -->
+<section id="faq">
+  <h2>FAQ — Common Questions &amp; Misconceptions</h2>
+
+  <h3>Does the server give the agent its private key?</h3>
+  <p><strong>No.</strong> The agent generates the private key locally. The server only signs the CSR and returns the public certificate (<code>client.crt</code>). The server never possesses the private key.</p>
+
+  <h3>Is mTLS the same as a username/password?</h3>
+  <p><strong>No.</strong> mTLS is cryptographic identity based on certificates. There's no password to type, steal via phishing, or brute-force. The "proof" is a mathematical signature using the private key.</p>
+
+  <h3>Can someone copy my certificate file and impersonate my device?</h3>
+  <p>They'd also need the matching <code>client.key</code> (private key) to pass the mTLS challenge, <em>and</em> know the <code>systemKey</code> to send in the <code>x-system-id</code> header. Copying only <code>client.crt</code> is not enough.</p>
+
+  <h3>Where is my company name stored?</h3>
+  <p>In the <strong>MongoDB system record</strong> (<code>organizationId</code>), not on the certificate. The certificate only has certuuid + "JumpCloud" as Organization. Org binding happened during enrollment via Connect Key.</p>
+
+  <h3>What if I clone a disk image to another machine?</h3>
+  <p>The clone would have the same certuuid + systemKey + private key. JumpCloud detects duplicate certuuid on new enrollment. For the clone to work as a separate device, it needs a fresh install with a new Connect Key generating a new certuuid. Running the same cloned agent would authenticate as the <em>original</em> system.</p>
+
+  <h3>What's the difference between device auth and user login?</h3>
+  <p><strong>Device auth (mTLS):</strong> Proves which machine is calling. Automatic on every request.<br>
+  <strong>User login (POST /authenticate):</strong> Proves which person is using the machine. Requires password + MFA. Proxied through agent to jumpcloud-auth. Completely separate from mTLS.</p>
+
+  <h3>Summary — the complete picture in one paragraph</h3>
+  <div class="truth">
+    On first install, an admin provides a Connect Key that authorizes the device to join their organization.
+    The agent generates a unique certuuid and RSA private key locally (never sent to cloud), creates a CSR,
+    and sends it to Kickstart which signs it with JumpCloud's CA. After a successful mTLS test, the agent
+    registers a system record in MongoDB (binding certuuid + systemKey + organizationId). Forever after,
+    every API call uses mTLS: the agent presents client.crt, signs a challenge with client.key, and sends
+    x-system-id. The load balancer verifies the cert; the server matches certuuid + systemKey in the database.
+    The Connect Key is never used again. The private key lives on disk (not Secure Enclave) with restricted
+    permissions and is never rotated. User login is a separate layer on top for proving who is using the device.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  JumpCloud mTLS Complete Guide — based on jumpcloud-agent <code>registration/</code> and <code>docs/agent-authentication-*.html</code>
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { padding: 20 } });
+</script>
+</body>
+</html>

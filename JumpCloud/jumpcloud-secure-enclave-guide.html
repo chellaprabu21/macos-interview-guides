@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Enclave &amp; Hardware Security in JumpCloud — Complete Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #fffdf8;
+      --surface: #ffffff;
+      --surface2: #f7f4ee;
+      --border: #e8e2d6;
+      --text: #292524;
+      --muted: #57534e;
+      --accent: #7c3aed;
+      --accent-bg: #f5f3ff;
+      --chip: #b45309;
+      --chip-bg: #fffbeb;
+      --green: #047857;
+      --green-bg: #ecfdf5;
+      --red: #b91c1c;
+      --red-bg: #fef2f2;
+      --blue: #1d4ed8;
+      --blue-bg: #eff6ff;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 19px; }
+    body { font-family: "Source Sans 3", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+    p { margin-bottom: 1.1rem; }
+    ul, ol { margin: 0 0 1.1rem 1.4rem; }
+    li { margin-bottom: .45rem; }
+
+    header {
+      background: linear-gradient(180deg, #f5f3ff, var(--bg));
+      border-bottom: 2px solid var(--border);
+      padding: 3rem 2rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-family: "Source Serif 4", Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: .75rem; color: #0f172a; }
+    header p { color: var(--muted); font-size: 1.12rem; max-width: 720px; margin: 0 auto; }
+    .nav-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: 1.75rem; }
+    .nav-pills a {
+      text-decoration: none; color: var(--muted); font-size: .9rem; font-weight: 600;
+      padding: .5rem 1rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+    }
+    .nav-pills a:hover { color: var(--accent); border-color: #c4b5fd; background: var(--accent-bg); }
+
+    main { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.75rem 5rem; }
+    section { margin-bottom: 3.75rem; }
+    h2 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.65rem; color: #0f172a; margin-bottom: 1rem;
+      padding-bottom: .5rem; border-bottom: 3px solid var(--accent);
+    }
+    h3 { font-size: 1.25rem; font-weight: 700; color: #5b21b6; margin: 2rem 0 .75rem; }
+    h4 { font-size: 1.05rem; font-weight: 700; color: var(--muted); margin: 1.25rem 0 .5rem; }
+
+    .analogy {
+      background: var(--accent-bg); border: 1px solid #ddd6fe; border-radius: var(--radius);
+      padding: 1.35rem 1.5rem; margin: 1.5rem 0;
+    }
+    .analogy-label { font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: .4rem; }
+
+    .truth { background: var(--green-bg); border-left: 5px solid var(--green); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+    .myth { background: var(--red-bg); border-left: 5px solid var(--red); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+    .note { background: var(--chip-bg); border-left: 5px solid var(--chip); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+    .info { background: var(--blue-bg); border-left: 5px solid var(--blue); padding: 1.25rem 1.4rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.5rem 0; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: .98rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin: 1.5rem 0;
+    }
+    th, td { padding: .9rem 1.1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; }
+    th { background: var(--surface2); font-weight: 700; font-size: .85rem; text-transform: uppercase; color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+    .yes { color: var(--green); font-weight: 700; }
+    .no { color: var(--red); font-weight: 700; }
+    .partial { color: var(--chip); font-weight: 700; }
+
+    .diagram { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+    .card h4 { margin-top: 0; color: #0f172a; font-size: 1.05rem; }
+    .card p { font-size: .95rem; color: var(--muted); margin: 0; line-height: 1.6; }
+
+    .chip-icon { font-size: 2rem; margin-bottom: .5rem; display: block; }
+
+    code { font-family: ui-monospace, monospace; font-size: .88em; background: #f5f5f4; padding: .12rem .4rem; border-radius: 4px; color: var(--accent); }
+
+    .step { display: flex; gap: 1.1rem; margin-bottom: 1.5rem; align-items: flex-start; }
+    .step-num {
+      flex-shrink: 0; width: 2.2rem; height: 2.2rem; background: var(--accent); color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;
+    }
+    .step-body h4 { margin: 0 0 .35rem; color: #0f172a; font-size: 1.08rem; }
+    .step-body p { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
+
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: .95rem; border-top: 2px solid var(--border); background: var(--surface); }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Secure Enclave &amp; Hardware Security in JumpCloud</h1>
+  <p>
+    A complete, plain-language guide to what Secure Enclave and TPM are,
+    where JumpCloud actually uses them, and where it does not.
+  </p>
+  <div class="nav-pills">
+    <a href="#what">What is it?</a>
+    <a href="#map">JumpCloud map</a>
+    <a href="#not-enclave">Agent mTLS</a>
+    <a href="#jc-go">JumpCloud Go</a>
+    <a href="#platforms">Per platform</a>
+    <a href="#device-trust">Device Trust</a>
+    <a href="#protect">Protect / MFA</a>
+    <a href="#compare">Comparison</a>
+    <a href="#interview">Interview</a>
+  </div>
+</header>
+
+<main>
+
+<!-- WHAT IS IT -->
+<section id="what">
+  <h2>1. What Is a Secure Enclave? (Layman's Terms)</h2>
+
+  <p>
+    Your Mac or phone has a <strong>main processor</strong> (CPU) that runs apps, and often a
+    <strong>separate secure chip</strong> designed only for cryptography. That secure area is
+    what people mean by <strong>Secure Enclave</strong> (Apple) or <strong>TPM</strong> (Windows/Linux).
+  </p>
+
+  <div class="analogy">
+    <div class="analogy-label">Think of it like this</div>
+    <p>
+      Your computer is an office building. Normal software runs in open cubicles — including malware
+      with admin access, which can read files on disk. A <strong>Secure Enclave / TPM</strong> is like
+      a vault inside the building with its own lock. You can ask the vault to <em>sign documents</em>
+      (prove identity), but you cannot photocopy the vault key and take it home. The private key
+      <strong>never leaves the chip</strong>.
+    </p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="chip-icon">🍎</span>
+      <h4>Apple Secure Enclave</h4>
+      <p>Isolated coprocessor on iPhone, iPad, and Mac (T2 chip or M-series). Used for Touch ID, Face ID, and hardware-backed keys. Keys marked <code>kSecAttrTokenSecureEnclave</code> cannot be exported.</p>
+    </div>
+    <div class="card">
+      <span class="chip-icon">🪟</span>
+      <h4>Windows TPM</h4>
+      <p>Trusted Platform Module chip. Windows uses it for BitLocker, Windows Hello, and "Platform Crypto Provider" (PCP) keys. JumpCloud Go stores DUK keys via <code>pcpcrypto</code> — non-exportable.</p>
+    </div>
+    <div class="card">
+      <span class="chip-icon">🐧</span>
+      <h4>Linux TPM 2.0</h4>
+      <p>Hardware chip on many enterprise laptops. JumpCloud Go creates ECDSA signing keys inside the TPM; private material never exists as a plain file.</p>
+    </div>
+  </div>
+
+  <h3>Software key vs hardware-backed key</h3>
+  <table>
+    <thead><tr><th></th><th>Software key (file on disk)</th><th>Hardware-backed key (Secure Enclave / TPM)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Where it lives</strong></td><td><code>client.key</code> file</td><td>Inside secure chip only</td></tr>
+      <tr><td><strong>Can malware copy it?</strong></td><td class="yes">Yes, if it gets root/admin + reads the file</td><td class="no">No — chip won't export raw key</td></tr>
+      <tr><td><strong>How signing works</strong></td><td>App reads key file, signs in memory</td><td>App sends "please sign this" to chip; chip returns signature</td></tr>
+      <tr><td><strong>JumpCloud example</strong></td><td>Agent mTLS <code>client.key</code></td><td>JumpCloud Go DUK (Device User Key)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- MAP -->
+<section id="map">
+  <h2>2. JumpCloud Security Map — What Uses Hardware?</h2>
+
+  <div class="myth">
+    <strong>Important:</strong> JumpCloud does <em>not</em> use Secure Enclave for everything.
+    Different features use different storage. Confusing "the agent" with "JumpCloud Go" or
+    "Device Trust" is the #1 source of misunderstanding.
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+  subgraph NoHW["Software / file-based (NOT Secure Enclave)"]
+    MTLS["Agent mTLS client.key<br/>RSA key on disk, 0600 permissions"]
+    DURT_W["DURT token (Windows)<br/>Registry + DPAPI encryption"]
+  end
+
+  subgraph HW["Hardware-backed (Secure Enclave / TPM)"]
+    DUK_M["JumpCloud Go DUK — macOS<br/>Secure Enclave (jumpcloud-durt-macos)"]
+    DUK_W["JumpCloud Go DUK — Windows<br/>TPM via Platform Crypto Provider"]
+    DUK_L["JumpCloud Go DUK — Linux<br/>TPM 2.0 chip"]
+    PROT["JumpCloud Protect mobile<br/>WebAuthn key on phone Secure Enclave"]
+    WA["Browser WebAuthn MFA<br/>Platform authenticator (Touch ID / TPM)"]
+  end
+
+  subgraph Keychain["macOS Keychain (encrypted, not always Secure Enclave)"]
+    DT["Device Trust user certs<br/>jumpcloud-device-trust-keychain-db"]
+    SAK["Service account keychain<br/>encrypted keychain file"]
+  end
+
+  Agent["jumpcloud-agent"] --> MTLS
+  Agent --> DUK_W
+  Agent --> DUK_L
+  DURT_Svc["DURT service"] --> DUK_M
+  DURT_Svc --> DUK_W
+  DURT_Svc --> DUK_L
+  DURT_Svc --> DURT_W
+    </pre>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>What key/token</th><th>Storage</th><th>Hardware?</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Agent cloud communication</strong></td>
+        <td>mTLS <code>client.key</code></td>
+        <td>File on disk (<code>/opt/jc/</code> etc.)</td>
+        <td class="no">No</td>
+      </tr>
+      <tr>
+        <td><strong>JumpCloud Go SSO</strong></td>
+        <td>DUK (Device User Key)</td>
+        <td>Secure Enclave (Mac) / TPM (Win/Linux)</td>
+        <td class="yes">Yes</td>
+      </tr>
+      <tr>
+        <td><strong>JumpCloud Go session</strong></td>
+        <td>DURT (refresh token)</td>
+        <td>OS keyring (Linux) / Registry+DPAPI (Windows)</td>
+        <td class="partial">Encrypted, not hardware chip</td>
+      </tr>
+      <tr>
+        <td><strong>Desktop Device Trust</strong></td>
+        <td>User cert + private key</td>
+        <td>macOS per-user keychain</td>
+        <td class="partial">Keychain encrypted; not same as agent mTLS</td>
+      </tr>
+      <tr>
+        <td><strong>JumpCloud Protect (phone)</strong></td>
+        <td>WebAuthn credential</td>
+        <td>Phone Secure Enclave / Keystore</td>
+        <td class="yes">Yes</td>
+      </tr>
+      <tr>
+        <td><strong>WebAuthn MFA (browser)</strong></td>
+        <td>Passkey / security key</td>
+        <td>Platform authenticator or roaming key</td>
+        <td class="yes">Often yes (Touch ID, Windows Hello)</td>
+      </tr>
+      <tr>
+        <td><strong>FileVault / BitLocker escrow</strong></td>
+        <td>Recovery keys</td>
+        <td>Cloud via agent; tied to agent cert identity</td>
+        <td class="no">N/A (disk encryption, different layer)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- AGENT MTLS - NOT ENCLAVE -->
+<section id="not-enclave">
+  <h2>3. Agent mTLS — Why It Does NOT Use Secure Enclave</h2>
+
+  <p>
+    The JumpCloud agent's main identity certificate (<code>client.crt</code> + <code>client.key</code>)
+    used for poll, config sync, and all cloud API calls is <strong>software-generated and file-stored</strong>.
+  </p>
+
+  <h3>How the agent key is created (from code)</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4><code>rsa.GenerateKey(rand.Reader, 2048)</code></h4>
+      <p>In <code>registration/certificate_utils.go</code>, the agent generates a 2048-bit RSA key in software — not inside Secure Enclave or TPM.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Written to <code>client.key</code> with mode <code>0600</code></h4>
+      <p>Only root/admin can read the file. Still a file on disk — not hardware-isolated.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Never rotated on certificate renewal</h4>
+      <p><code>registration/seal_renew.go</code> explicitly keeps the same private key forever so locally encrypted secrets (FileVault recovery keys) remain decryptable.</p>
+    </div>
+  </div>
+
+  <h3>Why JumpCloud made this choice</h3>
+  <ul>
+    <li><strong>Cross-platform consistency</strong> — same enrollment flow on macOS, Windows, Linux since early agent versions</li>
+    <li><strong>FileVault / FDE continuity</strong> — recovery key encryption chain depends on stable key material</li>
+    <li><strong>Simplicity</strong> — TPM/Secure Enclave APIs differ wildly per OS; agent predates JumpCloud Go's hardware model</li>
+    <li><strong>Operational familiarity</strong> — admins know where <code>client.key</code> lives for troubleshooting</li>
+  </ul>
+
+  <div class="info">
+    <strong>Security still applied:</strong> Private key never sent over network; mTLS challenge-response;
+    dual lookup (certuuid + systemKey); 0600 permissions; privileged service context.
+    Hardware backing would be a <em>hardening improvement</em>, not the current design.
+  </div>
+</section>
+
+<!-- JUMPCLOUD GO -->
+<section id="jc-go">
+  <h2>4. JumpCloud Go — Where Hardware Security IS Used</h2>
+
+  <p>
+    <strong>JumpCloud Go</strong> is passwordless SSO to work apps (Slack, Google, etc.).
+    It is <em>separate</em> from the agent's mTLS certificate. Go uses a per-user
+    <strong>DUK (Device User Key)</strong> that is explicitly tied to TPM or Secure Enclave.
+  </p>
+
+  <div class="analogy">
+    <div class="analogy-label">Two different badges</div>
+    <p>
+      <strong>Agent mTLS cert</strong> = the building's device badge ("this laptop is a managed JumpCloud device").<br>
+      <strong>JumpCloud Go DUK</strong> = your personal signing key for SSO ("this human on this device is requesting app access").<br><br>
+      The device badge is a file on disk. Your personal signing key lives in the vault (Secure Enclave / TPM).
+    </p>
+  </div>
+
+  <h3>JumpCloud Go components</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Browser extension</strong></td><td>Initiates SSO; talks to Native Messaging Host (NMH)</td></tr>
+      <tr><td><strong>NMH / DURT client</strong></td><td>Go service in agent bundle (<code>jumpcloud-durt-client</code>)</td></tr>
+      <tr><td><strong>KeyStoreService</strong></td><td>Platform-specific: creates DUK in TPM or Secure Enclave</td></tr>
+      <tr><td><strong>jumpcloud-durt</strong> (cloud)</td><td>Validates signed requests, issues DUST session tokens</td></tr>
+      <tr><td><strong>macOS-only: jumpcloud-durt-macos</strong></td><td>Swift client; Secure Enclave key operations on Mac</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Three tokens in JumpCloud Go</h3>
+  <table>
+    <thead><tr><th>Token</th><th>Full name</th><th>Where stored</th><th>Hardware?</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>DUK</strong></td>
+        <td>Device User Key (ECDSA private key)</td>
+        <td>TPM / Secure Enclave</td>
+        <td class="yes">Yes — cannot leave chip</td>
+      </tr>
+      <tr>
+        <td><strong>DURT</strong></td>
+        <td>Device User Refresh Token (JWT)</td>
+        <td>Linux: user keyring. Windows: Registry encrypted with DPAPI</td>
+        <td class="partial">Encrypted software storage</td>
+      </tr>
+      <tr>
+        <td><strong>DUST</strong></td>
+        <td>Device User Session Token (short-lived JWT)</td>
+        <td>Not stored long-term — returned to browser for SSO</td>
+        <td class="no">Cloud-issued</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Registration flow (one-time per user)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant User as User + Browser
+  participant NMH as DURT Client (agent)
+  participant HW as TPM / Secure Enclave
+  participant Cloud as jumpcloud-durt cloud
+
+  User->>User: Login to User Portal → get id_token
+  User->>NMH: RegisterUser(id_token)
+  NMH->>NMH: Check keyStore.IsSupported() — TPM/SE present?
+  alt No hardware support
+    NMH-->>User: NOT_SUPPORTED_ERROR
+  end
+  NMH->>HW: GenerateDUK(username) — create key IN chip
+  HW-->>NMH: Public key only (private stays in chip)
+  NMH->>Cloud: POST /register (signed JWT + DUK public key + id_token)
+  Cloud-->>NMH: DURT (refresh token)
+  NMH->>NMH: Save DURT to keyring/registry
+    </pre>
+  </div>
+
+  <h3>Access flow (every app open)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Ext as Browser Extension
+  participant NMH as DURT Client
+  participant HW as TPM / Secure Enclave
+  participant Cloud as jumpcloud-durt
+
+  Ext->>NMH: RequestAccessSession(app URL)
+  NMH->>NMH: Load DURT from keyring
+  NMH->>NMH: Collect device signals (OS, encryption, etc.)
+  NMH->>HW: GetDUKSigner(username) — sign AccessReq IN chip
+  HW-->>NMH: ECDSA signature (key never exposed)
+  NMH->>Cloud: POST /access (signed request + DURT)
+  Cloud->>Cloud: Validate signature, evaluate CAP
+  Cloud-->>NMH: DUST session token + rotated DURT
+  NMH-->>Ext: Session for SSO
+    </pre>
+  </div>
+
+  <div class="note">
+    <strong>Hardware requirement:</strong> If <code>keyStore.IsSupported()</code> returns false
+    (no TPM on Windows, no TPM on Linux, no Secure Enclave path on Mac), JumpCloud Go registration
+    fails with "No TPM found. JumpCloud Go not supported." (~92% of typical fleet has hardware support per internal estimates.)
+  </div>
+</section>
+
+<!-- PER PLATFORM -->
+<section id="platforms">
+  <h2>5. Implementation Per Platform (From Code)</h2>
+
+  <h3>Windows — TPM via Platform Crypto Provider (PCP)</h3>
+  <p>Source: <code>jumpcloud-durt-client/security/keystore_windows.go</code></p>
+  <ul>
+    <li>Calls <code>goncrypt.OpenProvider(MsPlatformKeyStorageProvider)</code> to detect TPM</li>
+    <li>Creates DUK with <code>pcpcrypto.GenerateECDSAKey(..., nonExportable=true)</code> — key name <code>jumpcloud-duk-{userUID}</code></li>
+    <li>Signing via <code>pcpcrypto.FindKey()</code> — TPM performs sign operation internally</li>
+    <li>Agent mTLS key still loaded from file: <code>LoadKeyFromFile(config.DefaultConfig.ClientKey)</code></li>
+    <li>DURT stored in registry <code>HKLM\SOFTWARE\JumpCloud\DeviceIdentity\DURT</code> with DPAPI encryption</li>
+  </ul>
+
+  <h3>Linux — TPM 2.0</h3>
+  <p>Source: <code>jumpcloud-durt-client/security/keystore_linux.go</code></p>
+  <ul>
+    <li>Opens TPM via <code>transport.OpenTPM()</code></li>
+    <li>Creates ECDSA P-256 key inside TPM with <code>FixedTPM: true</code> (cannot be moved off chip)</li>
+    <li>TPM private/public blobs saved via agent gRPC <code>SaveDUK</code> / <code>LoadDUK</code> (encrypted blobs, not raw private key)</li>
+    <li>Signing via <code>tpmSigner.Sign()</code> — digest sent to TPM, signature returned</li>
+    <li>DURT stored in user's Linux keyring via user-agent</li>
+  </ul>
+
+  <h3>macOS — Secure Enclave</h3>
+  <p>Source: <code>docs/jc_go/ARCHITECTURE.md</code>, <code>jumpcloud-durt-macos</code> repository</p>
+  <ul>
+    <li>macOS JumpCloud Go client lives in separate repo: <code>github.com/TheJumpCloud/jumpcloud-durt-macos</code> (Swift)</li>
+    <li>DUK described as "key tied to hardware through TPM or Secure Enclave" in official architecture docs</li>
+    <li>On Mac with T2 or Apple Silicon, ECDSA keys can be created with <code>kSecAttrTokenSecureEnclave</code> — private key non-exportable</li>
+    <li>Safari SSO uses App SSO Extension (<code>jcagent-tray-ssoe</code>) instead of browser extension</li>
+    <li>Agent mTLS <code>client.key</code> remains file-based (same as other platforms)</li>
+  </ul>
+
+  <div class="info">
+    The agent repo vendors Windows and Linux keystore code. macOS Secure Enclave logic is in
+    <code>jumpcloud-durt-macos</code> — not in the main Go agent binary, but bundled at install time.
+  </div>
+</section>
+
+<!-- DEVICE TRUST -->
+<section id="device-trust">
+  <h2>6. Device Trust — Certificates vs JumpCloud Go</h2>
+
+  <p>JumpCloud has <strong>two paths</strong> to prove "this login is from a trusted device" for Conditional Access Policies:</p>
+
+  <table>
+    <thead><tr><th>Path</th><th>Desktop (traditional)</th><th>JumpCloud Go (modern)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Mechanism</strong></td>
+        <td>User installs Device Trust cert in browser; mTLS to <code>device-cert.jumpcloud.com</code></td>
+        <td>DUST session JWT from DURT service; Auth mints device assertion (ADR-011)</td>
+      </tr>
+      <tr>
+        <td><strong>Key storage (Mac)</strong></td>
+        <td>Per-user keychain: <code>jumpcloud-device-trust-keychain-db</code> (<code>user-agent/cert/cert_darwin.go</code>)</td>
+        <td>Secure Enclave via jumpcloud-durt-macos</td>
+      </tr>
+      <tr>
+        <td><strong>Hardware chip?</strong></td>
+        <td class="partial">macOS Keychain is encrypted; not the same as Secure Enclave-backed DUK</td>
+        <td class="yes">Yes — DUK in Secure Enclave / TPM</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    ADR-011: When user authenticates via JumpCloud Go, Auth adds a device assertion to the session
+    from the DUST — no call to devices service needed. Desktop certificate flow still exists in parallel.
+    User Portal prefers certificate assertion today; Go assertion preferred once more tested.
+  </p>
+</section>
+
+<!-- PROTECT -->
+<section id="protect">
+  <h2>7. JumpCloud Protect &amp; WebAuthn MFA</h2>
+
+  <h3>JumpCloud Protect (mobile push MFA)</h3>
+  <p>Source: <code>jumpcloud-auth/docs/PROTECT_ARCHITECTURE.md</code>, ADR-008</p>
+  <ul>
+    <li>Uses <strong>WebAuthn protocol</strong> adapted for mobile (ADR-008)</li>
+    <li>During enrollment, phone creates a credential with a <strong>private key on the device</strong></li>
+    <li>On iPhone: private key typically in <strong>Secure Enclave</strong> (non-exportable)</li>
+    <li>Push approve/deny: request signed with device private key (Authorization Signature header, ADR-009)</li>
+    <li>Ephemeral ceremony state in Redis on server (10 min sessions)</li>
+  </ul>
+
+  <h3>Browser WebAuthn MFA (Touch ID / Windows Hello)</h3>
+  <p>When a user registers a passkey or platform authenticator for MFA:</p>
+  <ul>
+    <li>Browser asks OS to create key — on Mac often <strong>Secure Enclave</strong>, on Windows <strong>TPM via Windows Hello</strong></li>
+    <li>Public key stored in jumpcloud-auth Postgres (ADR-004 hybrid: credentials in Auth DB, pointer on systemuser in Mongo)</li>
+    <li>Each login: browser/OS signs challenge inside hardware; server verifies signature</li>
+  </ul>
+
+  <div class="analogy">
+    <div class="analogy-label">Same pattern everywhere</div>
+    <p>
+      Whether it's JumpCloud Go DUK, Protect on your phone, or Touch ID WebAuthn —
+      the pattern is identical: <strong>private key in hardware, public key at JumpCloud, sign challenges to prove presence</strong>.
+      Only the agent's main mTLS cert breaks this pattern (file on disk).
+    </p>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section id="compare">
+  <h2>8. Side-by-Side Comparison</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Question</th>
+        <th>Agent mTLS</th>
+        <th>JumpCloud Go DUK</th>
+        <th>Device Trust cert</th>
+        <th>Protect / WebAuthn</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Proves what?</td><td>Which device</td><td>Which user on which device</td><td>Which user/browser on device</td><td>Which person (MFA)</td></tr>
+      <tr><td>Secure Enclave / TPM?</td><td class="no">No</td><td class="yes">Yes</td><td class="partial">Keychain (Mac)</td><td class="yes">Yes (phone / platform)</td></tr>
+      <tr><td>Key algorithm</td><td>RSA 2048</td><td>ECDSA P-256</td><td>X.509 cert</td><td>ECDSA (WebAuthn)</td></tr>
+      <tr><td>Can key be copied?</td><td class="yes">Yes (file)</td><td class="no">No</td><td class="partial">Keychain export restricted</td><td class="no">No (hardware)</td></tr>
+      <tr><td>Used for poll/config?</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td>Used for SSO?</td><td class="no">No</td><td class="yes">Yes</td><td class="partial">Device trust only</td><td class="no">No (MFA only)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- INTERVIEW -->
+<section id="interview">
+  <h2>9. Interview Answers</h2>
+
+  <h3>"Does JumpCloud use Secure Enclave?"</h3>
+  <p>
+    "Yes, but not for the main agent mTLS certificate. JumpCloud Go stores the per-user DUK
+    (Device User Key) in TPM on Windows and Linux, and Secure Enclave on macOS via the
+    jumpcloud-durt-macos component. JumpCloud Protect and WebAuthn MFA also use hardware-backed
+    keys on phones and platform authenticators. The agent's poll/config mTLS key is software-generated
+    RSA in a file with 0600 permissions — a deliberate cross-platform choice for FileVault key continuity."
+  </p>
+
+  <h3>"Why doesn't the agent mTLS key use Secure Enclave?"</h3>
+  <p>
+    "Historical and practical reasons: cross-platform consistency since early agent versions,
+    FileVault recovery key encryption depends on stable key material across cert renewals,
+    and TPM/Secure Enclave APIs differ per OS. Security is still enforced via mTLS, dual lookup,
+    and filesystem permissions. JumpCloud Go added hardware-backed keys later for a higher-assurance
+    user SSO use case."
+  </p>
+
+  <h3>"What's the difference between mTLS cert and DUK?"</h3>
+  <p>
+    "mTLS cert identifies the <em>device</em> to the cloud (one per machine, file-based).
+    DUK identifies the <em>user on that device</em> for JumpCloud Go SSO (per-user, hardware-backed).
+    Different keys, different purposes, different storage."
+  </p>
+
+  <h3>Key code references</h3>
+  <table>
+    <thead><tr><th>Topic</th><th>Where to look</th></tr></thead>
+    <tbody>
+      <tr><td>Agent mTLS key generation</td><td><code>registration/certificate_utils.go</code></td></tr>
+      <tr><td>Windows TPM DUK</td><td><code>jumpcloud-durt-client/security/keystore_windows.go</code></td></tr>
+      <tr><td>Linux TPM DUK</td><td><code>jumpcloud-durt-client/security/keystore_linux.go</code></td></tr>
+      <tr><td>macOS Secure Enclave DUK</td><td><code>github.com/TheJumpCloud/jumpcloud-durt-macos</code></td></tr>
+      <tr><td>Go registration / access</td><td><code>jumpcloud-durt-client/service/register.go</code>, <code>access.go</code></td></tr>
+      <tr><td>JC Go architecture</td><td><code>docs/jc_go/ARCHITECTURE.md</code></td></tr>
+      <tr><td>Device Trust certs (Mac)</td><td><code>user-agent/cert/cert_darwin.go</code></td></tr>
+      <tr><td>Device Trust via Go (ADR)</td><td><code>jumpcloud-auth/docs/adrs/adr-011-device-trust-jc-go.md</code></td></tr>
+      <tr><td>Protect / WebAuthn</td><td><code>jumpcloud-auth/docs/PROTECT_ARCHITECTURE.md</code>, ADR-008</td></tr>
+    </tbody>
+  </table>
+
+  <div class="truth">
+    <strong>One paragraph summary:</strong> Secure Enclave and TPM are hardware vaults that hold private keys
+    so they cannot be stolen from disk. JumpCloud uses them for JumpCloud Go (per-user SSO signing),
+    JumpCloud Protect (mobile MFA), and browser WebAuthn (Touch ID / Windows Hello). The main agent
+    mTLS certificate does not use them — it is a software RSA key in <code>client.key</code> for device-to-cloud
+    authentication. Knowing which feature uses which storage model is essential for security discussions and interviews.
+  </div>
+
+  <p style="margin-top:1.5rem;">
+    Related guides:
+    <a href="jumpcloud-mtls-complete-guide.html">mTLS complete guide</a> ·
+    <a href="jumpcloud-agent-endpoint-interview-guide.html">Agent architecture interview guide</a> ·
+    <a href="ban-3495/context/JumpCloud-Go-explained.html">JumpCloud Go explained</a>
+  </p>
+</section>
+
+</main>
+
+<footer>
+  JumpCloud Secure Enclave &amp; Hardware Security Guide — based on jumpcloud-agent, jumpcloud-durt-client, jumpcloud-auth docs
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { padding: 20 } });
+</script>
+</body>
+</html>

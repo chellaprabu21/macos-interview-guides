@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Extension in EDR/DLP Sensors — Complete Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EBEEF1; --card:#FFFFFF; --ink:#0F1419; --muted:#5C6672;
+    --line:#D6DBE1; --probe:#1F4E9C; --probe-soft:#E2EAF6;
+    --strength:#276B4E; --risk:#B0600A; --risk-bg:#FBF2E5;
+    --code-bg:#101720; --code-ink:#D5DDE8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15.5px;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:44px 22px 90px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--probe);font-weight:500;margin-bottom:12px}
+  h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+    font-size:clamp(28px,5vw,44px);line-height:1.05;letter-spacing:-.02em}
+  .dek{color:var(--muted);font-size:16px;margin-top:12px;max-width:66ch}
+
+  .toc{margin-top:30px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px 20px}
+  .toc-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;counter-reset:t;columns:2;column-gap:28px}
+  .toc li{counter-increment:t;font-size:14px;margin-bottom:6px;break-inside:avoid}
+  .toc li::before{content:counter(t,decimal-leading-zero);font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--probe);margin-right:9px}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--probe)}
+
+  section{margin-top:54px;scroll-margin-top:20px}
+  h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:25px;
+    letter-spacing:-.015em;line-height:1.18}
+  h2 .num{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+    color:var(--probe);margin-right:10px;vertical-align:2px}
+  .sub{color:var(--muted);font-size:14.5px;margin:6px 0 18px;max-width:70ch}
+  h3{font-size:16px;font-weight:600;margin:22px 0 9px}
+  h3:first-child{margin-top:0}
+  p{margin-bottom:11px}
+  p:last-child{margin-bottom:0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:20px 22px;margin-bottom:14px}
+  ul{list-style:none}
+  ul.tick li{padding-left:20px;position:relative;margin-bottom:9px}
+  ul.tick li:last-child{margin-bottom:0}
+  ul.tick li::before{content:"›";position:absolute;left:2px;color:var(--probe);font-weight:700}
+  b{font-weight:600}
+  code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:#EAEEF3;
+    padding:1px 5px;border-radius:4px;color:#243447}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+    padding:16px 18px;overflow-x:auto;margin:12px 0 14px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55}
+  pre .c{color:#7C8B9E}
+  pre .k{color:#7FB3FF}
+  pre .s{color:#8FD6A9}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:12px 0 14px;
+    font-size:13.5px}
+  th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  th{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;background:#F6F8FA}
+  td.mono,th.mono{font-family:'IBM Plex Mono',monospace;font-size:12px}
+
+  .callout{background:var(--risk-bg);border:1px solid #EFDCBE;border-left:3px solid var(--risk);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .callout b{color:var(--risk)}
+  .win{background:#EAF3EE;border:1px solid #C9E0D3;border-left:3px solid var(--strength);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .win b{color:var(--strength)}
+  .key{background:var(--probe-soft);border:1px solid #C6D6EC;border-left:3px solid var(--probe);
+    border-radius:0 9px 9px 0;padding:13px 16px;font-size:14px;margin:12px 0}
+  .key b{color:var(--probe)}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px;font-family:'IBM Plex Mono',monospace}
+  @media(max-width:640px){.toc ol{columns:1} pre{font-size:11px} table{font-size:12.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Document 2 of 2 · Endpoint sensor internals</div>
+  <h1>Network Extension<br>in EDR and DLP sensors</h1>
+  <p class="dek">ESF told you who touched the data on disk. This document covers the frameworks that tell you where the data went — and then joins the two into the architecture an actual data-lineage product runs on.</p>
+
+  <nav class="toc">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s1">The provider zoo — picking one</a></li>
+      <li><a href="#s2">Content filter: the two-process split</a></li>
+      <li><a href="#s3">Flow lifecycle and verdicts</a></li>
+      <li><a href="#s4">Transparent proxy and TLS interception</a></li>
+      <li><a href="#s5">Process attribution — the join key</a></li>
+      <li><a href="#s6">The TLS problem, honestly</a></li>
+      <li><a href="#s7">DNS proxy and packet tunnel</a></li>
+      <li><a href="#s8">Performance constraints</a></li>
+      <li><a href="#s9">Deployment and entitlements</a></li>
+      <li><a href="#s10">The combined ESF + NE architecture</a></li>
+      <li><a href="#s11">The lineage graph, worked</a></li>
+      <li><a href="#s12">Coverage gaps and how products fill them</a></li>
+      <li><a href="#s13">Failure modes</a></li>
+      <li><a href="#s14">Whiteboard summary</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ── 01 ── -->
+<section id="s1">
+  <h2><span class="num">01</span>The provider zoo — picking the right one</h2>
+  <p class="sub">NetworkExtension is six frameworks in a trenchcoat. Choosing the wrong provider type is the most consequential early decision in an endpoint network component, so know the trade-offs.</p>
+
+  <table>
+    <tr><th>Provider</th><th>You receive</th><th>Typical product</th></tr>
+    <tr><td class="mono">NEFilterDataProvider</td><td>Socket flows + optional inbound/outbound byte stream, with app attribution</td><td><b>DLP / EDR content filter.</b> The Cyberhaven-shaped choice.</td></tr>
+    <tr><td class="mono">NEFilterPacketProvider</td><td>Raw packets (macOS 11+)</td><td>Firewalling by IP/port at line rate; no app-layer context.</td></tr>
+    <tr><td class="mono">NETransparentProxyProvider</td><td>TCP/UDP flows redirected to you, which you re-originate</td><td><b>ZTNA / SASE agents.</b> Enables local TLS termination.</td></tr>
+    <tr><td class="mono">NEAppProxyProvider</td><td>Flows from managed apps only</td><td>Per-app VPN on managed devices.</td></tr>
+    <tr><td class="mono">NEPacketTunnelProvider</td><td>IP packets via a virtual interface</td><td>Full-tunnel VPN. What most legacy ZTNA agents used.</td></tr>
+    <tr><td class="mono">NEDNSProxyProvider</td><td>All DNS queries on the system</td><td>Domain policy, C2 detection, DNS-tunnelling detection.</td></tr>
+  </table>
+
+  <div class="key"><b>The decision rule:</b> if you need to <em>see application data</em>, you need a content filter or a transparent proxy. If you only need to <em>allow or deny by destination</em>, a packet filter or DNS proxy is far cheaper. Filters observe; proxies re-originate — and only re-origination gives you plaintext.</div>
+</section>
+
+<!-- ── 02 ── -->
+<section id="s2">
+  <h2><span class="num">02</span>Content filter: the two-process split</h2>
+  <p class="sub">The most commonly misunderstood part of NE. Apple splits the filter into two providers with deliberately asymmetric powers, and the split dictates your whole design.</p>
+
+<pre>┌─────────────────────────────────────────────────────────────────┐
+│  NEFilterDataProvider          — in the SYSTEM EXTENSION        │
+│  ‣ sees every flow, sees the bytes                              │
+│  ‣ returns verdicts, synchronously, in the connection path      │
+│  ‣ HARD SANDBOX: no network of its own, no arbitrary disk I/O,  │
+│    tight memory ceiling, no user interaction                    │
+│  ‣ must be fast and self-contained. Rules are DATA it is given. │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ NEFilterControlVerdict / IPC
+┌───────────────────────────▼─────────────────────────────────────┐
+│  NEFilterControlProvider       — in the CONTAINING APP process  │
+│  ‣ allowed to be slow, allowed to do network calls              │
+│  ‣ resolves unknown destinations, fetches policy, prompts user  │
+│  ‣ pushes updated rules DOWN into the data provider             │
+└─────────────────────────────────────────────────────────────────┘</pre>
+
+  <ul class="tick">
+    <li>The data provider is where correctness and latency live. The control provider is where anything expensive lives.</li>
+    <li>A data provider returning <code>.needRules()</code> escalates to the control provider, which does the slow lookup and then updates rules. Later flows to the same destination are decided locally.</li>
+    <li><b>Everything the data provider needs must be pushed to it in advance.</b> Same architectural principle as the ESF AUTH fast path: no synchronous dependency on anything outside your address space.</li>
+  </ul>
+
+  <div class="win"><b>Pattern recognition worth naming:</b> ESF's AUTH path and NEFilterDataProvider's verdict path are the same architecture under two APIs — a latency-critical, sandboxed decision point that must be fed pre-compiled policy by a privileged component that is allowed to be slow. If you say that in a design round, you're describing the product rather than reciting APIs.</div>
+</section>
+
+<!-- ── 03 ── -->
+<section id="s3">
+  <h2><span class="num">03</span>Flow lifecycle and verdicts</h2>
+
+<pre><span class="k">class</span> FilterDataProvider: NEFilterDataProvider {
+
+  <span class="c">// 1. New connection. You must return a verdict — fast.</span>
+  <span class="k">override func</span> handleNewFlow(_ flow: NEFilterFlow) -&gt; NEFilterNewFlowVerdict {
+      <span class="k">guard let</span> socketFlow = flow <span class="k">as?</span> NEFilterSocketFlow <span class="k">else</span> { <span class="k">return</span> .allow() }
+
+      <span class="c">// App attribution — the join key back to the ESF world.</span>
+      <span class="k">let</span> token   = socketFlow.sourceAppAuditToken
+      <span class="k">let</span> signing = socketFlow.sourceAppSigningIdentifier   <span class="c">// e.g. "com.google.Chrome"</span>
+      <span class="k">let</span> remote  = socketFlow.remoteEndpoint
+
+      <span class="k">switch</span> policy.verdict(for: signing, remote) {
+      <span class="k">case</span> .allowSilently:  <span class="k">return</span> .allow()          <span class="c">// stop seeing this flow entirely</span>
+      <span class="k">case</span> .block:          <span class="k">return</span> .drop()
+      <span class="k">case</span> .unknown:        <span class="k">return</span> .needRules()      <span class="c">// escalate to control provider</span>
+      <span class="k">case</span> .inspect:
+          <span class="c">// Ask for outbound bytes. peekOutboundBytes is a BUDGET, not a wish —</span>
+          <span class="c">// every byte you peek is copied and costs latency.</span>
+          <span class="k">return</span> .filterDataVerdict(withFilterInbound: <span class="k">false</span>, peekInboundBytes: 0,
+                                     filterOutbound: <span class="k">true</span>,  peekOutboundBytes: 8192)
+      }
+  }
+
+  <span class="c">// 2. Streamed outbound content, if you asked for it.</span>
+  <span class="k">override func</span> handleOutboundData(from flow: NEFilterFlow,
+                                    readBytesStartOffset offset: Int,
+                                    readBytes: Data) -&gt; NEFilterDataVerdict {
+      inspector.feed(flow: flow, bytes: readBytes, at: offset)
+      <span class="k">if</span> inspector.matchedSensitiveContent(flow) { <span class="k">return</span> .drop() }
+      <span class="k">return</span> .allowDataVerdict()      <span class="c">// or request more with another peek window</span>
+  }
+
+  <span class="c">// 3. Stream finished.</span>
+  <span class="k">override func</span> handleOutboundDataComplete(for flow: NEFilterFlow) -&gt; NEFilterDataVerdict {
+      <span class="k">return</span> inspector.finalize(flow)
+  }
+}</pre>
+
+  <h3>Verdict semantics you must get right</h3>
+  <table>
+    <tr><th>Verdict</th><th>Meaning</th></tr>
+    <tr><td class="mono">.allow()</td><td>Permanent pass for this flow. You stop receiving callbacks — cheap, and the right answer for the overwhelming majority of flows.</td></tr>
+    <tr><td class="mono">.drop()</td><td>Connection killed. The app sees a network error, not a policy message — hence the user agent's job to explain what happened.</td></tr>
+    <tr><td class="mono">.needRules()</td><td>Defer to the control provider. Costs a round trip; use for cache misses, not as a default.</td></tr>
+    <tr><td class="mono">.filterDataVerdict(...)</td><td>Stream inspection. The expensive path. Reserve it for flows that policy says matter.</td></tr>
+    <tr><td class="mono">.pause()</td><td>macOS 11+. Hold the flow while you decide asynchronously, then <code>resumeFlow(with:)</code>. Bounded — a flow paused too long stalls the app's connection and users perceive it as the network being broken.</td></tr>
+  </table>
+
+  <div class="callout"><b>Latency reality:</b> your <code>handleNewFlow</code> verdict sits directly in TCP connection establishment. A 20&nbsp;ms verdict on a page load with 80 subresource connections is a visibly slower browser. The target is microseconds via an in-memory match, with <code>.allow()</code> as the fast exit.</div>
+</section>
+
+<!-- ── 04 ── -->
+<section id="s4">
+  <h2><span class="num">04</span>Transparent proxy and TLS interception</h2>
+  <p class="sub">This is the ZTNA/SASE architecture — Zscaler, Netskope, Check Point's agent, and the world you interviewed into at Zscaler.</p>
+
+<pre><span class="k">class</span> ProxyProvider: NETransparentProxyProvider {
+
+  <span class="k">override func</span> startProxy(options: [String:Any]?,
+                            completionHandler: @escaping (Error?) -&gt; Void) {
+      <span class="k">let</span> settings = NETransparentProxyNetworkSettings(tunnelRemoteAddress: <span class="s">"127.0.0.1"</span>)
+      <span class="k">let</span> rule = NENetworkRule(remoteNetwork: <span class="k">nil</span>, remotePrefix: 0,
+                               localNetwork: <span class="k">nil</span>, localPrefix: 0,
+                               protocol: .TCP, direction: .outbound)
+      settings.includedNetworkRules = [rule]        <span class="c">// claim all outbound TCP</span>
+      setTunnelNetworkSettings(settings, completionHandler: completionHandler)
+  }
+
+  <span class="c">// Return true to CLAIM the flow; false to let it route normally.</span>
+  <span class="k">override func</span> handleNewFlow(_ flow: NEAppProxyFlow) -&gt; Bool {
+      <span class="k">guard let</span> tcp = flow <span class="k">as?</span> NEAppProxyTCPFlow <span class="k">else</span> { <span class="k">return false</span> }
+      <span class="k">let</span> app = flow.metaData.sourceAppSigningIdentifier
+      <span class="k">let</span> tok = flow.metaData.sourceAppAuditToken       <span class="c">// ← join key again</span>
+      relay.handle(tcp, attributedTo: app, token: tok)
+      <span class="k">return true</span>
+  }
+}</pre>
+
+  <h3>Why a proxy, when a filter is simpler</h3>
+  <p>A content filter <em>observes</em> the flow. A transparent proxy <em>terminates</em> it and opens its own connection onward. That difference is what makes TLS inspection possible:</p>
+
+<pre>app ──TLS──▶ [ your proxy: terminate with a locally-trusted CA cert ]
+                        │  plaintext visible here
+                        └──TLS──▶ real server (you validate the real chain)</pre>
+
+  <ul class="tick">
+    <li>Requires installing a root CA in the System keychain and marking it trusted — an MDM operation on managed fleets, and a hard blocker on unmanaged ones.</li>
+    <li><b>Certificate pinning defeats it.</b> Many apps — and increasingly OS components — pin, so a bypass list is mandatory or you break Slack, Teams, Dropbox and software updates on day one.</li>
+    <li>Adds a full TLS handshake of latency and a real CPU cost per connection.</li>
+    <li>You become a cryptographic single point of failure holding a CA key trusted by every managed Mac. Attack surface, plus a governance conversation with the customer's security team.</li>
+  </ul>
+
+  <div class="win"><b>A strong opinion to hold:</b> "Full TLS interception is a heavy hammer with real breakage and a serious key-custody problem. For a data-lineage product I'd rather get plaintext where it's cheap — a browser extension inside the TLS boundary, and OS-level file and clipboard events — and use the network layer for attribution and destination policy rather than as the primary content inspection point." That is, essentially, Cyberhaven's actual architecture. Arriving at it independently is the strongest possible signal in a design round.</div>
+</section>
+
+<!-- ── 05 ── -->
+<section id="s5">
+  <h2><span class="num">05</span>Process attribution — the join key</h2>
+  <p class="sub">This is the hinge of the entire two-document architecture. Everything else is plumbing around it.</p>
+
+  <table>
+    <tr><th>Framework</th><th>Attribution field</th></tr>
+    <tr><td>ESF</td><td class="mono">es_process_t.audit_token<br>es_process_t.responsible_audit_token</td></tr>
+    <tr><td>NEFilterSocketFlow</td><td class="mono">sourceAppAuditToken<br>sourceAppSigningIdentifier<br>sourceAppUniqueIdentifier</td></tr>
+    <tr><td>NEAppProxyFlow</td><td class="mono">metaData.sourceAppAuditToken<br>metaData.sourceAppSigningIdentifier</td></tr>
+  </table>
+
+  <div class="key"><b>The whole trick:</b> both frameworks hand you an <code>audit_token_t</code>. Decompose it to <code>(pid, pidversion)</code> and you have a stable key into the process cache that ESF built at exec time. That is how "Chrome opened a socket to drive.google.com" becomes "the Chrome instance that, four seconds ago, read <code>Q3-forecast.xlsx</code> from the Finance share."</div>
+
+<pre>ESF  NOTIFY_EXEC   ──▶  ProcessCache[(pid,pidver)] = { Chrome, TeamID, cdhash, … }
+ESF  NOTIFY_OPEN   ──▶  edge:  Q3-forecast.xlsx ──read──▶ (pid,pidver)
+NE   handleNewFlow ──▶  edge:  (pid,pidver) ──connect──▶ drive.google.com
+                        └─ same key ⇒ the graph closes ⇒ lineage exists</pre>
+
+  <div class="callout"><b>Two traps.</b> (1) <b>PID reuse</b> — key on <code>(pid, pidversion)</code>, never pid alone, or you attribute one app's egress to another's identity. (2) <b>Helper processes</b> — a browser network process is not the browser. Resolve through <code>responsible_audit_token</code> before applying app-level policy, or every rule written against "Chrome" silently fails to match.</div>
+</section>
+
+<!-- ── 06 ── -->
+<section id="s6">
+  <h2><span class="num">06</span>The TLS problem, honestly</h2>
+  <p class="sub">Be able to state this cleanly. Candidates who claim the network layer solves content inspection reveal they haven't built one.</p>
+
+  <table>
+    <tr><th>What you get at the socket</th><th>Reality</th></tr>
+    <tr><td>Destination IP, port, SNI hostname</td><td>Available. SNI is plaintext today, but Encrypted Client Hello is eroding even that.</td></tr>
+    <tr><td>Byte volume, timing, direction</td><td>Available. Enough for "Chrome uploaded 40&nbsp;MB to an unmanaged Google account" — genuinely useful.</td></tr>
+    <tr><td>The actual file contents</td><td><b>Not available.</b> It is ciphertext unless you terminate TLS.</td></tr>
+    <tr><td>Which web app, which action</td><td>Not available. Personal Gmail and corporate Gmail are the same TLS session to the same host.</td></tr>
+  </table>
+
+  <p>The three ways products get past this, in ascending order of preference for a lineage product:</p>
+  <ul class="tick">
+    <li><b>TLS interception</b> via transparent proxy + local CA. Complete, invasive, breaks pinned apps, heavy key custody burden.</li>
+    <li><b>Browser extension</b> — sits inside the TLS boundary in the renderer. Sees the actual upload, the target web app, the tenant, the pasted text, the AI prompt. Limited to browsers, but that is where the majority of modern data egress happens.</li>
+    <li><b>Endpoint-side inference</b> — ESF told you which file the process read before the flow started, so you can attribute the upload to a file without ever reading the wire. Cheap, robust, and immune to encryption.</li>
+  </ul>
+
+  <div class="win"><b>Why this matters for your specific interview:</b> Cyberhaven runs a macOS endpoint team, a Linux endpoint team, <em>and</em> a browser-extension team. That organisational shape is the answer to this section. Being able to explain why the browser extension has to exist demonstrates you understand their product's architecture from the outside — which is exactly the kind of preparation a hiring manager notices.</div>
+</section>
+
+<!-- ── 07 ── -->
+<section id="s7">
+  <h2><span class="num">07</span>DNS proxy and packet tunnel — the supporting cast</h2>
+  <div class="card">
+    <h3>NEDNSProxyProvider</h3>
+    <ul class="tick">
+      <li>Handles every DNS query on the system as <code>NEAppProxyUDPFlow</code> / TCP flows, with app attribution attached.</li>
+      <li>Cheap domain-level policy, and the natural place to detect DNS tunnelling and algorithmically generated C2 domains.</li>
+      <li>Degrading fast: DoH and DoT bypass the system resolver entirely, so a growing share of name resolution never reaches you. Know this limitation.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>NEPacketTunnelProvider</h3>
+    <ul class="tick">
+      <li>Virtual interface, raw IP packets in and out. You implement the tunnel protocol yourself.</li>
+      <li>Maximum control, maximum cost — you are now responsible for MTU discovery, fragmentation, and per-packet throughput on the main data path.</li>
+      <li>Directly relevant to you: your Citrix work on runtime MTU discovery and UDP throughput tuning is the same class of problem. Worth mentioning if packet-level work comes up.</li>
+      <li>Modern ZTNA increasingly prefers transparent proxy over packet tunnel, because flow-level app attribution is free and packet-level attribution is not.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── 08 ── -->
+<section id="s8">
+  <h2><span class="num">08</span>Performance constraints specific to NE</h2>
+  <table>
+    <tr><th>Constraint</th><th>Consequence</th></tr>
+    <tr><td>Verdict latency is in the connection path</td><td>Budget microseconds. Every flow decision must be an in-memory lookup with no IPC.</td></tr>
+    <tr><td>Data provider memory ceiling</td><td>You cannot buffer a 2&nbsp;GB upload to inspect it. Streaming inspection over a bounded window, or hand off the decision.</td></tr>
+    <tr><td>Data provider sandbox</td><td>No sockets, no arbitrary file writes, no user prompts. Anything else happens elsewhere.</td></tr>
+    <tr><td>Peek size is a real cost</td><td><code>peekOutboundBytes</code> copies. Requesting large peeks on every flow collapses throughput.</td></tr>
+    <tr><td>Flow cardinality</td><td>A browser opens hundreds of flows per page load. Verdict caching by (signing ID, host) is mandatory.</td></tr>
+    <tr><td><code>.pause()</code> has a clock</td><td>Held too long and the app times out. Pausing is not a substitute for a fast decision.</td></tr>
+  </table>
+
+  <h3>The verdict cache</h3>
+<pre>key    : (sourceAppSigningIdentifier, remoteHost or IP, port)
+value  : { verdict, ttl, policyGeneration }
+policy : bump policyGeneration on any policy push → cache invalidated wholesale
+size   : bounded LRU. Unbounded caches on a machine visiting the open web
+         are a slow memory leak with extra steps.</pre>
+</section>
+
+<!-- ── 09 ── -->
+<section id="s9">
+  <h2><span class="num">09</span>Deployment and entitlements</h2>
+  <table>
+    <tr><th>Item</th><th>Detail</th></tr>
+    <tr><td class="mono">com.apple.developer.<br>networking.networkextension</td><td>Array-valued. Needs <code>content-filter-provider</code>, <code>packet-tunnel-provider</code>, <code>app-proxy-provider</code>, or <code>dns-proxy</code> as appropriate. Restricted — requires Apple approval per capability, like the ESF entitlement.</td></tr>
+    <tr><td class="mono">com.apple.developer.<br>system-extension.install</td><td>Required to activate any system extension.</td></tr>
+    <tr><td>Configuration</td><td>Content filter: <code>NEFilterManager.shared()</code> with an <code>NEFilterProviderConfiguration</code>. Proxy/tunnel: <code>NETunnelProviderManager</code>. Both persist to system preferences and both prompt the user on an unmanaged Mac.</td></tr>
+    <tr><td>MDM silent install</td><td>Content filter → <code>com.apple.webcontent-filter</code> payload. Proxy/VPN → <code>com.apple.vpn.managed</code>. Plus <code>com.apple.system-extension-policy</code> to pre-approve the sysext by Team ID. Without these, the user gets a stack of dialogs and the deployment fails in the field.</td></tr>
+    <tr><td>Non-removability</td><td>MDM-delivered filter configurations can be made non-removable by the user — a hard requirement for any real DLP deployment.</td></tr>
+    <tr><td>Coexistence</td><td>macOS permits limited concurrent filters. Another vendor's content filter already installed is a real-world deployment blocker worth designing diagnostics for.</td></tr>
+  </table>
+  <div class="win"><b>Again, your asymmetry:</b> the MDM payload delivery, pre-approval sequencing, and "why did this Mac end up with the agent installed but the filter unapproved" fleet-diagnosis problem is your daily work. Very few macOS engineers have operated this at fleet scale. It is not the JD's headline requirement, but it is a thing their team unquestionably deals with.</div>
+</section>
+
+<!-- ── 10 ── -->
+<section id="s10">
+  <h2><span class="num">10</span>The combined architecture</h2>
+  <p class="sub">Both documents in one diagram. This is the whiteboard answer to "design an endpoint DLP sensor."</p>
+
+<pre>┌──────────────────────────── macOS KERNEL ────────────────────────────┐
+│  MAC hooks / ES kernel      socket filter      network stack         │
+└──────┬──────────────────────────┬────────────────────────┬───────────┘
+       │ ES messages              │ flows                  │ packets
+┌──────▼──────────┐   ┌───────────▼───────────┐   ┌────────▼──────────┐
+│ SYSEXT: ES      │   │ SYSEXT: NEFilterData  │   │ (opt) Transparent │
+│ • proc / file   │   │ • flow verdicts       │   │  proxy: TLS term  │
+│ • fast AUTH     │   │ • peek + inspect      │   │  + re-originate   │
+│ • process cache │   │ • verdict cache       │   └────────┬──────────┘
+└──────┬──────────┘   └───────────┬───────────┘            │
+       │  audit_token             │  audit_token           │
+       └──────────┬───────────────┴────────────────────────┘
+                  │  XPC, peer-validated by audit token + code requirement
+┌─────────────────▼────────────────────────────────────────────────────┐
+│ PRIVILEGED DAEMON (root)                                             │
+│  ▸ CORRELATOR      join file events ⟷ flows on (pid,pidversion)      │
+│  ▸ LINEAGE GRAPH   local store: origin → process → derivative → dest │
+│  ▸ POLICY COMPILER backend policy → matchers pushed to both sysexts  │
+│  ▸ SPOOL/TRANSPORT batch, compress, capped disk spool, TLS, backoff  │
+│  ▸ WATCHDOG        health, staged rollout, kill switch               │
+└─────────┬─────────────────────────────────┬──────────────────────────┘
+          │ XPC                             │ XPC / native messaging
+┌─────────▼───────────────┐   ┌─────────────▼────────────────────────┐
+│ USER AGENT (per session)│   │ BROWSER EXTENSION                    │
+│ • pasteboard changeCount│   │ • inside the TLS boundary            │
+│ • justification prompts │   │ • web app + tenant identity          │
+│ • block notifications   │   │ • uploads, pastes, AI prompts        │
+└─────────────────────────┘   └──────────────────────────────────────┘
+                  │
+                  ▼  backend: cross-machine lineage, classification, policy, SOC</pre>
+
+  <h3>The five design invariants</h3>
+  <ul class="tick">
+    <li><b>Latency-critical components hold no dependencies.</b> Both sysexts decide from resident memory. Policy arrives as pre-compiled data.</li>
+    <li><b>Exactly one component talks to the network.</b> The daemon. One place to harden against untrusted backend input.</li>
+    <li><b>The audit token is the universal join key.</b> Every subsystem records it; the correlator does nothing else.</li>
+    <li><b>Fail-open in the data path, fail-loud in telemetry.</b> Never hang a user's save or connection; always report that you degraded.</li>
+    <li><b>The user agent exists because root has no session.</b> Pasteboard, prompts and notifications are inherently per-GUI-session.</li>
+  </ul>
+</section>
+
+<!-- ── 11 ── -->
+<section id="s11">
+  <h2><span class="num">11</span>The lineage graph, worked end to end</h2>
+  <p class="sub">Follow one file through the system. This is the story to tell if asked "how would data lineage actually work?"</p>
+
+<pre>t0   ESF NOTIFY_EXEC        Excel starts.  cache[(431,7)] = Microsoft Excel, TeamID UBF8T346G9
+t1   ESF NOTIFY_OPEN        (431,7) reads /Volumes/Finance/Q3-forecast.xlsx
+                            ⇒ node: FILE:Q3-forecast.xlsx  { origin = corporate share }
+                            ⇒ edge: FILE ──read──▶ PROC(431,7)
+t2   ESF NOTIFY_CLOSE       (431,7) closes ~/Desktop/summary.xlsx  modified = true
+     (modified)             ⇒ node: FILE:summary.xlsx
+                            ⇒ edge: PROC(431,7) ──wrote──▶ FILE:summary.xlsx
+                            ⇒ INHERITED CLASSIFICATION: derivative of a corporate-share file
+t3   ESF NOTIFY_CLONE       Finder clones summary.xlsx → ~/Personal/summary.xlsx
+                            ⇒ edge preserves lineage across an APFS clone
+                              (an open/write-only sensor loses the file HERE)
+t4   ESF NOTIFY_EXEC        Chrome starts.  cache[(902,3)] = Google Chrome
+t5   ESF NOTIFY_OPEN        (902,3) reads ~/Personal/summary.xlsx
+                            ⇒ edge: FILE ──read──▶ PROC(902,3)
+t6   NE  handleNewFlow      sourceAppAuditToken → (902,3) → Chrome
+                            remote = drive.google.com : 443
+                            ⇒ edge: PROC(902,3) ──egress──▶ DEST:drive.google.com
+t7   BROWSER EXTENSION      upload to account personal@gmail.com, not the corp tenant
+                            ⇒ DEST resolves to UNSANCTIONED
+
+VERDICT  A file whose origin is the Finance share reached an unsanctioned
+         personal cloud account, via two derivations and one clone.
+         No content inspection was required at any point.</pre>
+
+  <div class="key"><b>Why this example is the right one to tell:</b> it shows lineage beating classification. A content-matching DLP would have to recognise <code>summary.xlsx</code> as sensitive on its own merits, and it probably wouldn't — the numbers were retyped. Provenance carries the sensitivity through derivations that content matching cannot follow. That is Cyberhaven's actual thesis, arrived at from first principles.</div>
+
+  <h3>Graph engineering notes</h3>
+  <ul class="tick">
+    <li><b>Nodes:</b> files (by inode + volume UUID, not path — paths change), processes (by pid+pidversion), destinations, users, devices.</li>
+    <li><b>Edges:</b> read, wrote, cloned, renamed, egressed, pasted — each timestamped and each carrying the responsible process.</li>
+    <li><b>Locally bounded:</b> the endpoint holds a recent window with an eviction policy; the backend holds the durable cross-machine graph. The endpoint must be useful offline, which is why the local store exists at all.</li>
+    <li><b>Propagation is the hard part:</b> deciding when a derivative inherits classification, and when the chain is too diluted to matter, is a product judgement, not an algorithm. Saying so is a mark of maturity.</li>
+  </ul>
+</section>
+
+<!-- ── 12 ── -->
+<section id="s12">
+  <h2><span class="num">12</span>Coverage gaps and how products fill them</h2>
+  <p class="sub">Neither framework covers these. Knowing the full egress surface is what makes someone a DLP engineer rather than an ESF engineer.</p>
+
+  <table>
+    <tr><th>Channel</th><th>Mechanism</th></tr>
+    <tr><td>Clipboard</td><td>No notification API. A per-session <code>LaunchAgent</code> polls <code>NSPasteboard.general.changeCount</code>. On newer macOS, reading the pasteboard triggers a user-visible privacy notice — a real product constraint, not a footnote.</td></tr>
+    <tr><td>Drag and drop</td><td>Also pasteboard-backed (drag pasteboard), plus the resulting file events at the destination.</td></tr>
+    <tr><td>Screenshots</td><td>File creation on Desktop, TCC screen-recording grants, <code>NOTIFY_TCC_MODIFY</code>. Genuinely hard to cover well; be honest about that.</td></tr>
+    <tr><td>AirDrop</td><td><code>sharingd</code> process activity plus file events in its staging directories.</td></tr>
+    <tr><td>USB / removable media</td><td>IOKit matching notifications + DiskArbitration for volume appearance, joined with ESF <code>NOTIFY_MOUNT</code> and file events under <code>/Volumes/</code>. <code>AUTH_OPEN</code> flag downgrade gives read-only enforcement without hard denials.</td></tr>
+    <tr><td>Printing</td><td>CUPS spool directory monitoring; the spooled job is a file, and files are ESF's home turf.</td></tr>
+    <tr><td>Cloud sync clients</td><td>File events inside the sync folder plus the sync daemon's own flows. The daemon is the process to attribute, and the file that entered the folder is the lineage edge.</td></tr>
+    <tr><td>SSH / scp / rsync</td><td>ESF exec with argv, plus NE flow attribution to the same process. Trivially covered, and often forgotten.</td></tr>
+    <tr><td>AI assistants and agents</td><td>Browser extension for web chat UIs; NE flow attribution for native clients and API calls; ESF for local model file access. <b>This is Cyberhaven's current strategic frontier and your JumpCloud team's charter.</b></td></tr>
+  </table>
+</section>
+
+<!-- ── 13 ── -->
+<section id="s13">
+  <h2><span class="num">13</span>NE-specific failure modes</h2>
+  <div class="card">
+    <ul class="tick">
+      <li><b>Data provider crash.</b> Decide and document whether the system fails open (traffic flows, you're blind) or closed (machine loses network). Failing closed on a laptop fleet is a company-wide outage; almost everyone fails open and detects instead.</li>
+      <li><b>Slow verdicts.</b> Users don't report "the DLP agent is slow" — they report "the internet is slow." You will be blamed for the network. Ship per-flow verdict latency telemetry from day one so you can prove it isn't you.</li>
+      <li><b>Pinned apps versus TLS interception.</b> Slack, Teams, Dropbox, software updaters. A bypass list is mandatory and is permanent maintenance.</li>
+      <li><b>Filter coexistence.</b> A second vendor's content filter can prevent yours from installing.</li>
+      <li><b>QUIC and HTTP/3.</b> UDP-based, and easy to accidentally miss if your rules only claim TCP. Some products deliberately block QUIC to force TCP fallback into their inspection path — a defensible choice you should be able to argue.</li>
+      <li><b>Encrypted DNS.</b> Apps using DoH bypass your DNS proxy entirely.</li>
+      <li><b>VPN interaction.</b> A corporate VPN plus your transparent proxy plus a personal VPN is a real customer configuration and a real support nightmare.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── 14 ── -->
+<section id="s14">
+  <h2><span class="num">14</span>Whiteboard summary</h2>
+  <div class="card">
+    <p style="margin-bottom:12px">If you have thirty seconds and a marker, this is the whole thing:</p>
+    <ul class="tick">
+      <li><b>ESF</b> = what happened on disk, and which process did it. Userspace C API, AUTH events block a syscall under a deadline, and every design decision follows from that.</li>
+      <li><b>NE</b> = which process sent what, where. Content filter for observation and policy; transparent proxy when you must have plaintext.</li>
+      <li><b>The join</b> = <code>audit_token</code> → <code>(pid, pidversion)</code> → a process cache built at exec time, resolved through the responsible process.</li>
+      <li><b>The shared pattern</b> = both hot paths are sandboxed, latency-critical, dependency-free deciders, fed pre-compiled policy by a privileged daemon that is permitted to be slow.</li>
+      <li><b>The gap</b> = TLS. Filled by a browser extension inside the crypto boundary, or by endpoint-side inference from file reads that preceded the flow.</li>
+      <li><b>The output</b> = a provenance graph where sensitivity propagates through derivations, which is what content classification alone can never do.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Document 2 of 2 · Network Extension &amp; combined lineage architecture</footer>
+</div>
+</body>
+</html>

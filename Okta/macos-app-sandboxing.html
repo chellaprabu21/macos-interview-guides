@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>macOS App Sandboxing — from scratch</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;
+  --sbx:#2d5d4f;--sbxT:#e3efeb;
+  --tcc:#7a4a8f;--tccT:#f0e9f4;
+  --go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;
+  --stop:#a03a2a;--stopT:#f9e7e2;
+  --brand:#1c4f7c;--brandT:#e3edf5;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--sbx),var(--tcc));z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:284px;flex:0 0 284px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#101815;color:#c5d2cc;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#849a91;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#849a91;margin:15px 4px 6px;border-top:1px solid #223029;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#5f7469;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a5b6ae;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#6c8177;min-width:20px}
+  nav a:hover{background:#1a2620;color:#fff}nav a.active{background:var(--sbx);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:848px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sbx);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--sbx)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.3px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .sx{border-left-color:var(--sbx);background:var(--sbxT)}.sx .l{color:var(--sbx)}
+  .tc{border-left-color:var(--tcc);background:var(--tccT)}.tc .l{color:var(--tcc)}
+  .yo{border-left-color:var(--brand);background:var(--brandT)}.yo .l{color:var(--brand)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.7px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.7px;color:var(--sbx)}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.s{border-color:var(--sbx);background:var(--sbxT)}
+  .nd.t{border-color:var(--tcc);background:var(--tccT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">macOS Sandboxing</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">macOS App<br>Sandboxing<span class="s">what it is, what it isn't,<br>and how it composes</span></div>
+  <div class="ct">15 sections</div>
+  <nav id="toc">
+    <div class="grp">Foundations</div>
+    <a href="#why"><span class="n">01</span><span>The problem it solves ★</span></a>
+    <a href="#what"><span class="n">02</span><span>What the sandbox is</span></a>
+    <a href="#how"><span class="n">03</span><span>How it works</span></a>
+    <div class="grp">The mechanics</div>
+    <a href="#ent"><span class="n">04</span><span>Entitlements ★</span></a>
+    <a href="#container"><span class="n">05</span><span>The container</span></a>
+    <a href="#escape"><span class="n">06</span><span>Powerbox &amp; bookmarks</span></a>
+    <div class="grp">The neighbours</div>
+    <a href="#layers"><span class="n">07</span><span>The five layers ★</span></a>
+    <a href="#tcc"><span class="n">08</span><span>TCC — privacy consent</span></a>
+    <a href="#sip"><span class="n">09</span><span>SIP</span></a>
+    <a href="#hardened"><span class="n">10</span><span>Hardened runtime &amp; notarization</span></a>
+    <div class="grp">In practice</div>
+    <a href="#agent"><span class="n">11</span><span>Security agents ★</span></a>
+    <a href="#tradeoff"><span class="n">12</span><span>The trade-offs</span></a>
+    <a href="#debug"><span class="n">13</span><span>Debugging denials</span></a>
+    <a href="#ios"><span class="n">14</span><span>macOS vs iOS</span></a>
+    <a href="#qa"><span class="n">15</span><span>Interview answers</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">App Sandbox · entitlements · TCC · SIP · hardened runtime</p>
+  <h1>macOS sandboxing, and the layers around it.</h1>
+  <p class="led">Sandboxing is one of five distinct protection systems on macOS that people routinely conflate. This builds the App Sandbox from first principles, then separates it cleanly from TCC, SIP, the hardened runtime, and code signing — and shows how a security agent lives inside all of them.</p>
+</header>
+
+<!-- 01 -->
+<section id="why">
+  <div class="sn">01 / ★</div>
+  <h2>The problem it solves</h2>
+  <p class="ss">Start with why the default behaviour of an operating system is dangerous.</p>
+
+  <h3>The traditional Unix model</h3>
+  <p>Classic Unix permissions are based on <strong>who you are</strong>. If you're user <code>chella</code>, every process you run has full access to everything <code>chella</code> can reach.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd r" style="min-width:420px"><b>a text editor you downloaded</b>can read your SSH keys · your browser cookies · your Documents · your Keychain items · and can talk to any network host</div>
+    </div>
+    <div class="cap">Nothing about being a text editor limits what it may do.</div>
+  </div>
+
+  <p>This made sense on a multi-user timesharing system in 1975, where the threat was <em>other users</em>. It makes no sense today, where the threat is <strong>the software you yourself installed</strong> — because it inherits all your authority the moment you run it.</p>
+
+  <div class="bx st"><span class="l">The core mismatch</span>
+    <p>Unix asks <strong>"who is running this?"</strong> The question you actually need answered is <strong>"what should this particular program be allowed to do?"</strong></p>
+    <p style="margin-top:8px">A calculator and a backup tool run as the same user, but should clearly have wildly different powers. Unix has no way to express that difference.</p></div>
+
+  <h3>The principle being applied</h3>
+  <p><strong>Least privilege:</strong> every program gets the minimum access needed for its job, and nothing more. Then a compromise of that program is <em>contained</em> — an attacker who exploits your text editor gets a text editor's powers, not your entire account.</p>
+  <p>Sandboxing is macOS's mechanism for expressing and enforcing that.</p>
+</section>
+
+<!-- 02 -->
+<section id="what">
+  <div class="sn">02</div>
+  <h2>What the App Sandbox actually is</h2>
+  <p class="ss">A precise definition, and what it's not.</p>
+
+  <div class="bx sx"><span class="l">Definition</span>
+    <p>The App Sandbox is a <strong>kernel-enforced restriction on what a process may do</strong> — which files it can open, whether it can use the network, whether it can access hardware — applied at process launch based on the app's declared <strong>entitlements</strong>.</p></div>
+
+  <h3>Two properties that matter</h3>
+  <ul>
+    <li><strong>Deny by default.</strong> Once sandboxed, the process starts with almost nothing. Every capability must be explicitly requested. This is the inverse of Unix, where you start with everything your user has.</li>
+    <li><strong>Kernel-enforced.</strong> It isn't a library the app links or a policy it agrees to follow. The check happens in the kernel, below the app. A compromised app cannot decide to opt out — the restriction is applied to it, not by it.</li>
+  </ul>
+
+  <h3>What a sandboxed app loses by default</h3>
+  <table class="tb">
+    <tr><th>Capability</th><th>Default state</th></tr>
+    <tr><td>Read/write arbitrary files</td><td><strong>Denied</strong> — only its own container</td></tr>
+    <tr><td>Outgoing network connections</td><td><strong>Denied</strong></td></tr>
+    <tr><td>Incoming connections (act as a server)</td><td><strong>Denied</strong></td></tr>
+    <tr><td>Camera, microphone</td><td><strong>Denied</strong></td></tr>
+    <tr><td>Contacts, Calendar, Photos</td><td><strong>Denied</strong></td></tr>
+    <tr><td>USB, Bluetooth, printing</td><td><strong>Denied</strong></td></tr>
+    <tr><td>Launching other processes</td><td>Heavily restricted</td></tr>
+    <tr><td>Inspecting other processes</td><td><strong>Denied</strong></td></tr>
+    <tr><td>Its own container directory</td><td><strong>Allowed</strong> — this is all you start with</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">What it is NOT</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>Not a VM or a container.</strong> The process runs natively on the same kernel; only its permitted operations are narrowed.</li>
+      <li><strong>Not the same as TCC.</strong> TCC is the consent dialogs. Different system — see §08.</li>
+      <li><strong>Not SIP.</strong> SIP protects the OS from <em>root</em>. Different system — see §09.</li>
+      <li><strong>Not mandatory</strong> outside the App Store. Directly-distributed apps may choose not to sandbox.</li>
+      <li><strong>Not protection against a root attacker</strong> who can modify the system itself.</li>
+    </ul></div>
+</section>
+
+<!-- 03 -->
+<section id="how">
+  <div class="sn">03</div>
+  <h2>How it works underneath</h2>
+  <p class="ss">Enough mechanism to reason about it, without needing kernel source.</p>
+
+  <h3>The enforcement point</h3>
+  <p>macOS has a kernel subsystem called the <strong>Mandatory Access Control framework</strong> (MACF), inherited from TrustedBSD. It places hooks at security-relevant kernel operations — opening a file, creating a socket, sending a Mach message — where a policy module can approve or deny.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd" style="min-width:450px"><b>1 · app calls open("/Users/chella/.ssh/id_rsa")</b></div>
+      <span class="ar">↓</span>
+      <div class="nd" style="min-width:450px"><b>2 · kernel begins handling the syscall</b></div>
+      <span class="ar">↓</span>
+      <div class="nd s" style="min-width:450px"><b>3 · MACF hook consults the sandbox policy for this process</b></div>
+      <span class="ar">↓</span>
+      <div class="nd r" style="min-width:450px"><b>4 · not permitted → syscall returns EPERM</b>the app sees an ordinary "operation not permitted" error</div>
+    </div>
+    <div class="cap">The app can't distinguish a sandbox denial from a normal permission error — which is deliberate.</div>
+  </div>
+
+  <h3>Where the policy comes from</h3>
+  <p>At launch, the system reads the app's <strong>code signature</strong>, which contains its <strong>entitlements</strong>. If <code>com.apple.security.app-sandbox</code> is present, the kernel applies a sandbox profile derived from the full entitlement set. That profile is attached to the process for its entire lifetime.</p>
+
+  <div class="bx sx"><span class="l">Two consequences worth knowing</span>
+    <p><strong>Entitlements are signed.</strong> They live inside the code signature, so editing them invalidates the signature and the app won't launch. You cannot grant yourself capabilities by editing a plist.</p>
+    <p style="margin-top:8px"><strong>The sandbox is inherited and can only tighten.</strong> Child processes inherit the parent's restrictions. A sandboxed process cannot spawn an unsandboxed helper to do its dirty work — that would defeat the entire mechanism.</p></div>
+
+  <h3>Profiles</h3>
+  <p>Underneath, sandbox policies are written in a Scheme-like language (you can see Apple's own in <code>/System/Library/Sandbox/Profiles/</code>). Third-party apps don't write these directly — your entitlements select and parameterise a profile. Knowing they exist explains why the model is more expressive than the entitlement list suggests.</p>
+</section>
+
+<!-- 04 -->
+<section id="ent">
+  <div class="sn">04 / ★</div>
+  <h2>Entitlements</h2>
+  <p class="ss">The vocabulary of capabilities. This is the part you'd actually work with.</p>
+
+  <p>An entitlement is a key-value pair embedded in the code signature. Some grant capabilities; others assert identity or opt into behaviours.</p>
+
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+    <span class="c">&lt;!-- Turn the sandbox on --&gt;</span>
+    &lt;key&gt;com.apple.security.app-sandbox&lt;/key&gt;
+    &lt;true/&gt;
+
+    <span class="c">&lt;!-- Then request back only what you need --&gt;</span>
+    &lt;key&gt;com.apple.security.network.client&lt;/key&gt;
+    &lt;true/&gt;
+
+    &lt;key&gt;com.apple.security.files.user-selected.read-write&lt;/key&gt;
+    &lt;true/&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+
+  <h3>The common ones</h3>
+  <table class="tb">
+    <tr><th>Entitlement</th><th>Grants</th></tr>
+    <tr><td><code>network.client</code></td><td>Outgoing connections</td></tr>
+    <tr><td><code>network.server</code></td><td>Listening for incoming connections</td></tr>
+    <tr><td><code>files.user-selected.read-write</code></td><td>Access to files the <strong>user picks in an open panel</strong> — see §06</td></tr>
+    <tr><td><code>files.downloads.read-write</code></td><td>The Downloads folder</td></tr>
+    <tr><td><code>files.bookmarks.app-scope</code></td><td>Persisting access across launches</td></tr>
+    <tr><td><code>device.camera</code> / <code>device.microphone</code></td><td>Hardware — still subject to TCC consent on top</td></tr>
+    <tr><td><code>personal-information.location</code></td><td>Location services</td></tr>
+    <tr><td><code>print</code></td><td>Printing</td></tr>
+    <tr><td><code>application-groups</code></td><td>A shared container between your own apps</td></tr>
+  </table>
+
+  <h3>Three categories — the distinction matters</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:9px">
+      <div class="nd g" style="min-width:460px"><b>ordinary</b>you just declare them · network, files, printing · no approval needed</div>
+      <div class="nd t" style="min-width:460px"><b>provisioned / capability</b>tied to your developer account · push notifications, iCloud, app groups</div>
+      <div class="nd r" style="min-width:460px"><b>restricted</b>Apple must explicitly grant them to your team · Endpoint Security, Network Extension, DriverKit</div>
+    </div>
+    <div class="cap">Restricted entitlements are how Apple gates powerful capabilities to vetted vendors.</div>
+  </div>
+
+  <div class="bx yo"><span class="l">Why this matters in your world</span>
+    <p><code>com.apple.developer.endpoint-security.client</code> is a <strong>restricted</strong> entitlement. You apply to Apple, they assess your use case, and only then can your System Extension observe process and file events fleet-wide. That gate is deliberate — an ES client sees essentially everything happening on the machine, so Apple controls who can build one. Being able to explain that shows you understand the platform's trust model, not just its API.</p></div>
+
+  <div class="bx st"><span class="l">The temptation to resist</span>
+    <p><code>com.apple.security.temporary-exception.*</code> entitlements exist to ease migration — broad file access, arbitrary Mach lookups. They are called <em>temporary</em> for a reason: App Review scrutinises them heavily, they widen your attack surface, and they signal that the app hasn't been designed for the sandbox. Treat any temporary exception as technical debt with a deadline.</p></div>
+</section>
+
+<!-- 05 -->
+<section id="container">
+  <div class="sn">05</div>
+  <h2>The container</h2>
+  <p class="ss">Where a sandboxed app actually lives.</p>
+
+  <p>Every sandboxed app gets a private directory, keyed by its bundle identifier:</p>
+
+<pre><code>~/Library/Containers/com.example.MyApp/Data/
+    ├── Documents/
+    ├── Library/
+    │   ├── Preferences/
+    │   ├── Caches/
+    │   └── Application Support/
+    ├── Desktop  → symlink into the container, NOT the real Desktop
+    └── Downloads → also redirected</code></pre>
+
+  <div class="bx sx"><span class="l">The redirection that surprises people</span>
+    <p>Inside the sandbox, <code>NSHomeDirectory()</code> returns <strong>the container path</strong>, not <code>/Users/chella</code>. Standard paths like <code>~/Documents</code> silently resolve inside the container.</p>
+    <p style="margin-top:8px">This is why an app that worked fine unsandboxed suddenly "can't find its files" after sandboxing — it's looking in the right place by name, but that name now points somewhere else. Nothing failed; the namespace moved.</p></div>
+
+  <h3>What this buys you</h3>
+  <ul>
+    <li><strong>Isolation</strong> — apps can't read each other's data by default</li>
+    <li><strong>Clean uninstall</strong> — delete the container, the app's data is genuinely gone</li>
+    <li><strong>Containment</strong> — a compromised app's file access is bounded to its own data</li>
+  </ul>
+
+  <h3>App groups — controlled sharing</h3>
+  <p>When your app and its extension genuinely need shared storage, an <strong>app group</strong> creates a container both can reach:</p>
+<pre><code>&lt;key&gt;com.apple.security.application-groups&lt;/key&gt;
+&lt;array&gt;&lt;string&gt;TEAMID.com.example.shared&lt;/string&gt;&lt;/array&gt;
+
+<span class="c">// → ~/Library/Group Containers/TEAMID.com.example.shared/</span></code></pre>
+  <p>The group identifier is prefixed with your Team ID, so only your own signed code can join. It's sharing with a boundary, not a hole.</p>
+</section>
+
+<!-- 06 -->
+<section id="escape">
+  <div class="sn">06</div>
+  <h2>Powerbox &amp; security-scoped bookmarks</h2>
+  <p class="ss">How a sandboxed app opens a file outside its container — the elegant part of the design.</p>
+
+  <h3>The problem</h3>
+  <p>A text editor must be able to open <code>~/Documents/notes.txt</code>. But it can't be granted access to <code>~/Documents</code>, because that would let it read everything there without the user knowing.</p>
+
+  <h3>The solution — Powerbox</h3>
+  <p>When you show an <code>NSOpenPanel</code>, the panel isn't drawn by your app. It's drawn by a separate trusted system process (<strong>Powerbox</strong>), outside your sandbox. Your app cannot see or manipulate it.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd" style="min-width:450px"><b>1</b>app calls NSOpenPanel — the request goes to Powerbox</div>
+      <span class="ar">↓</span>
+      <div class="nd s" style="min-width:450px"><b>2</b>Powerbox draws the dialog · the app can't read it or preselect anything</div>
+      <span class="ar">↓</span>
+      <div class="nd g" style="min-width:450px"><b>3</b>user picks notes.txt — a deliberate human act</div>
+      <span class="ar">↓</span>
+      <div class="nd g" style="min-width:450px"><b>4</b>kernel extends the app's sandbox to allow <strong>that one file</strong></div>
+    </div>
+    <div class="cap">The user's choice IS the permission grant. No dialog was needed, because opening a file already means "I want this app to have it."</div>
+  </div>
+
+  <div class="bx go"><span class="l">Why this design is genuinely good</span>
+    <p>The user grants access by doing the thing they already wanted to do. There's <strong>no separate consent dialog</strong> to click through mindlessly, and the grant is precisely scoped to one file. Compare with a system that asks "allow access to Documents?" — the user says yes and the app gets everything, forever.</p>
+    <p style="margin-top:8px">This is a good example to cite if you're ever asked about designing security UX: <em>the best consent is the one embedded in an action the user was taking anyway.</em></p></div>
+
+  <h3>Security-scoped bookmarks — persisting access</h3>
+  <p>That grant disappears when the app quits. To reopen a recent file next launch, you need a <strong>security-scoped bookmark</strong> — an opaque token encoding both the file's location and the permission.</p>
+
+<pre><code><span class="c">// Save: after the user picks a file</span>
+<span class="k">let</span> bookmark = <span class="k">try</span> url.bookmarkData(
+    options: .withSecurityScope,
+    includingResourceValuesForKeys: <span class="k">nil</span>,
+    relativeTo: <span class="k">nil</span>)
+UserDefaults.standard.set(bookmark, forKey: <span class="s">"lastFile"</span>)
+
+<span class="c">// Restore: on next launch</span>
+<span class="k">var</span> stale = <span class="k">false</span>
+<span class="k">let</span> url = <span class="k">try</span> URL(resolvingBookmarkData: data,
+                  options: .withSecurityScope,
+                  relativeTo: <span class="k">nil</span>,
+                  bookmarkDataIsStale: &amp;stale)
+
+<span class="k">guard</span> url.startAccessingSecurityScopedResource() <span class="k">else</span> { <span class="k">return</span> }
+<span class="k">defer</span> { url.stopAccessingSecurityScopedResource() }   <span class="c">// ← always pair these</span>
+<span class="k">let</span> contents = <span class="k">try</span> <span class="k">String</span>(contentsOf: url)</code></pre>
+
+  <div class="bx wn"><span class="l">The bug people hit</span>
+    <p>Forgetting <code>stopAccessingSecurityScopedResource()</code> leaks a kernel resource, and there's a hard limit. Enough leaks and <em>all</em> subsequent access fails, usually long after the leak, making it painful to diagnose. Always pair with <code>defer</code>.</p></div>
+</section>
+
+<!-- 07 -->
+<section id="layers">
+  <div class="sn">07 / ★</div>
+  <h2>The five layers — separated</h2>
+  <p class="ss">These get conflated constantly. Getting them straight is the single most useful thing here.</p>
+
+  <table class="tb">
+    <tr><th>System</th><th>Protects</th><th>From</th><th>Controlled by</th></tr>
+    <tr><td><strong>Code signing</strong></td><td>Code integrity</td><td>Tampering, unknown origin</td><td>Developer certificate</td></tr>
+    <tr><td><strong>App Sandbox</strong></td><td>The rest of the system</td><td><strong>The app itself</strong></td><td>Entitlements, at launch</td></tr>
+    <tr><td><strong>TCC</strong></td><td>The user's private data</td><td>Any app, sandboxed or not</td><td><strong>The user</strong>, via consent dialogs</td></tr>
+    <tr><td><strong>SIP</strong></td><td>The operating system</td><td><strong>root</strong></td><td>Apple; disabled only in recoveryOS</td></tr>
+    <tr><td><strong>Hardened runtime</strong></td><td>The app's own process</td><td>Injection, debugging, patching</td><td>Opt-in at signing</td></tr>
+  </table>
+
+  <div class="bx sx"><span class="l">The distinction that clears up most confusion</span>
+    <p><strong>The sandbox protects the system from the app. TCC protects the user from the app. SIP protects the OS from root. The hardened runtime protects the app from other processes.</strong></p>
+    <p style="margin-top:8px">Four different directions of protection. They're independent and they compose — an operation must pass <em>all</em> applicable layers.</p></div>
+
+  <h3>How they stack for one operation</h3>
+  <p>An app tries to read <code>~/Documents/report.pdf</code>:</p>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:7px">
+      <div class="nd" style="min-width:450px"><b>1 · code signing</b>is this app validly signed and unmodified?</div>
+      <span class="ar">↓</span>
+      <div class="nd s" style="min-width:450px"><b>2 · sandbox</b>does the entitlement set permit this path?</div>
+      <span class="ar">↓</span>
+      <div class="nd t" style="min-width:450px"><b>3 · TCC</b>has the user consented to Documents access for this app?</div>
+      <span class="ar">↓</span>
+      <div class="nd" style="min-width:450px"><b>4 · Unix permissions</b>does the file mode allow it?</div>
+      <span class="ar">↓</span>
+      <div class="nd g" style="min-width:450px"><b>allowed</b>only if every layer said yes</div>
+    </div>
+    <div class="cap">Any single "no" denies. This is defence in depth made concrete.</div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section id="tcc">
+  <div class="sn">08</div>
+  <h2>TCC — the consent system</h2>
+  <p class="ss">Transparency, Consent, and Control. The dialogs everyone recognises, and the system people most often mistake for sandboxing.</p>
+
+  <h3>What it is</h3>
+  <p>TCC governs access to <strong>the user's private data and sensitive hardware</strong>, and it applies to <strong>every app — sandboxed or not</strong>. That last point is the key difference: sandboxing is something an app opts into; TCC applies regardless.</p>
+
+  <table class="tb">
+    <tr><th>TCC-protected</th><th>Example</th></tr>
+    <tr><td>Camera, microphone, screen recording</td><td>Video call apps</td></tr>
+    <tr><td>Contacts, Calendar, Reminders, Photos</td><td>Personal data stores</td></tr>
+    <tr><td>Desktop, Documents, Downloads</td><td>Even unsandboxed apps are gated on these</td></tr>
+    <tr><td>Full Disk Access</td><td>Backup and security tools</td></tr>
+    <tr><td>Accessibility</td><td>Controlling other apps — a very powerful grant</td></tr>
+    <tr><td>Input Monitoring</td><td>Reading keystrokes globally</td></tr>
+    <tr><td>Location</td><td></td></tr>
+  </table>
+
+  <h3>How it works</h3>
+  <ul>
+    <li>Decisions are stored in a TCC database, <strong>keyed on the app's code signature</strong>, not its path — so replacing the binary invalidates the grant, which prevents an attacker swapping in malicious code to inherit permissions.</li>
+    <li>The prompt string comes from your <code>Info.plist</code> (<code>NSCameraUsageDescription</code> and friends). <strong>Omit it and the app crashes</strong> on first access rather than showing an empty dialog.</li>
+    <li>The TCC database itself is protected by SIP, so even root can't simply grant itself permissions by editing it.</li>
+    <li>Users manage grants in System Settings → Privacy &amp; Security.</li>
+  </ul>
+
+  <div class="bx tc"><span class="l">The sandbox / TCC relationship</span>
+    <p>They're independent and both apply. A sandboxed app needs the camera <strong>entitlement</strong> (sandbox) <em>and</em> user <strong>consent</strong> (TCC). An unsandboxed app needs no entitlement but still needs consent.</p>
+    <p style="margin-top:8px">So: <strong>entitlements are what the developer declares; TCC is what the user decides.</strong> That one sentence separates them permanently.</p></div>
+
+  <div class="bx wn"><span class="l">Enterprise nuance</span>
+    <p>Some TCC grants can be pre-approved by MDM via a Privacy Preferences Policy Control profile — which is how a security agent gets Full Disk Access on 50,000 Macs without asking every user. It requires supervised devices and only works for specific services. This is a practical detail worth knowing if fleet deployment comes up.</p></div>
+</section>
+
+<!-- 09 -->
+<section id="sip">
+  <div class="sn">09</div>
+  <h2>SIP — System Integrity Protection</h2>
+  <p class="ss">Sometimes called "rootless." A different problem entirely.</p>
+
+  <div class="bx st"><span class="l">The insight behind it</span>
+    <p>Historically, root could do anything — including modifying the operating system itself. So <strong>any root compromise was total and often permanent</strong>: malware could patch system binaries, install a rootkit, and survive reinstallation of applications.</p>
+    <p style="margin-top:8px">SIP's premise: <strong>even root should not be able to modify the OS.</strong> Protection is enforced by the kernel based on file and process attributes, not on user identity.</p></div>
+
+  <h3>What SIP protects</h3>
+  <ul>
+    <li><strong>Filesystem:</strong> <code>/System</code>, <code>/usr</code> (except <code>/usr/local</code>), <code>/bin</code>, <code>/sbin</code>, and Apple-shipped apps — read-only even to root. On modern macOS the system volume is additionally a <strong>signed, sealed snapshot</strong>, cryptographically verified at boot.</li>
+    <li><strong>Runtime:</strong> Apple system processes can't be attached to with a debugger or have code injected, even by root.</li>
+    <li><strong>Kernel extensions:</strong> must be signed and approved.</li>
+    <li><strong>Certain data:</strong> including the TCC database.</li>
+  </ul>
+
+  <h3>The comparison that fixes it in your head</h3>
+  <table class="tb">
+    <tr><th></th><th>Sandbox</th><th>SIP</th></tr>
+    <tr><td>Protects</td><td>The system from an app</td><td>The system from <strong>root</strong></td></tr>
+    <tr><td>Scope</td><td>One process</td><td>System-wide</td></tr>
+    <tr><td>Opt-in?</td><td>Yes, by the developer</td><td>No — always on unless disabled in recoveryOS</td></tr>
+    <tr><td>Can root bypass it?</td><td>Root isn't sandboxed to begin with</td><td><strong>No</strong> — that's the entire point</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">Disabling it</span>
+    <p><code>csrutil disable</code> only works from recoveryOS, which requires physical presence and the user's credentials. Malware running on a booted system <strong>cannot turn SIP off</strong>. That physical-presence requirement is what makes the guarantee meaningful.</p></div>
+</section>
+
+<!-- 10 -->
+<section id="hardened">
+  <div class="sn">10</div>
+  <h2>Hardened runtime &amp; notarization</h2>
+  <p class="ss">The last two layers, and the ones most often confused with sandboxing.</p>
+
+  <h3>Hardened runtime — protecting the app from others</h3>
+  <p>Every layer so far restricts what the app can do <em>to</em> the system. The hardened runtime is the opposite direction: it protects <strong>your process from other processes</strong>.</p>
+  <table class="tb">
+    <tr><th>Protection</th><th>Blocks</th></tr>
+    <tr><td>No <code>DYLD_INSERT_LIBRARIES</code></td><td>Library injection at launch</td></tr>
+    <tr><td>No unsigned executable memory</td><td>Runtime code patching</td></tr>
+    <tr><td>Not debuggable by default</td><td>Attaching a debugger to inspect or modify your process</td></tr>
+    <tr><td>Validates linked libraries</td><td>Loading a substituted framework</td></tr>
+  </table>
+  <p>Exceptions exist as entitlements — <code>com.apple.security.cs.allow-jit</code> for JavaScript engines, <code>disable-library-validation</code> for plugin hosts — each widening the surface, so each needs justification.</p>
+
+  <h3>Notarization</h3>
+  <p>You upload your signed app to Apple, which scans it for known malware and issues a <strong>ticket</strong>. Gatekeeper checks that ticket on first launch. It is <strong>not</strong> App Review — no human evaluates your app — but it does mean Apple can revoke the ticket if the software is later found malicious, which effectively kills it across every Mac.</p>
+  <p>The hardened runtime is a <em>prerequisite</em> for notarization, which is why these two are usually mentioned together.</p>
+
+  <div class="bx go"><span class="l">The five-layer summary sentence</span>
+    <p>"<strong>Code signing</strong> proves who wrote it and that it's unmodified. <strong>Notarization</strong> proves Apple scanned it. The <strong>hardened runtime</strong> protects the process from injection. The <strong>sandbox</strong> limits what the process can do. <strong>TCC</strong> gates the user's private data. And <strong>SIP</strong> protects the OS from root. Six mechanisms, six distinct jobs."</p></div>
+</section>
+
+<!-- 11 -->
+<section id="agent">
+  <div class="sn">11 / ★ YOUR GROUND</div>
+  <h2>Security agents and the sandbox</h2>
+  <p class="ss">How a product like yours lives inside all of this — and where the interesting design decisions are.</p>
+
+  <h3>The tension</h3>
+  <p>A security agent needs to see everything — process launches, file writes, network flows — which is precisely what sandboxing exists to prevent. Apple's resolution isn't an exemption; it's a <strong>different, more tightly controlled path</strong>: System Extensions with restricted entitlements.</p>
+
+  <h3>The component split</h3>
+  <table class="tb">
+    <tr><th>Component</th><th>Sandboxed?</th><th>Notes</th></tr>
+    <tr><td><strong>Main app</strong> (UI, settings)</td><td>Usually yes</td><td>Largest attack surface, parses untrusted input, needs no privilege</td></tr>
+    <tr><td><strong>System Extension</strong> (ES / Network)</td><td><strong>Yes</strong> — a dedicated profile</td><td>Sandboxed <em>and</em> holds restricted entitlements. Not an escape hatch.</td></tr>
+    <tr><td><strong>LaunchDaemon</strong> (root)</td><td>Typically not</td><td>Runs as root; often needs Full Disk Access via TCC</td></tr>
+    <tr><td><strong>LaunchAgent</strong> (per user)</td><td>Varies</td><td>User-context work, notifications</td></tr>
+    <tr><td><strong>XPC helpers</strong></td><td>Yes</td><td>Sandboxing individual helpers is a strong pattern</td></tr>
+  </table>
+
+  <div class="bx yo"><span class="l">The design principle to state</span>
+    <p>"I design around <strong>trust boundaries first</strong>, then decide what code goes where. The UI is large and parses untrusted input, so it gets no privilege and stays sandboxed. The daemon has root, so it stays small and boring with a narrow XPC interface — the client <em>requests</em>, the daemon <em>decides</em>. The System Extension holds a restricted entitlement, so it does one job and nothing else. <strong>The architecture limits what a compromise can reach, rather than relying on the code being bug-free.</strong>"</p></div>
+
+  <h3>Sandboxing your own helpers — a strong pattern</h3>
+  <p>Even outside the App Store, you can sandbox individual components. The parser that reads untrusted policy files, the component that handles network responses — these can run in a tightly sandboxed XPC service with no network, no file access beyond what's passed in, and no ability to spawn processes. A parsing bug then becomes a contained crash rather than a foothold.</p>
+  <p>That's applying the sandbox as a <em>design tool</em> rather than an App Store requirement, and it's a genuinely senior thing to describe.</p>
+
+  <div class="bx wn"><span class="l">The deployment reality</span>
+    <p>A security agent needs: a restricted entitlement approved by Apple, a System Extension the user or MDM approves, TCC grants (often Full Disk Access), and notarization. Every one of those is a place a fleet deployment can stall — which is why MDM pre-approval of extensions and PPPC profiles matters so much at scale. That operational detail is worth mentioning; it's what separates shipping from prototyping.</p></div>
+</section>
+
+<!-- 12 -->
+<section id="tradeoff">
+  <div class="sn">12</div>
+  <h2>The trade-offs</h2>
+  <p class="ss">Sandboxing isn't free, and having a view on the costs reads as experience.</p>
+
+  <table class="tb">
+    <tr><th>Benefit</th><th>Cost</th></tr>
+    <tr><td>A compromise is contained</td><td>Legitimate features become harder or impossible</td></tr>
+    <tr><td>Clear, auditable capability declaration</td><td>Every capability needs justification and often review</td></tr>
+    <tr><td>Users can see what an app may do</td><td>Extra consent friction, which some users click through blindly</td></tr>
+    <tr><td>Required for App Store distribution</td><td>Some app categories simply can't be sandboxed</td></tr>
+    <tr><td>Forces least-privilege design</td><td>Retrofitting an existing app is genuinely painful</td></tr>
+    <tr><td>Clean uninstall, isolated data</td><td>File paths change; migration code needed</td></tr>
+  </table>
+
+  <h3>What can't reasonably be sandboxed</h3>
+  <ul>
+    <li>Developer tools that compile and run arbitrary code</li>
+    <li>System utilities — disk tools, cleaners, backup software needing whole-disk access</li>
+    <li>Automation tools that drive other applications</li>
+    <li>Virtualisation software</li>
+    <li>Anything requiring kernel-adjacent access beyond the System Extension model</li>
+  </ul>
+  <p>These distribute outside the App Store, and rely on notarization plus the hardened runtime plus TCC instead — which is a coherent alternative posture rather than an absence of security.</p>
+
+  <div class="bx go"><span class="l">The balanced position</span>
+    <p>"Sandboxing is the right default for most applications — least privilege genuinely limits blast radius, and it forces you to be explicit about what the app needs. But it's a poor fit for tools whose <em>purpose</em> is broad system access, and forcing it there produces either a crippled product or a pile of temporary exceptions that defeat the point. The honest answer is that macOS supports two postures — sandboxed App Store apps, and notarized hardened-runtime apps gated by TCC — and choosing the right one is a design decision, not a compliance checkbox."</p></div>
+</section>
+
+<!-- 13 -->
+<section id="debug">
+  <div class="sn">13</div>
+  <h2>Debugging sandbox denials</h2>
+  <p class="ss">Practical, and a good thing to be able to describe.</p>
+
+  <h3>The symptom</h3>
+  <p>Denials surface as ordinary errors — <code>EPERM</code>, "file not found", a socket that won't connect — with nothing saying "the sandbox blocked this." That's deliberate, and it makes the first encounter confusing.</p>
+
+  <h3>The tools</h3>
+<pre><code><span class="c"># Watch sandbox denials live</span>
+log stream --predicate 'subsystem == "com.apple.sandbox" AND
+                        eventMessage CONTAINS "deny"'
+
+<span class="c"># Historical denials</span>
+log show --last 10m --predicate 'eventMessage CONTAINS "Sandbox"'
+
+<span class="c"># What entitlements does this binary actually have?</span>
+codesign -d --entitlements :- /Applications/MyApp.app
+
+<span class="c"># Full signature detail — team ID, flags, runtime version</span>
+codesign -dvvv /Applications/MyApp.app
+
+<span class="c"># Is it notarized and will Gatekeeper accept it?</span>
+spctl -a -vvv /Applications/MyApp.app
+
+<span class="c"># Reset TCC grants for testing (per-service or all for a bundle)</span>
+tccutil reset All com.example.MyApp</code></pre>
+
+  <p>A denial in the log looks roughly like:</p>
+<pre><code>Sandbox: MyApp(1234) deny(1) file-read-data /Users/chella/Documents/x.txt</code></pre>
+  <p>Which tells you the process, the operation class (<code>file-read-data</code>, <code>network-outbound</code>, <code>mach-lookup</code>), and the target — enough to identify the missing entitlement.</p>
+
+  <div class="bx wn"><span class="l">The common causes, in order</span>
+    <ol style="margin:6px 0 0">
+      <li><strong>Path assumptions</strong> — hardcoded <code>~/Documents</code> now resolves into the container</li>
+      <li><strong>Missing entitlement</strong> — most often <code>network.client</code>, forgotten because it worked unsandboxed</li>
+      <li><strong>Bookmark not started</strong> — you have the bookmark but forgot <code>startAccessingSecurityScopedResource()</code></li>
+      <li><strong>Leaked scoped resources</strong> — hit the limit, and everything fails later with no obvious cause</li>
+      <li><strong>Mach service lookup</strong> — talking to an XPC service you haven't declared</li>
+      <li><strong>TCC, not the sandbox</strong> — the entitlement is present but the user hasn't consented. Check both.</li>
+    </ol></div>
+</section>
+
+<!-- 14 -->
+<section id="ios">
+  <div class="sn">14</div>
+  <h2>macOS vs iOS</h2>
+  <p class="ss">Same underlying technology, very different posture — and the difference is instructive.</p>
+
+  <table class="tb">
+    <tr><th></th><th>iOS</th><th>macOS</th></tr>
+    <tr><td>Sandboxing</td><td><strong>Mandatory</strong> for every app</td><td>Required for App Store; optional otherwise</td></tr>
+    <tr><td>Distribution</td><td>App Store (plus enterprise/regional alternatives)</td><td>App Store <em>or</em> direct download</td></tr>
+    <tr><td>Filesystem visibility</td><td>Essentially none outside the container</td><td>Full filesystem exists and is navigable</td></tr>
+    <tr><td>Root access</td><td>Not available</td><td>Available to the user</td></tr>
+    <tr><td>System extensions</td><td>Tightly limited extension points</td><td>System Extensions, DriverKit, and more</td></tr>
+  </table>
+
+  <div class="bx sx"><span class="l">Why the difference exists</span>
+    <p>iOS was designed sandboxed from day one, with no legacy of unrestricted apps. macOS has forty years of software that assumes full filesystem access, and remains a <strong>general-purpose development machine</strong> — you must be able to compile and run arbitrary code, which is fundamentally incompatible with mandatory sandboxing.</p>
+    <p style="margin-top:8px">So Apple's macOS strategy has been to strengthen the <em>other</em> layers — notarization, hardened runtime, TCC, SIP, the signed system volume — for the large population of apps that can't be sandboxed. The direction of travel is clear: each release tightens the unsandboxed path.</p></div>
+</section>
+
+<!-- 15 -->
+<section id="qa">
+  <div class="sn">15</div>
+  <h2>Interview answers</h2>
+  <p class="ss">Two or three sentences each, then depth if invited.</p>
+
+  <details class="q" open><summary>What is the macOS App Sandbox?</summary><div class="bod">
+    <p>A kernel-enforced restriction on what a process may do — file access, networking, hardware — applied at launch based on entitlements embedded in the app's code signature. It's deny-by-default: a sandboxed app starts with access to essentially nothing beyond its own container, and every capability must be explicitly requested.</p>
+    <p>The point is least privilege. Traditional Unix permissions ask "who is running this," so any app you run inherits all your authority. The sandbox asks "what should <em>this program</em> be allowed to do," which is the question that actually matters when the threat is software you installed yourself.</p></div></details>
+
+  <details class="q"><summary>Sandbox vs TCC vs SIP?</summary><div class="bod">
+    <p>Different directions of protection. The <strong>sandbox</strong> protects the system from the app, based on entitlements the developer declares. <strong>TCC</strong> protects the user's private data from any app — sandboxed or not — based on consent the user gives. <strong>SIP</strong> protects the operating system from root, and can only be disabled from recoveryOS with physical access.</p>
+    <p>They're independent and compose: a sandboxed app wanting camera access needs the entitlement <em>and</em> the user's TCC consent. Entitlements are what the developer declares; TCC is what the user decides.</p></div></details>
+
+  <details class="q"><summary>How does a sandboxed app open a file outside its container?</summary><div class="bod">
+    <p>Through Powerbox. The open panel is drawn by a separate trusted system process outside the app's sandbox, so the app can't read or manipulate it. When the user picks a file, the kernel extends the sandbox to allow that specific file — the user's choice is the permission grant.</p>
+    <p>To keep that access across launches you store a security-scoped bookmark and call <code>startAccessingSecurityScopedResource</code>, always paired with a <code>defer</code>'d stop — leaking those hits a kernel limit and causes failures much later that are painful to trace.</p>
+    <p class="lb">Worth adding</p><p>It's a nice piece of security UX: no separate dialog to click through, and the grant is scoped to one file rather than a whole folder.</p></div></details>
+
+  <details class="q"><summary>Why can't a security agent just be sandboxed normally?</summary><div class="bod">
+    <p>Because it needs exactly what sandboxing exists to prevent — visibility into process launches, file writes, and network flows across the whole system. Apple's answer isn't an exemption but a separate controlled path: System Extensions with restricted entitlements like <code>com.apple.developer.endpoint-security.client</code>, which Apple grants only after reviewing your use case.</p>
+    <p>The extension is still sandboxed, just with a profile matching its job. In practice a real agent splits across components — a sandboxed UI with no privilege, a small root daemon, and the extension — with XPC between them, so each piece holds only what it needs.</p></div></details>
+
+  <details class="q"><summary>What's the hardened runtime and how is it different?</summary><div class="bod">
+    <p>Opposite direction from the sandbox. The sandbox limits what your app can do to the system; the hardened runtime protects your <em>process from other processes</em> — blocking library injection, unsigned executable memory, and debugger attachment. It's a prerequisite for notarization, which is why the two come up together.</p>
+    <p>Exceptions exist as entitlements — allow-JIT for a JavaScript engine, disable-library-validation for a plugin host — and each one widens your attack surface, so each needs a reason.</p></div></details>
+
+  <details class="q"><summary>How would you debug a sandbox denial?</summary><div class="bod">
+    <p>Stream the unified log filtered on the sandbox subsystem — denials show the process, the operation class like <code>file-read-data</code> or <code>network-outbound</code>, and the target path, which usually identifies the missing entitlement directly. Then <code>codesign -d --entitlements</code> to check what the binary actually has, since a build-configuration mistake is common.</p>
+    <p>The trap is that denials surface as ordinary errors — EPERM or "file not found" — with nothing indicating the sandbox. And I'd check whether it's actually TCC rather than the sandbox: the entitlement can be present while the user simply hasn't consented.</p></div></details>
+
+  <details class="q"><summary>What are the downsides of sandboxing?</summary><div class="bod">
+    <p>Some legitimate functionality becomes impossible — developer tools, disk utilities, automation software genuinely can't be sandboxed, and forcing it produces either a crippled product or a pile of temporary-exception entitlements that defeat the point. Retrofitting an existing app is painful, mainly because container path redirection breaks assumptions everywhere.</p>
+    <p>The balanced view is that macOS supports two coherent postures: sandboxed App Store apps, and notarized hardened-runtime apps gated by TCC. Choosing between them is a design decision rather than a compliance checkbox.</p></div></details>
+
+  <div class="bx go"><span class="l">The compressed version</span>
+    <p><strong>Code signing proves origin and integrity. Notarization proves Apple scanned it. The hardened runtime protects the process from injection. The sandbox limits what the process can do. TCC gates the user's private data. SIP protects the OS from root.</strong> Six mechanisms, six distinct jobs — and an operation must pass every applicable one.</p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  macOS App Sandbox · entitlements → containers → Powerbox → TCC → SIP → hardened runtime → security agents.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=[].slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

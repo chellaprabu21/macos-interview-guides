@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Symmetric vs Asymmetric Encryption</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;
+  --sym:#1c4f7c;--symT:#e3edf5;      /* symmetric = blue */
+  --asym:#8a4b12;--asymT:#f9efe2;    /* asymmetric = amber */
+  --go:#186147;--goT:#e0efe8;
+  --stop:#a03a2a;--stopT:#f9e7e2;
+  --pur:#54418c;--purT:#ece7f7;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--sym),var(--asym));z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:278px;flex:0 0 278px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#101620;color:#c5ccd7;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#848fa2;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#848fa2;margin:15px 4px 6px;border-top:1px solid #242b36;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#5f6a7d;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a8b0be;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#6c7789;min-width:20px}
+  nav a:hover{background:#19202b;color:#fff}nav a.active{background:var(--sym);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:840px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pur);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--sym)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.4px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .pu{border-left-color:var(--pur);background:var(--purT)}.pu .l{color:var(--pur)}
+  .sy{border-left-color:var(--sym);background:var(--symT)}.sy .l{color:var(--sym)}
+  .as{border-left-color:var(--asym);background:var(--asymT)}.as .l{color:var(--asym)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.8px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.8px;color:var(--sym)}
+
+  /* ---------- animation stage ---------- */
+  .stage{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:18px 16px 14px;margin:18px 0}
+  .stage .ttl{font-family:'Sora';font-weight:700;font-size:14.5px;margin-bottom:4px}
+  .stage .sub{font-size:13px;color:var(--faint);margin-bottom:14px}
+  .ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .btn{font-family:'Inter';font-size:13px;font-weight:500;padding:6px 14px;border-radius:7px;border:1px solid var(--lineS);background:var(--surf2);color:var(--ink);cursor:pointer}
+  .btn:hover{background:var(--line)}
+  .btn.pri{background:var(--sym);color:#fff;border-color:var(--sym)}
+  .btn.pri:hover{filter:brightness(1.1)}
+  .btn:disabled{opacity:.4;cursor:default}
+  .narr{font-size:13.5px;color:var(--soft);margin-left:auto;text-align:right;max-width:52%;line-height:1.45}
+  svg .lbl{font-family:'Inter';font-size:11px;fill:var(--soft)}
+  svg .lblb{font-family:'Sora';font-size:12px;font-weight:700;fill:var(--ink)}
+  svg .mono{font-family:'JetBrains Mono';font-size:10px;fill:var(--faint)}
+  .fade{opacity:0;transition:opacity .45s ease}
+  .fade.on{opacity:1}
+  .mv{transition:transform 1.1s cubic-bezier(.4,0,.2,1), opacity .4s ease}
+
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}.narr{max-width:100%;text-align:left;margin-left:0;margin-top:8px}}
+  @media (prefers-reduced-motion:reduce){.mv,.fade{transition:none}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Symmetric vs Asymmetric</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Symmetric vs<br>Asymmetric<span class="s">intuition → mechanics →<br>mathematics → interview</span></div>
+  <div class="ct">13 sections · 4 animations</div>
+  <nav id="toc">
+    <div class="grp">Build the intuition</div>
+    <a href="#why"><span class="n">01</span><span>Why encryption exists</span></a>
+    <a href="#sym"><span class="n">02</span><span>Symmetric — one key ▶</span></a>
+    <a href="#problem"><span class="n">03</span><span>The two problems</span></a>
+    <a href="#asym"><span class="n">04</span><span>Asymmetric — key pairs ▶</span></a>
+    <a href="#two"><span class="n">05</span><span>The two superpowers</span></a>
+    <div class="grp">Go deeper</div>
+    <a href="#math"><span class="n">06</span><span>The mathematics</span></a>
+    <a href="#algos"><span class="n">07</span><span>The algorithms</span></a>
+    <a href="#modes"><span class="n">08</span><span>Modes &amp; why ECB fails</span></a>
+    <a href="#dh"><span class="n">09</span><span>Diffie-Hellman ▶</span></a>
+    <div class="grp">Put together</div>
+    <a href="#hybrid"><span class="n">10</span><span>Hybrid encryption ▶</span></a>
+    <a href="#choose"><span class="n">11</span><span>Choosing between them</span></a>
+    <a href="#apple"><span class="n">12</span><span>On Apple platforms</span></a>
+    <a href="#qa"><span class="n">13</span><span>Interview answers</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">From first principles to production · with animated flows</p>
+  <h1>Symmetric vs asymmetric encryption.</h1>
+  <p class="led">Two families of encryption that solve different problems — and every real system uses both together. This starts with locks and mailboxes, ends with the mathematics and the Apple platform APIs, and animates the flows where seeing the movement makes it click.</p>
+</header>
+
+<!-- 01 -->
+<section id="why">
+  <div class="sn">01</div>
+  <h2>Why encryption exists</h2>
+  <p class="ss">One sentence of setup before any mechanism.</p>
+
+  <p>You want to send a message across a channel someone else can observe — a network cable, the air, a disk that might be stolen. Encryption transforms the message so that observing it reveals nothing, and only the intended party can transform it back.</p>
+
+  <p>The transformation is done by an <strong>algorithm</strong> (public, published, scrutinised for decades) parameterised by a <strong>key</strong> (secret). That split matters:</p>
+
+  <div class="bx go"><span class="l">Kerckhoffs's principle</span>
+    <p><strong>The security must rest entirely on the key, never on the algorithm being secret.</strong> Assume the attacker has your source code, knows the algorithm, and has seen a million encrypted messages. If the system still holds, it's secure. If it only works because nobody knows how it works, it's not encryption — it's obscurity, and it fails the moment someone reverse-engineers your binary.</p></div>
+
+  <p>The two families differ in one respect only: <strong>whether the key that locks is the same key that unlocks.</strong> Everything else follows from that.</p>
+</section>
+
+<!-- 02 -->
+<section id="sym">
+  <div class="sn">02</div>
+  <h2>Symmetric encryption — one shared key</h2>
+  <p class="ss">The intuitive kind. Same key both directions.</p>
+
+  <div class="bx sy"><span class="l">The picture</span>
+    <p>A lockbox with one key, and you and your friend each have an identical copy. You put the message in, lock it, send the box. Your friend unlocks it with their copy. Anyone who intercepts the box sees only a locked box.</p></div>
+
+  <div class="stage">
+    <div class="ttl">Symmetric encryption</div>
+    <div class="sub">Watch the same key do both jobs. Alice locks; Eve sees nothing useful; Bob unlocks.</div>
+    <svg id="s1" viewBox="0 0 680 210" width="100%">
+      <!-- actors -->
+      <g><rect x="20" y="70" width="86" height="52" rx="9" fill="var(--symT)" stroke="var(--sym)" stroke-width="1.5"/>
+         <text class="lblb" x="63" y="90" text-anchor="middle">Alice</text>
+         <text class="lbl" x="63" y="107" text-anchor="middle">sender</text></g>
+      <g><rect x="574" y="70" width="86" height="52" rx="9" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+         <text class="lblb" x="617" y="90" text-anchor="middle">Bob</text>
+         <text class="lbl" x="617" y="107" text-anchor="middle">recipient</text></g>
+      <!-- channel -->
+      <line x1="112" y1="96" x2="568" y2="96" stroke="var(--lineS)" stroke-width="1" stroke-dasharray="5 5"/>
+      <text class="mono" x="340" y="34" text-anchor="middle">public channel — everything here is visible</text>
+      <!-- eavesdropper -->
+      <g id="s1eve" class="fade"><rect x="292" y="150" width="96" height="42" rx="9" fill="var(--stopT)" stroke="var(--stop)" stroke-width="1.5"/>
+         <text class="lblb" x="340" y="166" text-anchor="middle">Eve</text>
+         <text class="lbl" x="340" y="182" text-anchor="middle" id="s1evetxt">watching</text>
+         <line x1="340" y1="150" x2="340" y2="112" stroke="var(--stop)" stroke-width="1" stroke-dasharray="3 3"/></g>
+      <!-- keys -->
+      <g id="s1k1" class="fade"><rect x="34" y="132" width="58" height="26" rx="6" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.5"/>
+         <text class="mono" x="63" y="149" text-anchor="middle" fill="var(--pur)">KEY</text></g>
+      <g id="s1k2" class="fade"><rect x="588" y="132" width="58" height="26" rx="6" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.5"/>
+         <text class="mono" x="617" y="149" text-anchor="middle" fill="var(--pur)">KEY</text></g>
+      <!-- the message -->
+      <g id="s1msg" class="mv" transform="translate(0,0)">
+        <rect id="s1box" x="126" y="80" width="104" height="34" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.5"/>
+        <text class="lbl" id="s1txt" x="178" y="101" text-anchor="middle">"transfer £50"</text>
+      </g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="s1go">Play</button>
+      <button class="btn" id="s1rs">Reset</button>
+      <div class="narr" id="s1n">Alice has a message. Both parties already share an identical key.</div>
+    </div>
+  </div>
+
+  <h3>What's actually happening</h3>
+  <p>The algorithm takes the plaintext and the key and produces ciphertext through many rounds of substitution and permutation — swapping bytes according to lookup tables, shuffling their positions, and mixing in the key. Reverse the rounds with the same key and you recover the plaintext. AES does this in 10–14 rounds depending on key size.</p>
+
+  <div class="bx sy"><span class="l">Its great virtue</span>
+    <p><strong>Speed.</strong> AES is implemented in hardware on every modern CPU (AES-NI instructions), so it runs at gigabytes per second. That's why symmetric encryption carries all the actual data in every real system — your TLS session, your encrypted disk, your database at rest.</p></div>
+</section>
+
+<!-- 03 -->
+<section id="problem">
+  <div class="sn">03</div>
+  <h2>The two problems symmetric can't solve</h2>
+  <p class="ss">Both are structural, not implementation flaws. They're why the second family had to be invented.</p>
+
+  <h3>Problem 1 — key distribution</h3>
+  <p>Alice and Bob both need the same key. How does it get to both of them? If Alice sends it over the channel, Eve captures it and can read everything. You need a secure channel to establish a secure channel — which is circular.</p>
+  <p>Historically this was solved by physical means: couriers, code books, meeting in person. That works for embassies. It does not work for a browser connecting to a website it has never contacted before.</p>
+
+  <h3>Problem 2 — it scales terribly</h3>
+  <p>Every <em>pair</em> of people needs their own key, otherwise everyone can read everyone's messages.</p>
+  <table class="tb">
+    <tr><th>People</th><th>Keys needed</th></tr>
+    <tr><td>2</td><td>1</td></tr>
+    <tr><td>10</td><td>45</td></tr>
+    <tr><td>100</td><td>4,950</td></tr>
+    <tr><td>1,000</td><td>499,500</td></tr>
+    <tr><td>n</td><td><code>n(n−1)/2</code> — quadratic growth</td></tr>
+  </table>
+
+  <h3>Problem 3 — no identity</h3>
+  <p>A shared key proves nothing about <em>who</em> you're talking to. Anyone holding the key can encrypt <em>and</em> decrypt, so a message that decrypts successfully only tells you it came from someone with the key — which is at least two people, and possibly anyone who stole it.</p>
+
+  <div class="bx st"><span class="l">The summary to say in an interview</span>
+    <p>"Symmetric encryption has the <strong>key-distribution problem</strong> — both parties need the same secret and there's no safe way to get it to them over an untrusted channel — plus quadratic key growth and no notion of identity. Asymmetric cryptography exists to solve exactly those three."</p></div>
+</section>
+
+<!-- 04 -->
+<section id="asym">
+  <div class="sn">04</div>
+  <h2>Asymmetric encryption — a pair of keys</h2>
+  <p class="ss">The idea that seems impossible until you see the mechanism.</p>
+
+  <div class="bx as"><span class="l">The picture</span>
+    <p>A mailbox on a public street with a slot in the top. <strong>Anyone</strong> can drop a letter in — the slot is public. But only the person with the mailbox key can open it and read what's inside. Dropping in and taking out are different capabilities, requiring different things.</p></div>
+
+  <p>Each person generates a <strong>key pair</strong>: a public key they publish freely, and a private key they never share with anyone. The two are mathematically linked such that <strong>what one key does, only the other can undo</strong> — and crucially, knowing the public key doesn't let you compute the private one.</p>
+
+  <div class="stage">
+    <div class="ttl">Asymmetric encryption — sending Bob a secret</div>
+    <div class="sub">Bob publishes his public key. Alice uses it to lock. Only Bob's private key opens it — and Eve has the public key too, which doesn't help her at all.</div>
+    <svg id="s2" viewBox="0 0 680 250" width="100%">
+      <g><rect x="20" y="86" width="86" height="52" rx="9" fill="var(--asymT)" stroke="var(--asym)" stroke-width="1.5"/>
+         <text class="lblb" x="63" y="106" text-anchor="middle">Alice</text>
+         <text class="lbl" x="63" y="123" text-anchor="middle">sender</text></g>
+      <g><rect x="574" y="86" width="86" height="52" rx="9" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+         <text class="lblb" x="617" y="106" text-anchor="middle">Bob</text>
+         <text class="lbl" x="617" y="123" text-anchor="middle">recipient</text></g>
+      <line x1="112" y1="112" x2="568" y2="112" stroke="var(--lineS)" stroke-width="1" stroke-dasharray="5 5"/>
+
+      <!-- Bob's private key stays home -->
+      <g id="s2priv" class="fade"><rect x="576" y="150" width="82" height="26" rx="6" fill="var(--stopT)" stroke="var(--stop)" stroke-width="1.5"/>
+         <text class="mono" x="617" y="167" text-anchor="middle" fill="var(--stop)">PRIVATE</text>
+         <text class="lbl" x="617" y="190" text-anchor="middle">never leaves Bob</text></g>
+
+      <!-- public key travels to Alice -->
+      <g id="s2pub" class="mv fade" transform="translate(0,0)">
+        <rect x="576" y="34" width="82" height="26" rx="6" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+        <text class="mono" x="617" y="51" text-anchor="middle" fill="var(--go)">PUBLIC</text>
+      </g>
+      <!-- Eve -->
+      <g id="s2eve" class="fade"><rect x="292" y="196" width="96" height="42" rx="9" fill="var(--stopT)" stroke="var(--stop)" stroke-width="1.5"/>
+         <text class="lblb" x="340" y="212" text-anchor="middle">Eve</text>
+         <text class="lbl" x="340" y="228" text-anchor="middle" id="s2evetxt">watching</text></g>
+      <!-- message -->
+      <g id="s2msg" class="mv fade" transform="translate(0,0)">
+        <rect id="s2box" x="126" y="96" width="104" height="34" rx="7" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.5"/>
+        <text class="lbl" id="s2txt" x="178" y="117" text-anchor="middle">"transfer £50"</text>
+      </g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="s2go">Play</button>
+      <button class="btn" id="s2rs">Reset</button>
+      <div class="narr" id="s2n">Bob has generated a key pair. His public key can go anywhere; his private key never moves.</div>
+    </div>
+  </div>
+
+  <div class="bx go"><span class="l">What this solved</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>Key distribution</strong> — the public key can be shouted from a rooftop. There's nothing secret to transport.</li>
+      <li><strong>Scaling</strong> — n people need n key pairs, not n(n−1)/2 shared keys. Linear, not quadratic.</li>
+      <li><strong>Identity</strong> — see the next section; this is the part people find surprising.</li>
+    </ul></div>
+</section>
+
+<!-- 05 -->
+<section id="two">
+  <div class="sn">05</div>
+  <h2>The two superpowers</h2>
+  <p class="ss">The same key pair does two completely different jobs depending on which key you start with. This is the most commonly muddled point in cryptography.</p>
+
+  <div class="stage">
+    <div class="ttl">Same pair, opposite directions</div>
+    <div class="sub">Toggle between the two uses. Notice which key is used first each time.</div>
+    <svg id="s3" viewBox="0 0 680 230" width="100%">
+      <text class="lblb" id="s3title" x="340" y="26" text-anchor="middle" font-size="14">Confidentiality — sending a secret TO someone</text>
+
+      <g><rect x="30" y="80" width="92" height="46" rx="9" fill="var(--surf2)" stroke="var(--lineS)" stroke-width="1.5"/>
+         <text class="lblb" x="76" y="100" text-anchor="middle" id="s3a">Anyone</text>
+         <text class="lbl" x="76" y="116" text-anchor="middle" id="s3a2">wants to send</text></g>
+
+      <g><rect x="200" y="80" width="120" height="46" rx="9" fill="var(--asymT)" stroke="var(--asym)" stroke-width="1.5"/>
+         <text class="mono" x="260" y="99" text-anchor="middle" fill="var(--asym)" id="s3k1">BOB'S PUBLIC</text>
+         <text class="lbl" x="260" y="116" text-anchor="middle" id="s3k1s">locks it</text></g>
+
+      <g><rect x="368" y="80" width="120" height="46" rx="9" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.5"/>
+         <text class="mono" x="428" y="99" text-anchor="middle" fill="var(--pur)" id="s3k2">BOB'S PRIVATE</text>
+         <text class="lbl" x="428" y="116" text-anchor="middle" id="s3k2s">unlocks it</text></g>
+
+      <g><rect x="558" y="80" width="92" height="46" rx="9" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+         <text class="lblb" x="604" y="100" text-anchor="middle" id="s3b">Bob only</text>
+         <text class="lbl" x="604" y="116" text-anchor="middle" id="s3b2">reads it</text></g>
+
+      <path d="M122 103 L196 103" stroke="var(--faint)" stroke-width="1.5" fill="none" marker-end="url(#a3)"/>
+      <path d="M320 103 L364 103" stroke="var(--faint)" stroke-width="1.5" fill="none" marker-end="url(#a3)"/>
+      <path d="M488 103 L554 103" stroke="var(--faint)" stroke-width="1.5" fill="none" marker-end="url(#a3)"/>
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--faint)" stroke-width="1.5"/></marker></defs>
+
+      <rect x="60" y="162" width="560" height="46" rx="9" fill="var(--symT)" stroke="var(--sym)" stroke-width="1" id="s3note"/>
+      <text class="lbl" x="340" y="182" text-anchor="middle" id="s3n1" font-size="12.5">Public key locks → private key unlocks.</text>
+      <text class="lbl" x="340" y="198" text-anchor="middle" id="s3n2" font-size="12.5">Anyone can send Bob a secret; only Bob can read it.</text>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="s3t">Show the other superpower →</button>
+      <div class="narr" id="s3n">Direction 1 of 2 — confidentiality.</div>
+    </div>
+  </div>
+
+  <h3>Why direction 2 gives you identity</h3>
+  <p>If a message can be un-transformed with Alice's <em>public</em> key, then it must have been transformed with Alice's <em>private</em> key — and only Alice has that. So the message provably came from her. That's a <strong>digital signature</strong>, and it's the foundation of every certificate, code signature, and authentication token in existence.</p>
+
+  <div class="bx as"><span class="l">In practice you sign a hash, not the message</span>
+    <p>Asymmetric operations are slow and size-limited, so real signing hashes the message first (producing a fixed-size digest) and signs that. Verification re-hashes the received message and checks it matches. Same guarantee, vastly more efficient — and it works on a 4 GB file just as well as on a sentence.</p></div>
+
+  <div class="bx st"><span class="l">The mnemonic that keeps them straight</span>
+    <p><strong>Encrypt with the key you can give away. Sign with the key you keep.</strong></p>
+    <p>Or: <em>lock the box with the recipient's public key; stamp the seal with your own private key.</em></p></div>
+</section>
+
+<!-- 06 -->
+<section id="math">
+  <div class="sn">06</div>
+  <h2>The mathematics — why this actually works</h2>
+  <p class="ss">You don't need to derive RSA in an interview, but understanding <em>why</em> the asymmetry exists separates real comprehension from analogy.</p>
+
+  <h3>The core requirement: a one-way function with a trapdoor</h3>
+  <p>Asymmetric cryptography needs an operation that is <strong>easy in one direction and infeasible in reverse</strong> — unless you know a secret piece of information (the trapdoor), which makes the reverse easy again. The public key describes the forward operation; the private key <em>is</em> the trapdoor.</p>
+
+  <h3>Trapdoor 1 — factoring (RSA)</h3>
+  <ul>
+    <li><strong>Easy:</strong> multiply two large primes. <code>p × q = n</code>. A computer does this instantly, even for 1024-bit primes.</li>
+    <li><strong>Infeasible:</strong> given only <code>n</code>, recover <code>p</code> and <code>q</code>. For a 2048-bit <code>n</code>, no known classical algorithm does this in reasonable time.</li>
+    <li><strong>The trapdoor:</strong> knowing <code>p</code> and <code>q</code> lets you compute the private exponent. The public key is derived from <code>n</code>; the private key needs the factors.</li>
+  </ul>
+  <p>Try it intuitively: <code>391</code> — what are its factors? You'd have to search. (17 × 23.) Now imagine that number with 617 digits.</p>
+
+  <h3>Trapdoor 2 — discrete logarithm (Diffie-Hellman, ECC)</h3>
+  <ul>
+    <li><strong>Easy:</strong> compute <code>g^a mod p</code> — even for enormous exponents, via repeated squaring.</li>
+    <li><strong>Infeasible:</strong> given <code>g</code>, <code>p</code>, and <code>g^a mod p</code>, find <code>a</code>. The modular arithmetic destroys the ordering that would let you search efficiently.</li>
+  </ul>
+  <p>The reason ordering matters: without <code>mod p</code>, larger exponents give larger results, so you could binary search. The modulus wraps values around unpredictably, so the output tells you nothing about the size of the input.</p>
+
+  <h3>Elliptic curves — the same idea, better geometry</h3>
+  <p>ECC uses points on a curve like <code>y² = x³ + ax + b</code> with a defined "addition" operation on points. Adding a point to itself <code>k</code> times is easy; recovering <code>k</code> from the result is the <strong>elliptic-curve discrete logarithm problem</strong>, and it's much harder per bit than the classical version.</p>
+  <div class="bx go"><span class="l">Why that matters practically</span>
+    <p>Because the underlying problem is harder, you need <strong>far smaller keys</strong> for equivalent security:</p>
+    <table class="tb" style="margin-top:8px">
+      <tr><th>Security level</th><th>RSA key</th><th>ECC key</th></tr>
+      <tr><td>~112-bit</td><td>2048-bit</td><td>224-bit</td></tr>
+      <tr><td>~128-bit</td><td>3072-bit</td><td>256-bit</td></tr>
+      <tr><td>~256-bit</td><td>15360-bit</td><td>512-bit</td></tr>
+    </table>
+    <p>Smaller keys mean less storage, less bandwidth, and far less computation — which is exactly why constrained hardware like the <strong>Secure Enclave</strong> uses P-256 and doesn't support RSA at all.</p></div>
+
+  <h3>Why symmetric needs no trapdoor</h3>
+  <p>AES doesn't rely on a hard mathematical problem. It relies on <strong>confusion and diffusion</strong> — each output bit depends on many input bits and key bits in a way that's statistically indistinguishable from random. There's no clever shortcut to attack; the only known approach is trying every key, and 2^128 keys is beyond physical possibility. That's also why symmetric crypto is far less threatened by quantum computers: there's no structure for Shor's algorithm to exploit.</p>
+</section>
+
+<!-- 07 -->
+<section id="algos">
+  <div class="sn">07</div>
+  <h2>The algorithms</h2>
+  <p class="ss">What to name, and what to say about each.</p>
+
+  <h3>Symmetric</h3>
+  <table class="tb">
+    <tr><th>Algorithm</th><th>Key / block</th><th>Verdict</th></tr>
+    <tr><td><strong>AES</strong></td><td>128/192/256-bit key, 128-bit block</td><td>The standard. Hardware-accelerated, no practical break. AES-128 is fine; AES-256 for long-term or compliance reasons.</td></tr>
+    <tr><td><strong>ChaCha20</strong></td><td>256-bit, stream cipher</td><td>Fast in software without AES hardware. Paired with Poly1305 for authentication. Common on mobile and in TLS 1.3.</td></tr>
+    <tr><td><strong>3DES</strong></td><td>168-bit effective, <strong>64-bit block</strong></td><td><strong>Deprecated.</strong> DES three times over to extend the 56-bit key. Slow, and the small block enables birthday attacks (<strong>Sweet32</strong>) after roughly 32 GB under one key.</td></tr>
+    <tr><td>DES</td><td>56-bit</td><td>Broken by brute force since the 1990s. Historical only.</td></tr>
+  </table>
+
+  <h3>Asymmetric</h3>
+  <table class="tb">
+    <tr><th>Algorithm</th><th>Hard problem</th><th>Notes</th></tr>
+    <tr><td><strong>RSA</strong></td><td>Factoring</td><td>Signing and key transport. 2048-bit minimum. <strong>Padding is mandatory</strong> — OAEP for encryption, PSS for signatures. Textbook RSA without padding is broken.</td></tr>
+    <tr><td><strong>ECDSA / ECDH</strong></td><td>EC discrete log</td><td>P-256 is the workhorse. Small keys, fast. What the Secure Enclave supports.</td></tr>
+    <tr><td><strong>Ed25519</strong></td><td>Edwards-curve discrete log</td><td>Modern signatures. Fast, deterministic — avoids the nonce-reuse flaw that has broken real ECDSA implementations.</td></tr>
+    <tr><td><strong>Diffie-Hellman</strong></td><td>Discrete log</td><td>Key <em>agreement</em>, not encryption. See section 09.</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The RSA size limit — a real constraint</span>
+    <p>RSA can only encrypt data <em>smaller than its modulus</em> — a 2048-bit key encrypts at most about 256 bytes, less with padding. So you literally <strong>cannot</strong> encrypt a file with RSA. This isn't just a performance preference; it's a hard limit, and it's one of the concrete reasons hybrid encryption exists.</p></div>
+</section>
+
+<!-- 08 -->
+<section id="modes">
+  <div class="sn">08</div>
+  <h2>Modes of operation — and why ECB fails</h2>
+  <p class="ss">A block cipher encrypts one fixed-size block. The <em>mode</em> defines how you handle a longer message — and the choice is where real implementations break.</p>
+
+  <table class="tb">
+    <tr><th>Mode</th><th>How</th><th>Verdict</th></tr>
+    <tr><td><strong>ECB</strong></td><td>Each block encrypted independently</td><td><strong>Never use.</strong> Identical plaintext blocks produce identical ciphertext, so structure leaks straight through.</td></tr>
+    <tr><td>CBC</td><td>Each block XORed with the previous ciphertext; needs an IV</td><td>Workable but fragile — padding-oracle attacks, and no integrity on its own.</td></tr>
+    <tr><td>CTR</td><td>Turns the block cipher into a stream cipher</td><td>Fine, parallelisable, but no integrity and <strong>nonce reuse is catastrophic</strong>.</td></tr>
+    <tr><td><strong>GCM</strong></td><td>CTR plus an authentication tag</td><td><strong>The default.</strong> AEAD — confidentiality and integrity in one primitive.</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">Why ECB leaks — the famous demonstration</span>
+    <p>Encrypt an image of a penguin with AES-ECB and you can still see the penguin. Every white pixel block encrypts to the same ciphertext block, every black block to another — so the <em>pattern</em> survives perfectly even though every individual value is scrambled. The encryption is mathematically sound; the mode destroys it. This is the clearest illustration that <strong>a correct algorithm used wrongly gives no security.</strong></p></div>
+
+  <div class="bx go"><span class="l">The answer to "how would you encrypt data?"</span>
+    <p>"<strong>AES-256-GCM</strong>, with a unique nonce per message that is never reused under the same key. GCM is authenticated encryption, so I get integrity along with confidentiality rather than bolting on a MAC and risking the composition order. Nonce reuse with GCM is catastrophic — it leaks the authentication key and enables forgery — so nonce generation is part of the design, not an afterthought. And I'd use the platform implementation rather than my own."</p></div>
+</section>
+
+<!-- 09 -->
+<section id="dh">
+  <div class="sn">09</div>
+  <h2>Diffie-Hellman — agreeing a secret in public</h2>
+  <p class="ss">A third thing asymmetric maths gives you: two parties derive a shared secret over a fully monitored channel, without ever transmitting it.</p>
+
+  <div class="bx as"><span class="l">The paint analogy</span>
+    <p>Alice and Bob publicly agree on a common colour (yellow) — Eve sees it. Each privately picks a secret colour and mixes it with the yellow. They swap mixtures publicly — Eve sees both. Each then adds their own secret colour to the other's mixture, and both arrive at <em>the same</em> final colour. Eve has both mixtures and the yellow, but separating a mixture back into components is prohibitively hard, so she can't reach the final colour.</p></div>
+
+  <div class="stage">
+    <div class="ttl">Diffie-Hellman key agreement</div>
+    <div class="sub">Step through it. Watch what Eve can see at every point — and why it never adds up to the shared secret.</div>
+    <svg id="s4" viewBox="0 0 680 260" width="100%">
+      <g><rect x="24" y="40" width="96" height="44" rx="9" fill="var(--asymT)" stroke="var(--asym)" stroke-width="1.5"/>
+         <text class="lblb" x="72" y="60" text-anchor="middle">Alice</text>
+         <text class="mono" x="72" y="76" text-anchor="middle" id="s4as">secret a = 6</text></g>
+      <g><rect x="560" y="40" width="96" height="44" rx="9" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+         <text class="lblb" x="608" y="60" text-anchor="middle">Bob</text>
+         <text class="mono" x="608" y="76" text-anchor="middle" id="s4bs">secret b = 15</text></g>
+
+      <text class="mono" x="340" y="26" text-anchor="middle" id="s4pub">public: g = 5, p = 23</text>
+      <line x1="126" y1="112" x2="554" y2="112" stroke="var(--lineS)" stroke-width="1" stroke-dasharray="5 5"/>
+
+      <!-- travelling values -->
+      <g id="s4va" class="mv fade"><rect x="130" y="96" width="96" height="30" rx="7" fill="var(--surf2)" stroke="var(--asym)" stroke-width="1.5"/>
+         <text class="mono" x="178" y="115" text-anchor="middle">A = 5⁶ = 8</text></g>
+      <g id="s4vb" class="mv fade"><rect x="454" y="96" width="96" height="30" rx="7" fill="var(--surf2)" stroke="var(--go)" stroke-width="1.5"/>
+         <text class="mono" x="502" y="115" text-anchor="middle">B = 5¹⁵ = 19</text></g>
+
+      <!-- eve -->
+      <g id="s4eve" class="fade"><rect x="284" y="148" width="112" height="46" rx="9" fill="var(--stopT)" stroke="var(--stop)" stroke-width="1.5"/>
+         <text class="lblb" x="340" y="165" text-anchor="middle">Eve sees</text>
+         <text class="mono" x="340" y="182" text-anchor="middle" id="s4ev">g, p</text></g>
+
+      <!-- shared secret -->
+      <g id="s4sa" class="fade"><rect x="24" y="212" width="96" height="32" rx="7" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.5"/>
+         <text class="mono" x="72" y="232" text-anchor="middle" fill="var(--pur)">19⁶ = 2</text></g>
+      <g id="s4sb" class="fade"><rect x="560" y="212" width="96" height="32" rx="7" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.5"/>
+         <text class="mono" x="608" y="232" text-anchor="middle" fill="var(--pur)">8¹⁵ = 2</text></g>
+      <g id="s4eq" class="fade"><text class="lblb" x="340" y="233" text-anchor="middle" fill="var(--pur)">same secret — never transmitted</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="s4go">Step</button>
+      <button class="btn" id="s4rs">Reset</button>
+      <div class="narr" id="s4n">Public parameters agreed. Alice and Bob each pick a secret they tell nobody.</div>
+    </div>
+  </div>
+
+  <p>The numbers above are toy-sized so you can verify them by hand. Real Diffie-Hellman uses a prime <code>p</code> of 2048+ bits, or elliptic curve points, where recovering the private exponent is infeasible.</p>
+
+  <div class="bx go"><span class="l">Forward secrecy — the reason this matters so much</span>
+    <p>Use a <strong>fresh, ephemeral</strong> key pair for every session (ECDHE) and discard it afterwards. Then an attacker who records your encrypted traffic today and steals the server's long-term private key a year later <strong>still cannot decrypt those recordings</strong> — the keys that protected them no longer exist anywhere. That's forward secrecy, and it's why TLS 1.3 made ephemeral key exchange mandatory and removed static RSA key transport entirely.</p></div>
+
+  <div class="bx st"><span class="l">The critical weakness — always volunteer this</span>
+    <p><strong>Raw Diffie-Hellman is completely vulnerable to man-in-the-middle.</strong> It establishes a shared secret with <em>someone</em>, but proves nothing about who — an attacker can run DH separately with each party and relay between them. That's exactly why DH is always paired with authentication: a certificate signature proving the server is who it claims. Key agreement and identity are separate problems.</p></div>
+</section>
+
+<!-- 10 -->
+<section id="hybrid">
+  <div class="sn">10</div>
+  <h2>Hybrid encryption — how real systems work</h2>
+  <p class="ss">Neither family is used alone. This is the synthesis, and it's what TLS does every time you load a page.</p>
+
+  <div class="bx pu"><span class="l">The insight</span>
+    <p>Asymmetric solves key distribution and identity but is slow and size-limited. Symmetric is fast and handles any amount of data but can't distribute its own key. <strong>So use asymmetric briefly to establish a symmetric key, then use symmetric for everything else.</strong> Best of both, and the reason "which is better?" is the wrong question.</p></div>
+
+  <div class="stage">
+    <div class="ttl">Hybrid encryption — the TLS pattern</div>
+    <div class="sub">Step through a connection. Watch the handover from slow-and-clever to fast-and-simple.</div>
+    <svg id="s5" viewBox="0 0 680 250" width="100%">
+      <g><rect x="24" y="52" width="100" height="46" rx="9" fill="var(--symT)" stroke="var(--sym)" stroke-width="1.5"/>
+         <text class="lblb" x="74" y="72" text-anchor="middle">Browser</text>
+         <text class="lbl" x="74" y="88" text-anchor="middle">client</text></g>
+      <g><rect x="556" y="52" width="100" height="46" rx="9" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+         <text class="lblb" x="606" y="72" text-anchor="middle">Server</text>
+         <text class="lbl" x="606" y="88" text-anchor="middle">bank.com</text></g>
+      <line x1="130" y1="76" x2="550" y2="76" stroke="var(--lineS)" stroke-width="1" stroke-dasharray="5 5"/>
+
+      <g id="s5a" class="mv fade"><rect x="440" y="60" width="106" height="32" rx="7" fill="var(--asymT)" stroke="var(--asym)" stroke-width="1.5"/>
+         <text class="mono" x="493" y="80" text-anchor="middle" fill="var(--asym)">certificate</text></g>
+
+      <g id="s5b" class="fade"><rect x="196" y="122" width="288" height="34" rx="8" fill="var(--purT)" stroke="var(--pur)" stroke-width="1.5"/>
+         <text class="lbl" x="340" y="143" text-anchor="middle" fill="var(--pur)">ECDHE — both derive the same session key</text></g>
+
+      <g id="s5c" class="fade"><rect x="150" y="176" width="120" height="30" rx="7" fill="var(--symT)" stroke="var(--sym)" stroke-width="1.5"/>
+         <text class="mono" x="210" y="195" text-anchor="middle" fill="var(--sym)">AES key</text></g>
+      <g id="s5d" class="fade"><rect x="410" y="176" width="120" height="30" rx="7" fill="var(--symT)" stroke="var(--sym)" stroke-width="1.5"/>
+         <text class="mono" x="470" y="195" text-anchor="middle" fill="var(--sym)">AES key</text></g>
+
+      <g id="s5e" class="fade"><rect x="180" y="218" width="320" height="28" rx="7" fill="var(--goT)" stroke="var(--go)" stroke-width="1.5"/>
+         <text class="lbl" x="340" y="236" text-anchor="middle" fill="var(--go)">all page data — AES-GCM, gigabytes/sec</text></g>
+    </svg>
+    <div class="ctrls">
+      <button class="btn pri" id="s5go">Step</button>
+      <button class="btn" id="s5rs">Reset</button>
+      <div class="narr" id="s5n">A browser connects to bank.com. It has never spoken to this server before.</div>
+    </div>
+  </div>
+
+  <h3>The same pattern everywhere</h3>
+  <table class="tb">
+    <tr><th>System</th><th>Asymmetric part</th><th>Symmetric part</th></tr>
+    <tr><td>TLS / HTTPS</td><td>Certificate authentication + ECDHE</td><td>AES-GCM for all traffic</td></tr>
+    <tr><td>Signal / iMessage</td><td>Key agreement per conversation</td><td>Message encryption</td></tr>
+    <tr><td>PGP email</td><td>RSA/ECC encrypts a random session key</td><td>AES encrypts the message body</td></tr>
+    <tr><td>SSH</td><td>Host + user key authentication, DH exchange</td><td>Session encryption</td></tr>
+    <tr><td>FileVault</td><td>Key wrapping and escrow</td><td>AES-XTS on the volume</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">Key wrapping — the related pattern</span>
+    <p>The same idea applied to data at rest. Encrypt the data with a random symmetric <strong>data key</strong>, then encrypt that small key with a <strong>key-encryption key</strong> held in hardware. Rotating the outer key means re-wrapping a few bytes rather than re-encrypting terabytes. This is exactly how disk encryption and cloud KMS work — and it's a strong thing to mention when asked how you'd encrypt data at rest.</p></div>
+</section>
+
+<!-- 11 -->
+<section id="choose">
+  <div class="sn">11</div>
+  <h2>Choosing between them</h2>
+  <p class="ss">The comparison table, and the decision rules.</p>
+
+  <table class="tb">
+    <tr><th></th><th>Symmetric</th><th>Asymmetric</th></tr>
+    <tr><td>Keys</td><td>One shared secret</td><td>Public + private pair</td></tr>
+    <tr><td>Speed</td><td><strong>Very fast</strong> — hardware accelerated</td><td>100–1000× slower</td></tr>
+    <tr><td>Data size</td><td>Unlimited</td><td><strong>Limited</strong> — RSA can't exceed its modulus</td></tr>
+    <tr><td>Key distribution</td><td><strong>The hard problem</strong></td><td>Solved — publish the public key</td></tr>
+    <tr><td>Key count for n parties</td><td>n(n−1)/2 — quadratic</td><td>n pairs — linear</td></tr>
+    <tr><td>Identity / authentication</td><td>No — anyone with the key</td><td><strong>Yes</strong> — via signatures</td></tr>
+    <tr><td>Non-repudiation</td><td>No</td><td><strong>Yes</strong></td></tr>
+    <tr><td>Quantum resistance</td><td>Good — double the key size</td><td><strong>Broken</strong> by Shor's algorithm</td></tr>
+    <tr><td>Typical use</td><td>Bulk data, disk, sessions</td><td>Key exchange, signatures, certificates</td></tr>
+  </table>
+
+  <h3>Decision rules</h3>
+  <ul>
+    <li><strong>Bulk data?</strong> → symmetric (AES-GCM). Always.</li>
+    <li><strong>Parties who've never met?</strong> → asymmetric to bootstrap, then symmetric.</li>
+    <li><strong>Need to prove who sent it?</strong> → asymmetric signature. Symmetric cannot do this.</li>
+    <li><strong>Both parties equally trusted and a secure channel already exists?</strong> → symmetric alone is fine and simpler.</li>
+    <li><strong>Data at rest with a hardware-protected key?</strong> → symmetric data key, wrapped by an asymmetric or hardware key.</li>
+  </ul>
+
+  <div class="bx st"><span class="l">Post-quantum, in one paragraph</span>
+    <p>Shor's algorithm on a large enough quantum computer breaks RSA and ECC, because factoring and discrete logs are exactly what quantum computers do well. Symmetric crypto is far less affected — Grover's algorithm roughly halves the effective key length, so AES-256 remains comfortable. NIST has standardised post-quantum algorithms (ML-KEM for key encapsulation, ML-DSA for signatures), and current practice is <strong>hybrid</strong> deployment — classical plus post-quantum together — because of "harvest now, decrypt later." Not urgent for short-lived session data; genuinely relevant for anything that must stay confidential for a decade.</p></div>
+</section>
+
+<!-- 12 -->
+<section id="apple">
+  <div class="sn">12</div>
+  <h2>On Apple platforms</h2>
+  <p class="ss">Where this becomes code you'd actually ship.</p>
+
+  <h3>CryptoKit — both families</h3>
+<pre><code><span class="k">import</span> CryptoKit
+
+<span class="c">// ─── SYMMETRIC — bulk data ───────────────────────────────</span>
+<span class="k">let</span> key = SymmetricKey(size: .bits256)
+<span class="k">let</span> sealed = <span class="k">try</span> AES.GCM.seal(plaintext, using: key)   <span class="c">// nonce auto-generated</span>
+<span class="k">let</span> opened = <span class="k">try</span> AES.GCM.open(sealed, using: key)
+
+<span class="c">// ─── ASYMMETRIC — signing (identity) ─────────────────────</span>
+<span class="k">let</span> signingKey = P256.Signing.PrivateKey()
+<span class="k">let</span> signature  = <span class="k">try</span> signingKey.signature(<span class="k">for</span>: data)
+<span class="k">let</span> ok = signingKey.publicKey.isValidSignature(signature, <span class="k">for</span>: data)
+
+<span class="c">// ─── ASYMMETRIC — key agreement (ECDH) ───────────────────</span>
+<span class="k">let</span> myKey  = P256.KeyAgreement.PrivateKey()
+<span class="k">let</span> shared = <span class="k">try</span> myKey.sharedSecretFromKeyAgreement(with: theirPublicKey)
+
+<span class="c">// ─── THE HANDOVER — derive a symmetric key from the agreement</span>
+<span class="k">let</span> sessionKey = shared.hkdfDerivedSymmetricKey(
+    using: SHA256.<span class="k">self</span>, salt: salt, sharedInfo: <span class="k">Data</span>(), outputByteCount: 32)
+<span class="c">// From here on: AES.GCM with sessionKey. That's hybrid encryption.</span></code></pre>
+
+  <div class="bx go"><span class="l">Why CryptoKit over CommonCrypto</span>
+    <p>CryptoKit deliberately <strong>doesn't expose ECB or unauthenticated modes</strong> — the unsafe options aren't reachable. That's API design as a security control, and it's a good thing to say: "I prefer CryptoKit precisely because you can't easily make the classic mistakes."</p></div>
+
+  <h3>The Secure Enclave — asymmetric with hardware backing</h3>
+<pre><code><span class="c">// A P-256 private key that NEVER leaves the hardware</span>
+<span class="k">let</span> access = SecAccessControlCreateWithFlags(
+    <span class="k">nil</span>,
+    kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+    [.privateKeyUsage, .userPresence],          <span class="c">// biometric gate</span>
+    <span class="k">nil</span>)!
+
+<span class="k">let</span> attrs: [<span class="k">String</span>: Any] = [
+    kSecAttrKeyType <span class="k">as</span> <span class="k">String</span>:      kSecAttrKeyTypeECSECPrimeRandom,
+    kSecAttrKeySizeInBits <span class="k">as</span> <span class="k">String</span>: 256,
+    kSecAttrTokenID <span class="k">as</span> <span class="k">String</span>:      kSecAttrTokenIDSecureEnclave,
+    kSecPrivateKeyAttrs <span class="k">as</span> <span class="k">String</span>: [
+        kSecAttrIsPermanent <span class="k">as</span> <span class="k">String</span>:   <span class="k">true</span>,
+        kSecAttrAccessControl <span class="k">as</span> <span class="k">String</span>: access
+    ]
+]
+<span class="k">let</span> key = SecKeyCreateRandomKey(attrs <span class="k">as</span> CFDictionary, &amp;error)!
+<span class="c">// You can ask it to sign. You can never read it. Not even as root.</span></code></pre>
+
+  <div class="bx pu"><span class="l">Why the Enclave is asymmetric-only, and why that's the point</span>
+    <p>The SEP supports <strong>P-256, not RSA</strong> — elliptic curves give equivalent security with far less computation and storage, which suits constrained hardware. And it's asymmetric by design: the private key stays inside and only <em>signs</em> or <em>agrees</em>, while the public key goes out into the world. That asymmetry is exactly what makes a credential device-bound — there is nothing extractable to steal.</p>
+    <p style="margin-top:8px">This is the same primitive underneath <strong>FIDO2 platform authenticators</strong> and <strong>MDM device attestation</strong>: a hardware-held private key signing an origin-bound or server-issued challenge.</p></div>
+</section>
+
+<!-- 13 -->
+<section id="qa">
+  <div class="sn">13</div>
+  <h2>Interview answers</h2>
+  <p class="ss">Two or three sentences each, then depth if invited.</p>
+
+  <details class="q" open><summary>Explain the difference between symmetric and asymmetric encryption.</summary><div class="bod">
+    <p>Symmetric uses one shared key for both encryption and decryption — it's fast and handles unlimited data, but it has the key-distribution problem: both parties need the same secret and there's no safe way to send it over an untrusted channel. It also scales quadratically and proves nothing about identity.</p>
+    <p>Asymmetric uses a mathematically linked key pair. Encrypt with someone's public key and only their private key can decrypt — that gives confidentiality. Sign with your private key and anyone can verify with your public key — that gives authenticity and non-repudiation. It solves distribution and identity, but it's orders of magnitude slower and size-limited.</p>
+    <p>So real systems use both: asymmetric briefly to authenticate and agree on a session key, then symmetric for the actual data. That's exactly what TLS does.</p></div></details>
+
+  <details class="q"><summary>Which key encrypts and which decrypts?</summary><div class="bod">
+    <p>Depends on the goal. For <strong>confidentiality</strong>, encrypt with the recipient's <em>public</em> key so only their private key opens it. For <strong>authenticity</strong>, sign with your own <em>private</em> key so anyone with your public key can verify it came from you. The mnemonic: encrypt with the key you can give away, sign with the key you keep.</p></div></details>
+
+  <details class="q"><summary>Why not just use asymmetric for everything?</summary><div class="bod">
+    <p>Two reasons, and the second is a hard limit rather than a preference. It's 100 to 1000 times slower, so encrypting a video stream with RSA is impractical. And RSA can only encrypt data smaller than its modulus — a 2048-bit key handles about 256 bytes — so you literally cannot encrypt a file with it. Hence hybrid: asymmetric to establish the key, symmetric to move the data.</p></div></details>
+
+  <details class="q"><summary>How would you encrypt data at rest?</summary><div class="bod">
+    <p>AES-256-GCM with a unique nonce per message, never reused under the same key — GCM gives integrity as well as confidentiality, so I'm not composing a cipher and a MAC by hand and risking the order. The interesting question is key management rather than the cipher: I'd use a random data key for the content and <strong>wrap</strong> it with a key-encryption key held in hardware — on Apple platforms a Secure Enclave key. Rotating then means re-wrapping a few bytes instead of re-encrypting everything.</p></div></details>
+
+  <details class="q"><summary>Explain Diffie-Hellman.</summary><div class="bod">
+    <p>It lets two parties derive a shared secret over a completely public channel without ever transmitting it, based on the discrete logarithm problem — the exchanged values are cheap to compute forward and infeasible to reverse. ECDH is the elliptic-curve version used today, and the ephemeral variant gives forward secrecy, so recorded traffic stays safe even if the long-term key later leaks. The crucial caveat is that raw DH is entirely vulnerable to man-in-the-middle — it establishes a secret with <em>someone</em> but proves nothing about who — which is why it's always paired with certificate-based authentication.</p></div></details>
+
+  <details class="q"><summary>Why does the Secure Enclave use elliptic curves rather than RSA?</summary><div class="bod">
+    <p>Equivalent security with far smaller keys — a 256-bit ECC key is roughly a 3072-bit RSA key — which means much less computation, storage, and power. That suits a constrained coprocessor. More importantly the asymmetric model is what makes the credential device-bound: the private key is generated inside and never leaves, so it can only sign or perform key agreement, and there's nothing extractable for an attacker to steal even with root. That's the primitive underneath FIDO2 platform authenticators and device attestation.</p></div></details>
+
+  <details class="q"><summary>What's AEAD and why does it matter?</summary><div class="bod">
+    <p>Authenticated Encryption with Associated Data — it encrypts the payload and authenticates it in one primitive, plus authenticates additional unencrypted context like headers. It matters because encryption alone gives confidentiality but not integrity: with CBC, an attacker can flip bits in the ciphertext and produce predictable changes in the plaintext. Composing a separate MAC works but the order matters (encrypt-then-MAC), and people get it wrong. AES-GCM and ChaCha20-Poly1305 make the question disappear.</p></div></details>
+
+  <details class="q"><summary>What breaks under quantum computing?</summary><div class="bod">
+    <p>Asymmetric takes the hit. Shor's algorithm efficiently solves factoring and discrete logarithms, which is exactly what RSA and ECC rest on. Symmetric is much safer — Grover's algorithm roughly halves the effective key length, so AES-256 stays comfortable. NIST has standardised post-quantum algorithms and current practice is hybrid deployment, classical plus post-quantum, because of harvest-now-decrypt-later. It's not urgent for short-lived session keys; it matters for anything needing decade-long confidentiality.</p></div></details>
+
+  <div class="bx go"><span class="l">The one-sentence version</span>
+    <p>If you remember nothing else: <strong>symmetric is fast but can't distribute its own key; asymmetric solves distribution and identity but is slow and size-limited; every real system uses asymmetric to bootstrap symmetric.</strong></p></div>
+</section>
+
+<p style="margin-top:52px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Symmetric vs asymmetric encryption · intuition → mechanics → mathematics → hybrid systems → Apple platform.
+</p>
+
+</div></main>
+</div>
+<script>
+(function(){
+  /* progress + nav */
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=[].slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+
+  function $(id){return document.getElementById(id)}
+  function on(el){el.classList.add('on')}
+  function off(el){el.classList.remove('on')}
+
+  /* ---------- ANIM 1 : symmetric ---------- */
+  (function(){
+    var msg=$('s1msg'),box=$('s1box'),txt=$('s1txt'),k1=$('s1k1'),k2=$('s1k2'),
+        eve=$('s1eve'),evetxt=$('s1evetxt'),n=$('s1n'),go=$('s1go'),rs=$('s1rs');
+    var step=0,t=[];
+    function clear(){t.forEach(clearTimeout);t=[]}
+    function reset(){
+      clear();step=0;
+      msg.style.transform='translate(0,0)';msg.classList.add('on');
+      box.setAttribute('fill','var(--surf2)');box.setAttribute('stroke','var(--lineS)');
+      txt.textContent='"transfer £50"';txt.setAttribute('fill','var(--soft)');
+      off(k1);off(k2);off(eve);evetxt.textContent='watching';
+      n.textContent='Alice has a message. Both parties already share an identical key.';
+      go.disabled=false;go.textContent='Play';
+    }
+    function play(){
+      clear();go.disabled=true;go.textContent='Playing…';
+      on(k1);on(k2);
+      n.textContent='Both hold the same key — established beforehand, somehow. That "somehow" is the whole problem.';
+      t.push(setTimeout(function(){
+        box.setAttribute('fill','var(--symT)');box.setAttribute('stroke','var(--sym)');
+        txt.textContent='8f3a…c19d';txt.setAttribute('fill','var(--sym)');
+        n.textContent='Alice encrypts with the shared key. The message becomes ciphertext.';
+      },900));
+      t.push(setTimeout(function(){
+        msg.style.transform='translate(268px,0)';
+        on(eve);
+        n.textContent='The ciphertext crosses the public channel.';
+      },1900));
+      t.push(setTimeout(function(){
+        evetxt.textContent='sees only gibberish';
+        n.textContent='Eve intercepts it — but without the key it is meaningless to her.';
+      },3100));
+      t.push(setTimeout(function(){
+        msg.style.transform='translate(360px,0)';
+        n.textContent='It arrives at Bob.';
+      },4100));
+      t.push(setTimeout(function(){
+        box.setAttribute('fill','var(--goT)');box.setAttribute('stroke','var(--go)');
+        txt.textContent='"transfer £50"';txt.setAttribute('fill','var(--go)');
+        n.textContent='Bob decrypts with his identical copy of the key. Same key, both directions — that is what "symmetric" means.';
+        go.disabled=false;go.textContent='Play again';
+      },5000));
+    }
+    go.addEventListener('click',play);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* ---------- ANIM 2 : asymmetric ---------- */
+  (function(){
+    var pub=$('s2pub'),priv=$('s2priv'),msg=$('s2msg'),box=$('s2box'),txt=$('s2txt'),
+        eve=$('s2eve'),evetxt=$('s2evetxt'),n=$('s2n'),go=$('s2go'),rs=$('s2rs');
+    var t=[];
+    function clear(){t.forEach(clearTimeout);t=[]}
+    function reset(){
+      clear();
+      pub.style.transform='translate(0,0)';off(pub);off(priv);off(eve);off(msg);
+      msg.style.transform='translate(0,0)';
+      box.setAttribute('fill','var(--surf2)');box.setAttribute('stroke','var(--lineS)');
+      txt.textContent='"transfer £50"';txt.setAttribute('fill','var(--soft)');
+      evetxt.textContent='watching';
+      n.textContent='Bob has generated a key pair. His public key can go anywhere; his private key never moves.';
+      go.disabled=false;go.textContent='Play';
+    }
+    function play(){
+      clear();go.disabled=true;go.textContent='Playing…';
+      on(pub);on(priv);
+      n.textContent='Bob generates a key pair. The private key stays with him permanently.';
+      t.push(setTimeout(function(){
+        pub.style.transform='translate(-490px,52px)';
+        n.textContent='He publishes the public key freely — on a website, in a directory, anywhere. There is no secret to protect.';
+      },1000));
+      t.push(setTimeout(function(){
+        on(msg);on(eve);
+        n.textContent='Alice has a message for Bob. They have never met and share no secret.';
+      },2200));
+      t.push(setTimeout(function(){
+        box.setAttribute('fill','var(--asymT)');box.setAttribute('stroke','var(--asym)');
+        txt.textContent='c04b…9ef2';txt.setAttribute('fill','var(--asym)');
+        n.textContent='She encrypts using Bob\u2019s PUBLIC key. Note: she now cannot decrypt her own message.';
+      },3200));
+      t.push(setTimeout(function(){
+        msg.style.transform='translate(300px,0)';
+        evetxt.textContent='has the public key too';
+        n.textContent='Eve sees the ciphertext and also has the public key — and it does not help her at all.';
+      },4300));
+      t.push(setTimeout(function(){
+        msg.style.transform='translate(378px,0)';
+        n.textContent='It reaches Bob.';
+      },5500));
+      t.push(setTimeout(function(){
+        box.setAttribute('fill','var(--goT)');box.setAttribute('stroke','var(--go)');
+        txt.textContent='"transfer £50"';txt.setAttribute('fill','var(--go)');
+        n.textContent='Only Bob\u2019s PRIVATE key opens it. No shared secret ever had to be transported — that is the breakthrough.';
+        go.disabled=false;go.textContent='Play again';
+      },6300));
+    }
+    go.addEventListener('click',play);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* ---------- ANIM 3 : two superpowers toggle ---------- */
+  (function(){
+    var title=$('s3title'),a=$('s3a'),a2=$('s3a2'),b=$('s3b'),b2=$('s3b2'),
+        k1=$('s3k1'),k1s=$('s3k1s'),k2=$('s3k2'),k2s=$('s3k2s'),
+        n1=$('s3n1'),n2=$('s3n2'),note=$('s3note'),n=$('s3n'),btn=$('s3t');
+    var mode=0;
+    function render(){
+      if(mode===0){
+        title.textContent='Confidentiality — sending a secret TO someone';
+        a.textContent='Anyone';a2.textContent='wants to send';
+        k1.textContent="BOB'S PUBLIC";k1.setAttribute('fill','var(--asym)');k1s.textContent='locks it';
+        k2.textContent="BOB'S PRIVATE";k2.setAttribute('fill','var(--pur)');k2s.textContent='unlocks it';
+        b.textContent='Bob only';b2.textContent='reads it';
+        n1.textContent='Public key locks → private key unlocks.';
+        n2.textContent='Anyone can send Bob a secret; only Bob can read it.';
+        note.setAttribute('fill','var(--symT)');note.setAttribute('stroke','var(--sym)');
+        n.textContent='Direction 1 of 2 — confidentiality.';
+        btn.textContent='Show the other superpower →';
+      }else{
+        title.textContent='Authenticity — proving a message came FROM someone';
+        a.textContent='Alice';a2.textContent='signs it';
+        k1.textContent="ALICE'S PRIVATE";k1.setAttribute('fill','var(--pur)');k1s.textContent='signs';
+        k2.textContent="ALICE'S PUBLIC";k2.setAttribute('fill','var(--asym)');k2s.textContent='verifies';
+        b.textContent='Everyone';b2.textContent='can verify';
+        n1.textContent='Private key signs → public key verifies.';
+        n2.textContent='Only Alice could have signed it; anyone can check that she did.';
+        note.setAttribute('fill','var(--asymT)');note.setAttribute('stroke','var(--asym)');
+        n.textContent='Direction 2 of 2 — authenticity and non-repudiation.';
+        btn.textContent='← Back to confidentiality';
+      }
+    }
+    btn.addEventListener('click',function(){mode=1-mode;render()});render();
+  })();
+
+  /* ---------- ANIM 4 : Diffie-Hellman ---------- */
+  (function(){
+    var va=$('s4va'),vb=$('s4vb'),eve=$('s4eve'),ev=$('s4ev'),
+        sa=$('s4sa'),sb2=$('s4sb'),eq=$('s4eq'),n=$('s4n'),go=$('s4go'),rs=$('s4rs');
+    var step=0;
+    function reset(){
+      step=0;off(va);off(vb);off(sa);off(sb2);off(eq);on(eve);
+      va.style.transform='translate(0,0)';vb.style.transform='translate(0,0)';
+      ev.textContent='g, p';
+      n.textContent='Public parameters agreed. Alice and Bob each pick a secret they tell nobody.';
+      go.disabled=false;go.textContent='Step';
+    }
+    function next(){
+      step++;
+      if(step===1){
+        on(va);on(vb);
+        n.textContent='Each computes a public value from their secret: A = g^a mod p, B = g^b mod p.';
+      }else if(step===2){
+        va.style.transform='translate(180px,0)';vb.style.transform='translate(-180px,0)';
+        ev.textContent='g, p, A=8, B=19';
+        n.textContent='They swap those values across the open channel. Eve now sees everything transmitted.';
+      }else if(step===3){
+        on(sa);on(sb2);
+        n.textContent='Each raises the value they received to their own secret. Alice: 19^6 mod 23. Bob: 8^15 mod 23.';
+      }else if(step===4){
+        on(eq);
+        n.textContent='Both get 2 — because (g^a)^b = (g^b)^a. Eve has g, p, A and B, but recovering a or b is the discrete-log problem: infeasible at real key sizes.';
+        go.disabled=true;go.textContent='Complete';
+      }
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+
+  /* ---------- ANIM 5 : hybrid ---------- */
+  (function(){
+    var a=$('s5a'),b=$('s5b'),c=$('s5c'),d=$('s5d'),e=$('s5e'),n=$('s5n'),go=$('s5go'),rs=$('s5rs');
+    var step=0;
+    function reset(){
+      step=0;off(a);off(b);off(c);off(d);off(e);
+      a.style.transform='translate(0,0)';
+      n.textContent='A browser connects to bank.com. It has never spoken to this server before.';
+      go.disabled=false;go.textContent='Step';
+    }
+    function next(){
+      step++;
+      if(step===1){
+        on(a);
+        n.textContent='The server sends its certificate — containing its public key, signed by a CA the browser already trusts.';
+      }else if(step===2){
+        a.style.transform='translate(-330px,0)';
+        n.textContent='The browser validates the chain: signature, expiry, hostname. ASYMMETRIC crypto is doing identity here.';
+      }else if(step===3){
+        on(b);
+        n.textContent='Both sides run ephemeral ECDH. They derive an identical session key that was never transmitted.';
+      }else if(step===4){
+        on(c);on(d);
+        n.textContent='That shared secret becomes a symmetric AES key — the same on both sides.';
+      }else if(step===5){
+        on(e);
+        n.textContent='Everything after this is AES-GCM at gigabytes per second. Asymmetric bootstrapped it; symmetric carries it. That is hybrid encryption, and it happens on every HTTPS connection you make.';
+        go.disabled=true;go.textContent='Complete';
+      }
+    }
+    go.addEventListener('click',next);rs.addEventListener('click',reset);reset();
+  })();
+})();
+</script>
+</body>
+</html>

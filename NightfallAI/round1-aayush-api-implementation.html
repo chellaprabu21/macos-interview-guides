@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round 1 · API Implementation · Aayush Ashok · Mon 20 Jul 2:30 PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ECEFF2;--panel:#FFFFFF;--ink:#0F1720;--muted:#5A6773;--rule:#C9D2DA;
+    --deny:#B32B3D;--allow:#16624F;--watch:#8A5A00;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --display:'Space Grotesk','IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{display:grid;grid-template-columns:262px minmax(0,1fr);max-width:1380px;margin:0 auto}
+  nav{position:sticky;top:0;height:100vh;overflow-y:auto;padding:26px 18px 60px;border-right:1px solid var(--rule)}
+  nav .brand{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:-.02em;line-height:1.25}
+  nav .sub{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin:4px 0 18px}
+  nav .grp{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:600;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  nav a{display:block;font-family:var(--mono);font-size:11.5px;color:var(--muted);text-decoration:none;padding:3.5px 0 3.5px 10px;border-left:2px solid transparent;margin-left:-10px}
+  nav a:hover{color:var(--ink);border-left-color:var(--ink)}
+  nav a .n{opacity:.5;margin-right:7px}
+  main{padding:44px 46px 140px;min-width:0}
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:26px;margin-bottom:38px}
+  header.top h1{font-family:var(--display);font-size:35px;line-height:1.08;letter-spacing:-.03em;margin:0 0 12px}
+  header.top p{margin:0 0 10px;color:var(--muted);max-width:76ch}
+  .meta{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px}
+  section{margin-bottom:52px;scroll-margin-top:24px}
+  .part{border-top:2px solid var(--ink);padding-top:14px;margin:64px 0 32px}
+  .part .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .part h2{font-family:var(--display);font-size:30px;letter-spacing:-.025em;margin:2px 0 8px}
+  .part p{color:var(--muted);margin:0;max-width:76ch}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  h3.s{font-family:var(--display);font-size:23px;letter-spacing:-.02em;margin:0 0 6px;line-height:1.2}
+  h3.s + .lede{color:var(--muted);margin:0 0 20px;max-width:76ch}
+  h4{font-family:var(--display);font-size:17px;margin:26px 0 8px;letter-spacing:-.01em}
+  h5{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+  p{margin:0 0 12px}
+  ul,ol{margin:0 0 12px;padding-left:19px}
+  li{margin-bottom:5px}
+  code{font-family:var(--mono);font-size:.86em;background:#DEE4E9;padding:1px 5px;border-radius:3px;word-break:break-word}
+  pre{background:var(--ink);color:#E6EDF3;font-family:var(--mono);font-size:12.1px;line-height:1.58;padding:15px 17px;border-radius:4px;overflow-x:auto;margin:0 0 14px}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit}
+  pre .c{color:#7E93A5}
+  pre .k{color:#F0A868}
+  pre .s{color:#9FD5C4}
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:18px 20px;margin:0 0 16px}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;padding:2px 7px;border-radius:3px;text-transform:uppercase;vertical-align:2px}
+  .chip.allow{background:#DDEDE7;color:var(--allow)}
+  .chip.deny{background:#F6DDE0;color:var(--deny)}
+  .chip.watch{background:#F6EBD3;color:var(--watch)}
+  .verdict{border-left:3px solid var(--rule);padding:12px 0 12px 16px;margin:0 0 14px}
+  .verdict.allow{border-left-color:var(--allow)}
+  .verdict.deny{border-left-color:var(--deny)}
+  .verdict.watch{border-left-color:var(--watch)}
+  .verdict p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--rule);border-radius:5px;background:var(--panel);margin-bottom:10px;overflow:hidden}
+  details.q summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:12px;align-items:baseline}
+  details.q summary::-webkit-details-marker{display:none}
+  details.q summary::before{content:"▸";font-family:var(--mono);color:var(--muted);font-size:12px}
+  details.q[open] summary::before{content:"▾"}
+  details.q[open] summary{border-bottom:1px solid var(--rule);background:#F7F9FA}
+  details.q .body{padding:14px 16px 4px}
+  table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:13.5px;background:var(--panel)}
+  th,td{text-align:left;padding:8px 10px;border:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:#F3F6F8;font-weight:600}
+  td code{font-size:.9em}
+  .callout{background:var(--ink);color:#E6EDF3;border-radius:5px;padding:18px 20px;margin:0 0 18px}
+  .callout h5{color:#9FB1BF;margin-top:0}
+  .callout code{background:#26313B;color:#E6EDF3}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .say{font-family:var(--mono);font-size:13px;background:#F7F9FA;border:1px dashed var(--rule);padding:12px 14px;border-radius:4px;margin:0 0 12px}
+  .say::before{content:"IN THE ROOM →  ";color:var(--muted);font-size:10px;letter-spacing:.1em}
+  .clock{display:grid;grid-template-columns:86px 1fr;border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--panel);margin-bottom:16px}
+  .clock div{padding:9px 12px;border-bottom:1px solid var(--rule)}
+  .clock div:nth-child(odd){font-family:var(--mono);font-size:11.5px;color:var(--muted);background:#F3F6F8;border-right:1px solid var(--rule)}
+  .clock div:nth-last-child(-n+2){border-bottom:none}
+  hr{border:none;border-top:1px solid var(--rule);margin:34px 0}
+  .footnote{font-size:13px;color:var(--muted)}
+  @media (max-width:900px){
+    .wrap{grid-template-columns:1fr}
+    nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--rule)}
+    main{padding:28px 20px 90px}
+    header.top h1{font-size:25px}
+    .grid2{grid-template-columns:1fr}
+    .clock{grid-template-columns:70px 1fr}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="brand">Round 1 · Aayush</div>
+  <div class="sub">Mon 20 Jul · 2:30 PM IST</div>
+
+  <div class="grp">Read the room</div>
+  <a href="#s1"><span class="n">1</span>Who Aayush actually is</a>
+  <a href="#s2"><span class="n">2</span>The seniority inversion</a>
+  <a href="#s3"><span class="n">3</span>What "API" means to him</a>
+
+  <div class="grp">The round</div>
+  <a href="#s4"><span class="n">4</span>The 75-min clock</a>
+  <a href="#s5"><span class="n">5</span>Logistics &amp; talk track</a>
+  <a href="#s6"><span class="n">6</span>Problem odds, reweighted</a>
+
+  <div class="grp">Swift fundamentals</div>
+  <a href="#s7"><span class="n">7</span>Value vs reference</a>
+  <a href="#s8"><span class="n">8</span>Optionals &amp; errors</a>
+  <a href="#s9"><span class="n">9</span>Protocols &amp; generics</a>
+  <a href="#s10"><span class="n">10</span>ARC &amp; closures</a>
+  <a href="#s11"><span class="n">11</span>Collections &amp; hashing</a>
+  <a href="#s12"><span class="n">12</span>Concurrency</a>
+  <a href="#s13"><span class="n">13</span>Rapid-fire Swift</a>
+
+  <div class="grp">The build</div>
+  <a href="#s14"><span class="n">14</span>API design rubric</a>
+  <a href="#s15"><span class="n">15</span>Worked: CRUD service</a>
+  <a href="#s16"><span class="n">16</span>Worked: event batcher</a>
+  <a href="#s17"><span class="n">17</span>Testing (his home turf)</a>
+  <a href="#s18"><span class="n">18</span>Driver code</a>
+
+  <div class="grp">Close</div>
+  <a href="#s19"><span class="n">19</span>What he'll ask</a>
+  <a href="#s20"><span class="n">20</span>Ask him</a>
+  <a href="#s21"><span class="n">21</span>Traps</a>
+  <a href="#s22"><span class="n">22</span>3-day plan</a>
+</nav>
+
+<main>
+<header class="top">
+  <div class="meta">Round 1 of 3 · API Implementation · 75 min · Zoom</div>
+  <h1>Monday, 2:30 PM<br>Aayush Ashok</h1>
+  <p>This is Sabin's <strong>Problem-Solving Round</strong> under a different name. Same 75 minutes, same brief: implement an API skeleton service class, write unit tests, write driver code, console app, C++ or Swift.</p>
+  <p>One correction before anything else, because your read on this is wrong and it's the kind of wrong that costs offers: <strong>Aayush is not a junior developer.</strong> §1.</p>
+</header>
+
+<!-- 1 -->
+<section id="s1">
+  <div class="eyebrow">§1</div>
+  <h3 class="s">Who Aayush actually is</h3>
+  <p class="lede">Roughly four years in, and one of those years was building macOS System Extension sensors at Trellix.</p>
+
+  <table>
+    <tr><th>When</th><th>Where</th><th>What it means for Monday</th></tr>
+    <tr>
+      <td>2018–2021</td>
+      <td>Manipal University Jaipur (Aperture MUJ, photography society, managed 45 people)</td>
+      <td>Graduated ~2021. So he's <strong>~4–4.5 years in</strong>, not 1–2. Mid-level, not junior.</td>
+    </tr>
+    <tr>
+      <td>Jan–Oct 2022</td>
+      <td>MTX Group — <strong>Salesforce QA automation</strong>, Selenium, Playwright</td>
+      <td><span class="chip deny">Important</span> His career <em>started in test automation</em>. The "write unit tests" part of this brief is not a box he ticks — it's his origin story. He will read your tests more carefully than your implementation. §17.</td>
+    </tr>
+    <tr>
+      <td>Nov 2022 – Feb 2024</td>
+      <td>Trellix — global <strong>Endpoint Security for macOS</strong> team. Built and maintained <strong>macOS event sensors via System Extensions</strong>, for both endpoint security <em>and</em> network security. AMD64 + ARM64.</td>
+      <td><span class="chip deny">Do not underestimate</span> He has shipped the exact thing you'd be hired to build. ES sensors <em>and</em> NetworkExtension sensors. He knows what a deadline is. He knows what muting is. 15 months of it.</td>
+    </tr>
+    <tr>
+      <td>Mar 2024 – Nov 2025</td>
+      <td>BlackBerry/Cylance → Arctic Wolf (acquisition) — <strong>Protect Cloud</strong>. Microservices, REST APIs, AWS, Kafka, Kinesis, SNS/SQS, RabbitMQ, Lambda, containers, event-driven architecture.</td>
+      <td><span class="chip watch">The key insight</span> His last two years were <strong>backend and cloud</strong>, not macOS. So his macOS depth is real but two years cold — and his current mental model of the word <strong>"API"</strong> is REST-shaped. §3.</td>
+    </tr>
+    <tr>
+      <td>Nov 2025 – now</td>
+      <td>Nightfall AI — macOS DLP, preventing sensitive data exfiltration on endpoints. <strong>9 months.</strong> On-site Bengaluru.</td>
+      <td>He came back to macOS to join them. He's on Aehjaj's team (they're mutual connections). He knows the current codebase better than anyone you'll talk to except Aehjaj.</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <h5>The composite</h5>
+    <p style="margin-bottom:0">A four-year engineer with an unusual shape: <strong>QA automation → macOS sensors → distributed cloud → back to macOS DLP.</strong> He's a generalist who has genuinely shipped in your domain, currently rebuilding his macOS muscles after two years in AWS. He is not going to out-macOS you. He will absolutely notice if your tests are an afterthought, and he'll have opinions about API contracts that come from REST rather than from Swift.</p>
+  </div>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">Correct your assumption</span> You went in thinking "junior developer, first round, probably a formality." That framing leaks. It leaks in tone, in how much you explain, in whether you actually listen to his follow-ups. A four-year engineer who built ES sensors at Trellix and now owns DLP features at Nightfall will feel it in about ninety seconds, and a "he was a bit dismissive" note from the first interviewer is very hard to recover from — because it's a signal about how you'd behave with the team, and that's worth more to them than your macOS depth.</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <div class="eyebrow">§2</div>
+  <h3 class="s">The seniority inversion — the actual risk in this round</h3>
+  <p class="lede">You have ten years and a Staff title. He has four and a Software Engineer title. He is evaluating you. This asymmetry is the single biggest thing that can go wrong on Monday, and it has nothing to do with code.</p>
+
+  <h4>What happens in these rounds, mechanically</h4>
+  <p>He has a rubric. He has to fill it in and defend his recommendation to Aehjaj and Prasad. His incentive is not to be impressed — it's to have <strong>evidence</strong>. Your job is to give him evidence that's easy to write down, and to make him feel like the conversation was between two engineers rather than an audition.</p>
+
+  <table>
+    <tr><th>Failure mode</th><th>What it sounds like</th><th>Do instead</th></tr>
+    <tr>
+      <td><strong>Unconscious condescension</strong></td>
+      <td>"As you probably know…" · "This is pretty basic but…" · "In my experience at scale…" (unprompted, repeatedly) · explaining a concept he uses daily</td>
+      <td>Assume he knows everything you know about macOS sensors, because he might. Explain your <em>reasoning</em>, not the concept. "I'm using a map plus a list here" — not "a hash map is a data structure that…"</td>
+    </tr>
+    <tr>
+      <td><strong>Dominating</strong></td>
+      <td>Talking for four minutes straight. Answering the question he didn't ask. Not stopping when he tries to speak.</td>
+      <td>On Zoom, latency makes interrupting hard. <strong>Leave deliberate gaps.</strong> Every ~60 seconds, land a sentence and pause. If he's typing in silence, ask "does that direction work for you?"</td>
+    </tr>
+    <tr>
+      <td><strong>Correcting him publicly</strong></td>
+      <td>He says something slightly off about ES or Swift. You correct it flatly. He's now defending himself instead of evaluating you.</td>
+      <td>"That's interesting — my mental model is X, but I might be out of date on that. What have you seen?" Nine times out of ten you're both right about different macOS versions. And if he's wrong, he gets to arrive there himself.</td>
+    </tr>
+    <tr>
+      <td><strong>Dismissing the exercise</strong></td>
+      <td>Any hint of "this is a toy problem." Skipping tests because "obviously in production I'd use XCTest."</td>
+      <td>Take the exercise completely seriously. Do the thing that's asked, well, on the clock. Contempt for the format reads as contempt for the interviewer.</td>
+    </tr>
+    <tr>
+      <td><strong>Not letting him drive</strong></td>
+      <td>You decide the problem is actually more interesting a different way and go there.</td>
+      <td>He has a script and a rubric. Follow it. If you want to go deeper, ask: "I could take this further with X — is that useful or should I move to tests?"</td>
+    </tr>
+  </table>
+
+  <div class="verdict allow">
+    <p><span class="chip allow">The play</span> Treat him as a <strong>colleague who happens to be holding the rubric today.</strong> Ask him things. Reference his world — he spent two years in Kafka and Lambda, and if your solution involves batching or backpressure, saying "this is basically the same problem as consumer lag, just on a laptop" will land <em>hard</em> because it's his language and nobody else in your loop will speak it. Make him feel like the interview was interesting for him too. People advocate for candidates they enjoyed talking to. That's not cynicism — it's how hiring actually works.</p>
+  </div>
+
+  <div class="say">"Before we start — I saw you were on the macOS endpoint team at Trellix doing System Extension sensors. That's the same corner of the world I've been in at JumpCloud. Good to talk to someone who knows where the bodies are buried."</div>
+  <p>Thirty seconds. Costs nothing. It (a) tells him you did your homework, (b) signals you see him as a peer, (c) makes the next 74 minutes a conversation. Do not skip this.</p>
+
+  <div class="callout">
+    <h5>The one thing he can do that you can't</h5>
+    <p style="margin-bottom:0">He knows Nightfall's actual codebase. Nine months in it. If you get a chance, ask him a real question about it (§20) — not to flatter him, but because you genuinely want to know and he genuinely knows. That inverts the dynamic in the healthiest possible way: for two minutes, he's the expert and you're the one learning. Interviewers remember that.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <div class="eyebrow">§3</div>
+  <h3 class="s">What "API Implementation" means to <em>him</em></h3>
+  <p class="lede">Sabin's brief says "API skeleton service class… console application, not a web service." But Aayush spent 2024–25 building REST microservices. His instincts about what makes a good API come from there. Use that.</p>
+
+  <h4>The REST concepts he'll grade you on, whether or not he names them</h4>
+  <table>
+    <tr><th>REST concept</th><th>Its console-app equivalent</th><th>How to show it</th></tr>
+    <tr><td><strong>Idempotency</strong></td><td>Calling <code>remove(id)</code> twice, or <code>add</code> with the same ID. Does it blow up or converge?</td><td>Decide and document: "remove is idempotent — removing a missing ID is a no-op, not an error. add is not — it throws on duplicate, because silently overwriting a policy rule is how you lose an audit trail." <span class="chip allow">Very high value</span></td></tr>
+    <tr><td><strong>Error taxonomy</strong></td><td>4xx vs 5xx. Client error (you called it wrong) vs server error (the world is broken).</td><td>Three-way split: <code>nil</code>/empty for "not found, that's normal" · <code>throw</code> for "you gave me bad input" · <code>precondition</code> for "you violated the contract, this is a bug in your code." Say it in those terms and he'll hear 404 vs 400 vs crash.</td></tr>
+    <tr><td><strong>Statelessness / contract</strong></td><td>Does the caller need to know the order to call things in?</td><td>Minimise hidden state machines. If <code>flush()</code> must be called before <code>stats()</code> is accurate, that's a leaky contract — say so or fix it.</td></tr>
+    <tr><td><strong>Versioning</strong></td><td>What happens when the rule schema changes?</td><td>Worth one sentence: "In production this policy struct is a wire format from the backend, so I'd version it and treat unknown fields as forward-compatible rather than a parse error."</td></tr>
+    <tr><td><strong>Backpressure</strong></td><td>Bounded queue, drop policy, the <code>dropped</code> counter.</td><td>This is <em>his exact world</em> — Kinesis throttling, SQS visibility timeouts, Kafka consumer lag. §16.</td></tr>
+    <tr><td><strong>At-least-once / dedup</strong></td><td>Duplicate events, idempotent writes, dedup keys.</td><td>Also his world. If dedup comes up, say "at-least-once delivery plus an idempotent consumer" and watch him light up.</td></tr>
+    <tr><td><strong>Observability</strong></td><td><code>stats()</code> — hits, misses, evictions, drops.</td><td>He came from a team that lived on dashboards. Volunteer the counters.</td></tr>
+  </table>
+
+  <div class="callout">
+    <h5>The bridge sentence</h5>
+    <p style="margin-bottom:0">"I think of this class the same way I'd think about a service API — the method signatures are the contract, the error types are the status codes, and the thing that matters most is that a caller can use it correctly without reading the implementation. The only difference on an endpoint is that my 'rate limit' is a kernel deadline instead of a load balancer."</p>
+    <p style="margin-bottom:0;margin-top:10px">That sentence is engineered for Aayush specifically. It maps your world onto his, it shows you understand what "API" means beyond syntax, and it's true.</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <div class="eyebrow">§4</div>
+  <h3 class="s">The 75-minute clock</h3>
+  <div class="clock">
+    <div>0–5</div><div><strong>Rapport + setup.</strong> The Trellix line. Confirm the tooling (§5). Let him explain the problem fully — <em>do not start solving while he's still talking.</em></div>
+    <div>5–12</div><div><strong>Clarify &amp; contract.</strong> Five or six questions. Restate the problem back to him in one sentence and get a yes. Write the contract as comments.</div>
+    <div>12–16</div><div><strong>Test harness + DS choice, out loud.</strong> Two options, why one, what it costs. Harness is 10 lines and buys you the tests later.</div>
+    <div>16–45</div><div><strong>Implement.</strong> Narrate. Pause every ~60s.</div>
+    <div>45–60</div><div><strong>Tests.</strong> Non-negotiable. He is an ex-QA engineer. <strong>This is the section he grades hardest.</strong></div>
+    <div>60–70</div><div><strong>Driver + run it.</strong> Show output.</div>
+    <div>70–75</div><div><strong>Production delta + his questions.</strong> Leave room for him to ask. Ask him one back.</div>
+  </div>
+  <div class="verdict deny">
+    <p><span class="chip deny">Hard rule</span> At minute 45 you stop implementing, whatever state you're in. Three partial deliverables beat one complete one — and with <em>this</em> interviewer, tests aren't the third deliverable, they're arguably the first.</p>
+  </div>
+  <div class="say">"I'll aim for roughly: five minutes on the contract, thirty implementing, fifteen on tests, ten on a driver, and leave five at the end. If you'd rather I weight it differently — more tests, less driver — tell me now and I'll plan around it."</div>
+  <p>Asking him to set the weighting is a small, real act of deference that costs nothing and makes him a collaborator instead of a judge.</p>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <div class="eyebrow">§5</div>
+  <h3 class="s">Logistics &amp; talk track</h3>
+  <h4>Questions to fire in the first two minutes</h4>
+  <ul>
+    <li>"Where am I writing — CoderPad, a shared doc, or my own Xcode with screen share?" <strong>This changes everything.</strong> If you have a compiler, compile constantly. If you don't, you must trace by hand and say so.</li>
+    <li>"Does it need to compile, or is pseudo-Swift acceptable where it's obvious?" — get permission for shortcuts <em>up front</em>, not as an excuse at minute 50.</li>
+    <li>"Swift or C++ — any preference from your side?" — he'll say either. Then: "I'll take Swift; it's what I've been shipping and I believe it's what your agent's in."</li>
+    <li>"Am I allowed to use Foundation, or standard library only?" — matters for <code>Date</code>, <code>Deque</code>, <code>NSLock</code>. If no Foundation, you write your own deque; know that.</li>
+  </ul>
+
+  <h4>Zoom-specific</h4>
+  <ul>
+    <li><strong>Camera on.</strong> A silent black square typing code is unnerving.</li>
+    <li><strong>Increase the font size</strong> before you share. He's reading your code on a laptop while thinking.</li>
+    <li><strong>Deliberate pauses.</strong> Zoom latency makes interruption socially expensive; he will not cut in. If you talk for four minutes he'll just wait, and you'll have lost four minutes of signal about what he wanted.</li>
+    <li><strong>Narrate at the decision points, not the syntax.</strong> "I'm reaching for a map plus a doubly-linked list — the map for O(1) find, the list for O(1) reorder" ✓. "Now I'm writing a for loop" ✗.</li>
+    <li>If you go quiet to think, <em>say</em> "give me twenty seconds on the eviction case." Silence with a reason is fine. Silence without one is dead air he has to interpret.</li>
+  </ul>
+
+  <div class="verdict allow">
+    <p><span class="chip allow">No assist tools</span> Not in this round especially. It produces code you can't defend when he asks "why did you do that?" — and he will, because that's the whole point of the round. It also produces the long hedged register that's all over your Prasad transcript. You have ten years of the real thing. The only person who can lose this round is you, by not sounding like yourself.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <div class="eyebrow">§6</div>
+  <h3 class="s">Problem odds, reweighted for Aayush</h3>
+  <p class="lede">The name of the round — "API Implementation" — plus his two years in event-driven cloud shifts the probabilities.</p>
+  <table>
+    <tr><th>Odds</th><th>Problem</th><th>Why <em>him</em></th><th>Prep</th></tr>
+    <tr><td><span class="chip deny">Highest</span></td><td><strong>CRUD-shaped service class</strong> — rule store / policy store / session manager. <code>add</code> / <code>get</code> / <code>update</code> / <code>remove</code> / <code>list</code> / <code>evaluate</code></td><td>It's literally called "API Implementation." A CRUD contract is what "API" means to someone from REST microservices. Idempotency, error taxonomy, and validation all live here.</td><td>§15 — full worked example</td></tr>
+    <tr><td><span class="chip deny">Very high</span></td><td><strong>Event ingestion / batching with flush + backpressure</strong></td><td>Kafka, Kinesis, SQS, RabbitMQ, Lambda. Two years of it. Batching by size-or-time with a bounded buffer <em>is</em> his mental furniture — and it's also exactly what a DLP agent's telemetry path does.</td><td>§16 — full worked example</td></tr>
+    <tr><td><span class="chip deny">Very high</span></td><td><strong>LRU / bounded cache</strong></td><td>The universal. Every rubric has it.</td><td>Prior doc §8. Drill to 25 min.</td></tr>
+    <tr><td><span class="chip watch">High</span></td><td><strong>Rate limiter</strong> (token bucket / sliding window)</td><td>A REST-brain classic — throttling is an API concern. He'll have implemented one.</td><td>Prior doc §9</td></tr>
+    <tr><td><span class="chip watch">High</span></td><td><strong>Dedup / suppression over a window</strong></td><td>Sits exactly between his cloud world (at-least-once delivery) and Nightfall's world (event storms from a sensor).</td><td>Prior doc §11</td></tr>
+    <tr><td><span class="chip watch">Medium</span></td><td><strong>Path / prefix matcher (trie)</strong></td><td>Domain-native, but more Aehjaj's flavour than Aayush's.</td><td>Prior doc §10</td></tr>
+    <tr><td><span class="chip allow">Lower</span></td><td>Process tree, TTL store</td><td>Possible; both are compositions you already know.</td><td>Prior doc §14, §8</td></tr>
+  </table>
+  <p class="footnote">Notice they're all still <strong>a hash map composed with one other structure</strong>. Sabin's DS hint (stacks, queues, maps, hash tables) covers the entire surface. Nobody is asking you to balance a tree.</p>
+</section>
+
+<!-- ============ SWIFT ============ -->
+<div class="part">
+  <div class="k">Swift</div>
+  <h2>The fundamentals he might probe</h2>
+  <p>He's been in Python/Java/C++/AWS-land for two years and came back to Swift nine months ago. He'll ask Swift questions that are conceptual rather than exotic — and he'll respect precise answers.</p>
+</div>
+
+<!-- 7 -->
+<section id="s7">
+  <div class="eyebrow">§7</div>
+  <h3 class="s">Value vs reference — the #1 Swift question</h3>
+  <pre><code><span class="k">struct</span> Point { <span class="k">var</span> x = 0 }        <span class="c">// VALUE   — copied on assignment</span>
+<span class="k">class</span>  Node  { <span class="k">var</span> x = 0 }        <span class="c">// REFERENCE — shared, ARC-managed</span>
+
+<span class="k">var</span> a = Point(); <span class="k">var</span> b = a; b.x = 1
+<span class="c">// a.x == 0  ← independent copies</span>
+
+<span class="k">let</span> n = Node(); <span class="k">let</span> m = n; m.x = 1
+<span class="c">// n.x == 1  ← same object. Note `let` on a class only makes the</span>
+<span class="c">//              REFERENCE constant, not the object's contents.</span></code></pre>
+
+  <table>
+    <tr><th></th><th>struct</th><th>class</th></tr>
+    <tr><td>Semantics</td><td>Copy</td><td>Share</td></tr>
+    <tr><td>Memory</td><td>Usually stack / inline; no ARC traffic</td><td>Heap + retain/release</td></tr>
+    <tr><td>Identity</td><td>None — <code>===</code> doesn't apply</td><td><code>===</code></td></tr>
+    <tr><td>Inheritance</td><td>No (compose with protocols)</td><td>Yes</td></tr>
+    <tr><td>Mutation</td><td><code>mutating func</code>; can't mutate through a <code>let</code></td><td>Any method can mutate</td></tr>
+    <tr><td>Thread safety</td><td>Copies are trivially isolated — <strong>this is the big one</strong></td><td>Shared mutable state; you own the locking</td></tr>
+    <tr><td>Use for</td><td>Data. <code>Event</code>, <code>Rule</code>, <code>FileKey</code>, <code>Verdict</code></td><td>Identity + shared lifecycle. <code>Cache</code>, <code>Service</code>, list nodes</td></tr>
+  </table>
+
+  <div class="callout">
+    <h5>The answer that shows depth</h5>
+    <p style="margin-bottom:0">"My default is <strong>struct for data, class for services</strong>. The reason isn't style — it's that a struct copy is trivially thread-safe, so an immutable policy snapshot as a struct means my readers never need a lock. I only reach for a class when I need identity or a shared lifecycle: a cache, a list node, something with a <code>deinit</code>. And the subtlety is that a <code>let</code> on a class reference doesn't make the object immutable, only the pointer — which is exactly the bug people write when they think <code>let</code> means constant."</p>
+  </div>
+
+  <h4>Copy-on-write — he may push here</h4>
+  <pre><code><span class="k">var</span> a = [1,2,3]
+<span class="k">var</span> b = a          <span class="c">// NO copy yet — both point at the same buffer</span>
+b.append(4)        <span class="c">// NOW it copies. isKnownUniquelyReferenced() said no.</span>
+
+<span class="c">// Consequence: passing a big array around is cheap UNTIL someone writes.</span>
+<span class="c">// Standard library collections do this. Your own structs DON'T unless you</span>
+<span class="c">// implement it — wrap a class in a struct and check</span>
+<span class="c">// isKnownUniquelyReferenced(&storage) before mutating.</span></code></pre>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <div class="eyebrow">§8</div>
+  <h3 class="s">Optionals &amp; error handling — the API design question in disguise</h3>
+
+  <h4>The three-way split (memorise this — it's §14's rubric in code)</h4>
+  <pre><code><span class="c">// 1. "Not found" is a NORMAL outcome → Optional. Not an error.</span>
+<span class="k">func</span> get(_ key: Key) -&gt; Value?          <span class="c">// 404 is not a crash</span>
+
+<span class="c">// 2. "You gave me bad input" → throw. Recoverable, caller's fault.</span>
+<span class="k">func</span> add(_ rule: Rule) <span class="k">throws</span>           <span class="c">// 400</span>
+
+<span class="c">// 3. "You violated the contract" → precondition. Programmer error.</span>
+<span class="k">init</span>(capacity: Int) {
+    precondition(capacity &gt; 0, <span class="s">"capacity must be positive"</span>)  <span class="c">// this is a BUG</span>
+}
+
+<span class="c">// 4. Optional bonus: Result when you need to defer handling</span>
+<span class="k">func</span> evaluate(_ e: Event) -&gt; Result&lt;Verdict, PolicyError&gt;</code></pre>
+
+  <div class="say">"I split failures three ways. Not-found is an Optional, because it's a normal outcome and forcing the caller into a do/catch for a cache miss is hostile. Bad input throws — that's a 400, the caller can fix it. And violating the contract, like a zero capacity, is a precondition, because that's a bug in the calling code and crashing loudly in a test beats limping in production. Getting that split wrong is how you end up with APIs where every call site has an empty catch block."</p>
+  </div>
+
+  <h4>Optional handling — the four forms</h4>
+  <pre><code><span class="k">guard let</span> v = map[k] <span class="k">else</span> { <span class="k">return nil</span> }   <span class="c">// early exit — DEFAULT. flat.</span>
+<span class="k">if let</span> v = map[k] { ... }                     <span class="c">// nested — fine for one level</span>
+<span class="k">let</span> v = map[k] ?? .allow                     <span class="c">// default value</span>
+<span class="k">let</span> n = map[k]?.count                        <span class="c">// optional chain → Int?</span>
+<span class="k">let</span> v = map[k]!                              <span class="c">// ← justify or don't use it</span></code></pre>
+  <p><strong>The force-unwrap question:</strong> "When is <code>!</code> acceptable?" — "When the invariant guarantees it and the alternative is noise. In my LRU, <code>map[key]!</code> right after I inserted it is safe by construction. But I'd rather write it so the compiler knows, and I'd never force-unwrap anything that crossed an API boundary or came from parsing — a force-unwrap on untrusted input is a remote crash, and in a system extension a crash is a fleet incident."</p>
+
+  <h5>Error types</h5>
+  <pre><code><span class="k">enum</span> PolicyError: Error, Equatable {   <span class="c">// Equatable ⇒ testable with ==</span>
+    <span class="k">case</span> duplicateID(RuleID)
+    <span class="k">case</span> notFound(RuleID)
+    <span class="k">case</span> invalidRule(reason: String)
+}
+<span class="c">// Associated values carry context. `case error` with no payload is useless</span>
+<span class="c">// at 3am. This is the same argument as "don't return bare 500".</span></code></pre>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <div class="eyebrow">§9</div>
+  <h3 class="s">Protocols &amp; generics</h3>
+  <pre><code><span class="c">// The protocol IS the API. This is what "API skeleton" means in Swift.</span>
+<span class="k">protocol</span> RuleStore {
+    <span class="k">associatedtype</span> R: Identifiable
+    <span class="k">func</span> add(_ r: R) <span class="k">throws</span>
+    <span class="k">func</span> remove(_ id: R.ID) <span class="k">throws</span>
+    <span class="k">func</span> all() -&gt; [R]
+}
+
+<span class="c">// Protocol with a default implementation — free behaviour for conformers</span>
+<span class="k">extension</span> RuleStore {
+    <span class="k">func</span> count() -&gt; Int { all().count }
+}
+
+<span class="c">// Generic constraint — the everyday form</span>
+<span class="k">final class</span> LRUCache&lt;Key: Hashable, Value&gt; { ... }
+
+<span class="c">// The dependency-injection form. THE testability move.</span>
+<span class="k">protocol</span> Clock { <span class="k">var</span> now: TimeInterval { <span class="k">get</span> } }
+<span class="k">final class</span> SystemClock: Clock { <span class="k">var</span> now: TimeInterval { Date().timeIntervalSince1970 } }
+<span class="k">final class</span> FakeClock: Clock {
+    <span class="k">private(set) var</span> now: TimeInterval
+    <span class="k">init</span>(_ t: TimeInterval = 0) { now = t }
+    <span class="k">func</span> advance(_ d: TimeInterval) { now += d }
+}</code></pre>
+
+  <table>
+    <tr><th>He asks</th><th>You say</th></tr>
+    <tr><td>Protocol vs class inheritance?</td><td>"Protocols compose; inheritance doesn't. A type can conform to five protocols but have one superclass. And protocols let me inject a fake — a <code>Clock</code> protocol is why my TTL test runs in a microsecond instead of sleeping eleven seconds."</td></tr>
+    <tr><td><code>some</code> vs <code>any</code>?</td><td>"<code>some P</code> is an opaque type — one concrete type, resolved at compile time, no boxing, fast. <code>any P</code> is an existential — a box, dynamic dispatch, slower, but it lets me put heterogeneous conformers in an array. On a hot path I want <code>some</code> or a generic; in a plugin registry I want <code>any</code>."</td></tr>
+    <tr><td>Why <code>final class</code>?</td><td>"Static dispatch. Without <code>final</code>, every method call goes through a vtable in case someone subclasses. On an ES callback path that's real. It also documents intent: this isn't a base class."</td></tr>
+    <tr><td>Associated type vs generic?</td><td>"Same idea, different placement. A generic parameter is chosen by the caller; an associated type is chosen by the conformer. Associated types make the protocol non-existential though — you can't have <code>[any RuleStore]</code> without a type eraser, which is the classic Swift papercut."</td></tr>
+  </table>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <div class="eyebrow">§10</div>
+  <h3 class="s">ARC, retain cycles, closures</h3>
+  <p class="lede">Guaranteed to come up if you write a linked list. Which you will, if it's an LRU.</p>
+
+  <pre><code><span class="k">final class</span> Node {
+    <span class="k">var</span> next: Node?          <span class="c">// strong  ─┐</span>
+    <span class="k">var</span> prev: Node?          <span class="c">// strong  ─┴─► CYCLE. Neither ever deallocs.</span>
+}
+
+<span class="c">// Fix: one direction must be non-owning.</span>
+<span class="k">final class</span> Node {
+    <span class="k">var</span> next: Node?          <span class="c">// strong — the list owns forward</span>
+    <span class="k">weak var</span> prev: Node?     <span class="c">// weak — becomes nil automatically</span>
+}
+<span class="c">// or `unowned` if you can guarantee prev outlives next (faster: no</span>
+<span class="c">// side table, no optionality — but a dangling unowned is a CRASH).</span></code></pre>
+
+  <table>
+    <tr><th></th><th><code>weak</code></th><th><code>unowned</code></th></tr>
+    <tr><td>Type</td><td>Always Optional</td><td>Non-optional</td></tr>
+    <tr><td>On dealloc</td><td>Auto-nils</td><td>Dangles → crash on access</td></tr>
+    <tr><td>Cost</td><td>Side table lookup</td><td>Free</td></tr>
+    <tr><td>Use</td><td>Delegates, anything that can outlive you</td><td>When the referent provably outlives you (child → parent)</td></tr>
+  </table>
+
+  <h5>Closure capture — the other half of the same question</h5>
+  <pre><code><span class="c">// Closures capture STRONGLY by default. self holds the closure,</span>
+<span class="c">// the closure holds self. Cycle.</span>
+timer = Timer.scheduledTimer(...) { _ <span class="k">in</span> self.tick() }        <span class="c">// ✗ leak</span>
+timer = Timer.scheduledTimer(...) { [<span class="k">weak self</span>] _ <span class="k">in</span> self?.tick() }  <span class="c">// ✓</span>
+
+<span class="c">// Escaping vs non-escaping — the distinction he'll ask about</span>
+<span class="k">func</span> sync(_ f: () -&gt; Void)           { f() }        <span class="c">// non-escaping (default)</span>
+<span class="k">func</span> async(_ f: @escaping () -&gt; Void) { queue.async(execute: f) }
+<span class="c">// @escaping = "I'm storing this and calling it later", so the compiler</span>
+<span class="c">// forces you to think about lifetime — hence the [weak self] requirement.</span>
+
+<span class="c">// Capture by VALUE at creation time:</span>
+<span class="k">var</span> x = 1
+<span class="k">let</span> f = { [x] <span class="k">in</span> print(x) }   <span class="c">// captures 1</span>
+x = 2; f()                       <span class="c">// prints 1, not 2</span></code></pre>
+
+  <div class="say">"If I write a doubly-linked list for the LRU I'm going to make one direction weak or unowned, because two strong references means the whole list leaks even after you drop the cache — and it's invisible until you look at a memory graph. The production version I'd actually reach for is an array-backed node pool with integer indices: no ARC traffic at all, better cache locality, and the cycle can't exist by construction. But for 75 minutes I'll write the linked list and just be honest about the trade."</div>
+  <p class="footnote">That answer does three things at once: shows you know ARC, shows you know what you'd do differently in production, and pre-empts the follow-up. It's the single best 20 seconds available in an LRU problem.</p>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+  <div class="eyebrow">§11</div>
+  <h3 class="s">Collections, Hashable, complexity</h3>
+  <table>
+    <tr><th>Type</th><th>Costs</th><th>Notes</th></tr>
+    <tr><td><code>Array</code></td><td>index O(1) · append O(1) amortised · insert/remove at front O(n)</td><td>Contiguous, cache-friendly. <code>reserveCapacity</code> to avoid realloc.</td></tr>
+    <tr><td><code>Dictionary</code></td><td>get/set/remove O(1) avg</td><td><strong>Unordered — iteration order is not stable and is randomised per launch.</strong> If your policy engine's tie-break depends on it, the same event gets different verdicts on two machines. Say this.</td></tr>
+    <tr><td><code>Set</code></td><td>O(1)</td><td>Same ordering caveat.</td></tr>
+    <tr><td><code>Deque</code></td><td>both ends O(1)</td><td><strong>swift-collections package, not stdlib.</strong> Know that — if Foundation-only, you write it or use an array with a head index.</td></tr>
+    <tr><td><code>Heap</code></td><td>O(log n)</td><td>Also swift-collections. Not in stdlib. Roll it if needed.</td></tr>
+    <tr><td><code>OrderedDictionary</code></td><td>O(1) + order</td><td>swift-collections. If available it's an LRU shortcut — <em>mention it, then implement by hand anyway</em>, because he wants to see the DS.</td></tr>
+  </table>
+
+  <h5>Custom Hashable — near-certain if the key is composite</h5>
+  <pre><code><span class="k">struct</span> FileKey: Hashable {
+    <span class="k">let</span> dev: UInt64
+    <span class="k">let</span> ino: UInt64
+    <span class="k">let</span> gen: UInt32
+
+    <span class="c">// Synthesised automatically when all members are Hashable.</span>
+    <span class="c">// Write it by hand only to EXCLUDE a field:</span>
+    <span class="k">func</span> hash(<span class="k">into</span> hasher: <span class="k">inout</span> Hasher) {
+        hasher.combine(dev); hasher.combine(ino)   <span class="c">// gen excluded on purpose</span>
+    }
+    <span class="k">static func</span> == (a: FileKey, b: FileKey) -&gt; Bool {
+        a.dev == b.dev && a.ino == b.ino
+    }
+}
+<span class="c">// THE INVARIANT: a == b  ⇒  a.hashValue == b.hashValue.</span>
+<span class="c">// Break it and your dictionary silently loses entries. If you exclude a</span>
+<span class="c">// field from hash(), you MUST exclude it from == too. That's the bug he's</span>
+<span class="c">// checking for, and it's the same bug as an inconsistent equals/hashCode</span>
+<span class="c">// in Java — which he'll have seen in his Kafka years.</span></code></pre>
+  <p><strong>Bonus he'll appreciate:</strong> "Swift seeds the hasher per-process, so <code>hashValue</code> isn't stable across launches. You cannot persist it or send it over the wire as a dedup key — you'd need a stable hash like SHA-256 or FNV for that. People get bitten by this when they try to use it as a cache key on disk."</p>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+  <div class="eyebrow">§12</div>
+  <h3 class="s">Concurrency</h3>
+  <table>
+    <tr><th>Tool</th><th>Use</th><th>The catch</th></tr>
+    <tr><td><code>os_unfair_lock</code></td><td>Fastest lock. Hot paths.</td><td>Not reentrant. Must not be copied (it's a struct — use a pointer or wrap it). No priority inversion, unlike a spinlock.</td></tr>
+    <tr><td><code>NSLock</code> / <code>NSRecursiveLock</code></td><td>Simple, Foundation.</td><td>Slower. Recursive locks usually mean a design problem.</td></tr>
+    <tr><td>Serial <code>DispatchQueue</code></td><td>Isolation without explicit locks.</td><td>A queue hop has cost. <code>sync</code> onto a queue you're already on = deadlock.</td></tr>
+    <tr><td><code>actor</code></td><td>Compiler-enforced isolation. Clean.</td><td><strong>Async.</strong> You cannot <code>await</code> from a synchronous ES callback. This is why real ES clients use locks, not actors — a great thing to volunteer.</td></tr>
+    <tr><td><code>async</code>/<code>await</code></td><td>Structured concurrency, <code>TaskGroup</code>.</td><td>Not usable on a C callback path. Different world.</td></tr>
+    <tr><td>Copy-on-write snapshot</td><td>Immutable struct + atomic reference swap. Readers never block.</td><td><strong>The right answer for a policy engine.</strong> Writes are rare, reads are the hot path.</td></tr>
+    <tr><td><code>Sendable</code></td><td>Compile-time "safe to cross isolation boundaries."</td><td>Structs of Sendable members are automatically Sendable. A class needs <code>@unchecked Sendable</code> + your own locking, and that's a promise you're making to the compiler.</td></tr>
+  </table>
+
+  <h4>The two answers to have loaded</h4>
+  <div class="grid2">
+    <div class="card">
+      <h5>"Make it thread-safe."</h5>
+      <p style="margin-bottom:0">"One lock, narrow scope, no callbacks or I/O inside it. Measure. If contention shows up, shard the map by hash into N stripes with N locks — most of lock-free's benefit for a fraction of the risk. And I'd keep the lock <em>outside</em> the data structure: a thread-safe container still can't do 'get, then put if absent' atomically, so baking the lock in gives you false confidence. Lock the operation, not the container."</p>
+    </div>
+    <div class="card">
+      <h5>"Reader-writer lock on the LRU?"</h5>
+      <p style="margin-bottom:0">"There's no reader. <code>get</code> promotes the entry to most-recent, so it's a write. A reader-writer lock on an LRU is pure cost. If I needed genuinely lock-free reads I'd change the eviction policy — a clock/second-chance algorithm only sets a bit on read, which <em>can</em> be atomic." <span class="chip allow">Genuine differentiator</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section id="s13">
+  <div class="eyebrow">§13</div>
+  <h3 class="s">Rapid-fire Swift</h3>
+  <details class="q"><summary><code>struct</code> vs <code>class</code> — one sentence?</summary><div class="body"><p>Struct copies, class shares. Struct for data, class for identity and shared lifecycle. The practical consequence is thread safety: a struct copy is trivially isolated, a class isn't.</p></div></details>
+  <details class="q"><summary>What does <code>mutating</code> do?</summary><div class="body"><p>Marks a struct method that changes <code>self</code>. Under the hood <code>self</code> is <code>inout</code>. You can't call it on a <code>let</code>, which is the compiler enforcing value semantics for you.</p></div></details>
+  <details class="q"><summary><code>weak</code> vs <code>unowned</code>?</summary><div class="body"><p>Both non-owning. <code>weak</code> is optional and auto-nils on dealloc; <code>unowned</code> is non-optional and dangles into a crash. <code>unowned</code> is faster (no side table) and correct when the referent provably outlives you — a child pointing at its parent. When in doubt, <code>weak</code>.</p></div></details>
+  <details class="q"><summary>What's <code>@escaping</code>?</summary><div class="body"><p>The closure outlives the function call — you're storing it or dispatching it. It's the compiler making lifetime explicit, which is why escaping closures are where <code>[weak self]</code> matters and non-escaping ones don't.</p></div></details>
+  <details class="q"><summary>Why is <code>Dictionary</code> unordered, and when does it bite?</summary><div class="body"><p>Hash order, and Swift seeds the hasher per process so it's not even stable across launches. It bites when correctness leaks onto iteration order — e.g. a policy engine that breaks ties by "first match found" is non-deterministic across machines, so the same event gets different verdicts on two laptops. Break ties on an explicit field.</p></div></details>
+  <details class="q"><summary><code>lazy var</code>?</summary><div class="body"><p>Computed once on first access, then stored. Not thread-safe — two threads can both initialise it. Fine for a struct that's confined to one thread; a landmine in a shared service class.</p></div></details>
+  <details class="q"><summary>Enum with associated values — why care?</summary><div class="body"><p>Sum types. <code>Verdict.deny(reason: String)</code> carries context the caller needs, and the compiler forces you to handle every case in a <code>switch</code>. It's how you make illegal states unrepresentable, which is worth more than any test.</p></div></details>
+  <details class="q"><summary><code>@discardableResult</code>?</summary><div class="body"><p>Suppresses the "result unused" warning. Correct on something like <code>@discardableResult func push(_:) -&gt; Bool</code> where most callers don't care whether it was dropped but some do. It's a small API-design signal.</p></div></details>
+  <details class="q"><summary>Access control levels?</summary><div class="body"><p><code>private</code> (this scope) · <code>fileprivate</code> · <code>internal</code> (default, the module) · <code>public</code> · <code>open</code> (public + subclassable). And <code>private(set)</code> — publicly readable, privately writable — which is exactly right for a <code>stats</code> counter.</p></div></details>
+  <details class="q"><summary>How does Swift call C? (he built ES sensors — fair game)</summary><div class="body"><p>Direct import; C structs become Swift structs, pointers become <code>UnsafePointer&lt;T&gt;</code>, C string tokens need copying into a Swift <code>String</code> before the underlying memory dies. The genre of bug is lifetime: capture an <code>es_message_t</code> pointer in an escaping closure without retaining it and you get a use-after-free that only fires under load. I wrap those in a small RAII-style Swift type at the boundary so ARC owns the lifetime and the mistake is impossible.</p></div></details>
+</section>
+
+<!-- ============ THE BUILD ============ -->
+<div class="part">
+  <div class="k">The build</div>
+  <h2>Implementation</h2>
+</div>
+
+<!-- 14 -->
+<section id="s14">
+  <div class="eyebrow">§14</div>
+  <h3 class="s">The API design rubric</h3>
+  <table>
+    <tr><th>Signal</th><th>What he's looking for</th></tr>
+    <tr><td><strong>Contract before code</strong></td><td>Four comment lines per method: complexity, preconditions, error behaviour, thread-safety. Ninety seconds. Answers half his follow-ups pre-emptively.</td></tr>
+    <tr><td><strong>Idempotency</strong></td><td>Stated per method. "remove is idempotent, add isn't, and here's why." <span class="chip allow">REST brain</span></td></tr>
+    <tr><td><strong>Error taxonomy</strong></td><td>Optional / throw / precondition, deliberately split. §8.</td></tr>
+    <tr><td><strong>Total functions</strong></td><td>Every input has defined behaviour. No "undefined if capacity is 0."</td></tr>
+    <tr><td><strong>Encapsulation</strong></td><td>Internals private. If your test reaches into <code>cache.map</code>, one of the two is wrong.</td></tr>
+    <tr><td><strong>Injectability</strong></td><td>Clock injected. Testability is a design property, not a testing technique.</td></tr>
+    <tr><td><strong>Observability</strong></td><td><code>stats()</code>. He came from a team that lived on dashboards; volunteer the counters and say why eviction rate is a security metric, not a perf metric.</td></tr>
+    <tr><td><strong>Bounded</strong></td><td>Every collection has a cap and a documented policy for what happens at the cap.</td></tr>
+  </table>
+</section>
+
+<!-- 15 -->
+<section id="s15">
+  <div class="eyebrow">§15 · Worked example</div>
+  <h3 class="s">The CRUD service class</h3>
+  <p class="lede">Highest-probability shape. This is what "API Implementation" means to someone from REST.</p>
+
+  <pre><code><span class="c">// ═══ 1. THE CONTRACT — write this FIRST, out loud ═══════════</span>
+
+<span class="k">typealias</span> RuleID = String
+
+<span class="k">struct</span> Rule: Equatable {              <span class="c">// struct: it's data</span>
+    <span class="k">let</span> id: RuleID
+    <span class="k">let</span> pathPrefix: String?           <span class="c">// nil = matches any path</span>
+    <span class="k">let</span> appID: String?                <span class="c">// nil = matches any app</span>
+    <span class="k">let</span> priority: Int                 <span class="c">// higher wins</span>
+    <span class="k">let</span> verdict: Verdict
+}
+
+<span class="k">enum</span> Verdict: Equatable { <span class="k">case</span> allow, deny, readOnly }
+
+<span class="k">enum</span> PolicyError: Error, Equatable {
+    <span class="k">case</span> duplicateID(RuleID)
+    <span class="k">case</span> invalidRule(reason: String)
+}
+
+<span class="k">protocol</span> PolicyService {
+    <span class="c">/// - Throws: `.duplicateID` if id exists; `.invalidRule` if malformed.</span>
+    <span class="c">/// - Complexity: O(1).</span>
+    <span class="c">/// - NOT idempotent by design: a silent overwrite of a policy rule</span>
+    <span class="c">///   destroys the audit trail. Use `update` to change one.</span>
+    <span class="k">func</span> add(_ rule: Rule) <span class="k">throws</span>
+
+    <span class="c">/// - Returns: the removed rule, or nil if absent.</span>
+    <span class="c">/// - IDEMPOTENT: removing a missing id is a no-op, not an error.</span>
+    <span class="c">/// - Complexity: O(1).</span>
+    <span class="k">@discardableResult func</span> remove(_ id: RuleID) -&gt; Rule?
+
+    <span class="c">/// - Complexity: O(1). Returns nil if absent — a normal outcome.</span>
+    <span class="k">func</span> rule(_ id: RuleID) -&gt; Rule?
+
+    <span class="c">/// - Returns: rules in a STABLE order (by id). Never hash order.</span>
+    <span class="k">func</span> all() -&gt; [Rule]
+
+    <span class="c">/// - Complexity: O(1) on cache hit, O(matching rules) on miss.</span>
+    <span class="c">/// - Deterministic: same input + same rule set ⇒ same verdict, always.</span>
+    <span class="c">/// - Default when nothing matches: .allow  ← a product decision</span>
+    <span class="k">func</span> evaluate(_ event: Event) -&gt; Verdict
+
+    <span class="k">func</span> stats() -&gt; Stats
+}
+
+
+<span class="c">// ═══ 2. THE IMPLEMENTATION ══════════════════════════════════</span>
+
+<span class="k">final class</span> InMemoryPolicyService: PolicyService {
+
+    <span class="k">private var</span> byID: [RuleID: Rule] = [:]
+    <span class="k">private var</span> cache: LRUCache&lt;EventKey, Verdict&gt;
+    <span class="k">private var</span> epoch: UInt64 = 0          <span class="c">// O(1) cache invalidation</span>
+    <span class="k">private(set) var</span> hits = 0, misses = 0, evaluations = 0
+
+    <span class="k">init</span>(cacheCapacity: Int = 10_000) {
+        precondition(cacheCapacity &gt; 0)
+        cache = LRUCache(capacity: cacheCapacity)
+    }
+
+    <span class="k">func</span> add(_ rule: Rule) <span class="k">throws</span> {
+        <span class="k">try</span> validate(rule)
+        <span class="k">guard</span> byID[rule.id] == <span class="k">nil</span> <span class="k">else</span> { <span class="k">throw</span> PolicyError.duplicateID(rule.id) }
+        byID[rule.id] = rule
+        invalidate()
+    }
+
+    <span class="k">@discardableResult</span>
+    <span class="k">func</span> remove(_ id: RuleID) -&gt; Rule? {
+        <span class="k">guard let</span> r = byID.removeValue(forKey: id) <span class="k">else</span> { <span class="k">return nil</span> }
+        invalidate()
+        <span class="k">return</span> r
+    }
+
+    <span class="k">func</span> rule(_ id: RuleID) -&gt; Rule? { byID[id] }
+
+    <span class="k">func</span> all() -&gt; [Rule] {
+        <span class="c">// Sorted, NOT hash order. Iteration order of a Dictionary is not</span>
+        <span class="c">// stable across launches — leaking it into the API makes the</span>
+        <span class="c">// service non-deterministic.</span>
+        byID.values.sorted { $0.id &lt; $1.id }
+    }
+
+    <span class="k">func</span> evaluate(_ event: Event) -&gt; Verdict {
+        evaluations += 1
+        <span class="k">let</span> key = EventKey(event, epoch: epoch)
+
+        <span class="k">if let</span> v = cache.get(key) { hits += 1; <span class="k">return</span> v }
+        misses += 1
+
+        <span class="k">let</span> v = byID.values
+            .filter { matches($0, event) }
+            .max { a, b <span class="k">in</span>
+                <span class="c">// DETERMINISTIC tie-break. Priority, then id. Never</span>
+                <span class="c">// "whichever the dictionary handed me first."</span>
+                (a.priority, a.id) &lt; (b.priority, b.id)
+            }?.verdict ?? .allow     <span class="c">// ← default allow. Say why.</span>
+
+        cache.put(key, v)
+        <span class="k">return</span> v
+    }
+
+    <span class="k">func</span> stats() -&gt; Stats {
+        Stats(rules: byID.count, evaluations: evaluations,
+              hits: hits, misses: misses,
+              hitRate: evaluations == 0 ? 0 : Double(hits)/Double(evaluations),
+              evictions: cache.evictions)
+    }
+
+    <span class="c">// ── private ─────────────────────────────────────────────</span>
+    <span class="k">private func</span> validate(_ r: Rule) <span class="k">throws</span> {
+        <span class="k">if</span> r.id.isEmpty { <span class="k">throw</span> PolicyError.invalidRule(reason: <span class="s">"empty id"</span>) }
+        <span class="k">if let</span> p = r.pathPrefix, !p.hasPrefix(<span class="s">"/"</span>) {
+            <span class="k">throw</span> PolicyError.invalidRule(reason: <span class="s">"path must be absolute: \(p)"</span>)
+        }
+        <span class="k">if</span> r.pathPrefix == <span class="k">nil</span> && r.appID == <span class="k">nil</span> {
+            <span class="c">// A rule matching everything is almost always a mistake.</span>
+            <span class="k">throw</span> PolicyError.invalidRule(reason: <span class="s">"rule must constrain something"</span>)
+        }
+    }
+
+    <span class="k">private func</span> matches(_ r: Rule, _ e: Event) -&gt; Bool {
+        <span class="k">if let</span> p = r.pathPrefix, !e.path.hasPrefix(p) { <span class="k">return false</span> }
+        <span class="k">if let</span> a = r.appID, a != e.appID { <span class="k">return false</span> }
+        <span class="k">return true</span>
+    }
+
+    <span class="k">private func</span> invalidate() {
+        epoch &+= 1     <span class="c">// every cached key is now unreachable. O(1).</span>
+    }                  <span class="c">// walking the cache would be O(n) under a lock.</span>
+}</code></pre>
+
+  <h4>The five things to say while writing it</h4>
+  <ol>
+    <li><strong>Default allow.</strong> "No rule matched → allow. On an endpoint, default-deny means a broken policy set bricks every Mac in the fleet. That's a product decision, not a technical one — I'd make it configurable but ship allow."</li>
+    <li><strong>Deterministic tie-break.</strong> "Two rules, same priority, both match — if the answer depends on dictionary iteration order, the same event gets different verdicts on two machines. Compliance needs 'why was this blocked' to have exactly one answer."</li>
+    <li><strong>Epoch invalidation.</strong> "Rule set changed → bump an integer → every cached key is stale by construction. O(1). Walking the cache to invalidate is O(n) while holding a lock on the hot path."</li>
+    <li><strong>Idempotency, asymmetric.</strong> "<code>remove</code> is idempotent, <code>add</code> isn't. That's deliberate — removing something that's already gone converges on the state you wanted, but silently overwriting a rule loses the audit trail."</li>
+    <li><strong>Ordered <code>all()</code>.</strong> "Sorted, not hash order. The moment iteration order leaks out of the API someone will depend on it and it isn't stable across launches."</li>
+  </ol>
+
+  <div class="verdict watch">
+    <p><span class="chip watch">The follow-up he'll ask</span> "This <code>filter</code> over every rule is O(n) per evaluate — what if there are 10,000 rules?" <strong>Have the answer ready:</strong> "Right — I'd index by the most selective dimension. A path trie narrows thousands of rules to a handful in O(depth), then I linear-scan the survivors. I started with the linear scan deliberately: it's correct, it's testable, and the index is a drop-in optimisation once I have the tests to prove it didn't change behaviour. If you want, I'll add the trie now." That answer is better than having written the trie, because it shows judgement about <em>when</em> to optimise — which is what a four-year engineer coming from cloud is actively learning and will recognise.</p>
+  </div>
+</section>
+
+<!-- 16 -->
+<section id="s16">
+  <div class="eyebrow">§16 · Worked example</div>
+  <h3 class="s">The event batcher — his home turf</h3>
+  <p class="lede">Kafka producer semantics, on a laptop. If this is the problem, you have an unfair advantage: speak his dialect.</p>
+
+  <pre><code><span class="c">/// Batches events and flushes on size OR time, whichever first.</span>
+<span class="c">/// Bounded — drops with a counter rather than growing without limit.</span>
+<span class="c">/// This is a Kafka producer's linger.ms + batch.size + buffer.memory,</span>
+<span class="c">/// scaled down to one endpoint. Say that out loud.</span>
+<span class="k">final class</span> EventBatcher {
+
+    <span class="k">enum</span> DropPolicy { <span class="k">case</span> dropOldest, dropNewest }
+
+    <span class="k">private var</span> buffer: [Event] = []
+    <span class="k">private let</span> maxBatch: Int          <span class="c">// batch.size</span>
+    <span class="k">private let</span> maxWait: TimeInterval  <span class="c">// linger.ms</span>
+    <span class="k">private let</span> maxBuffer: Int         <span class="c">// buffer.memory</span>
+    <span class="k">private let</span> policy: DropPolicy
+    <span class="k">private let</span> clock: Clock
+    <span class="k">private let</span> sink: ([Event]) -&gt; Bool   <span class="c">// false = upload failed → retry</span>
+    <span class="k">private var</span> lastFlush: TimeInterval
+
+    <span class="k">private(set) var</span> accepted = 0, flushed = 0, dropped = 0, retries = 0
+
+    <span class="k">init</span>(maxBatch: Int = 100, maxWait: TimeInterval = 5,
+         maxBuffer: Int = 10_000, policy: DropPolicy = .dropOldest,
+         clock: Clock, sink: @escaping ([Event]) -&gt; Bool) {
+        precondition(maxBatch &gt; 0 && maxBuffer &gt;= maxBatch,
+                     <span class="s">"buffer must hold at least one batch"</span>)
+        self.maxBatch = maxBatch; self.maxWait = maxWait
+        self.maxBuffer = maxBuffer; self.policy = policy
+        self.clock = clock; self.sink = sink
+        lastFlush = clock.now
+        buffer.reserveCapacity(maxBatch)
+    }
+
+    <span class="c">/// - Returns: false if the event was dropped due to backpressure.</span>
+    <span class="c">/// - Complexity: O(1) amortised; O(batch) when a flush triggers.</span>
+    <span class="k">@discardableResult</span>
+    <span class="k">func</span> ingest(_ e: Event) -&gt; Bool {
+        <span class="k">if</span> buffer.count &gt;= maxBuffer {
+            dropped += 1
+            <span class="k">switch</span> policy {
+            <span class="k">case</span> .dropNewest: <span class="k">return false</span>              <span class="c">// reject the new one</span>
+            <span class="k">case</span> .dropOldest: buffer.removeFirst()      <span class="c">// O(n) — see note</span>
+            }
+        }
+        buffer.append(e)
+        accepted += 1
+        <span class="k">if</span> buffer.count &gt;= maxBatch { flush() }        <span class="c">// size trigger</span>
+        <span class="k">return true</span>
+    }
+
+    <span class="c">/// Call from a timer. Idempotent — flushing an empty buffer is a no-op.</span>
+    <span class="k">func</span> tick() {
+        <span class="k">if</span> !buffer.isEmpty && clock.now - lastFlush &gt;= maxWait { flush() }
+    }
+
+    <span class="c">/// - IDEMPOTENT: no-op on an empty buffer.</span>
+    <span class="k">func</span> flush() {
+        <span class="k">guard</span> !buffer.isEmpty <span class="k">else</span> { lastFlush = clock.now; <span class="k">return</span> }
+        <span class="k">let</span> batch = buffer
+        <span class="k">if</span> sink(batch) {
+            flushed += batch.count
+            buffer.removeAll(keepingCapacity: <span class="k">true</span>)
+        } <span class="k">else</span> {
+            <span class="c">// Sink failed. KEEP the batch — at-least-once beats at-most-once</span>
+            <span class="c">// for audit data. The backend dedups on (device, seq).</span>
+            retries += 1
+        }
+        lastFlush = clock.now
+    }
+}</code></pre>
+
+  <h4>The four things to say — each one is aimed at him</h4>
+  <ol>
+    <li><strong>Name the analogy.</strong> "This is <code>batch.size</code>, <code>linger.ms</code> and <code>buffer.memory</code> from a Kafka producer, scaled to one endpoint. Same three knobs, same three failure modes." <span class="chip allow">He will visibly relax</span></li>
+    <li><strong>At-least-once, not at-most-once.</strong> "On a flush failure I keep the batch rather than dropping it, and the backend dedups on (device, sequence). Exactly-once on a laptop that sleeps mid-upload is a fantasy — at-least-once plus an idempotent consumer is the real answer." That's his language, verbatim.</li>
+    <li><strong>Two queues, two policies.</strong> "Drop-oldest is right for telemetry, where recent data is more valuable. It's <em>wrong</em> for audit records — those are a compliance obligation and you may not lose them. So a real agent has two buffers with different drop policies. Asking which one this is matters more than the implementation."</li>
+    <li><strong>The <code>dropped</code> counter.</strong> "A security product that silently discards events is lying to its customer about coverage. Every drop is counted and exported."</li>
+  </ol>
+
+  <div class="verdict deny">
+    <p><span class="chip deny">Catch your own bug</span> <code>buffer.removeFirst()</code> on an Array is <strong>O(n)</strong> — it shifts everything. Under drop-oldest at a full buffer, that's O(n) per ingest, and your hot path just became quadratic. <strong>Say this out loud when you notice it:</strong> "Actually — <code>removeFirst</code> on an Array is O(n), so at a full buffer I'm shifting 10,000 elements per event. I want a ring buffer or a deque here. Let me note that and either fix it or flag it depending on our clock." Finding your own performance bug, mid-flow, unprompted, is the single most valuable thirty seconds available in this entire round. It's the closest he'll get to watching you actually work.</p>
+  </div>
+</section>
+
+<!-- 17 -->
+<section id="s17">
+  <div class="eyebrow">§17 · Weight this heavily</div>
+  <h3 class="s">Tests — his home turf</h3>
+  <p class="lede">His career started in QA automation. Selenium, Playwright, ten months of it before he ever wrote product code. Your tests will get more scrutiny from him than from anyone else in this loop.</p>
+
+  <h4>The harness — write it at minute 12, not minute 60</h4>
+  <pre><code><span class="k">var</span> _pass = 0, _fail = 0
+
+<span class="k">func</span> expect(_ c: @autoclosure () -&gt; Bool, _ what: String,
+            _ f: String = #file, _ l: Int = #line) {
+    <span class="k">if</span> c() { _pass += 1 }
+    <span class="k">else</span> { _fail += 1
+           print(<span class="s">"✗ \(what)  [\((f <span class="k">as</span> NSString).lastPathComponent):\(l)]"</span>) }
+}
+
+<span class="k">func</span> expectEqual&lt;T: Equatable&gt;(_ a: T, _ b: T, _ what: String,
+                              _ f: String = #file, _ l: Int = #line) {
+    expect(a == b, <span class="s">"\(what) — expected \(b), got \(a)"</span>, f, l)
+}
+
+<span class="k">func</span> expectThrows&lt;E: Error &amp; Equatable&gt;(_ expected: E, _ what: String,
+                                       _ body: () <span class="k">throws</span> -&gt; Void) {
+    <span class="k">do</span> { <span class="k">try</span> body(); expect(<span class="k">false</span>, <span class="s">"\(what) — expected throw, got success"</span>) }
+    <span class="k">catch let</span> e <span class="k">as</span> E { expectEqual(e, expected, what) }
+    <span class="k">catch</span> { expect(<span class="k">false</span>, <span class="s">"\(what) — wrong error type: \(error)"</span>) }
+}
+
+<span class="k">func</span> suite(_ n: String, _ b: () -&gt; Void) { print(<span class="s">"\n── \(n) ──"</span>); b() }
+<span class="k">func</span> report() -&gt; Int { print(<span class="s">"\n\(_pass) passed, \(_fail) failed"</span>); <span class="k">return</span> _fail == 0 ? 0 : 1 }</code></pre>
+  <p><code>expectThrows</code> is the one nobody writes and it's the one an ex-QA engineer will notice is missing. Include it.</p>
+
+  <h4>The test plan — say the categories out loud before you write them</h4>
+  <pre><code>suite(<span class="s">"empty state"</span>) {
+    <span class="k">let</span> s = InMemoryPolicyService()
+    expect(s.all().isEmpty, <span class="s">"fresh service has no rules"</span>)
+    expectEqual(s.evaluate(anyEvent), .allow, <span class="s">"no rules ⇒ default allow"</span>)
+    expect(s.rule(<span class="s">"nope"</span>) == <span class="k">nil</span>, <span class="s">"missing rule returns nil, not a crash"</span>)
+}
+
+suite(<span class="s">"core behaviour"</span>) {
+    <span class="k">let</span> s = InMemoryPolicyService()
+    <span class="k">try</span>! s.add(Rule(id: <span class="s">"r1"</span>, pathPrefix: <span class="s">"/finance"</span>, appID: <span class="k">nil</span>,
+                    priority: 1, verdict: .deny))
+    expectEqual(s.evaluate(event(path: <span class="s">"/finance/q3.xlsx"</span>)), .deny, <span class="s">"prefix matches"</span>)
+    expectEqual(s.evaluate(event(path: <span class="s">"/tmp/x"</span>)),          .allow, <span class="s">"no match ⇒ allow"</span>)
+}
+
+suite(<span class="s">"error contract"</span>) {
+    <span class="k">let</span> s = InMemoryPolicyService()
+    <span class="k">try</span>! s.add(rule(id: <span class="s">"r1"</span>))
+    expectThrows(PolicyError.duplicateID(<span class="s">"r1"</span>), <span class="s">"duplicate add throws"</span>) {
+        <span class="k">try</span> s.add(rule(id: <span class="s">"r1"</span>))
+    }
+    expectThrows(PolicyError.invalidRule(reason: <span class="s">"empty id"</span>), <span class="s">"empty id rejected"</span>) {
+        <span class="k">try</span> s.add(rule(id: <span class="s">""</span>))
+    }
+}
+
+suite(<span class="s">"idempotency"</span>) {                     <span class="c">// ← the REST-brain test</span>
+    <span class="k">let</span> s = InMemoryPolicyService()
+    <span class="k">try</span>! s.add(rule(id: <span class="s">"r1"</span>))
+    expect(s.remove(<span class="s">"r1"</span>) != <span class="k">nil</span>, <span class="s">"first remove returns the rule"</span>)
+    expect(s.remove(<span class="s">"r1"</span>) == <span class="k">nil</span>, <span class="s">"second remove is a no-op, not an error"</span>)
+    expect(s.remove(<span class="s">"never-existed"</span>) == <span class="k">nil</span>, <span class="s">"removing unknown is a no-op"</span>)
+}
+
+suite(<span class="s">"determinism"</span>) {                     <span class="c">// ← almost nobody writes this</span>
+    <span class="c">// Two rules, same priority, both match. The verdict must be the</span>
+    <span class="c">// same every run — not whatever the dictionary hands us first.</span>
+    <span class="k">for</span> _ <span class="k">in</span> 0..&lt;100 {
+        <span class="k">let</span> s = InMemoryPolicyService()
+        <span class="k">try</span>! s.add(Rule(id: <span class="s">"a"</span>, pathPrefix: <span class="s">"/x"</span>, appID: <span class="k">nil</span>, priority: 5, verdict: .deny))
+        <span class="k">try</span>! s.add(Rule(id: <span class="s">"b"</span>, pathPrefix: <span class="s">"/x"</span>, appID: <span class="k">nil</span>, priority: 5, verdict: .allow))
+        expectEqual(s.evaluate(event(path: <span class="s">"/x/y"</span>)), .allow,
+                    <span class="s">"tie broken deterministically by id"</span>)
+    }
+}
+
+suite(<span class="s">"cache coherence"</span>) {                 <span class="c">// ← the bug hunt</span>
+    <span class="k">let</span> s = InMemoryPolicyService()
+    <span class="k">try</span>! s.add(Rule(id: <span class="s">"r1"</span>, pathPrefix: <span class="s">"/x"</span>, appID: <span class="k">nil</span>, priority: 1, verdict: .deny))
+    expectEqual(s.evaluate(event(path: <span class="s">"/x/y"</span>)), .deny, <span class="s">"cached deny"</span>)
+    s.remove(<span class="s">"r1"</span>)
+    expectEqual(s.evaluate(event(path: <span class="s">"/x/y"</span>)), .allow,
+                <span class="s">"STALE CACHE: removing the rule must change the verdict"</span>)
+}
+
+suite(<span class="s">"time"</span>) {
+    <span class="k">let</span> clk = FakeClock(0)                <span class="c">// injected — no sleep()</span>
+    <span class="k">var</span> sent: [[Event]] = []
+    <span class="k">let</span> b = EventBatcher(maxBatch: 100, maxWait: 5, clock: clk) { sent.append($0); <span class="k">return true</span> }
+    b.ingest(anyEvent)
+    b.tick(); expect(sent.isEmpty, <span class="s">"no flush before linger expires"</span>)
+    clk.advance(6)
+    b.tick(); expectEqual(sent.count, 1, <span class="s">"flush after linger expires"</span>)
+}
+
+suite(<span class="s">"invariant under random ops"</span>) {      <span class="c">// ← worth three normal tests</span>
+    <span class="k">let</span> c = LRUCache&lt;Int,Int&gt;(capacity: 8)
+    <span class="k">for</span> i <span class="k">in</span> 0..&lt;10_000 {
+        Bool.random() ? { _ = c.get(Int.random(in: 0..&lt;20)) }()
+                      : c.put(Int.random(in: 0..&lt;20), i)
+        expect(c.checkInvariant(), <span class="s">"invariant broken at op \(i)"</span>)
+    }
+}</code></pre>
+
+  <div class="callout">
+    <h5>The three tests that separate you from every other candidate</h5>
+    <p><strong>1 · Cache coherence.</strong> Add a rule, evaluate (caches), remove the rule, evaluate again. If your epoch logic is wrong you'll return the stale deny — and this is the actual bug the design exists to prevent. Testing your own hardest bug is the flex.</p>
+    <p><strong>2 · Determinism under repetition.</strong> Run the same tie-break 100 times. Swift randomises the hash seed per process, so if you leaked iteration order into your verdict, it'll pass locally and fail in CI three weeks later. He's from a QA background; flaky tests are his personal nemesis.</p>
+    <p style="margin-bottom:0"><strong>3 · The invariant under random ops.</strong> 10,000 random operations, assert the structural invariant after each. It's a property test in three lines and it finds things example-based tests never will.</p>
+  </div>
+
+  <div class="say">"I'd rather write six tests that each pin down one behaviour of the contract than twenty that walk the happy path. And the two I care most about are the coherence test — because a stale cache after a policy change is the actual bug this design exists to prevent — and the determinism loop, because Swift randomises the hash seed per process, so an order-dependent tie-break passes on my machine and fails in CI a month later. Flaky tests are worse than no tests; they train people to hit re-run."</div>
+  <p class="footnote">That last sentence is written for Aayush specifically. Ten months of Selenium means he has personally been destroyed by flaky tests. It will land.</p>
+</section>
+
+<!-- 18 -->
+<section id="s18">
+  <div class="eyebrow">§18</div>
+  <h3 class="s">Driver code</h3>
+  <pre><code><span class="c">// ── main.swift ───────────────────────────────────────────────</span>
+<span class="k">func</span> runDemo() {
+    print(<span class="s">"\n═══ SCENARIO: DLP policy on an endpoint ═══\n"</span>)
+    <span class="k">let</span> s = InMemoryPolicyService()
+    <span class="k">try</span>! s.add(Rule(id: <span class="s">"finance-deny"</span>, pathPrefix: <span class="s">"/Users/x/Finance"</span>,
+                    appID: <span class="k">nil</span>, priority: 10, verdict: .deny))
+    <span class="k">try</span>! s.add(Rule(id: <span class="s">"ide-readonly"</span>, pathPrefix: <span class="s">"/Users/x/repo"</span>,
+                    appID: <span class="s">"com.microsoft.VSCode"</span>, priority: 5, verdict: .readOnly))
+
+    <span class="k">let</span> events = [
+        (<span class="s">"/Users/x/Finance/q3.xlsx"</span>, <span class="s">"com.apple.Numbers"</span>),
+        (<span class="s">"/Users/x/repo/main.swift"</span>, <span class="s">"com.microsoft.VSCode"</span>),
+        (<span class="s">"/Users/x/repo/main.swift"</span>, <span class="s">"com.apple.Terminal"</span>),
+        (<span class="s">"/tmp/scratch.txt"</span>,         <span class="s">"com.apple.TextEdit"</span>),
+    ]
+
+    print(<span class="s">"PATH                             APP                      VERDICT"</span>)
+    print(<span class="s">"───────────────────────────────  ───────────────────────  ───────"</span>)
+    <span class="k">for</span> (p, a) <span class="k">in</span> events {
+        <span class="k">let</span> v = s.evaluate(Event(path: p, appID: a))
+        print(<span class="s">"\(pad(p,31))  \(pad(a,23))  \(v)"</span>)
+    }
+
+    <span class="c">// SHOW THE FAILURE CASES TOO. Success-only output is a demo;</span>
+    <span class="c">// showing the edges is evidence.</span>
+    print(<span class="s">"\n── error paths ──"</span>)
+    <span class="k">do</span> { <span class="k">try</span> s.add(Rule(id: <span class="s">"finance-deny"</span>, ...)) }
+    <span class="k">catch</span> { print(<span class="s">"duplicate add → \(error)"</span>) }
+    print(<span class="s">"remove unknown → \(String(describing: s.remove(<span class="s">"ghost"</span>)))"</span>)
+
+    print(<span class="s">"\nstats: \(s.stats())"</span>)
+}
+
+runTests()
+runDemo()
+exit(report())</code></pre>
+  <div class="verdict allow">
+    <p><span class="chip allow">Why a table</span> He's reading your output on a laptop on Zoom while thinking about his next question. A formatted table is instantly legible; a wall of <code>print(x)</code> isn't. Four extra lines. It's the last thing he sees before he writes his notes.</p>
+  </div>
+</section>
+
+<!-- 19 -->
+<section id="s19">
+  <div class="eyebrow">§19</div>
+  <h3 class="s">What he'll ask</h3>
+  <details class="q"><summary>"Why this data structure?"</summary><div class="body"><p>Give two options and a reason. "Map plus a doubly-linked list. Map for O(1) find, list for O(1) reorder — the map stores node references, not values, which is the whole trick. The alternative is an array with a timestamp and a linear scan for the victim, which is O(n) per eviction. On a hot path where I'm doing this per file open, that's not viable." Never just name the structure.</p></div></details>
+  <details class="q"><summary>"What's the complexity?"</summary><div class="body"><p>Per method, and say <em>amortised</em> or <em>average</em> where it's true. "get and put are O(1) average — the hash map is O(n) worst case on adversarial keys, but that's not a threat model that applies to an inode key. The eviction is O(1) because I hold the tail pointer."</p></div></details>
+  <details class="q"><summary>"How would you make this thread-safe?"</summary><div class="body"><p>§12. And the killer addition: "I'd put the lock outside the container, not inside. A 'thread-safe' collection still can't do 'get, then put if absent' atomically, so baking the lock in gives callers false confidence. Lock the operation."</p></div></details>
+  <details class="q"><summary>"What if there were 10 million entries?"</summary><div class="body"><p>Memory first: "the node overhead dominates — an ARC-managed class per entry is 16 bytes of header plus the pointers before you've stored anything. At 10M I'd move to an array-backed node pool with Int32 indices: no ARC, better locality, and a fixed allocation. Then I'd question whether it belongs in memory at all — that's a mmap'd file or an on-disk store with an in-memory hot tier."</p></div></details>
+  <details class="q"><summary>"How would you test this?"</summary><div class="body"><p>Don't list test names — give <em>categories</em>: contract (each documented behaviour has a test), boundaries (capacity 1, exactly full, one over), errors (expectThrows for each case), idempotency, determinism under repetition, the structural invariant under random ops, and time via an injected clock. Then say: "and I'd keep the lock out of the data structure so I can test the logic deterministically without threads at all."</p></div></details>
+  <details class="q"><summary>"What would you change for production?"</summary><div class="body"><p>"Metrics — hit rate, eviction rate, drop count. And I'd argue eviction rate is a security metric, not a perf metric: on an endpoint, an eviction is a cache miss is a verdict I can't compute in time is a fail-open. So it belongs on the same dashboard as coverage. Then: a memory cap rather than an entry count, because entry sizes vary. And the index I skipped."</p></div></details>
+  <details class="q"><summary>"Have you used ES / System Extensions?" — he'll enjoy this</summary><div class="body"><p>Yes, and he has too, so this is a conversation not an exam. Keep it peer-level and concrete: AUTH vs NOTIFY, the deadline and what happens when you miss it, why classification can't live on the callback path, muting your own audit token before you subscribe. Then <em>ask him back</em>: "you did both the ES and the network sensors at Trellix — did you run AUTH in production or stay notify-only?" That's a real question and he'll have a real answer.</p></div></details>
+  <details class="q"><summary>"Why are you leaving JumpCloud?"</summary><div class="body"><p>Same answer as you gave Prasad, word for word. "I want the endpoint to be the product, not a feature." One sentence, no badmouthing, then stop. He may not ask — it's not his round — but be consistent if he does, because notes get compared.</p></div></details>
+</section>
+
+<!-- 20 -->
+<section id="s20">
+  <div class="eyebrow">§20</div>
+  <h3 class="s">Ask him — you said "no questions" twice with Prasad</h3>
+  <p class="lede">Don't repeat that. Two or three, and make at least one about <em>his</em> work, genuinely.</p>
+  <ul>
+    <li><strong>"You did both the endpoint and network sensors at Trellix — how does that compare to what you're building here? Is Nightfall's agent doing ES and NetworkExtension in one system extension or split?"</strong> <span class="chip allow">Best question</span> — it's about his experience, it's technically real, and the answer tells you something you actually want to know.</li>
+    <li>"You went Trellix → cloud → back to macOS. What pulled you back?" — a genuine, human question. He'll enjoy answering it and you'll learn what he values.</li>
+    <li>"Is the agent mostly Swift, or is there still C++ in there?" — practical, and tells you what Monday's language choice means for the job.</li>
+    <li>"What does the test story look like for the agent? Coming from a QA background you must have opinions." — flattering but true, and it's the thing he most likely wishes someone would ask.</li>
+    <li>"What's the thing about the codebase that surprised you when you joined?" — open, honest, and the answer is usually genuinely informative.</li>
+  </ul>
+  <div class="verdict allow">
+    <p><span class="chip allow">The mechanism</span> Asking an interviewer about their own work isn't flattery — it's the fastest way to convert an audition into a conversation, and conversations are what people advocate for afterwards. It also costs you nothing: you have the answers to his technical questions already.</p>
+  </div>
+</section>
+
+<!-- 21 -->
+<section id="s21">
+  <div class="eyebrow">§21</div>
+  <h3 class="s">Traps</h3>
+  <div class="verdict deny"><p><span class="chip deny">1</span> <strong>Treating him as junior.</strong> He built ES and NE sensors at Trellix for 15 months. He owns DLP features at Nightfall now. The framing you walked in with is wrong and it will leak. Fix it before Monday, not during.</p></div>
+  <div class="verdict deny"><p><span class="chip deny">2</span> <strong>No tests.</strong> Ex-QA. Explicitly in the brief. Minute 45, you stop coding.</p></div>
+  <div class="verdict deny"><p><span class="chip deny">3</span> <strong>Talking for four minutes.</strong> Zoom latency means he won't interrupt — he'll just wait, and you'll lose the signal about what he wanted. Pause every 60 seconds.</p></div>
+  <div class="verdict deny"><p><span class="chip deny">4</span> <strong>Over-clarifying.</strong> Six questions, seven minutes, commit. Endless clarification reads as avoidance, not rigour.</p></div>
+  <div class="verdict deny"><p><span class="chip deny">5</span> <strong>Perfection paralysis.</strong> Don't refactor at minute 40. "I'd extract this into a protocol in a real codebase; inlining for time" — then move.</p></div>
+  <div class="verdict deny"><p><span class="chip deny">6</span> <strong>Ignoring the domain.</strong> You're at a DLP company. Make the cache a <em>verdict</em> cache. Use their vocabulary. Free points, every time.</p></div>
+  <div class="verdict allow"><p><span class="chip allow">7</span> <strong>The move that wins:</strong> catch your own bug, out loud, mid-flow. "Wait — <code>removeFirst</code> on an Array is O(n), so at a full buffer I'm shifting ten thousand elements per event. I want a ring buffer here." That's the closest he gets to watching you actually work, and it's worth more than the rest of the round combined.</p></div>
+</section>
+
+<!-- 22 -->
+<section id="s22">
+  <div class="eyebrow">§22</div>
+  <h3 class="s">3-day plan — today is Friday</h3>
+  <table>
+    <tr><th>When</th><th>Do</th><th>Why</th></tr>
+    <tr><td><strong>Fri eve</strong></td><td>Write the <strong>LRU cache</strong> from scratch in Swift, timed, 25 min, no reference. Then the harness from memory. Then the tests. Repeat the harness until it's automatic.</td><td>Highest-probability core. Must be muscle memory so your mouth is free to narrate.</td></tr>
+    <tr><td><strong>Sat AM</strong></td><td><strong>CRUD policy service</strong> (§15) end to end: contract, impl, six test suites, driver. Timed to 75 min, out loud, on a real clock.</td><td>Most likely actual problem. One full dress rehearsal beats five partial ones.</td></tr>
+    <tr><td><strong>Sat PM</strong></td><td><strong>Event batcher</strong> (§16) + <strong>rate limiter</strong>. Practise the Kafka analogy sentence until it's natural.</td><td>His home turf. The unfair advantage.</td></tr>
+    <tr><td><strong>Sun AM</strong></td><td>Swift fundamentals §7–13, out loud. Especially: value vs reference, weak vs unowned, the error three-way split, Hashable/== consistency, why an actor can't be used from an ES callback.</td><td>He'll probe conceptually. Precise answers, fast.</td></tr>
+    <tr><td><strong>Sun PM</strong></td><td>Re-read §1 and §2. Write down the Trellix opening line. Decide your notice-period number.</td><td>The dynamic is the actual risk. And the notice thing is still unresolved from Prasad's call.</td></tr>
+    <tr><td><strong>Mon 2:00</strong></td><td>Xcode open with an empty console project. Font size up. Camera check. Read §22's box below. Nothing else.</td><td>Cramming at 2pm makes you worse.</td></tr>
+  </table>
+
+  <div class="callout">
+    <h5>Read this at 2:25</h5>
+    <p>Open with the Trellix line. He's a peer, not a gatekeeper. Confirm the tooling. Let him finish explaining before you start solving. Announce the clock and let <em>him</em> set the weighting.</p>
+    <p>Six questions, then commit. Harness at minute 12. Contract as comments before code. Say the invariant. Narrate the decisions, not the syntax. <strong>Pause every sixty seconds.</strong></p>
+    <p><strong>Minute 45: stop implementing.</strong> Tests are not the third deliverable with this interviewer — they might be the first. Include <code>expectThrows</code>, the idempotency suite, the cache-coherence test, and the determinism loop.</p>
+    <p>Driver as a table, including the error paths. Close with the production delta. Ask him about the Trellix sensors.</p>
+    <p style="margin-bottom:0"><strong>Commit first. Caveat second. Never both at once.</strong></p>
+  </div>
+</section>
+
+<hr>
+<p class="footnote">Built from Sabin's round breakdown, the interview confirmation for Mon 20 Jul 2:30 PM IST, Aayush Ashok's public LinkedIn profile, and your Round 1 transcript with Prasad. Code is illustrative skeleton for drilling — type it, compile it, break it. Where this says "he'll ask X," that's inference from his background, not inside information.</p>
+</main>
+</div>
+</body>
+</html>

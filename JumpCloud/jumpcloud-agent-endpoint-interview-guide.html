@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JumpCloud Agent — Complete Endpoint Architecture Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --surface: #ffffff;
+      --surface2: #f3f1ec;
+      --border: #ddd8ce;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #1d4ed8;
+      --accent-light: #dbeafe;
+      --green: #047857;
+      --green-bg: #ecfdf5;
+      --amber: #b45309;
+      --amber-bg: #fffbeb;
+      --purple: #6d28d9;
+      --purple-bg: #f5f3ff;
+      --radius: 14px;
+      --mono: "IBM Plex Mono", ui-monospace, monospace;
+      --sans: "Source Sans 3", system-ui, sans-serif;
+      --serif: "Source Serif 4", Georgia, serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 18px; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 1rem;
+    }
+    p { margin-bottom: 1rem; color: var(--text); }
+    ul, ol { margin: 0 0 1rem 1.4rem; }
+    li { margin-bottom: .45rem; }
+
+    header {
+      background: linear-gradient(180deg, #eff6ff 0%, var(--bg) 100%);
+      border-bottom: 2px solid var(--border);
+      padding: 2.5rem 2rem 0;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    .header-inner { max-width: 1140px; margin: 0 auto; }
+    header h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.75rem, 4vw, 2.4rem);
+      font-weight: 700;
+      margin-bottom: .6rem;
+      color: #0f172a;
+      line-height: 1.25;
+    }
+    header .subtitle {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 860px;
+      margin-bottom: 1.2rem;
+      line-height: 1.6;
+    }
+    .meta-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-bottom: 1.2rem; }
+    .pill {
+      font-size: .82rem; font-weight: 600; padding: .35rem .8rem; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    }
+    .pill-accent { background: var(--accent-light); color: var(--accent); border-color: #93c5fd; }
+
+    nav.tabs {
+      display: flex; flex-wrap: wrap; gap: .3rem;
+      border-top: 1px solid var(--border); padding-top: .9rem;
+    }
+    nav.tabs a {
+      text-decoration: none; color: var(--muted); font-size: .88rem; font-weight: 600;
+      padding: .55rem .95rem; border-radius: 10px 10px 0 0;
+    }
+    nav.tabs a:hover { color: var(--accent); background: var(--surface2); }
+    nav.tabs a.active {
+      color: var(--accent); background: var(--bg);
+      border: 1px solid var(--border); border-bottom: 2px solid var(--bg); margin-bottom: -1px;
+    }
+
+    main { max-width: 1140px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+    section { margin-bottom: 4rem; scroll-margin-top: 160px; }
+    section > h2 {
+      font-family: var(--serif);
+      font-size: 1.75rem; font-weight: 700; margin-bottom: .75rem;
+      color: #0f172a;
+      padding-bottom: .5rem;
+      border-bottom: 3px solid var(--accent);
+    }
+    .section-lead {
+      color: var(--muted);
+      font-size: 1.08rem;
+      margin-bottom: 1.5rem;
+      max-width: 900px;
+      line-height: 1.7;
+    }
+    h3 {
+      font-family: var(--serif);
+      font-size: 1.3rem; font-weight: 700;
+      margin: 2rem 0 .75rem;
+      color: #1e3a5f;
+    }
+    h4 {
+      font-size: 1.05rem; font-weight: 700;
+      margin: 1.5rem 0 .5rem;
+      color: var(--muted);
+    }
+
+    .callout {
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--accent);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.35rem 1.5rem;
+      margin: 1.5rem 0;
+      font-size: 1.02rem;
+      line-height: 1.7;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .callout.interview { border-left-color: var(--green); background: var(--green-bg); }
+    .callout.warn { border-left-color: var(--amber); background: var(--amber-bg); }
+    .callout.security { border-left-color: var(--purple); background: var(--purple-bg); }
+    .callout strong { color: #0f172a; }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.35rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.03);
+    }
+    .card h4 { margin-top: 0; color: #0f172a; font-size: 1.1rem; }
+    .card p, .card li { font-size: .98rem; color: var(--muted); line-height: 1.65; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: .98rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      margin: 1.5rem 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.03);
+    }
+    th, td { padding: .85rem 1.1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; }
+    th {
+      background: var(--surface2); font-weight: 700; font-size: .88rem;
+      text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafaf9; }
+
+    code {
+      font-family: var(--mono); font-size: .88em;
+      background: #f5f5f4; padding: .15rem .45rem;
+      border-radius: 5px; color: #7c3aed;
+      border: 1px solid #e7e5e4;
+    }
+
+    .diagram-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.75rem;
+      margin: 1.5rem 0; overflow-x: auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,.03);
+    }
+
+    .flow-steps { display: flex; flex-wrap: wrap; gap: 0; margin: 1.5rem 0; }
+    .flow-step {
+      flex: 1; min-width: 150px;
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 1.1rem;
+    }
+    .flow-step .num {
+      display: inline-block; background: var(--accent); color: white;
+      width: 1.75rem; height: 1.75rem; border-radius: 50%;
+      text-align: center; line-height: 1.75rem;
+      font-size: .85rem; font-weight: 700; margin-bottom: .5rem;
+    }
+    .flow-step h4 { font-size: .95rem; margin: 0 0 .35rem; color: #0f172a; }
+    .flow-step p { font-size: .9rem; margin: 0; color: var(--muted); line-height: 1.5; }
+    .flow-arrow { display: flex; align-items: center; color: var(--accent); font-size: 1.3rem; padding: 0 .2rem; }
+
+    .layer-stack { display: flex; flex-direction: column; max-width: 600px; margin: 1.5rem 0; border-radius: var(--radius); overflow: hidden; }
+    .layer {
+      padding: 1rem 1.3rem; text-align: center;
+      font-weight: 600; font-size: 1rem;
+      border: 1px solid var(--border);
+    }
+    .layer-app { background: #dbeafe; color: #1e3a5f; }
+    .layer-tls { background: #d1fae5; color: #065f46; }
+    .layer-mtls { background: #fef3c7; color: #92400e; }
+    .layer-net { background: var(--surface2); color: var(--muted); }
+
+    .qa-block {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      margin: 1.25rem 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.03);
+    }
+    .qa-block .q {
+      font-family: var(--serif);
+      font-weight: 700; font-size: 1.15rem;
+      margin-bottom: .75rem; color: #1e3a5f;
+    }
+    .qa-block .a { font-size: 1.02rem; color: var(--text); line-height: 1.75; }
+    .qa-block .followup {
+      margin-top: 1rem; padding-top: 1rem;
+      border-top: 1px dashed var(--border);
+      font-size: .95rem; color: var(--muted);
+    }
+    .qa-block .followup strong { color: var(--amber); }
+
+    .toc-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+    }
+    .toc-box ol { columns: 2; column-gap: 2rem; margin: .5rem 0 0 1.2rem; }
+    .toc-box a { color: var(--accent); text-decoration: none; font-size: .98rem; }
+    .toc-box a:hover { text-decoration: underline; }
+
+    footer {
+      border-top: 2px solid var(--border);
+      padding: 2.5rem 2rem; text-align: center;
+      color: var(--muted); font-size: .95rem;
+      background: var(--surface);
+    }
+
+    @media (max-width: 700px) {
+      html { font-size: 16px; }
+      .toc-box ol { columns: 1; }
+      nav.tabs a { font-size: .8rem; padding: .45rem .65rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>JumpCloud Agent — Complete Architecture Guide</h1>
+    <p class="subtitle">
+      A detailed, interview-ready reference for how the JumpCloud endpoint agent works on-device,
+      how it communicates with cloud services, and how security is enforced at every layer.
+    </p>
+    <div class="meta-row">
+      <span class="pill pill-accent">Endpoint Agent Interview</span>
+      <span class="pill">Light mode · Large text</span>
+      <span class="pill">macOS · Windows · Linux</span>
+      <span class="pill">Go · mTLS · Poll · MQTT</span>
+    </div>
+    <nav class="tabs">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#lifecycle">Lifecycle</a>
+      <a href="#on-device">On Device</a>
+      <a href="#server">Server Interaction</a>
+      <a href="#poll">Poll Loop</a>
+      <a href="#security">Security</a>
+      <a href="#flows">Data Flows</a>
+      <a href="#failure">Failures</a>
+      <a href="#interview">Interview</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <h2>1. What Is the JumpCloud Agent?</h2>
+  <p class="section-lead">
+    The JumpCloud Agent is a cross-platform Go service that runs as a system daemon on every managed endpoint
+    (macOS, Windows, Linux). It is the bridge between the JumpCloud cloud directory and the local operating system.
+  </p>
+
+  <div class="callout interview">
+    <strong>Your 60-second interview answer:</strong>
+    "The JumpCloud Agent is a privileged system service written in Go that runs on every managed device.
+    On first install it enrolls using a one-time Connect Key, receives an mTLS client certificate, and registers
+    a system record in the cloud. After that, its core runtime is a long-poll loop to the Agent Server — the server
+    returns directives like update configuration, sync users, apply policies, or upgrade the agent. MQTT is used
+    only as a wake signal to poll sooner. Locally, the agent manages OS users, applies policies, runs osquery for
+    inventory, and exposes a gRPC API to tray apps and login window components. Security has two layers: mTLS
+    proves which device is calling the cloud, and user authentication (proxied to jumpcloud-auth) proves which
+    person is using the device."
+  </div>
+
+  <h3>What the Agent Is Responsible For</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>User &amp; Identity on Device</h4>
+      <p>Create local OS accounts for JumpCloud users, deactivate deleted users (never remove), sync passwords,
+      manage UID/GID, configure SSH/MFA settings via AuthConf from the cloud.</p>
+    </div>
+    <div class="card">
+      <h4>Policy &amp; Software Enforcement</h4>
+      <p>Apply JumpCloud policy templates, install software from App Catalog or Private Repo, manage trusted apps.
+      Anything not handled by native MDM (Apple/Microsoft) goes through the agent.</p>
+    </div>
+    <div class="card">
+      <h4>Visibility &amp; Reporting</h4>
+      <p>System Insights via osquery (inventory snapshots every 5 min – 2 hr), diagnostics on startup and every 2 hours,
+      event monitoring (logins, file changes, session events), metrics to Datadog.</p>
+    </div>
+    <div class="card">
+      <h4>Remote Administration</h4>
+      <p>Execute admin workflows (arbitrary command sequences), self-upgrade when server detects outdated version,
+      Windows KB patch installation, Remote Assist coordination, FDE recovery key management.</p>
+    </div>
+    <div class="card">
+      <h4>User Experience Components</h4>
+      <p>Local gRPC IPC with tray app (notifications, password change), login window plugin, Windows credential
+      providers, JumpCloud Go SSO, Endpoint Security extension on macOS.</p>
+    </div>
+    <div class="card">
+      <h4>Device Trust &amp; Login</h4>
+      <p>Proxy end-user login credentials to cloud for MFA and Conditional Access Policy evaluation.
+      Device authentication (mTLS) is separate from user authentication.</p>
+    </div>
+  </div>
+
+  <h3>What the Agent Is NOT</h3>
+  <ul>
+    <li>It is <strong>not</strong> an MDM server — Apple MDM and Microsoft MDM are separate services. The agent complements MDM for user management and non-MDM policies.</li>
+    <li>It does <strong>not</strong> maintain a persistent WebSocket — it uses HTTP long-poll with optional MQTT wake.</li>
+    <li>It does <strong>not</strong> store user passwords locally — login validation is proxied to the cloud.</li>
+    <li>Tray/login apps do <strong>not</strong> talk to the cloud directly — they use local gRPC to the agent.</li>
+  </ul>
+
+  <div class="toc-box">
+    <strong style="font-size:1.1rem;">Quick Navigation</strong>
+    <ol>
+      <li><a href="#architecture">Complete system architecture</a></li>
+      <li><a href="#lifecycle">Enrollment &amp; startup lifecycle</a></li>
+      <li><a href="#on-device">On-device components in depth</a></li>
+      <li><a href="#server">Every backend service &amp; endpoint</a></li>
+      <li><a href="#poll">Poll loop mechanics</a></li>
+      <li><a href="#security">Full security model</a></li>
+      <li><a href="#flows">Step-by-step data flows</a></li>
+      <li><a href="#failure">Failure modes &amp; recovery</a></li>
+      <li><a href="#interview">15+ interview Q&amp;A with follow-ups</a></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <h2>2. Complete System Architecture</h2>
+  <p class="section-lead">
+    The agent sits on the endpoint and talks to cloud services over HTTPS. It never calls jumpcloud-devices gRPC
+    directly — HAProxy terminates TLS/mTLS and routes to the Agent Server (SI), which internally uses devices-agent-api.
+  </p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TB
+  subgraph Device["Managed Endpoint"]
+    Agent["jumpcloud-agent<br/>Go binary, system service"]
+    DB[("agent.db SQLite")]
+    Files["client.key / client.crt<br/>ca.crt / jcagent.conf"]
+    Components["Tray · Login Window<br/>Credential Provider · Remote Assist"]
+    Agent --> DB
+    Agent --> Files
+    Agent <-->|"local gRPC"| Components
+  end
+
+  subgraph Edge["Edge / Load Balancer"]
+    LB["HAProxy<br/>TLS termination + mTLS client cert verify<br/>Injects X-SSL-CLIENT-* headers"]
+  end
+
+  subgraph Enrollment["Enrollment (one-time)"]
+    KS["Kickstart Server<br/>kickstart.jumpcloud.com"]
+  end
+
+  subgraph Runtime["Runtime (ongoing)"]
+    AS["Agent Server SI<br/>agent.jumpcloud.com"]
+    DAPI["devices-agent-api<br/>gRPC Poll handler"]
+    AS <-->|"gRPC internal"| DAPI
+  end
+
+  subgraph Supporting["Supporting Services"]
+    Auth["jumpcloud-auth<br/>Connect Keys, Device Trust, MFA"]
+    Dir["Directory API<br/>user/system graph"]
+    MQTT["AWS IoT MQTT<br/>wake signal only"]
+    Mongo[("MongoDB systems")]
+    Redis[("Redis pending certs")]
+  end
+
+  Agent -->|"HTTPS + Connect Key"| KS
+  Agent -->|"HTTPS mTLS"| LB
+  LB --> AS
+  KS --> Auth
+  KS --> Redis
+  AS --> Mongo
+  AS --> Auth
+  DAPI --> MQTT
+  MQTT -->|"subscribe systems/id/state"| Agent
+  DAPI --> Dir
+    </pre>
+  </div>
+
+  <h3>Three Cloud Services the Agent Cares About</h3>
+  <table>
+    <thead>
+      <tr><th>Service</th><th>URL</th><th>When Used</th><th>Auth</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Kickstart (public)</strong></td>
+        <td><code>kickstart.jumpcloud.com</code></td>
+        <td>CSR signing, config template download, CA bundle — before full enrollment</td>
+        <td>Connect Key in <code>x-connect-key</code> header</td>
+      </tr>
+      <tr>
+        <td><strong>Kickstart (private)</strong></td>
+        <td><code>private-kickstart.jumpcloud.com</code></td>
+        <td>CheckAccess, certificate renewal</td>
+        <td>mTLS + systemKey</td>
+      </tr>
+      <tr>
+        <td><strong>Agent Server</strong></td>
+        <td><code>agent.jumpcloud.com</code></td>
+        <td>Poll, config fetch, SI upload, metrics, user auth, everything post-enrollment</td>
+        <td>mTLS client cert + <code>x-system-id</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Why This Architecture?</h3>
+  <table>
+    <thead><tr><th>Design Choice</th><th>Reason</th><th>Tradeoff</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Single Go binary, cross-platform</td>
+        <td>One codebase for macOS/Windows/Linux; platform splits via build tags</td>
+        <td>Platform-specific code paths add complexity</td>
+      </tr>
+      <tr>
+        <td>HTTP long-poll (not WebSocket)</td>
+        <td>Works through corporate firewalls and HTTP proxies; no persistent connection state</td>
+        <td>Higher latency than push (mitigated by MQTT wake)</td>
+      </tr>
+      <tr>
+        <td>mTLS client certificates</td>
+        <td>Strong device identity without per-request tokens; cert binds to system record</td>
+        <td>Cert renewal lifecycle must be managed</td>
+      </tr>
+      <tr>
+        <td>Directive-driven control plane</td>
+        <td>Server pushes intent ("update config"); agent decides how to apply locally</td>
+        <td>Agent must handle every directive type; versioning coupling</td>
+      </tr>
+      <tr>
+        <td>Local gRPC for UI components</td>
+        <td>Tray/login run per-user without LocalSystem privileges</td>
+        <td>Extra IPC layer to maintain</td>
+      </tr>
+      <tr>
+        <td>SQLite on device</td>
+        <td>Known admin path, WAL mode, migrations — durable local state</td>
+        <td>Single writer bottleneck</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Repository Map (What Lives Where)</h3>
+  <table>
+    <thead><tr><th>Repo / Service</th><th>What It Owns for the Agent</th></tr></thead>
+    <tbody>
+      <tr><td><code>jumpcloud-agent</code></td><td>The binary: poll loop, registration, user mgmt, policies, events, local gRPC, SQLite</td></tr>
+      <tr><td><code>jumpcloud-devices</code> (agent-api)</td><td>Poll gRPC handler, directive generation, system flags, MQTT wakeup publishing</td></tr>
+      <tr><td>SI / Agent Server</td><td>HTTP API the agent calls: /poll, /policyconf, /authenticate, /systeminsights, etc.</td></tr>
+      <tr><td><code>jumpcloud-auth</code></td><td>Connect Key issuance/validation, Device Trust user auth, MFA, CAP</td></tr>
+      <tr><td><code>jumpcloud-macos-agent-apps</code></td><td>TrayApp, login window, service enroller — talk to agent via local gRPC only</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- LIFECYCLE -->
+<section id="lifecycle">
+  <h2>3. Agent Lifecycle — From Install to Runtime</h2>
+  <p class="section-lead">
+    Understanding the full lifecycle is critical for interviews. There are three distinct phases:
+    enrollment (one-time), startup (every boot), and runtime (continuous poll loop).
+  </p>
+
+  <h3>Phase A: Enrollment (First Install)</h3>
+  <p>Triggered by installer (MSI/pkg/deb) or when certificates are missing. The agent calls <code>sealAgent()</code> in <code>registration/</code>.</p>
+
+  <div class="flow-steps">
+    <div class="flow-step"><span class="num">1</span><h4>Generate certuuid</h4><p>Fresh UUID becomes the X.509 certificate Common Name. Prevents golden-image clone re-enrollment.</p></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="num">2</span><h4>Generate RSA key pair</h4><p>Private key saved to <code>client.key</code> with 0600 permissions. Never rotated on cert renewal.</p></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="num">3</span><h4>Get config template</h4><p><code>POST /GetRegistrationConf</code> with Connect Key. Returns initial <code>jcagent.conf</code> with server URLs.</p></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="num">4</span><h4>Sign CSR</h4><p><code>POST /SignCsr</code> — Kickstart signs with JumpCloud CA. Pending cert stored in Redis.</p></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="num">5</span><h4>Verify access</h4><p><code>GET /CheckAccess</code> via mTLS — confirms cert works before registration.</p></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="num">6</span><h4>Register system</h4><p><code>POST /registernewsystem</code> with system report. Receives <code>systemKey</code> (MongoDB ObjectId).</p></div>
+  </div>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Installer as Installer / Admin
+  participant Agent as JumpCloud Agent
+  participant KS as Kickstart Server
+  participant Auth as jumpcloud-auth
+  participant AS as Agent Server
+  participant Redis as Redis
+  participant DB as MongoDB
+
+  Installer->>Agent: Install with Connect Key
+  Agent->>Agent: Generate certuuid + RSA key pair
+
+  Agent->>KS: POST /GetRegistrationConf (x-connect-key)
+  KS->>Auth: Validate Connect Key
+  KS-->>Agent: jcagent.conf template
+
+  Agent->>KS: POST /SignCsr (CSR + certuuid)
+  KS->>KS: Sign with JumpCloud CA
+  KS->>Redis: Store pending cert (orgId + certuuid)
+  KS-->>Agent: Signed client.crt
+
+  Agent->>KS: GET /GetCACerts
+  KS-->>Agent: CA trust bundle (ca.crt)
+
+  Agent->>KS: GET /CheckAccess (mTLS)
+  KS-->>Agent: 200 OK
+
+  Agent->>AS: POST /registernewsystem (mTLS)
+  Note over Agent,AS: Sends connectKey, certuuid, hostname,<br/>serial, arch, OS version, network interfaces
+  AS->>Auth: Validate Connect Key
+  AS->>Redis: Fetch pending cert
+  AS->>DB: Create system record
+  AS-->>Agent: systemKey + full jcagent.conf
+
+  Note over Agent: Connect Key no longer used.<br/>All future auth = mTLS + systemKey.
+    </pre>
+  </div>
+
+  <h4>Registration Payload (what the agent sends)</h4>
+  <ul>
+    <li><code>templateId</code> — OS template (Windows=21, macOS=34, Linux varies by distro)</li>
+    <li><code>certuuid</code> — must match CSR CN and Redis pending cert entry</li>
+    <li><code>connectKey</code> — enrollment authorization</li>
+    <li><code>report</code> — hostname, serial number, architecture, OS version, network interfaces, FDE status, TPM version</li>
+  </ul>
+
+  <h4>Server-Side Validation (what the cloud checks)</h4>
+  <ol>
+    <li>Connect Key is valid and scoped to the correct org (via jumpcloud-auth gRPC or org-user lookup)</li>
+    <li>Pending certificate exists in Redis for org + certuuid pair</li>
+    <li>certuuid is globally unique — prevents cloned disk images from re-registering</li>
+    <li>System record created with certificate, MDM linkage (if applicable), hardware metadata</li>
+    <li>Agent receives <code>systemKey</code> stored permanently in <code>jcagent.conf</code></li>
+  </ol>
+
+  <h3>Phase B: Startup (Every Boot / Service Start)</h3>
+  <table>
+    <thead><tr><th>Step</th><th>macOS / Linux</th><th>Windows</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Enable panic stack dump (<code>defer StackDumpOnPanic</code>)</td><td>Same</td></tr>
+      <tr><td>2</td><td>Configure logging to <code>/var/log/jcagent.log</code></td><td>Log to <code>\Windows\Temp\jcagent.log</code></td></tr>
+      <tr><td>3</td><td>Acquire lockfile — bail if another agent instance running</td><td>Same (via Windows Service)</td></tr>
+      <tr><td>4</td><td>Load certs + <code>jcagent.conf</code></td><td>Same</td></tr>
+      <tr><td>5</td><td>Register if <code>systemKey</code> empty (re-enrollment)</td><td>Same</td></tr>
+      <tr><td>6</td><td>Wire all dependencies via constructor injection</td><td>Same</td></tr>
+      <tr><td>7</td><td>Initialize subsystems, write PID file</td><td>Send start command to Windows Service Manager</td></tr>
+      <tr><td>8</td><td>Start agent goroutines (dispatcher, push, events, etc.)</td><td>Same</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Phase C: Runtime (Continuous)</h3>
+  <p>Once started, these subsystems run concurrently as goroutines:</p>
+  <ul>
+    <li><strong>Dispatcher</strong> — poll loop (the heart of the agent)</li>
+    <li><strong>MQTT Push Client</strong> — subscribes for wake signals</li>
+    <li><strong>User Management</strong> — applies AuthConf when received</li>
+    <li><strong>Policy Manager</strong> — applies policy templates</li>
+    <li><strong>Software Apps</strong> — installs/uninstalls from catalog</li>
+    <li><strong>System Insights</strong> — osquery on configured intervals</li>
+    <li><strong>Event System</strong> — OS monitors → MUX → handlers</li>
+    <li><strong>Diagnostics</strong> — system report on startup + every 2 hours</li>
+    <li><strong>local gRPC Server</strong> — IPC for tray, login window, credential providers</li>
+    <li><strong>Metrics Queue</strong> — batches metrics for upload</li>
+  </ul>
+
+  <h3>Connect Key Types (How Devices Get Enrolled)</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Issued By</th><th>Scenario</th><th>Extra Validation</th></tr></thead>
+    <tbody>
+      <tr><td>Organization User</td><td>Admin Console</td><td>Admin manually installs .pkg / .msi / script</td><td>Admin needs Manage Devices permission</td></tr>
+      <tr><td>Apple MDM Device</td><td>jumpcloud-auth</td><td>Agent installed after DEP/ADE enrollment</td><td>Linked to MDM device ID</td></tr>
+      <tr><td>Microsoft MDM Device</td><td>jumpcloud-auth</td><td>Agent pushed via Intune after Windows MDM</td><td>Linked to Windows device UUID</td></tr>
+      <tr><td>System User</td><td>jumpcloud-auth</td><td>End-user self-install from User Portal</td><td>Org must enable user portal agent install</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ON DEVICE -->
+<section id="on-device">
+  <h2>4. On-Device Architecture (Deep Dive)</h2>
+  <p class="section-lead">
+    The agent is a single Go binary running as a system service. On Windows it runs as LocalSystem;
+    on macOS/Linux it runs as root. Per-user UI components communicate via local gRPC — they never touch the cloud.
+  </p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TB
+  subgraph AgentProcess["jumpcloud-agent process"]
+    Dispatch["Dispatcher<br/>Poll loop + directive routing"]
+    HTTP["jchttp Client<br/>mTLS, proxy, SSRF protection"]
+    Reg["Registration<br/>Enrollment + cert renewal"]
+    UM["User Management<br/>AuthConf → OS users"]
+    Policy["Policy Manager"]
+    SW["Software Apps"]
+    SI["System Insights<br/>osquery scheduler"]
+    Events["Event System"]
+    Push["MQTT Push Client"]
+    gRPC["local gRPC Server"]
+    Diag["Diagnostics"]
+    Metrics["Metrics Queue"]
+  end
+
+  subgraph Storage["Local Storage"]
+    SQLite[("agent.db<br/>WAL mode, single writer")]
+    Conf["jcagent.conf<br/>server URLs, systemKey, flags"]
+    Certs["client.key / client.crt / ca.crt"]
+  end
+
+  subgraph OSComponents["On-Device Components (separate processes)"]
+    Tray["Tray App"]
+    Login["Login Window"]
+    CP["Credential Provider"]
+    RA["Remote Assist Agent"]
+  end
+
+  Dispatch --> HTTP
+  Dispatch --> Push
+  Events --> SQLite
+  Conf --> SQLite
+  gRPC --> Tray
+  gRPC --> Login
+  gRPC --> CP
+  gRPC --> RA
+    </pre>
+  </div>
+
+  <h3>Core Components Explained</h3>
+
+  <h4>Dispatcher (<code>dispatch/dispatcher.go</code>)</h4>
+  <p>The heart of the agent. Runs an infinite loop that:</p>
+  <ol>
+    <li>Sends <code>GET /poll/{directiveID}</code> with mTLS and checksum headers</li>
+    <li>Receives: heartbeat (nothing to do), directive (action required), or error</li>
+    <li>Routes directive to registered listener function by name (e.g., <code>update_config</code> → <code>agent.updateAgentConf</code>)</li>
+    <li>Waits <code>PollDelaySeconds</code> (heartbeat) or <code>PollContinueSeconds</code> (after directive), unless MQTT triggers immediate poll</li>
+    <li>On error: Fibonacci backoff starting at 55s, 89s, capped at <code>MaxRetryDelayTime</code></li>
+    <li>Adds random jitter (up to 10s) to prevent thundering herd across thousands of agents</li>
+  </ol>
+
+  <h4>jchttp Client (<code>http/client.go</code>)</h4>
+  <ul>
+    <li>TLS 1.2 minimum — no insecure skip verify</li>
+    <li>Loads client cert from <code>client.key</code> + <code>client.crt</code></li>
+    <li>Verifies server against custom <code>ca.crt</code> bundle (JumpCloud CA only)</li>
+    <li>SSRF-safe redirect policy — won't follow redirects to private/internal IPs</li>
+    <li>HTTP proxy support for corporate environments</li>
+    <li>Rate limiting and configurable retry with backoff</li>
+    <li>Custom headers on every request: <code>x-system-id</code>, agent version, checksums</li>
+  </ul>
+
+  <h4>SQLite — agent.db (<code>db/file_database.go</code>)</h4>
+  <ul>
+    <li>WAL (Write-Ahead Logging) mode for concurrent readers</li>
+    <li><code>SetMaxOpenConns(1)</code> — single writer to avoid corruption</li>
+    <li>Stores: config key/values, event bookmarks (resume position), metrics send queue</li>
+    <li>Goose migrations for schema versioning</li>
+    <li>Known admin path — support engineers know where to look</li>
+  </ul>
+
+  <h4>User Management (<code>um/</code>)</h4>
+  <p>Driven by <strong>AuthConf</strong> received from cloud. Contains:</p>
+  <table>
+    <thead><tr><th>AuthConf Field</th><th>What Agent Does Locally</th></tr></thead>
+    <tbody>
+      <tr><td><code>Users[]</code></td><td>Create OS account, set password, set UID/GID, configure home directory</td></tr>
+      <tr><td><code>AllowPublicKeys</code></td><td>Enable/disable SSH public key authentication</td></tr>
+      <tr><td><code>AllowPassword</code></td><td>Enable/disable SSH password authentication</td></tr>
+      <tr><td><code>AllowRootLogin</code></td><td>Control SSH root login</td></tr>
+      <tr><td><code>ModifySSHDConfig</code></td><td>Agent manages sshd_config vs leaving it alone</td></tr>
+      <tr><td><code>UseMultifactor</code></td><td>Enable MFA for SSH login</td></tr>
+      <tr><td><code>ManageUIDGID</code></td><td>Sync UID/GID values from cloud to local OS</td></tr>
+      <tr><td>User deleted in cloud</td><td>Agent <strong>deactivates</strong> local account — never deletes the OS user</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Event System (<code>event/</code>)</h4>
+  <p>Composable pipeline: <strong>Monitors → MUX → Handlers</strong></p>
+  <ul>
+    <li><strong>Monitors</strong> watch OS for events (file changes, login/logout, session events on Windows Event ID 4624/4634)</li>
+    <li><strong>MUX</strong> routes typed agent events to registered handlers by event type</li>
+    <li><strong>Handlers</strong> perform one action each (update metrics, enforce policy, log for audit)</li>
+    <li>Bookmarks persisted in SQLite so monitors resume after agent restart</li>
+  </ul>
+
+  <h4>Local gRPC IPC</h4>
+  <table>
+    <thead><tr><th>Platform</th><th>Transport</th><th>Components</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>macOS</td>
+        <td>Unix socket <code>/tmp/jumpcloud-grpc</code></td>
+        <td>TrayApp (SwiftUI), Login Window (Obj-C), Service Enroller, Endpoint Security (SecureXPC), JumpCloud Go (NSXPC)</td>
+      </tr>
+      <tr>
+        <td>Windows</td>
+        <td>Named pipes</td>
+        <td>Tray app (per-user), Credential Provider (generic + DAAG), Remote Assist Agent</td>
+      </tr>
+      <tr>
+        <td>Linux</td>
+        <td>Unix socket</td>
+        <td>User agent component</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>Privilege separation:</strong> The agent runs as LocalSystem (Windows) or root (macOS/Linux) because it
+    must manage OS users, write system configs, and install software. Tray and login window apps run per-user with
+    lower privileges and talk to the agent over local gRPC. This is a deliberate security boundary.
+  </div>
+
+  <h3>Local Files on Disk</h3>
+  <table>
+    <thead><tr><th>File</th><th>Purpose</th><th>Permissions</th></tr></thead>
+    <tbody>
+      <tr><td><code>client.key</code></td><td>RSA private key for mTLS</td><td>0600 (owner read/write only)</td></tr>
+      <tr><td><code>client.crt</code></td><td>Signed client certificate (CN = certuuid)</td><td>0644</td></tr>
+      <tr><td><code>ca.crt</code></td><td>JumpCloud CA trust bundle</td><td>0644</td></tr>
+      <tr><td><code>jcagent.conf</code></td><td>systemKey, server URLs, poll intervals, feature flags</td><td>0600</td></tr>
+      <tr><td><code>agent.db</code></td><td>SQLite: config KV, event bookmarks, metrics queue</td><td>0600</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- SERVER -->
+<section id="server">
+  <h2>5. Server Interaction — Every API the Agent Uses</h2>
+  <p class="section-lead">
+    After enrollment, all communication goes to the Agent Server over HTTPS with mTLS.
+    The agent never calls jumpcloud-devices directly — HAProxy routes to SI, which calls devices-agent-api internally for Poll.
+  </p>
+
+  <h3>Agent Server Endpoints (Post-Enrollment)</h3>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Method</th><th>Purpose</th><th>When Called</th></tr></thead>
+    <tbody>
+      <tr><td><code>/poll/{directiveID}</code></td><td>GET</td><td>Core loop — receive directives or heartbeat</td><td>Every PollDelaySeconds / on MQTT wake</td></tr>
+      <tr><td><code>/agentStartup</code></td><td>POST</td><td>Boot handshake, initial directive fetch</td><td>Agent startup</td></tr>
+      <tr><td><code>/policyconf</code></td><td>GET</td><td>Fetch full policy configuration</td><td>On <code>update_policy_conf</code> directive</td></tr>
+      <tr><td><code>/authconf</code></td><td>GET</td><td>Fetch AuthConf (users, SSH, MFA settings)</td><td>On <code>update_auth_conf</code> directive</td></tr>
+      <tr><td><code>/softwareappconf</code></td><td>GET</td><td>Fetch software app catalog for device</td><td>On <code>update_software_app_conf</code> directive</td></tr>
+      <tr><td><code>/trustedappconf</code></td><td>GET</td><td>Fetch trusted application list</td><td>On <code>update_trusted_app_conf</code> directive</td></tr>
+      <tr><td><code>/systeminsights/conf</code></td><td>GET</td><td>Fetch osquery collection intervals</td><td>On <code>update_system_insights_conf</code> directive</td></tr>
+      <tr><td><code>/systeminsights/snapshots/:table</code></td><td>POST</td><td>Upload osquery inventory data</td><td>On SI schedule (5 min – 2 hr)</td></tr>
+      <tr><td><code>/authenticate</code></td><td>POST</td><td>End-user login credential verification</td><td>User login at login window / credential provider</td></tr>
+      <tr><td><code>/authenticate-factor</code></td><td>POST</td><td>MFA factor verification (TOTP, push)</td><td>After initial password auth when MFA required</td></tr>
+      <tr><td><code>/changepassword</code></td><td>POST</td><td>Password change with mTLS-protected channel</td><td>User changes password via tray</td></tr>
+      <tr><td><code>/metrics</code></td><td>POST</td><td>Upload agent metrics</td><td>Batched from metrics queue</td></tr>
+      <tr><td><code>/response</code></td><td>POST</td><td>Report command/workflow execution results</td><td>After workflow commands complete</td></tr>
+      <tr><td><code>/pushconfig</code></td><td>GET</td><td>Fetch MQTT broker config (endpoint, credentials)</td><td>Agent startup + on reconnect</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What the Agent Sends on Every Poll Request</h3>
+  <table>
+    <thead><tr><th>Header / Field</th><th>Value</th><th>Why Server Needs It</th></tr></thead>
+    <tbody>
+      <tr><td><code>x-system-id</code></td><td>MongoDB ObjectId (<code>systemKey</code> from jcagent.conf)</td><td>Identify which system record to look up</td></tr>
+      <tr><td>Client certificate (mTLS)</td><td>CN = certuuid</td><td>Prove device identity; LB injects X-SSL-CLIENT-* headers</td></tr>
+      <tr><td><code>Jc-Agent-Configurations</code></td><td>JSON with all checksums</td><td>Server compares — only sends directives when checksums differ</td></tr>
+      <tr><td><code>X-Policy-Checksum</code></td><td>Hash of current policy config</td><td>Skip policy push if unchanged (legacy header)</td></tr>
+      <tr><td><code>X-System-Insights-Conf-Updated-At</code></td><td>Timestamp of SI config version</td><td>Detect SI config changes</td></tr>
+      <tr><td><code>X-MQTT-Connection-Status</code></td><td><code>connected</code> or <code>disconnected</code></td><td>Server knows if wake signal will reach agent</td></tr>
+      <tr><td><code>x-jumpcloud-agent-version</code></td><td>Current agent version string</td><td>Server decides if upgrade directive needed</td></tr>
+      <tr><td><code>directiveID</code> (URL path)</td><td>Last processed directive ID</td><td>Server tracks queue position; <code>0</code> on startup</td></tr>
+    </tbody>
+  </table>
+
+  <h3>How the Backend Decides What to Send</h3>
+  <p>The jumpcloud-devices <code>agent-api</code> Poll handler (<code>services/systems_poll.go</code>) does this on every poll:</p>
+  <ol>
+    <li>Look up system record in MongoDB by <code>systemKey</code> + validate <code>certuuid</code> from mTLS headers</li>
+    <li>Compare agent checksums against server-side state</li>
+    <li>Check flags: <code>AgentConfUpdatePending</code>, pending directives in <code>agentDirQueue</code></li>
+    <li>If flag set or checksum mismatch → build directive with full config JSON</li>
+    <li>If nothing pending → return heartbeat (agent waits and polls again)</li>
+    <li>Update <code>lastContact</code> timestamp → may produce Kafka <code>device_active</code> event</li>
+  </ol>
+
+  <h3>Backend Services Behind the Scenes</h3>
+  <table>
+    <thead><tr><th>Backend Service</th><th>Role in Agent Lifecycle</th></tr></thead>
+    <tbody>
+      <tr><td><strong>devices-agent-api</strong></td><td>Poll gRPC handler, directive generation, system flags, checksum comparison</td></tr>
+      <tr><td><strong>devices internal-api</strong></td><td>Admin changes (policy bind, software app assign) → sets flags on system → triggers sync</td></tr>
+      <tr><td><strong>devices worker</strong></td><td>Async SQS consumer: processes directory sync, policy dispatch, MQTT wakeup batching</td></tr>
+      <tr><td><strong>Directory API</strong></td><td>Owns user↔system, policy↔system graph. Changes dispatch to devices Sync service</td></tr>
+      <tr><td><strong>jumpcloud-auth</strong></td><td>Connect Key validation (enrollment), Device Trust (user login), MFA/CAP evaluation</td></tr>
+      <tr><td><strong>SI Internal API</strong></td><td>Org settings, trusted apps, auth conf checksums — dedicated cluster for poll traffic isolation</td></tr>
+      <tr><td><strong>AWS IoT MQTT</strong></td><td>Wake signal published to <code>systems/{systemId}/state</code> — agent subscribes, triggers immediate poll</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Traffic isolation:</strong> JumpCloud runs a dedicated <code>si-internal-api-devices</code> cluster
+    for agent poll traffic. This isolates volatile, high-frequency poll requests from other SI API consumers,
+    preventing agent check-ins from affecting admin portal performance.
+  </div>
+</section>
+
+<!-- POLL -->
+<section id="poll">
+  <h2>6. The Poll Loop — How the Agent Stays in Sync</h2>
+  <p class="section-lead">
+    The poll loop is the single most important mechanism. Everything the cloud wants the agent to do
+    arrives as a directive in a poll response. Understanding this deeply will set you apart in interviews.
+  </p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TD
+  Start["Dispatcher.Start()"] --> Loop["Poll Loop"]
+  Loop --> Build["Build poll request:<br/>mTLS + checksum headers + directiveID"]
+  Build --> Send["GET /poll/{directiveID}"]
+  Send --> Response{"Server Response"}
+
+  Response -->|"Heartbeat"| WaitHB["Wait PollDelaySeconds<br/>(server may override via header)"]
+  Response -->|"Directive"| Handle["Route to listener<br/>by directive name"]
+  Response -->|"Error"| Backoff["Fibonacci backoff<br/>55s → 89s → ..."]
+
+  Handle --> UC["update_config → write jcagent.conf"]
+  Handle --> UA["update_auth_conf → fetch + apply users"]
+  Handle --> UP["update_policy_conf → fetch + apply policies"]
+  Handle --> US["update_software_app_conf → install apps"]
+  Handle --> RW["run_workflow → execute commands"]
+  Handle --> UG["update_agent → download + install"]
+  Handle --> RC["renew_certs → Kickstart renewal"]
+
+  UC --> Loop
+  UA --> Loop
+  UP --> Loop
+  US --> Loop
+  RW --> Loop
+  UG --> Loop
+  RC --> Loop
+  WaitHB --> Loop
+  Backoff --> Loop
+
+  MQTT["MQTT wake signal"] -->|"immediate poll channel"| Loop
+    </pre>
+  </div>
+
+  <h3>Poll Loop Internals (from dispatch/dispatcher.go)</h3>
+  <p>The dispatcher runs a <code>select</code> loop with three triggers:</p>
+  <ol>
+    <li><strong>Timer expiry</strong> — normal interval poll (<code>PollDelaySeconds</code> for heartbeat, <code>PollContinueSeconds</code> after directive)</li>
+    <li><strong>MQTT immediate poll channel</strong> — wake signal received, poll now</li>
+    <li><strong>Shutdown channel</strong> — graceful stop</li>
+  </ol>
+  <p>After each poll, jitter (0–10s random) is added to the next interval to prevent all agents in an org from polling simultaneously (thundering herd prevention).</p>
+
+  <h3>Complete Directive Catalog</h3>
+  <table>
+    <thead><tr><th>Directive</th><th>What Happens on Agent</th><th>What Triggered It on Server</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>update_config</code></td>
+        <td>Atomically write <code>jcagent.conf</code>, reload config, re-evaluate subsystems (streaming, secure login, credential provider flags)</td>
+        <td><code>AgentConfUpdatePending</code> flag set — feature flag change, agent version update, secure login settings</td>
+      </tr>
+      <tr>
+        <td><code>update_auth_conf</code></td>
+        <td>Fetch AuthConf from <code>/authconf</code>, create/deactivate users, sync passwords, configure sshd</td>
+        <td>Directory sync: user bound/unbound from system</td>
+      </tr>
+      <tr>
+        <td><code>update_policy_conf</code></td>
+        <td>Fetch policy templates from <code>/policyconf</code>, apply locally (scripts, registry, plist)</td>
+        <td>Policy assigned to system or user on system</td>
+      </tr>
+      <tr>
+        <td><code>update_software_app_conf</code></td>
+        <td>Fetch software catalog, install/uninstall apps from S3/CDN</td>
+        <td>Software app bound to system</td>
+      </tr>
+      <tr>
+        <td><code>update_trusted_app_conf</code></td>
+        <td>Update trusted application allowlist</td>
+        <td>Trusted app policy change</td>
+      </tr>
+      <tr>
+        <td><code>update_system_insights_conf</code></td>
+        <td>Update osquery collection intervals</td>
+        <td>SI config change in admin console</td>
+      </tr>
+      <tr>
+        <td><code>run_workflow</code></td>
+        <td>Execute admin-defined command sequence, report results via <code>/response</code></td>
+        <td>Admin triggered remote command</td>
+      </tr>
+      <tr>
+        <td><code>update_agent</code></td>
+        <td>Download new binary from S3, run platform installer script (MSI/pkg/deb)</td>
+        <td>Agent version behind release stream (real-time, dogfood, delayed)</td>
+      </tr>
+      <tr>
+        <td><code>renew_certs</code></td>
+        <td>Call Kickstart <code>POST /Renew</code> with existing cert + systemKey</td>
+        <td>Cert approaching expiry or server-initiated renewal</td>
+      </tr>
+      <tr>
+        <td><code>run_diagnostics</code></td>
+        <td>Collect system report (hostname, serial, network, FDE, TPM), send to server</td>
+        <td>Admin requested or scheduled (startup + every 2 hr)</td>
+      </tr>
+      <tr>
+        <td><code>uninstall_agent</code></td>
+        <td>Remove agent service, certs, config from device</td>
+        <td>System deleted or purged in admin console</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Poll + MQTT Hybrid (ADR-003)</h3>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Admin as Admin / Directory
+  participant Devices as devices-agent-api
+  participant Worker as devices worker
+  participant MQTT as AWS IoT MQTT
+  participant Agent as JumpCloud Agent
+
+  Admin->>Devices: Policy bound to system
+  Devices->>Devices: Rebuild PolicyConf, set update flag
+  Devices->>Worker: Enqueue MQTT wakeup (batched via SQS)
+  Worker->>MQTT: Publish {} to systems/{systemId}/state
+  MQTT-->>Agent: Wake signal (empty payload)
+  Agent->>Agent: Send to immediatePoll channel
+  Agent->>Devices: GET /poll/{directiveID} (accelerated)
+  Devices-->>Agent: Directive: update_policy_conf
+  Agent->>Devices: GET /policyconf
+  Devices-->>Agent: Full policy JSON
+  Agent->>Agent: Apply policies locally
+    </pre>
+  </div>
+
+  <div class="callout interview">
+    <strong>Critical interview point:</strong> MQTT carries <em>no configuration data</em>. It is purely a wake signal.
+    The agent must still poll to receive the actual directive and config. This design avoids the complexity of
+    guaranteed push delivery, offline message queues, and config versioning over MQTT. If MQTT is down, the agent
+    still syncs on its normal poll interval — degraded latency, not degraded correctness.
+  </div>
+
+  <h3>Directive ID Tracking</h3>
+  <p>Every directive has an associated <code>directiveID</code>. The agent sends the last processed ID on every poll:</p>
+  <ul>
+    <li>On startup, agent uses <code>0</code> until server assigns a real ID</li>
+    <li>Queued directives (workflows) create a new MongoDB document in <code>agentDirQueue</code> → new ID generated</li>
+    <li>Ad-hoc directives (config update flags) reuse the last directive ID</li>
+    <li>Server uses directiveID to track what the agent has already processed</li>
+  </ul>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <h2>7. Security Model — Complete Deep Dive</h2>
+  <p class="section-lead">
+    JumpCloud uses a two-phase trust model: Connect Key for enrollment authorization,
+    then mTLS client certificates for all ongoing communication. User authentication is a separate layer on top.
+  </p>
+
+  <h3>Phase 1: Enrollment Security (Connect Key)</h3>
+  <p>The Connect Key is a short-lived secret that proves a device is authorized to join a specific organization. It is passed in the <code>x-connect-key</code> HTTP header during kickstart operations only.</p>
+
+  <table>
+    <thead><tr><th>Property</th><th>How It's Enforced</th></tr></thead>
+    <tbody>
+      <tr><td>Scoped to organization</td><td>Connect Key validated against org via jumpcloud-auth gRPC or SI org-user lookup</td></tr>
+      <tr><td>Ephemeral / time-limited</td><td>Keys expire; not reusable after successful registration</td></tr>
+      <tr><td>Type-specific validation</td><td>MDM keys linked to device ID; user portal keys require org setting enabled</td></tr>
+      <tr><td>Not used post-enrollment</td><td>After registration, Connect Key is never sent again — only mTLS cert matters</td></tr>
+      <tr><td>Clone prevention</td><td>certuuid globally unique; pending cert in Redis must match; golden image clones fail uniqueness check</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 2: Runtime Security (mTLS)</h3>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Agent as JumpCloud Agent
+  participant LB as Load Balancer (HAProxy)
+  participant AS as Agent Server Middleware
+  participant DB as MongoDB
+
+  Agent->>LB: HTTPS request<br/>+ client cert (CN=certuuid)<br/>+ x-system-id header
+
+  LB->>LB: Verify client cert against JumpCloud CA
+  LB->>LB: Reject if cert invalid/expired/wrong CA
+
+  LB->>AS: Forward request + injected headers:<br/>X-SSL-CLIENT-DN<br/>X-SSL-CLIENT-CN (= certuuid)<br/>X-SSL-CLIENT-OU (= orgId)
+
+  AS->>AS: Parse certuuid from X-SSL-CLIENT-CN
+  AS->>AS: Validate x-system-id is valid ObjectId
+
+  AS->>DB: find({ _id: systemKey, certuuid: CN })
+
+  alt System found and active
+    AS->>AS: Attach system to request context
+    AS-->>Agent: 200 + response data
+  else certuuid mismatch
+    AS-->>Agent: 401 Unauthorized
+  else System deleted
+    AS-->>Agent: uninstall_agent directive
+  else System purged
+    AS-->>Agent: 401 — cannot re-authenticate
+  end
+    </pre>
+  </div>
+
+  <h3>Security Layers in Transit</h3>
+  <div class="layer-stack">
+    <div class="layer layer-app">Application Data — JSON payloads (policies, AuthConf, commands)</div>
+    <div class="layer layer-tls">TLS 1.2+ — Server certificate verified against JumpCloud ca.crt bundle</div>
+    <div class="layer layer-mtls">Mutual TLS — Client certificate required; CN must match system record certuuid</div>
+    <div class="layer layer-net">TCP/IP — optionally via corporate HTTP proxy (agent respects system proxy settings)</div>
+  </div>
+
+  <h3>Complete Security Properties</h3>
+  <table>
+    <thead><tr><th>Threat</th><th>Mitigation</th><th>Implementation Detail</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Man-in-the-middle</td>
+        <td>TLS 1.2+ with custom CA bundle</td>
+        <td>Agent loads <code>ca.crt</code>; no <code>InsecureSkipVerify</code>; SSRF-safe redirect policy in jchttp</td>
+      </tr>
+      <tr>
+        <td>Impersonating a device</td>
+        <td>mTLS client certificate</td>
+        <td>Only devices with valid JumpCloud CA-signed cert can call APIs; CN = certuuid bound to system record</td>
+      </tr>
+      <tr>
+        <td>Cert replay on different system</td>
+        <td>Dual lookup: systemKey + certuuid</td>
+        <td>Middleware requires both <code>x-system-id</code> AND cert CN to match same MongoDB document</td>
+      </tr>
+      <tr>
+        <td>Unauthorized enrollment</td>
+        <td>Ephemeral Connect Keys</td>
+        <td>Validated via jumpcloud-auth; scoped to org + enrollment type; pending cert in Redis</td>
+      </tr>
+      <tr>
+        <td>Golden image clone</td>
+        <td>certuuid global uniqueness</td>
+        <td>Kickstart rejects duplicate certuuid; new enrollment requires new Connect Key + new certuuid</td>
+      </tr>
+      <tr>
+        <td>Private key theft</td>
+        <td>Filesystem permissions</td>
+        <td><code>client.key</code> stored at mode 0600; agent runs as privileged service to protect key path</td>
+      </tr>
+      <tr>
+        <td>Decommissioned device calling APIs</td>
+        <td>System state check</td>
+        <td>Deleted systems get <code>uninstall_agent</code> directive; purged systems get 401</td>
+      </tr>
+      <tr>
+        <td>Stale/compromised cert</td>
+        <td>Certificate renewal</td>
+        <td>Server sends <code>renew_certs</code> directive; agent renews via Kickstart while keeping same private key</td>
+      </tr>
+      <tr>
+        <td>Unauthorized user login</td>
+        <td>Cloud-side credential validation</td>
+        <td>Agent proxies to jumpcloud-auth Device Trust; verifies user bound to system; MFA/CAP evaluated server-side</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Two Trust Layers: Device vs User</h3>
+  <div class="callout security">
+    <p><strong>Layer 1 — Device authentication (agent ↔ cloud):</strong></p>
+    <p>mTLS proves <em>which physical device</em> is making the API call. The load balancer verifies the client certificate;
+    the server binds certuuid + systemKey to a MongoDB system record.</p>
+    <p style="margin-top:.75rem;"><strong>Layer 2 — User authentication (person ↔ cloud via agent):</strong></p>
+    <p>When a user logs in at the login window or credential provider, the agent proxies
+    <code>POST /authenticate</code> to the Agent Server. The server verifies the user is bound to that system,
+    then calls jumpcloud-auth Device Trust to validate credentials and MFA/CAP policies.
+    A JWT authentication token is returned; the agent grants the local OS session.</p>
+    <p style="margin-top:.75rem;">These are intentionally separate. A valid device cert does not grant access to any user account.
+    A valid user password does not help without a registered device.</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+sequenceDiagram
+  participant User as End User
+  participant LW as Login Window / Cred Provider
+  participant Agent as JumpCloud Agent
+  participant AS as Agent Server
+  participant Auth as jumpcloud-auth
+
+  User->>LW: Enter username + password
+  LW->>Agent: gRPC authenticate request
+  Agent->>AS: POST /authenticate (mTLS)<br/>userid + password + x-system-id
+  AS->>AS: Verify user is bound to this system
+  AS->>Auth: DeviceTrust.Authenticate(org, system, user, creds)
+  Auth->>Auth: Validate password
+  Auth->>Auth: Evaluate MFA requirements (CAP PDP)
+  alt MFA required
+    Auth-->>AS: MFA challenge required
+    AS-->>Agent: MFA challenge
+    Agent-->>LW: Prompt for MFA factor
+    User->>LW: Enter TOTP / approve push
+    LW->>Agent: gRPC authenticate-factor
+    Agent->>AS: POST /authenticate-factor
+    AS->>Auth: Validate factor
+  end
+  Auth-->>AS: JWT authentication token
+  AS-->>Agent: authenticationToken
+  Agent->>Agent: Grant local OS session / unlock
+    </pre>
+  </div>
+
+  <h3>Certificate Renewal</h3>
+  <table>
+    <thead><tr><th>Scenario</th><th>Endpoint</th><th>Authentication</th><th>Key Rotation?</th></tr></thead>
+    <tbody>
+      <tr><td>Proactive renewal (cert valid)</td><td><code>POST /Renew</code> on private Kickstart</td><td>mTLS + systemKey + existing cert</td><td>No — same private key, new cert with same certuuid CN</td></tr>
+      <tr><td>Expired cert renewal</td><td><code>POST /Renew</code> with systemKey</td><td>systemKey proves identity when cert lapsed</td><td>No — private key retained for FDE key continuity</td></tr>
+      <tr><td>Server-initiated</td><td><code>renew_certs</code> directive on poll</td><td>Normal mTLS (cert still valid)</td><td>No</td></tr>
+    </tbody>
+  </table>
+  <p>The private key is <strong>intentionally never rotated</strong> on cert renewal because locally encrypted secrets
+  (e.g., FileVault recovery keys) depend on the key continuity.</p>
+
+  <h3>Authentication Headers Reference</h3>
+  <table>
+    <thead><tr><th>Header</th><th>Set By</th><th>Phase</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>x-connect-key</code></td><td>Agent</td><td>Enrollment only</td><td>Authorizes kickstart and initial registration</td></tr>
+      <tr><td><code>x-system-id</code></td><td>Agent</td><td>Post-registration</td><td>MongoDB ObjectId of the registered system</td></tr>
+      <tr><td><code>X-SSL-CLIENT-CN</code></td><td>Load Balancer</td><td>Runtime</td><td>Client cert Common Name (= certuuid), injected after mTLS termination</td></tr>
+      <tr><td><code>X-SSL-CLIENT-DN</code></td><td>Load Balancer</td><td>Runtime</td><td>Full certificate subject DN</td></tr>
+      <tr><td><code>X-SSL-CLIENT-OU</code></td><td>Load Balancer</td><td>Runtime</td><td>Organization ID from cert OU field</td></tr>
+      <tr><td><code>x-jumpcloud-agent-version</code></td><td>Agent</td><td>Runtime</td><td>Agent version for compatibility and upgrade decisions</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- FLOWS -->
+<section id="flows">
+  <h2>8. Step-by-Step Data Flows</h2>
+  <p class="section-lead">Walk through these flows verbally in an interview to demonstrate end-to-end understanding.</p>
+
+  <h3>Flow 1: Admin Changes a Setting → Agent Applies It</h3>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Admin as Admin Console
+  participant Internal as devices internal-api
+  participant Mongo as MongoDB
+  participant Worker as devices worker
+  participant MQTT as AWS IoT
+  participant Agent as Agent
+
+  Admin->>Internal: Enable feature flag for org
+  Internal->>Mongo: Set AgentConfUpdatePending = true on all systems
+  Internal->>Worker: Enqueue MQTT wakeup batch
+  Worker->>MQTT: Publish to systems/{id}/state
+  MQTT-->>Agent: Wake signal
+  Agent->>Agent: Immediate poll triggered
+  Agent->>Internal: GET /poll/{directiveID}
+  Internal->>Mongo: Build agentConf JSON, clear pending flag
+  Internal-->>Agent: Directive: update_config + JSON
+  Agent->>Agent: Atomic write jcagent.conf
+  Agent->>Agent: Reload config, restart affected subsystems
+    </pre>
+  </div>
+  <p><strong>Latency:</strong> Without MQTT, agent discovers change on next poll (minutes). With MQTT wake, typically seconds.</p>
+
+  <h3>Flow 2: User Added to System → Local Account Created</h3>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Admin as Admin Console
+  participant Dir as Directory API
+  participant Devices as devices Sync
+  participant Mongo as MongoDB
+  participant Agent as Agent
+
+  Admin->>Dir: Bind user to system
+  Dir->>Devices: Dispatch sync event
+  Devices->>Devices: Rebuild SystemToUser, AuthConf
+  Devices->>Mongo: Update system.authConf
+  Devices->>Agent: MQTT wake → poll
+  Agent->>Devices: Poll → update_auth_conf directive
+  Agent->>Devices: GET /authconf
+  Devices-->>Agent: AuthConf with new user entry
+  Agent->>Agent: useradd / create account
+  Agent->>Agent: Set password, UID/GID, home dir
+    </pre>
+  </div>
+
+  <h3>Flow 3: Agent Self-Upgrade</h3>
+  <ol>
+    <li>Agent sends current version on every poll request</li>
+    <li>Server compares against release stream (real-time, dogfood, or delayed rollout)</li>
+    <li>If outdated, server returns <code>update_agent</code> directive with install script</li>
+    <li>Agent downloads new binary from S3</li>
+    <li>Platform-specific install: macOS <code>installer</code>, Windows MSI, Linux deb/rpm</li>
+    <li>Agent stops, installs, restarts with new version</li>
+    <li>Windows MSI also downloads component bundles (tray, CEF) from CDN if versions mismatch</li>
+  </ol>
+
+  <h3>Flow 4: System Insights Upload</h3>
+  <ol>
+    <li>Agent receives SI config with table names and collection intervals (5 min – 2 hr)</li>
+    <li>osquery runs scheduled queries locally</li>
+    <li>Results batched and uploaded via <code>POST /systeminsights/snapshots/:table</code></li>
+    <li>Data flows to SI backend for admin visibility, compliance, and (future) device trust</li>
+    <li><strong>Limitation:</strong> Polling-based SI is too slow for real-time device trust — BAN-3495 plans event-driven telemetry</li>
+  </ol>
+</section>
+
+<!-- FAILURE -->
+<section id="failure">
+  <h2>9. Failure Modes &amp; Recovery</h2>
+  <p class="section-lead">Interviewers often ask "what happens when X fails?" — here are the real behaviors.</p>
+
+  <table>
+    <thead><tr><th>Failure Scenario</th><th>Agent Behavior</th><th>Recovery</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Network unreachable</td>
+        <td>Poll fails → Fibonacci backoff (55s, 89s, ...). Logs error once, suppresses repeats unless message changes.</td>
+        <td>Auto-retries with increasing delay. Continues local operations (user mgmt already applied). Queues metrics in SQLite.</td>
+      </tr>
+      <tr>
+        <td>MQTT broker down</td>
+        <td>Agent logs disconnect, reports <code>X-MQTT-Connection-Status: disconnected</code> on polls. Falls back to normal poll interval.</td>
+        <td>Auto-reconnect with 1–4 min retry. Degraded latency only — config still syncs via poll.</td>
+      </tr>
+      <tr>
+        <td>Client cert expired</td>
+        <td>Poll returns 401. Agent should receive <code>renew_certs</code> directive or attempt renewal via systemKey.</td>
+        <td>Renewal via Kickstart <code>POST /Renew</code>. If systemKey valid, new cert issued with same certuuid.</td>
+      </tr>
+      <tr>
+        <td>System deleted in admin</td>
+        <td>Server returns <code>uninstall_agent</code> directive on next authenticated poll.</td>
+        <td>Agent removes itself from device. By design — decommissioned devices cannot continue.</td>
+      </tr>
+      <tr>
+        <td>Duplicate agent instance</td>
+        <td>Second instance fails lockfile check and exits immediately.</td>
+        <td>Only one agent per device by design.</td>
+      </tr>
+      <tr>
+        <td>Panic in goroutine</td>
+        <td><code>StackDumpOnPanic</code> catches panic, dumps stack trace to log, exits gracefully.</td>
+        <td>OS service manager restarts agent (Windows Service, launchd, systemd).</td>
+      </tr>
+      <tr>
+        <td>Server write failure during config update</td>
+        <td>Agent writes <code>jcagent.conf</code> atomically (write to temp, rename). If write fails, old config preserved.</td>
+        <td>Server keeps <code>AgentConfUpdatePending</code> true — will retry on next poll.</td>
+      </tr>
+      <tr>
+        <td>Proxy misconfiguration</td>
+        <td>jchttp respects system proxy settings. Connection fails with timeout.</td>
+        <td>Same Fibonacci backoff. Agent logs proxy-related errors at debug level.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>Real production incident (June 2026):</strong> A MongoDB write storm from systemsToUsers sync loop
+    caused cascading agent poll failures. Lesson: sync operations need idempotency checks, write batching, and
+    circuit breakers for hot tenants. JumpCloud uses org-level diversion FIFO queues to isolate overloaded tenants.
+  </div>
+</section>
+
+<!-- INTERVIEW -->
+<section id="interview">
+  <h2>10. Interview Q&amp;A — With Follow-Up Answers</h2>
+  <p class="section-lead">
+    Practice answering these out loud. Each answer includes a likely follow-up question
+    and how to handle it — interviewers often dig deeper on security and scale.
+  </p>
+
+  <div class="qa-block">
+    <div class="q">Q1: Walk me through how the JumpCloud agent works.</div>
+    <div class="a">
+      The agent is a Go binary running as a system service on macOS, Windows, or Linux. On first install it enrolls
+      using a Connect Key — generates an RSA key pair, gets a CSR signed by Kickstart, registers a system record,
+      and receives an mTLS client certificate plus a systemKey. After enrollment, the core runtime is a poll loop:
+      the agent sends GET /poll/{directiveID} with mTLS and config checksums. The server returns either a heartbeat
+      (nothing to do) or a directive (update config, sync users, apply policies, upgrade, etc.). The agent applies
+      changes locally and polls again. MQTT accelerates polling when backend state changes but never carries data.
+      Locally, the agent manages OS users via AuthConf, applies policies, runs osquery for inventory, and exposes
+      local gRPC to tray/login apps.
+    </div>
+    <div class="followup"><strong>Likely follow-up:</strong> "Why poll instead of WebSocket?" → Poll works through
+    corporate firewalls and HTTP proxies without maintaining stateful connections. MQTT was added later as wake-only
+    optimization. Simpler failure modes with Fibonacci backoff. Agent already uses HTTP for everything else.</div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q2: How is the agent secured?</div>
+    <div class="a">
+      Two-phase model. Enrollment: ephemeral Connect Key authorizes joining an org — validated by jumpcloud-auth,
+      scoped to org and enrollment type. Runtime: every request uses mTLS with a client certificate signed by JumpCloud CA.
+      The load balancer verifies the cert and injects X-SSL-CLIENT-CN (= certuuid). Server middleware binds certuuid +
+      x-system-id to a MongoDB system record — dual lookup prevents cert replay. TLS 1.2 minimum, custom CA bundle,
+      no skip verify. Private key at filesystem 0600, never rotated on cert renewal. User login is a separate layer:
+      agent proxies credentials to jumpcloud-auth Device Trust over the already-authenticated mTLS channel.
+    </div>
+    <div class="followup"><strong>Likely follow-up:</strong> "What if someone steals the private key?" → They could
+    impersonate that specific device until cert is revoked. Mitigations: 0600 permissions, privileged service context,
+    cert renewal allows server-side revocation, deleted systems get uninstall directive. User login still requires
+    valid credentials + MFA separately.</div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q3: How does the agent discover and apply configuration changes?</div>
+    <div class="a">
+      Checksum-based sync. Agent sends hashes of current policy, software, SI, and trusted app configs on every poll.
+      Server compares against its state. When admin changes something, server sets a flag (e.g., AgentConfUpdatePending)
+      on the system document and publishes MQTT wake. Agent polls, server detects flag or checksum mismatch, returns a
+      directive with full config JSON or a fetch directive. Agent atomically writes config and reloads. Directory graph
+      changes (user bound to system) trigger sync service → rebuild AuthConf → MQTT wake → update_auth_conf directive.
+    </div>
+    <div class="followup"><strong>Likely follow-up:</strong> "What if the agent misses an MQTT wake?" → It still syncs
+    on the next regular poll interval (minutes). MQTT is optimization, not correctness requirement. Server also
+    keeps pending flags until agent confirms with matching checksum.</div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q4: Explain the difference between device auth and user auth.</div>
+    <div class="a">
+      Device auth (mTLS) proves which physical machine is calling the API. Established at enrollment, validated on
+      every request via client certificate CN + systemKey. User auth proves which person is using the device.
+      When a user logs in, the login window sends credentials to the agent via local gRPC. Agent proxies
+      POST /authenticate to the cloud over mTLS. Server checks user is bound to that system, then jumpcloud-auth
+      validates password and evaluates MFA/CAP. Returns JWT. Agent grants local OS session. A stolen device cert
+      doesn't grant user access. Valid user credentials without a registered device don't work either.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q5: How would you design the agent communication protocol from scratch?</div>
+    <div class="a">
+      I'd use a similar pull-based model: devices behind NAT/firewalls need outbound-initiated communication. mTLS for
+      device identity is industry standard (same as IoT). I'd separate enrollment (one-time bootstrap key) from runtime
+      (long-lived cert). Use checksums to avoid sending full configs when unchanged. Add push-notification wake for
+      latency without push-data complexity. Directive pattern decouples server intent from client implementation.
+      I'd also separate privileged system service from per-user UI components via local IPC.
+    </div>
+    <div class="followup"><strong>Likely follow-up:</strong> "What would you do differently?" → Consider gRPC for
+    agent-server instead of REST (JumpCloud uses gRPC internally via devices-agent-api but HTTP at the edge for
+    proxy compatibility). Event-driven telemetry instead of osquery polling for real-time device trust. Structured
+    agent log streaming instead of local files only.</div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q6: How does the agent handle scale — millions of devices polling?</div>
+    <div class="a">
+      Jitter (0–10s random) on poll intervals prevents thundering herd. Dedicated si-internal-api-devices cluster
+      isolates poll traffic. Server uses checksums to return lightweight heartbeats when nothing changed. MQTT wake
+      reduces unnecessary polling. MongoDB for hot agent state, with org-level diversion FIFO queues for overloaded
+      tenants. Fibonacci backoff on agent side prevents retry storms during outages. Agent sends compact headers,
+      not full state, on every poll.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q7: What happens during agent enrollment step by step?</div>
+    <div class="a">
+      Admin provides Connect Key (or MDM/user portal issues one). Agent generates certuuid and RSA key pair.
+      POST /GetRegistrationConf with Connect Key → receives jcagent.conf template. POST /SignCsr → Kickstart signs
+      with JumpCloud CA, stores pending cert in Redis. GET /CheckAccess via mTLS to verify cert works.
+      POST /registernewsystem with system report (hostname, serial, OS, network) → server validates Connect Key,
+      fetches pending cert, creates MongoDB system record, returns systemKey. Connect Key never used again.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q8: How does the agent manage local users?</div>
+    <div class="a">
+      Via AuthConf — a JSON document from the cloud listing users and SSH/MFA settings. When agent receives
+      update_auth_conf directive, it fetches AuthConf and for each user: creates OS account if missing, sets password,
+      configures UID/GID, home directory. If user removed from AuthConf, agent deactivates (never deletes) the local
+      account. Also manages sshd_config (AllowPassword, AllowPublicKeys, AllowRootLogin, MFA for SSH). AuthConf
+      is rebuilt by devices Sync service when Directory graph changes (user bound/unbound from system).
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q9: What is the role of SQLite on the agent?</div>
+    <div class="a">
+      agent.db stores durable local state: config key/values, event monitor bookmarks (resume position after restart),
+      and metrics send queue. WAL mode with single writer (SetMaxOpenConns(1)). Known admin path for troubleshooting.
+      Not used for the primary server-delivered config (that's jcagent.conf). SQLite chosen because admins already
+      know the path, it supports migrations, and concurrent readers work with WAL.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q10: How does the tray app interact with the agent?</div>
+    <div class="a">
+      Tray app is a separate per-user process (SwiftUI on macOS, .NET on Windows). It does NOT talk to the cloud.
+      It connects to the agent via local gRPC (unix socket on macOS, named pipes on Windows). Agent polls cloud
+      for UserInformation every 5 seconds, tray flow controllers check for scheduled notifications (password expiry,
+      MDM enrollment, software updates). This privilege separation keeps the tray out of LocalSystem while still
+      enabling user-facing flows.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q11: How do you prevent golden image clones from enrolling twice?</div>
+    <div class="a">
+      certuuid is generated fresh on each enrollment and embedded as the X.509 CN. Kickstart verifies global uniqueness
+      before signing CSR. Pending cert stored in Redis per org+certuuid. Registration requires matching pending cert.
+      A cloned image with the same certuuid fails uniqueness check. A clone generating new certuuid still needs a
+      new Connect Key. Both barriers must be passed.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q12: What are the agent's known limitations?</div>
+    <div class="a">
+      System Insights polling (5 min – 2 hr) too slow for real-time device trust. Large agentConf JSON increases poll
+      response size. Windows agent runs as LocalSystem (large privilege surface). Logs are local files, not auto-streamed
+      to cloud. Single SQLite writer can bottleneck high-frequency events. Linux agent has fewer UI components than
+      macOS/Windows. No persistent connection means worst-case config latency equals poll interval without MQTT.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q13: Explain MQTT's role — why not just use MQTT for everything?</div>
+    <div class="a">
+      MQTT is wake-only (ADR-003). Backend publishes empty payload to systems/{systemId}/state. Agent receives it,
+      sends signal on immediatePoll channel, polls HTTP immediately. Config still delivered via poll response.
+      Why not MQTT for data: would need guaranteed delivery, offline queuing, config versioning, and larger payloads
+      over a protocol designed for small messages. HTTP poll already works reliably. MQTT adds latency improvement
+      without changing the correctness path. If MQTT is down, agent falls back to regular poll interval.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q14: How does certificate renewal work without breaking local secrets?</div>
+    <div class="a">
+      Private key is never rotated. Renewal via POST /Renew on Kickstart with mTLS + systemKey. New certificate
+      issued with same certuuid as CN. This preserves the chain of locally encrypted data (FileVault recovery keys
+      encrypted with key derived from cert identity). Server can also send renew_certs directive proactively before
+      expiry. If cert already expired, systemKey alone can authenticate the renewal request.
+    </div>
+  </div>
+
+  <div class="qa-block">
+    <div class="q">Q15: How would you debug an agent that's not syncing?</div>
+    <div class="a">
+      Check local logs: /var/log/jcagent.log (macOS/Linux) or \Windows\Temp\jcagent.log. Verify jcagent.conf has
+      valid systemKey and server URLs. Check client.crt expiry. Test mTLS connectivity to agent.jumpcloud.com.
+      Look for poll errors and backoff messages. Check X-MQTT-Connection-Status in logs. Verify agent.db exists
+      and is writable. On server side: check system record in MongoDB, verify AgentConfUpdatePending flag,
+      check lastContact timestamp. Compare agent checksums vs server state.
+    </div>
+  </div>
+
+  <h3>System Design Framework Answers</h3>
+  <table>
+    <thead><tr><th>Framework Question</th><th>JumpCloud Agent Answer</th></tr></thead>
+    <tbody>
+      <tr><td>CAP theorem tradeoff</td><td>Availability over consistency for config sync — agent applies last known good config offline; syncs when cloud reachable (eventual consistency)</td></tr>
+      <tr><td>Idempotency</td><td>Directives are idempotent — writing same jcagent.conf twice is safe; user create checks if account exists; atomic file writes</td></tr>
+      <tr><td>Backpressure</td><td>Fibonacci backoff on poll errors; metrics queued in SQLite; single writer on agent.db</td></tr>
+      <tr><td>Observability</td><td>Structured logging (jumpcloud-common-go), Datadog metrics on critical paths, MQTT connectivity metric, fallback poll metric</td></tr>
+      <tr><td>Multi-tenancy</td><td>certuuid + systemKey + org OU in cert; org-level MQTT topics; diversion FIFO for hot tenants</td></tr>
+      <tr><td>Zero trust alignment</td><td>mTLS device identity + per-user auth + MFA/CAP + device trust telemetry (planned SDTL)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Key Vocabulary for the Interview</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>Must-Know Terms</h4>
+      <ul>
+        <li><strong>Connect Key</strong> — one-time enrollment authorization</li>
+        <li><strong>certuuid</strong> — device identity in cert CN</li>
+        <li><strong>systemKey</strong> — MongoDB ObjectId for the system</li>
+        <li><strong>Directive</strong> — server command in poll response</li>
+        <li><strong>AuthConf</strong> — user management configuration</li>
+        <li><strong>jcagent.conf</strong> — primary agent config file</li>
+        <li><strong>mTLS</strong> — mutual TLS, client cert required</li>
+        <li><strong>Device Trust</strong> — user auth via agent proxy</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Source Docs to Reference</h4>
+      <ul>
+        <li><code>docs/how_does_the_agent_work.md</code></li>
+        <li><code>docs/agent-authentication-architecture.html</code></li>
+        <li><code>docs/sequence_diagrams.md</code></li>
+        <li><code>dispatch/dispatcher.go</code></li>
+        <li><code>registration/register.go</code></li>
+        <li><code>devices/docs/adrs/adr-002</code> (config delivery)</li>
+        <li><code>devices/docs/adrs/adr-003</code> (MQTT wakeup)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  JumpCloud Agent Endpoint Guide — based on jumpcloud-agent, jumpcloud-devices, and jumpcloud-auth documentation.
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral',
+    securityLevel: 'loose',
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 60, messageMargin: 45 }
+  });
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav.tabs a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`nav.tabs a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

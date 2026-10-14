@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 03 - Device Binding &amp; Device Assertions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 03 of 10</span>
+    <h1>Device Binding &amp; Device Assertions</h1>
+    <p>Two parallel paths - certificate serial and DURT/DUST - converging on a DeviceAssertion JWT consumed by CAP and OAuth.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-02-keychain-secure-enclave.html">← Module 02</a>
+    <a href="index.html">Hub</a>
+    <a href="module-04-jc-go.html">Module 04 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">Device binding proves a specific user is on a specific managed device. JumpCloud mints a <strong>DeviceAssertion JWT</strong> containing device ID, org, OS, FDE status, EDR signals, and optional app-managed flags. Policy engines (CAP) consume this token at login and app access time - analogous to Okta embedding device context in authentication policies.</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>jumpcloud-devices/services/device_identification.go</code> - cert serial → JWT with org/user/device/FDE claims</li>
+        <li><code>jumpcloud-auth/assertions/device.go</code> - assertion claims: <code>disk_encryption</code>, <code>signals</code>, <code>is_app_managed</code></li>
+        <li><code>jumpcloud-auth/docs/adrs/adr-011-device-trust-jc-go.md</code> - cert vs Go assertion paths</li>
+        <li><code>jumpcloud-auth/proto/jumpcloud/auth/device_trust.proto</code> - Authenticate → Authorize → GetToken</li>
+      </ul>
+      <pre><code>// assertions/device.go - key claims in DeviceAssertion
+userIDClaim             = "user"
+fullDiskEncryptionClaim = "disk_encryption"
+signalsClaim            = "signals"      // CrowdStrike ZTA, SentinelOne, OS
+isAppManagedClaim       = "is_app_managed"
+bundleIDClaim           = "bundle_id"</code></pre>
+      <p><strong>DeviceTrust RPC</strong> (OAuth-like, not RFC 8628): <code>Authenticate</code> (user creds + system binding → auth JWT) → <code>Authorize</code> (auth JWT → authorization code) → <code>GetToken</code> (code → ID token).</p>
+    </section>
+
+    <section>
+      <h2>Okta Parallel</h2>
+      <div class="card okta">
+        <p>When a device enrolls in Okta FastPass / Device Access, it becomes a <strong>registered device object</strong> in Universal Directory with lifecycle states (active, suspended, deleted). Okta auth policies reference <code>device.state</code>, <code>device.managementStatus</code>, and <code>device.provider.deviceAccess.joined</code>. JumpCloud's DeviceAssertion JWT is the equivalent payload - a signed, consumable device context blob.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Architecture Diagram</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph pathA [Path A - Certificate mTLS]
+    Browser[Browser mTLS with device-trust cert]
+    Serial[Extract cert serial number]
+    DevSvc[jumpcloud-devices DeviceIdentification.Token]
+    AssertA[DeviceAssertion JWT]
+    Browser --> Serial --> DevSvc --> AssertA
+  end
+
+  subgraph pathB [Path B - JumpCloud Go DURT]
+    Go[Browser NMH / SSO extension]
+    DURT[DURT service refresh]
+    DUST[DUST session token]
+    AuthMint[auth mints assertion directly]
+    AssertB[DeviceAssertion JWT]
+    Go --> DURT --> DUST --> AuthMint --> AssertB
+  end
+
+  subgraph pathC [Path C - DeviceTrust Login RPC]
+    Login[DeviceTrust.Authenticate]
+    AuthCode[Authorize → auth code]
+    IDTok[GetToken → ID token]
+    Login --> AuthCode --> IDTok
+  end
+
+  AssertA --> CAP[CAP PDP Evaluate]
+  AssertB --> CAP
+  CAP --> Outcome["ALLOW or MFA or DENY"]
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">What happens if a device-trust cert moves to another machine?</div>
+        <div class="qa-a">The cert serial still maps to the original system record, but the session/device binding breaks when the portal detects mismatch - assertion is removed from session and device trust fails. Binding is intentional: cert is issued per user+device pair via <code>SystemsToUsers</code> lookup.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Why does auth mint Go assertions instead of devices service?</div>
+        <div class="qa-a">ADR-011: DURT service already attests device existence when minting DUST. Auth can embed live signals without an extra devices-service round trip. Separate session keys keep cert and Go paths independent.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What's in the signals claim?</div>
+        <div class="qa-a">OS version, CrowdStrike status/version/ZTA score, SentinelOne status/version - collected by <code>signal/collector_darwin.go</code>, embedded at assertion mint time, parsed by CAP PDP for conditions like <code>CROWD_STRIKE_ZTA_SCORE</code>.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">How does this map to Okta device lifecycle?</div>
+        <div class="qa-a">Suspend/delete device in Okta → dbSSO breaks until re-enrollment. JumpCloud equivalent: remove system association or revoke cert → assertion fails CAP checks. Both treat device as first-class identity object, not just a User-Agent string.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>No RFC 8628 device authorization grant - custom DeviceTrust 3-leg flow instead.</li>
+          <li>Portal prefers cert assertion over Go assertion today (ADR-011); Go preference is future.</li>
+          <li>DeviceTrust authenticate lacks mandatory device private key signature (TODO in auth service).</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-02-keychain-secure-enclave.html">← Module 02</a> · <a href="module-04-jc-go.html">Module 04 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

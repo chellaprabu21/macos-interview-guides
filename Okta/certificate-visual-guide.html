@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What Is a Certificate? — Visual Guide</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --surface: #151b24;
+      --surface2: #1c2433;
+      --border: #2a3548;
+      --text: #eef2f7;
+      --muted: #8fa3bf;
+      --blue: #3b82f6;
+      --blue-glow: rgba(59, 130, 246, 0.4);
+      --green: #22c55e;
+      --green-glow: rgba(34, 197, 94, 0.4);
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.35);
+      --amber: #f59e0b;
+      --purple: #a78bfa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      padding: 2.5rem 1.5rem 1.5rem;
+      background: radial-gradient(ellipse at top, #1a2744 0%, var(--bg) 70%);
+    }
+
+    header h1 { font-size: 1.75rem; margin-bottom: 0.4rem; }
+    header p { color: var(--muted); max-width: 520px; margin: 0 auto; font-size: 0.95rem; }
+
+    .nav { margin-top: 1rem; }
+    .nav a { color: var(--blue); font-size: 0.85rem; text-decoration: none; margin: 0 0.75rem; }
+    .nav a:hover { text-decoration: underline; }
+
+    main { max-width: 900px; margin: 0 auto; padding: 1rem 1.25rem 4rem; }
+
+    section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 1rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin-bottom: 0.35rem;
+      color: var(--text);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── SCENE CONTAINER ── */
+    .scene {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scene-label {
+      position: absolute;
+      top: 0.75rem;
+      left: 1rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    /* ── ID CARD VISUAL ── */
+    .id-card-demo {
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem 1rem;
+      perspective: 800px;
+    }
+
+    .id-card {
+      width: 280px;
+      background: linear-gradient(145deg, #1e3a5f, #0f2744);
+      border: 2px solid var(--blue);
+      border-radius: 14px;
+      padding: 1.25rem;
+      box-shadow: 0 0 30px var(--blue-glow);
+      animation: cardFloat 4s ease-in-out infinite;
+      position: relative;
+    }
+
+    @keyframes cardFloat {
+      0%, 100% { transform: rotateY(-5deg) translateY(0); }
+      50% { transform: rotateY(5deg) translateY(-6px); }
+    }
+
+    .id-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .id-card-logo {
+      width: 36px; height: 36px;
+      background: var(--blue);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.7rem;
+    }
+
+    .id-card-title { font-size: 0.75rem; font-weight: 700; }
+    .id-card-sub { font-size: 0.65rem; color: var(--muted); }
+
+    .id-field {
+      margin-bottom: 0.6rem;
+      animation: fieldReveal 0.6s ease backwards;
+    }
+
+    .id-field:nth-child(1) { animation-delay: 0.2s; }
+    .id-field:nth-child(2) { animation-delay: 0.5s; }
+    .id-field:nth-child(3) { animation-delay: 0.8s; }
+    .id-field:nth-child(4) { animation-delay: 1.1s; }
+
+    @keyframes fieldReveal {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .id-field label {
+      display: block;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .id-field span {
+      font-size: 0.85rem;
+      font-family: "SF Mono", monospace;
+      color: var(--green);
+    }
+
+    .id-stamp {
+      position: absolute;
+      bottom: 1rem; right: 1rem;
+      width: 56px; height: 56px;
+      border: 3px solid var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 800;
+      color: var(--green);
+      text-align: center;
+      line-height: 1.2;
+      animation: stampPulse 2s ease-in-out infinite;
+      opacity: 0.9;
+    }
+
+    @keyframes stampPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--green-glow); }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px 4px var(--green-glow); }
+    }
+
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ── KEY PAIR SPLIT ── */
+    .keypair-scene {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      padding: 2rem 1rem 1rem;
+      min-height: 220px;
+    }
+
+    @media (max-width: 640px) {
+      .keypair-scene { grid-template-columns: 1fr; text-align: center; }
+      .keypair-arrow { transform: rotate(90deg); }
+    }
+
+    .key-box {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .key-box.private {
+      border: 2px solid var(--red);
+      box-shadow: 0 0 20px var(--red-glow);
+    }
+
+    .key-box.public {
+      border: 2px solid var(--green);
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+
+    .key-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .key-box h4 { font-size: 0.95rem; margin-bottom: 0.35rem; }
+    .key-box p { font-size: 0.8rem; color: var(--muted); }
+
+    .key-box .tag {
+      display: inline-block;
+      margin-top: 0.6rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .key-box.private .tag { background: rgba(239,68,68,0.2); color: var(--red); }
+    .key-box.public .tag { background: rgba(34,197,94,0.2); color: var(--green); }
+
+    .keypair-arrow {
+      font-size: 1.5rem;
+      color: var(--muted);
+      animation: linkPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes linkPulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; color: var(--purple); }
+    }
+
+    .lock-animation {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--red);
+      animation: blink 2s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── ANIMATED FLOW (creation) ── */
+    .flow-stage {
+      position: relative;
+      min-height: 280px;
+      padding: 2.5rem 1rem 1rem;
+    }
+
+    .flow-actors {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: relative;
+      z-index: 2;
+    }
+
+    .actor {
+      text-align: center;
+      width: 120px;
+    }
+
+    .actor-icon {
+      width: 72px; height: 72px;
+      margin: 0 auto 0.5rem;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .actor-icon.device { border-color: var(--blue); }
+    .actor-icon.cloud { border-color: var(--green); }
+
+    .actor-name { font-size: 0.8rem; font-weight: 600; }
+    .actor-sub { font-size: 0.7rem; color: var(--muted); }
+
+    .flow-line {
+      position: absolute;
+      top: 36px;
+      left: 120px;
+      right: 120px;
+      height: 3px;
+      background: var(--border);
+      z-index: 1;
+    }
+
+    .flow-packet {
+      position: absolute;
+      top: 24px;
+      left: 120px;
+      padding: 0.35rem 0.65rem;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      white-space: nowrap;
+      z-index: 3;
+      opacity: 0;
+    }
+
+    .flow-packet.csr {
+      background: var(--amber);
+      color: #1a1a1a;
+    }
+
+    .flow-packet.cert {
+      background: var(--green);
+      color: #0a1a0a;
+    }
+
+    .flow-packet.secret {
+      background: var(--red);
+      color: white;
+    }
+
+    /* Creation animation steps */
+    .flow-stage[data-step="1"] .packet-csr { animation: sendCSR 3s ease-in-out infinite; }
+    .flow-stage[data-step="2"] .packet-cert { animation: recvCert 3s ease-in-out infinite; }
+    .flow-stage[data-step="3"] .secret-stays { animation: secretStay 3s ease-in-out infinite; }
+
+    @keyframes sendCSR {
+      0% { opacity: 0; left: 120px; }
+      15% { opacity: 1; left: 120px; }
+      45% { opacity: 1; left: calc(100% - 220px); }
+      55% { opacity: 0; left: calc(100% - 220px); }
+      100% { opacity: 0; left: 120px; }
+    }
+
+    @keyframes recvCert {
+      0%, 40% { opacity: 0; left: calc(100% - 220px); }
+      55% { opacity: 1; left: calc(100% - 220px); }
+      85% { opacity: 1; left: 120px; }
+      95% { opacity: 0; left: 120px; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes secretStay {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
+    .step-caption {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface2);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-controls {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .step-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .step-btn:hover { border-color: var(--blue); }
+    .step-btn.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: white;
+    }
+
+    .secret-stays-marker {
+      position: absolute;
+      bottom: 60px;
+      left: 60px;
+      text-align: center;
+    }
+
+    .secret-stays-marker .flow-packet {
+      position: relative;
+      top: auto; left: auto;
+      display: inline-block;
+    }
+
+    /* ── HANDSHAKE ANIMATION ── */
+    .handshake-scene {
+      padding: 1.5rem 1rem;
+    }
+
+    .hs-progress {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1.25rem;
+      justify-content: center;
+    }
+
+    .hs-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s, transform 0.3s;
+      cursor: pointer;
+    }
+
+    .hs-dot:hover { transform: scale(1.2); }
+
+    .hs-dot.lit {
+      background: var(--blue);
+      transform: scale(1.3);
+      box-shadow: 0 0 10px var(--blue-glow);
+    }
+
+    .hs-dot.lit.green { background: var(--green); box-shadow: 0 0 10px var(--green-glow); }
+
+    .hs-visual {
+      display: grid;
+      grid-template-columns: 1fr 80px 1fr;
+      gap: 0.5rem;
+      align-items: center;
+      min-height: 200px;
+    }
+
+    @media (max-width: 560px) {
+      .hs-visual { grid-template-columns: 1fr; }
+      .hs-middle { order: -1; }
+    }
+
+    .hs-side {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.4s, box-shadow 0.4s;
+      border: 2px solid transparent;
+    }
+
+    .hs-side.active {
+      border-color: var(--blue);
+      box-shadow: 0 0 24px var(--blue-glow);
+    }
+
+    .hs-side.active-green {
+      border-color: var(--green);
+      box-shadow: 0 0 24px var(--green-glow);
+    }
+
+    .hs-middle {
+      text-align: center;
+      font-size: 1.5rem;
+    }
+
+    .hs-emoji { font-size: 2rem; margin-bottom: 0.35rem; }
+    .hs-label { font-size: 0.75rem; font-weight: 600; }
+    .hs-detail { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; }
+
+    .hs-message {
+      background: var(--surface2);
+      border-left: 3px solid var(--blue);
+      padding: 0.85rem 1rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      min-height: 4rem;
+      margin-top: 1rem;
+      transition: opacity 0.3s;
+    }
+
+    .hs-play-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .play-btn {
+      background: var(--green);
+      border: none;
+      color: #0a1a0a;
+      padding: 0.6rem 1.25rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .play-btn:hover { filter: brightness(1.1); }
+    .play-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+    .play-btn.secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .play-btn.pause { background: var(--amber); color: #1a1a1a; }
+
+    .hs-step-counter {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .hs-step-counter strong { color: var(--blue); font-size: 1rem; }
+
+    .hs-speed-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .speed-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .speed-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.15); }
+
+    .hs-hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.65rem;
+    }
+
+    /* ── CHALLENGE DEEP DIVE ── */
+    .crypto-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 1.25rem 0;
+      font-family: -apple-system, sans-serif;
+      font-size: 0.85rem;
+    }
+
+    .crypto-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    @media (max-width: 600px) {
+      .crypto-row { grid-template-columns: 1fr; text-align: center; }
+      .crypto-arrow { transform: rotate(90deg); }
+    }
+
+    .crypto-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      text-align: center;
+    }
+
+    .crypto-box.highlight-blue { border-color: var(--blue); background: rgba(59,130,246,0.1); }
+    .crypto-box.highlight-red { border-color: var(--red); background: rgba(239,68,68,0.08); }
+    .crypto-box.highlight-green { border-color: var(--green); background: rgba(34,197,94,0.08); }
+
+    .crypto-box .emoji { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
+    .crypto-box .lbl { font-weight: 700; font-size: 0.8rem; }
+    .crypto-box .sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+
+    .crypto-arrow { color: var(--amber); font-size: 1.25rem; font-weight: 700; text-align: center; }
+
+    .truth-box {
+      background: rgba(167, 139, 250, 0.1);
+      border: 1px solid var(--purple);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    .truth-box strong { color: var(--purple); }
+
+    .fail-pass {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    @media (max-width: 560px) { .fail-pass { grid-template-columns: 1fr; } }
+
+    .fail-pass .fp-card {
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .fail-pass .fp-card.pass { background: var(--green-light, rgba(34,197,94,0.1)); border: 1px solid var(--green); }
+    .fail-pass .fp-card.fail { background: rgba(239,68,68,0.08); border: 1px solid var(--red); }
+
+    .fp-card h4 { font-size: 0.9rem; margin-bottom: 0.4rem; }
+    .fp-card p { color: var(--muted); margin: 0; font-size: 0.82rem; }
+
+    /* flying emoji between sides */
+    .hs-flyer {
+      position: absolute;
+      font-size: 1.25rem;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .hs-wrap { position: relative; }
+
+    /* ── COMPARE BOXES ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    @media (max-width: 560px) { .compare-grid { grid-template-columns: 1fr; } }
+
+    .compare-card {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+    }
+
+    .compare-card.highlight {
+      border-color: var(--blue);
+      box-shadow: 0 0 20px var(--blue-glow);
+    }
+
+    .compare-card h4 { font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .compare-card p { font-size: 0.85rem; color: var(--muted); margin: 0; }
+
+    /* ── SUMMARY STRIP ── */
+    .summary-strip {
+      background: linear-gradient(90deg, #1e3a5f, #1a3d2e);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      text-align: center;
+    }
+
+    @media (max-width: 560px) { .summary-strip { grid-template-columns: 1fr; } }
+
+    .summary-strip .num {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    .summary-strip .lbl { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    footer a { color: var(--blue); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>What Is a Certificate?</h1>
+  <p>A visual, animated guide — see exactly what it is and how it proves device identity.</p>
+  <div class="nav">
+    <a href="agent-authentication-explained.html">Plain-language guide</a>
+    <a href="agent-authentication-architecture.html">Technical architecture</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ═══ 1: WHAT IS IT ═══ -->
+  <section id="what">
+    <h2>1. A certificate is a digital ID card</h2>
+    <p class="subtitle">Not a password. Not a file full of secrets. A signed document that says "I am device XYZ, issued by JumpCloud."</p>
+
+    <div class="scene">
+      <span class="scene-label">Live example — this is what client.crt contains</span>
+      <div class="id-card-demo">
+        <div class="id-card">
+          <div class="id-card-header">
+            <div class="id-card-logo">JC</div>
+            <div>
+              <div class="id-card-title">JumpCloud Device Certificate</div>
+              <div class="id-card-sub">X.509 Digital ID Card</div>
+            </div>
+          </div>
+          <div class="id-field">
+            <label>Device ID (Common Name)</label>
+            <span>a3f8b2c1d4e5f678…</span>
+          </div>
+          <div class="id-field">
+            <label>Organization</label>
+            <span>JumpCloud</span>
+          </div>
+          <div class="id-field">
+            <label>Valid until</label>
+            <span>2027-06-21</span>
+          </div>
+          <div class="id-field">
+            <label>Public key</label>
+            <span>🔓 embedded (safe to share)</span>
+          </div>
+          <div class="id-stamp">JC<br>CA<br>SIGNED</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="dot" style="background:var(--green)"></span> Safe to show anyone</div>
+        <div class="legend-item"><span class="dot" style="background:var(--blue)"></span> Signed by JumpCloud CA</div>
+        <div class="legend-item"><span class="dot" style="background:var(--amber)"></span> Contains NO private secret</div>
+      </div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4>❌ A certificate is NOT…</h4>
+        <p>A password you type in. A secret key. Something you memorize. Something that alone unlocks the server.</p>
+      </div>
+      <div class="compare-card highlight">
+        <h4>✅ A certificate IS…</h4>
+        <p>A public ID document + a mathematical link to a private key stored separately on the device. Like a driver's license that only works if you also know the PIN.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 2: KEY PAIR ═══ -->
+  <section id="keypair">
+    <h2>2. Two linked pieces — only one is secret</h2>
+    <p class="subtitle">Created together on the device. They match like a lock and key. The certificate is the lock (public). The private key is the key (secret).</p>
+
+    <div class="scene">
+      <span class="scene-label">The key pair — animated link</span>
+      <div class="keypair-scene">
+        <div class="key-box private">
+          <span class="key-icon">🔑</span>
+          <h4>client.key</h4>
+          <p>Private key<br>NEVER leaves device</p>
+          <span class="tag">SECRET</span>
+        </div>
+        <div class="keypair-arrow">⟷</div>
+        <div class="key-box public">
+          <span class="key-icon">📇</span>
+          <h4>client.crt</h4>
+          <p>Certificate<br>Shown on every connection</p>
+          <span class="tag">PUBLIC ID</span>
+        </div>
+      </div>
+      <div class="lock-animation">🔒 Private key stays on device — always</div>
+    </div>
+  </section>
+
+  <!-- ═══ 3: CREATION ANIMATION ═══ -->
+  <section id="creation">
+    <h2>3. How the certificate gets created (animated)</h2>
+    <p class="subtitle">Click each step to see what travels between device and cloud.</p>
+
+    <div class="scene">
+      <span class="scene-label">Certificate creation flow</span>
+      <div class="flow-stage" id="creationStage" data-step="1">
+        <div class="flow-actors">
+          <div class="actor">
+            <div class="actor-icon device">💻</div>
+            <div class="actor-name">Your Device</div>
+            <div class="actor-sub">creates key + CSR</div>
+          </div>
+          <div class="actor">
+            <div class="actor-icon cloud">☁️</div>
+            <div class="actor-name">JumpCloud</div>
+            <div class="actor-sub">signs &amp; returns cert</div>
+          </div>
+        </div>
+        <div class="flow-line"></div>
+
+        <!-- Step 1: CSR goes out -->
+        <div class="flow-packet csr packet-csr" id="animCSR">📋 CSR request</div>
+        <!-- Step 2: Cert comes back -->
+        <div class="flow-packet cert packet-cert" id="animCert">📇 Signed certificate</div>
+        <!-- Step 3: Secret stays -->
+        <div class="secret-stays-marker" id="animSecret" style="display:none">
+          <div class="flow-packet secret secret-stays">🔑 Private key STAYS</div>
+        </div>
+
+        <div class="step-caption" id="creationCaption">
+          Step 1: Device creates a private key locally, then sends only a <strong>CSR</strong> (certificate request) to JumpCloud.
+        </div>
+      </div>
+
+      <div class="step-controls">
+        <button class="step-btn active" data-creation="1">① CSR sent</button>
+        <button class="step-btn" data-creation="2">② Cert returned</button>
+        <button class="step-btn" data-creation="3">③ Key stays local</button>
+        <button class="step-btn" data-creation="auto">▶ Auto-play all</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 4: HANDSHAKE ANIMATION ═══ -->
+  <section id="handshake">
+    <h2>4. How the certificate authenticates (animated handshake)</h2>
+    <p class="subtitle">Use <strong>Next step</strong> to go at your own pace, or <strong>Auto-play</strong> with pause. Click any dot to jump to that step.</p>
+
+    <div class="scene hs-wrap">
+      <span class="scene-label">mTLS challenge — step through at your pace</span>
+      <div class="handshake-scene">
+        <div class="hs-step-counter" id="hsCounter">Ready — press <strong>Next step</strong> or click dot ①</div>
+        <div class="hs-progress" id="hsDots">
+          <div class="hs-dot" data-hs-step="0" title="Step 1"></div>
+          <div class="hs-dot" data-hs-step="1" title="Step 2"></div>
+          <div class="hs-dot" data-hs-step="2" title="Step 3"></div>
+          <div class="hs-dot" data-hs-step="3" title="Step 4"></div>
+          <div class="hs-dot" data-hs-step="4" title="Step 5"></div>
+          <div class="hs-dot" data-hs-step="5" title="Step 6"></div>
+        </div>
+
+        <div class="hs-visual">
+          <div class="hs-side" id="hsDevice">
+            <div class="hs-emoji">💻</div>
+            <div class="hs-label">Device</div>
+            <div class="hs-detail" id="hsDeviceDetail">Waiting…</div>
+          </div>
+          <div class="hs-middle" id="hsMiddle">🔒</div>
+          <div class="hs-side" id="hsServer">
+            <div class="hs-emoji">☁️</div>
+            <div class="hs-label">JumpCloud</div>
+            <div class="hs-detail" id="hsServerDetail">Waiting…</div>
+          </div>
+        </div>
+
+        <div class="hs-message" id="hsMessage">
+          Use the controls below to move through each step. Nothing advances until you click <strong>Next step</strong> or start <strong>Auto-play</strong>.
+        </div>
+
+        <div class="hs-play-row">
+          <button class="play-btn secondary" id="hsPrev" disabled>← Previous</button>
+          <button class="play-btn" id="hsNext">Next step →</button>
+          <button class="play-btn secondary" id="hsAuto">▶ Auto-play</button>
+          <button class="play-btn secondary" id="hsReset">Reset</button>
+        </div>
+
+        <div class="hs-speed-row">
+          <span>Auto-play speed:</span>
+          <button class="speed-btn" data-speed="8000">Slow (8s)</button>
+          <button class="speed-btn active" data-speed="5000">Medium (5s)</button>
+          <button class="speed-btn" data-speed="3000">Fast (3s)</button>
+        </div>
+        <div class="hs-hint">Tip: during Auto-play, click <strong>Pause</strong> to freeze on the current step and read.</div>
+      </div>
+    </div>
+
+    <div class="compare-grid" style="margin-top:1rem">
+      <div class="compare-card">
+        <h4>Why send the certificate?</h4>
+        <p>It tells the server <em>who</em> is knocking — "I am device a3f8b2c1."</p>
+      </div>
+      <div class="compare-card highlight">
+        <h4>Why the challenge + private key?</h4>
+        <p>Anyone could copy the certificate file. The challenge proves the device still holds the matching <strong>secret key</strong> right now — not just a photocopy.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 4b: CHALLENGE EXPLAINED ═══ -->
+  <section id="challenge">
+    <h2>4b. What is the "random challenge"? (deep dive)</h2>
+    <p class="subtitle">Steps 4–6 of the handshake — what actually happens, in plain language.</p>
+
+    <div class="scene">
+      <span class="scene-label">The problem we're solving</span>
+      <p style="font-size:0.9rem;color:var(--muted);margin:0.5rem 0 1rem">
+        Sending <code>client.crt</code> only says <em>"I claim to be device XYZ."</em>
+        Anyone could copy that file from another machine. The challenge proves
+        <strong>you hold the matching secret key right now</strong> — not just a photocopy of the ID.
+      </p>
+
+      <div class="analogy" style="background:rgba(245,158,11,0.1);border:1px solid var(--amber);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
+        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--amber);margin-bottom:0.35rem">Simple analogy</div>
+        <p style="margin:0;font-size:0.9rem;color:var(--muted)">
+          A bouncer asks you to <strong>sign a random napkin</strong> they just handed you.
+          They verify the signature against the sample on your ID card.
+          Copying someone's license doesn't help — you can't forge their handwriting without practice (the private key).
+        </p>
+      </div>
+
+      <h3 style="font-size:0.95rem;color:var(--text);margin-bottom:0.75rem">What TLS actually does (inside the handshake)</h3>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">
+        It's not a separate JumpCloud API call. The "challenge" is built into the TLS protocol itself.
+        Both sides have been exchanging handshake messages; together those messages form a
+        <strong>transcript</strong>. The server effectively says: <em>sign this transcript hash to prove you own the key.</em>
+      </p>
+
+      <div class="crypto-flow">
+        <div class="crypto-row">
+          <div class="crypto-box highlight-blue">
+            <span class="emoji">💬</span>
+            <div class="lbl">Handshake transcript</div>
+            <div class="sub">All messages so far:<br>server hello, cert request, client cert…</div>
+          </div>
+          <div class="crypto-arrow">→</div>
+          <div class="crypto-box">
+            <span class="emoji">#️⃣</span>
+            <div class="lbl">Hash (fingerprint)</div>
+            <div class="sub">SHA-256 digest of transcript<br>e.g. <code>7a3f9b2c…</code></div>
+          </div>
+        </div>
+        <div class="crypto-row">
+          <div class="crypto-box highlight-red">
+            <span class="emoji">🔑</span>
+            <div class="lbl">Agent signs hash</div>
+            <div class="sub">Uses <strong>client.key</strong> (private key)<br>Output: digital signature</div>
+          </div>
+          <div class="crypto-arrow">→</div>
+          <div class="crypto-box highlight-green">
+            <span class="emoji">📇</span>
+            <div class="lbl">Server verifies</div>
+            <div class="sub">Uses <strong>public key inside client.crt</strong><br>Math matches? ✓ Authentic</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="truth-box">
+        <strong>Key insight:</strong> The certificate embeds the <em>public</em> half of the key pair.
+        Only the matching <em>private</em> key can produce a signature the public key will accept.
+        This is one-way math — you can't derive the private key from the certificate.
+      </div>
+
+      <h3 style="font-size:0.95rem;color:var(--text);margin:1.25rem 0 0.75rem">Step by step — who does what</h3>
+
+      <ol class="step-list" style="list-style:none;padding:0">
+        <li style="display:flex;gap:1rem;margin-bottom:1rem">
+          <span style="flex-shrink:0;width:2rem;height:2rem;background:var(--blue);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem">4</span>
+          <div>
+            <strong style="font-size:0.9rem">Server builds the "challenge"</strong>
+            <p style="font-size:0.85rem;color:var(--muted);margin:0.25rem 0 0">
+              During TLS, server and client have exchanged several messages. TLS combines them into one
+              hash — a fixed-length fingerprint unique to <em>this exact conversation</em>.
+              Because it includes random values from both sides, it's different every connection (like a fresh napkin each time).
+            </p>
+          </div>
+        </li>
+        <li style="display:flex;gap:1rem;margin-bottom:1rem">
+          <span style="flex-shrink:0;width:2rem;height:2rem;background:var(--red);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem">5</span>
+          <div>
+            <strong style="font-size:0.9rem">Agent signs with the private key</strong>
+            <p style="font-size:0.85rem;color:var(--muted);margin:0.25rem 0 0">
+              The agent's TLS stack reads <code>client.key</code> from disk and runs a sign operation:
+              <code>signature = Sign(private_key, hash)</code>.
+              The private key never leaves the device — only the signature bytes are sent back.
+              (In TLS 1.3 this is the <strong>CertificateVerify</strong> message.)
+            </p>
+          </div>
+        </li>
+        <li style="display:flex;gap:1rem;margin-bottom:0">
+          <span style="flex-shrink:0;width:2rem;height:2rem;background:var(--green);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem">6</span>
+          <div>
+            <strong style="font-size:0.9rem">Server verifies — pass or reject</strong>
+            <p style="font-size:0.85rem;color:var(--muted);margin:0.25rem 0 0">
+              The load balancer extracts the public key from the client's certificate and runs:
+              <code>Verify(public_key, hash, signature)</code>.
+              If the math checks out → the signer owns the private key paired with that certificate → connection allowed.
+              If not → handshake fails, connection dropped. No API data ever flows.
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <h3 style="font-size:0.95rem;color:var(--text);margin:1.5rem 0 0.75rem">What if someone only steals the certificate?</h3>
+      <div class="fail-pass">
+        <div class="fp-card fail">
+          <h4>❌ Attacker has client.crt only</h4>
+          <p>Can claim the device ID. Cannot produce a valid signature. Verification fails. Connection rejected.</p>
+        </div>
+        <div class="fp-card pass">
+          <h4>✅ Real device has both files</h4>
+          <p>Has client.crt + client.key. Signs the hash correctly. Verification passes. Tunnel opens.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size:0.95rem;color:var(--text);margin:1.25rem 0 0.75rem">Why a fresh hash every time?</h3>
+      <p style="font-size:0.85rem;color:var(--muted);margin:0">
+        The transcript includes random numbers from both server and client. An attacker can't replay
+        yesterday's signature — it was for a different hash. Each connection requires a new proof,
+        right now, with the private key.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ 5: FULL PICTURE ═══ -->
+  <section id="full">
+    <h2>5. The full picture in 3 ideas</h2>
+    <p class="subtitle">If you remember nothing else, remember these.</p>
+
+    <div class="summary-strip">
+      <div>
+        <div class="num">📇</div>
+        <div class="lbl"><strong>Certificate</strong> = public ID card<br>shows who you are</div>
+      </div>
+      <div>
+        <div class="num">🔑</div>
+        <div class="lbl"><strong>Private key</strong> = secret PIN<br>proves you ARE that ID</div>
+      </div>
+      <div>
+        <div class="num">✍️</div>
+        <div class="lbl"><strong>JumpCloud CA signature</strong> = official stamp<br>proves the ID is real</div>
+      </div>
+    </div>
+
+    <div class="scene" style="margin-top:1.25rem">
+      <span class="scene-label">Complete lifecycle</span>
+      <div style="padding:1.5rem 0.5rem;font-size:0.9rem;color:var(--muted);line-height:2">
+        <strong style="color:var(--text)">Install day:</strong>
+        Device generates 🔑 → sends 📋 CSR → receives 📇 certificate → registers with JumpCloud<br>
+        <strong style="color:var(--text)">Every day after:</strong>
+        Agent shows 📇 + signs challenge with 🔑 → server verifies → data flows inside 🔒 encrypted tunnel<br>
+        <strong style="color:var(--text)">Before expiry:</strong>
+        Same 🔑, new 📇 with extended date — identity unchanged
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <a href="agent-authentication-explained.html">Read the full plain-language guide →</a>
+  &nbsp;·&nbsp; JumpCloud Agent
+</footer>
+
+<script>
+(function () {
+  /* ── Creation step buttons ── */
+  const stage = document.getElementById('creationStage');
+  const caption = document.getElementById('creationCaption');
+  const animCSR = document.getElementById('animCSR');
+  const animCert = document.getElementById('animCert');
+  const animSecret = document.getElementById('animSecret');
+  const creationBtns = document.querySelectorAll('[data-creation]');
+  let autoTimer = null;
+
+  const creationText = {
+    1: 'Step 1: Device creates a <strong>private key</strong> locally, then sends only a <strong>CSR</strong> (certificate request) to JumpCloud. The secret never leaves.',
+    2: 'Step 2: JumpCloud\'s Certificate Authority <strong>signs</strong> the request and sends back the <strong>certificate</strong> (client.crt). The device saves it.',
+    3: 'Step 3: The <strong>private key never traveled</strong>. It stays in client.key on the device forever. Only the public certificate was exchanged.',
+  };
+
+  function setCreationStep(n) {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    stage.setAttribute('data-step', n);
+    caption.innerHTML = creationText[n];
+    creationBtns.forEach(b => b.classList.toggle('active', b.dataset.creation === String(n)));
+
+    animCSR.style.display = n === 1 ? 'block' : 'none';
+    animCert.style.display = n === 2 ? 'block' : 'none';
+    animSecret.style.display = n === 3 ? 'block' : 'none';
+
+    /* restart CSS animations */
+    [animCSR, animCert].forEach(el => {
+      if (el.style.display !== 'none') {
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = '';
+      }
+    });
+  }
+
+  creationBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.creation;
+      if (v === 'auto') {
+        let i = 1;
+        setCreationStep(1);
+        autoTimer = setInterval(() => {
+          i = i >= 3 ? 1 : i + 1;
+          setCreationStep(i);
+        }, 3500);
+        creationBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      } else {
+        setCreationStep(parseInt(v, 10));
+      }
+    });
+  });
+
+  setCreationStep(1);
+
+  /* ── Handshake animation ── */
+  let hsAutoDelay = 5000;
+
+  const hsSteps = [
+    {
+      msg: '<strong>Step 1 of 6:</strong> JumpCloud sends its server certificate. Device checks: "Is this the real JumpCloud?" (using ca.crt trust bundle)',
+      device: 'Checking server…', server: 'Here is my server cert 📜', devActive: false, srvActive: true,
+    },
+    {
+      msg: '<strong>Step 2 of 6:</strong> Server says: "This is mTLS — now show me YOUR certificate." Normal websites skip this; JumpCloud requires it.',
+      device: 'Preparing my cert…', server: 'Show your ID card 📇', devActive: true, srvActive: true,
+    },
+    {
+      msg: '<strong>Step 3 of 6:</strong> Device sends <strong>client.crt</strong> (the public ID card). The private key is still NOT on the wire.',
+      device: 'Sending client.crt 📇', server: 'Received certificate', devActive: true, srvActive: false,
+    },
+    {
+      msg: '<strong>Step 4 of 6:</strong> TLS builds a <strong>hash of the handshake transcript</strong> (all messages so far + random values). This is the "challenge" — unique to this connection. <a href="#challenge" style="color:var(--blue)">Deep dive →</a>',
+      device: 'Handshake in progress…', server: 'Prove you own the key!', devActive: false, srvActive: true,
+    },
+    {
+      msg: '<strong>Step 5 of 6:</strong> Agent signs the hash with <strong>client.key</strong>. Only the signature is sent — the private key stays on disk. (TLS <strong>CertificateVerify</strong> message.)',
+      device: 'Signing hash with 🔑…', server: 'Waiting for signature…', devActive: true, srvActive: false,
+    },
+    {
+      msg: '<strong>Step 6 of 6:</strong> Server runs <code>Verify(public_key, hash, signature)</code> using the public key embedded in client.crt. Match → ✅ tunnel opens. No match → connection dropped.',
+      device: 'Authenticated ✓', server: 'Welcome, device ✓', devActive: true, srvActive: true, done: true,
+    },
+  ];
+
+  const hsMessage = document.getElementById('hsMessage');
+  const hsDevice = document.getElementById('hsDevice');
+  const hsServer = document.getElementById('hsServer');
+  const hsDeviceDetail = document.getElementById('hsDeviceDetail');
+  const hsServerDetail = document.getElementById('hsServerDetail');
+  const hsMiddle = document.getElementById('hsMiddle');
+  const hsDots = document.querySelectorAll('#hsDots .hs-dot');
+  const hsPrev = document.getElementById('hsPrev');
+  const hsNext = document.getElementById('hsNext');
+  const hsAuto = document.getElementById('hsAuto');
+  const hsReset = document.getElementById('hsReset');
+  const hsCounter = document.getElementById('hsCounter');
+  const speedBtns = document.querySelectorAll('.speed-btn');
+
+  let hsCurrentStep = -1;
+  let hsAutoTimer = null;
+  let hsPaused = false;
+
+  function renderHsStep(i) {
+    if (i < 0 || i >= hsSteps.length) return;
+    hsCurrentStep = i;
+    const s = hsSteps[i];
+
+    hsMessage.innerHTML = s.msg;
+    hsDeviceDetail.textContent = s.device;
+    hsServerDetail.textContent = s.server;
+
+    hsDevice.className = 'hs-side' + (s.devActive ? (s.done ? ' active-green' : ' active') : '');
+    hsServer.className = 'hs-side' + (s.srvActive ? (s.done ? ' active-green' : ' active') : '');
+
+    hsDots.forEach((d, j) => {
+      d.className = 'hs-dot' + (j <= i ? (s.done && j === i ? ' lit green' : ' lit') : '');
+      if (j === i) d.className += ' lit';
+    });
+
+    hsMiddle.textContent = s.done ? '✅' : ['🔒', '🔒', '📇', '🎲', '🔑', '✅'][i];
+
+    hsCounter.innerHTML = 'Step <strong>' + (i + 1) + '</strong> of ' + hsSteps.length;
+    hsPrev.disabled = i <= 0;
+    hsNext.disabled = i >= hsSteps.length - 1;
+    hsNext.textContent = i >= hsSteps.length - 1 ? 'Done ✓' : 'Next step →';
+  }
+
+  function stopAuto() {
+    if (hsAutoTimer) {
+      clearInterval(hsAutoTimer);
+      hsAutoTimer = null;
+    }
+    hsPaused = false;
+    hsAuto.textContent = '▶ Auto-play';
+    hsAuto.classList.remove('pause');
+  }
+
+  function resetHandshake() {
+    stopAuto();
+    hsCurrentStep = -1;
+    hsMessage.innerHTML = 'Use the controls below to move through each step. Nothing advances until you click <strong>Next step</strong> or start <strong>Auto-play</strong>.';
+    hsDeviceDetail.textContent = 'Waiting…';
+    hsServerDetail.textContent = 'Waiting…';
+    hsDevice.className = 'hs-side';
+    hsServer.className = 'hs-side';
+    hsMiddle.textContent = '🔒';
+    hsDots.forEach(d => { d.className = 'hs-dot'; });
+    hsCounter.innerHTML = 'Ready — press <strong>Next step</strong> or click dot ①';
+    hsPrev.disabled = true;
+    hsNext.disabled = false;
+    hsNext.textContent = 'Next step →';
+  }
+
+  function startAuto() {
+    stopAuto();
+    if (hsCurrentStep < 0) renderHsStep(0);
+    hsAuto.textContent = '⏸ Pause';
+    hsAuto.classList.add('pause');
+    hsPaused = false;
+
+    hsAutoTimer = setInterval(() => {
+      if (hsPaused) return;
+      if (hsCurrentStep >= hsSteps.length - 1) {
+        stopAuto();
+        return;
+      }
+      renderHsStep(hsCurrentStep + 1);
+    }, hsAutoDelay);
+  }
+
+  hsNext.addEventListener('click', () => {
+    stopAuto();
+    if (hsCurrentStep < hsSteps.length - 1) {
+      renderHsStep(hsCurrentStep + 1);
+    }
+  });
+
+  hsPrev.addEventListener('click', () => {
+    stopAuto();
+    if (hsCurrentStep > 0) {
+      renderHsStep(hsCurrentStep - 1);
+    }
+  });
+
+  hsAuto.addEventListener('click', () => {
+    if (hsAutoTimer && !hsPaused) {
+      hsPaused = true;
+      hsAuto.textContent = '▶ Resume';
+      hsAuto.classList.remove('pause');
+    } else if (hsAutoTimer && hsPaused) {
+      hsPaused = false;
+      hsAuto.textContent = '⏸ Pause';
+      hsAuto.classList.add('pause');
+    } else {
+      startAuto();
+    }
+  });
+
+  hsReset.addEventListener('click', resetHandshake);
+
+  hsDots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      stopAuto();
+      renderHsStep(parseInt(dot.dataset.hsStep, 10));
+    });
+  });
+
+  speedBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      speedBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      hsAutoDelay = parseInt(btn.dataset.speed, 10);
+      if (hsAutoTimer && !hsPaused) {
+        startAuto();
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

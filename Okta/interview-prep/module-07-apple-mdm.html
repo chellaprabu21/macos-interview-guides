@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 07 - Apple MDM as Security Control Transport</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 07 of 10</span>
+    <h1>Apple MDM as Security Control Transport</h1>
+    <p>MDM is the provisioning plane - SCEP enrollment, profile delivery, ES entitlements - that enables the agent runtime plane.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-06-webauthn.html">← Module 06</a>
+    <a href="index.html">Hub</a>
+    <a href="module-08-endpoint-security.html">Module 08 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">Apple MDM is how enterprises bootstrap trust on macOS: enroll device, install identity certs, deploy configuration profiles (SSO extension, login items, system extension policies), and push security commands. JumpCloud operates a full MDM stack in <code>jumpcloud-apple-mdm</code> - check-in protocol, SCEP, APNs push, DDM - that provisions capabilities the agent consumes at runtime.</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>jumpcloud-apple-mdm/endpoints/checkin.go</code> - Authenticate, TokenUpdate, CheckOut; Mdm-Signature PKCS#7 verify</li>
+        <li><code>jumpcloud-apple-mdm/business/checkin.go</code> - enrollment command chain, APNs push, bootstrap token</li>
+        <li><code>jumpcloud-apple-mdm/business/templates.go</code> - ES system extension profile (<code>com.apple.system-extension-policy</code>)</li>
+        <li><code>jumpcloud-apple-mdm/commands/results/handlers/endpoint_security_profile_handler.go</code> - auto-enqueue ES profile if missing</li>
+        <li><code>jumpcloud-apple-mdm/services/scep.go</code> - CSR signing, challenge password</li>
+        <li><code>jumpcloud-apple-mdm/business/checkin_ddm_declaration.go</code> - Declarative MDM</li>
+        <li><code>jumpcloud-agent/mdm/</code> - agent-side MDM association reporters</li>
+      </ul>
+      <p>Check-in verifies <code>Mdm-Signature</code> header (PKCS#7 over body with device identity cert) before dispatching message type. During enrollment, business logic chains commands: install profiles → ES entitlement → agent association.</p>
+    </section>
+
+    <section>
+      <h2>Okta Parallel</h2>
+      <div class="card okta">
+        <p>Okta Device Access deploys via MDM: Platform SSO extension profiles, Device Access SCEP certificates, Okta Verify login items, and <code>com.apple.extensibility.sso</code> payloads. Same pattern - MDM is not the security product; it's the <strong>delivery mechanism</strong> for entitlements and configs that Okta Verify / Device Access consume at runtime.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Architecture Diagram</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph provision [Provisioning Plane - jumpcloud-apple-mdm]
+    ABM["ABM DEP"]
+    Enroll[SCEP Enrollment]
+    CheckIn[MDM Check-in Protocol]
+    Queue[Command Queue]
+    APNs[APNs Push]
+    Profiles[Configuration Profiles]
+    ABM --> Enroll --> CheckIn --> Queue
+    APNs --> CheckIn
+    Queue --> Profiles
+  end
+
+  subgraph profiles [Key Profiles Delivered]
+    ESProf[System Extension Policy ES entitlement]
+    SSOProf[SSO Extension Policy]
+    LoginItems[Login Items Okta Verify analog]
+    AgentProf[JumpCloud Agent install]
+  end
+
+  Profiles --> ESProf
+  Profiles --> SSOProf
+  Profiles --> LoginItems
+  Profiles --> AgentProf
+
+  subgraph runtime [Runtime Plane - jumpcloud-agent]
+    Agent[Agent daemon]
+    Tray[Tray plus extensions]
+    Report[MDM association reporter]
+    Agent --> Tray
+    Agent --> Report
+  end
+
+  ESProf --> Tray
+  SSOProf --> Tray
+  AgentProf --> Agent
+  Report --> CheckIn
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Check-in Message Types</h2>
+      <table>
+        <thead><tr><th>Message</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Authenticate</td><td>Initial enrollment - device presents identity, receives token</td></tr>
+          <tr><td>TokenUpdate</td><td>Push token refresh for APNs delivery</td></tr>
+          <tr><td>CheckOut</td><td>Unenrollment - wipe MDM relationship</td></tr>
+          <tr><td>GetBootstrapToken</td><td>Escrow bootstrap token for secure token workflows</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Enrollment Sequence</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant Device as macOS Device
+  participant MDM as jumpcloud-apple-mdm
+  participant APNs as Apple APNs
+
+  Device->>MDM: SCEP enroll obtain identity cert
+  Device->>MDM: CheckIn Authenticate
+  MDM->>MDM: Verify Mdm-Signature
+  MDM->>Device: Install agent plus base profiles
+  MDM->>APNs: Register push token
+  MDM->>Device: Install ES system extension profile
+  Device->>MDM: ProfileList result
+  MDM->>MDM: ES handler enqueues if missing
+  Device->>MDM: TokenUpdate periodic
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">Provisioning plane vs runtime plane?</div>
+        <div class="qa-a">MDM delivers entitlements and configs once (or on change). Agent/extensions enforce security continuously at runtime. ES entitlement without ES client binary is useless; ES client without MDM entitlement won't load. Both planes required.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">How is ES entitlement delivered?</div>
+        <div class="qa-a"><code>EndpointSecurityBuilder</code> in templates.go builds <code>com.apple.system-extension-policy</code> payload allowing JumpCloud team ID + ES extension bundle ID. Handler auto-enqueues on ProfileList if <code>com.jumpcloud.endpoint.security</code> missing - self-healing enrollment.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What is DDM?</div>
+        <div class="qa-a">Declarative MDM - device pulls declarations and reports status vs classic push-command model. JumpCloud has DDM handlers for SecurityInfo and related declarations - relevant for BAN-3495 MDM producer path (FileVault status from MDM with MDM &gt; Agent precedence).</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Okta MDM deployment comparison?</div>
+        <div class="qa-a">Okta publishes .mobileconfig templates for SSO extension, login items, Device Access certs via customer's MDM (Jamf, Intune, etc.). JumpCloud IS the MDM - same payloads, integrated stack. Interview angle: you've seen both integrated and BYO-MDM deployment models.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>Agent MDM hooks (<code>jumpcloud-agent/mdm/</code>) report association - deep MDM business logic is apple-mdm repo, not agent.</li>
+          <li>Microsoft MDM parity in <code>jumpcloud-microsoft-mdm</code> - lower priority for macOS-focused JD.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-06-webauthn.html">← Module 06</a> · <a href="module-08-endpoint-security.html">Module 08 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

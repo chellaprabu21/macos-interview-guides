@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyberhaven HR Screen — Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F7FA;
+    --ink:#171A21;
+    --muted:#5A6072;
+    --trace:#5B4FE9;      /* lineage violet */
+    --trace-soft:#E8E6FB;
+    --signal:#0E8A6D;     /* evidence green */
+    --warn:#B4540A;
+    --card:#FFFFFF;
+    --line:#DDE0E8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:15.5px;
+    line-height:1.55;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:48px 24px 96px}
+
+  /* header */
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--trace);font-weight:500;margin-bottom:14px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:650;
+    font-size:clamp(30px,5vw,44px);line-height:1.08;letter-spacing:-.01em;
+    margin-bottom:14px;
+  }
+  .meta{
+    display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;
+  }
+  .chip{
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;
+    background:var(--card);border:1px solid var(--line);
+    padding:6px 12px;border-radius:999px;color:var(--muted);
+  }
+  .chip strong{color:var(--ink);font-weight:500}
+  .chip.action{border-color:var(--trace);color:var(--trace)}
+
+  /* lineage spine: sections connected by a trace line */
+  .spine{position:relative;margin-top:56px}
+  .spine::before{
+    content:"";position:absolute;left:7px;top:8px;bottom:8px;
+    width:2px;background:linear-gradient(var(--trace) 0%,var(--trace-soft) 100%);
+    border-radius:2px;
+  }
+  section{position:relative;padding-left:40px;margin-bottom:52px}
+  section::before{
+    content:"";position:absolute;left:0;top:6px;
+    width:16px;height:16px;border-radius:50%;
+    background:var(--paper);border:2px solid var(--trace);
+  }
+  h2{
+    font-family:'Fraunces',serif;font-weight:650;font-size:23px;
+    letter-spacing:-.01em;margin-bottom:6px;
+  }
+  .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:20px 22px;margin-bottom:14px;
+  }
+  ul{list-style:none}
+  ul.tick li{
+    padding-left:22px;position:relative;margin-bottom:9px;
+  }
+  ul.tick li::before{
+    content:"—";position:absolute;left:0;color:var(--trace);font-weight:600;
+  }
+  b{font-weight:600}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:13px}
+
+  /* pitch block */
+  .pitch{
+    border-left:3px solid var(--trace);
+    background:var(--card);border-radius:0 12px 12px 0;
+    padding:22px 24px;font-size:16px;line-height:1.65;
+  }
+  .pitch em{font-style:normal;background:var(--trace-soft);padding:0 4px;border-radius:3px}
+  .beats{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+  .beats span{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;
+    color:var(--muted);border:1px dashed var(--line);
+    padding:4px 10px;border-radius:6px;
+  }
+
+  /* mapping table */
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:12px 14px;text-align:left;vertical-align:top;font-size:14px;
+    border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  th{font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;background:#FBFBFD}
+  td.evidence{color:var(--ink)}
+  .exceeds{color:var(--signal);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:12px}
+
+  /* Q&A */
+  details{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:12px;margin-bottom:10px;overflow:hidden;
+  }
+  summary{
+    cursor:pointer;padding:15px 20px;font-weight:600;font-size:15px;
+    list-style:none;display:flex;gap:10px;align-items:baseline;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"Q";font-family:'JetBrains Mono',monospace;
+    color:var(--trace);font-size:12px;font-weight:500}
+  details[open] summary{border-bottom:1px solid var(--line)}
+  .answer{padding:16px 20px 18px;color:var(--ink)}
+  .answer p{margin-bottom:10px}
+  .answer p:last-child{margin-bottom:0}
+  .note{
+    font-size:13.5px;color:var(--warn);background:#FCF3EA;
+    border:1px solid #F0DCC6;border-radius:8px;padding:10px 14px;margin-top:10px;
+  }
+
+  /* honest flag */
+  .flag{border-left:3px solid var(--warn)}
+
+  .ask li{margin-bottom:10px}
+  footer{padding-left:40px;color:var(--muted);font-size:13px}
+  @media(max-width:560px){
+    section{padding-left:30px}
+    .spine::before{left:5px}
+    section::before{width:12px;height:12px}
+    th,td{padding:10px 10px;font-size:13px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Interview Prep · Round 1 of N</div>
+    <h1>Cyberhaven — HR Screen<br>Senior SWE, macOS Endpoint</h1>
+    <div class="meta">
+      <span class="chip"><strong>30 min</strong> · recruiter screen</span>
+      <span class="chip">Recruiter: <strong>Aisha Ansari</strong></span>
+      <span class="chip">Referred by <strong>Mann</strong></span>
+      <span class="chip action">Book the Ashby slot first — IST evening for CET/US-East overlap</span>
+    </div>
+  </header>
+
+  <div class="spine">
+
+  <section>
+    <h2>Know the company in 60 seconds</h2>
+    <p class="sub">You only need enough to sound genuinely curious, not encyclopedic.</p>
+    <div class="card">
+      <ul class="tick">
+        <li><b>What they do:</b> Data Detection &amp; Response — they trace <b>data lineage</b> (where a file came from, every hop it took) instead of pattern-matching content like legacy DLP. That lineage drives classification and policy.</li>
+        <li><b>The macOS role:</b> the endpoint <b>sensor</b> that watches every data movement across apps and files — hundreds of thousands of events, near-zero performance impact, hardened against attack.</li>
+        <li><b>Stage:</b> ~$250M raised (Khosla, Redpoint). Leadership pedigree from CrowdStrike, Palo Alto Networks, Meta, Google. Growth-stage, so expect "early contributor, shape the architecture" framing — mirror that language back.</li>
+        <li><b>Team shape:</b> distributed across CET and US-Eastern. India is an approved location — your evening availability from Bengaluru is a selling point, say so unprompted.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Your 60-second pitch</h2>
+    <p class="sub">Deliver this when asked "walk me through your background." Commit first — no hedging, no résumé recitation.</p>
+    <div class="pitch">
+      "I've spent ten years building native macOS client software for security products — Zoho, Citrix, and now JumpCloud, where I'm a Staff engineer tech-leading the Endpoint AI Governance team. My day job is essentially the job in your JD: <em>a fleet-scale macOS agent built on System Extensions and the Endpoint Security framework</em>, deployed across millions of endpoints, where performance and reliability are non-negotiable because we sit in the user's critical path. I've done the hard parts of this domain — multithreaded event processing, Instruments-driven profiling, secure-by-design client code handling untrusted data. What pulls me to Cyberhaven is that the sensor <em>is</em> the product. Data lineage on the endpoint is the most interesting unsolved problem in DLP, and I want to build it early enough to shape the architecture."
+    </div>
+    <div class="beats">
+      <span>10 yrs macOS</span><span>security products only</span><span>ES framework daily</span><span>millions of endpoints</span><span>perf is my specialty</span><span>why-them, not why-leave</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>JD → your evidence, line by line</h2>
+    <p class="sub">If she checks boxes against the JD, hand her the boxes.</p>
+    <table>
+      <tr><th>They ask for</th><th>You say</th></tr>
+      <tr>
+        <td>Swift on macOS, strong track record</td>
+        <td class="evidence">Decade of Swift/Obj-C/C++ across Zoho Assist, Citrix Workspace, JumpCloud agent</td>
+      </tr>
+      <tr>
+        <td>System Extensions + Endpoint Security framework + Network Extensions</td>
+        <td class="evidence">Current daily work — JumpCloud agent is built on exactly these APIs <span class="exceeds">DIRECT HIT</span></td>
+      </tr>
+      <tr>
+        <td>Large native app, tens of thousands of users</td>
+        <td class="evidence">Fleet-scale agent across <b>millions</b> of endpoints <span class="exceeds">EXCEEDS 100×</span></td>
+      </tr>
+      <tr>
+        <td>Debugging/profiling low-level software with Instruments</td>
+        <td class="evidence">Instruments-driven memory, concurrency, and leak analysis; WebRTC perf tuning across 26 regions</td>
+      </tr>
+      <tr>
+        <td>Endpoint security products (DLP/EDR)</td>
+        <td class="evidence">Device trust, attestation, conditional access, zero-trust posture — endpoint security agent end-to-end</td>
+      </tr>
+      <tr>
+        <td>Distributed cross-functional teams, CET/US-East overlap</td>
+        <td class="evidence">Years of distributed work at Citrix + JumpCloud; comfortable with IST-evening overlap</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Questions she will actually ask</h2>
+    <p class="sub">HR screens are logistics + motivation + red-flag checks. Have crisp numbers ready.</p>
+
+    <details open>
+      <summary>Why are you looking to leave JumpCloud?</summary>
+      <div class="answer">
+        <p>Never negative. Pull, not push: "I'm not running from anything — JumpCloud has been great. But at Cyberhaven the endpoint sensor is the core product, not a supporting component of an identity platform. I want my macOS depth to be the company's main event, at a stage where I can still shape architecture."</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>What are your compensation expectations?</summary>
+      <div class="answer">
+        <p>Deflect once, gracefully: "I'd rather first confirm mutual fit — but I'm benchmarking against Staff-level offers in the Bengaluru security market, and I trust Cyberhaven's band is competitive for that. Can you share the range for this role?" Many recruiters will share the band if you ask directly.</p>
+        <p>If pressed for a number, give a <b>range anchored to your Staff-level benchmarks</b> (you've already researched Okta/Zscaler/India Staff bands) — not your current CTC.</p>
+        <div class="note">Do not volunteer current CTC. If asked, it's fine in India hiring culture to redirect to expectations instead.</div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Notice period / earliest start date?</summary>
+      <div class="answer"><p>State it plainly with the buyout/negotiation option if one exists. Startups move fast; a shorter effective notice is a real advantage — mention it if you can offer one.</p></div>
+    </details>
+
+    <details>
+      <summary>Are you comfortable with CET / US-Eastern collaboration?</summary>
+      <div class="answer"><p>"Yes — I already work with distributed teams. CET overlap is comfortable from IST afternoons, and I can hold a regular evening window for US-East syncs." Concrete, committed, done.</p></div>
+    </details>
+
+    <details>
+      <summary>Tell me about your current role</summary>
+      <div class="answer"><p>Compressed version of the pitch: Staff engineer, tech lead, fleet-scale macOS security agent, ES framework + System Extensions, device trust and conditional access. One breath, then stop. Let her ask follow-ups.</p></div>
+    </details>
+  </section>
+
+  <section>
+    <h2 style="color:var(--warn)">The one honest wrinkle: Senior vs Staff</h2>
+    <div class="card flag">
+      <p style="margin-bottom:10px">This role is titled <b>Senior</b>; you are a <b>Staff engineer and tech lead</b>. That's a real level question — don't pretend it isn't, and don't let it fester until the offer stage.</p>
+      <ul class="tick">
+        <li>Raise it lightly in <b>this</b> call: "I noticed the posting is Senior-level — I'm currently Staff and tech-leading a team. Is there flexibility on leveling for strong candidates, or is the band fixed?"</li>
+        <li>Startups often flex titles and comp for a candidate who exceeds the JD — but only if you ask early.</li>
+        <li>If leveling is truly fixed, decide consciously whether scope + equity + product-fit outweigh the title step-down (you already assessed Omnissa as a step-down and passed — apply the same bar).</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ask her these (pick 2–3)</h2>
+    <div class="card">
+      <ul class="tick ask">
+        <li>"What does the rest of the interview loop look like, and what's the timeline?" — always ask; shows momentum.</li>
+        <li>"How large is the macOS endpoint team today, and where does this hire fit?"</li>
+        <li>"Is the India team new? How is engineering split across Romania, Poland, and India?"</li>
+        <li>"What does success look like in the first six months for this role?"</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Final reminders</h2>
+    <div class="card">
+      <ul class="tick">
+        <li><b>Commit first, then caveat.</b> Your known failure mode is hedging. For a 30-min HR screen: short declarative answers, zero qualifiers, stop talking when done.</li>
+        <li><b>It's a vibe check, not a technical round.</b> She's screening for communication, motivation, logistics, and enthusiasm. Warm, energetic, concise wins.</li>
+        <li><b>Name the referral.</b> "Mann spoke highly of the team" — referrals convert; remind her the signal exists.</li>
+        <li><b>Book the slot today</b> via the Ashby link, and skim their blog + LinkedIn Life page for 10 minutes before the call so you can reference one specific post.</li>
+      </ul>
+    </div>
+  </section>
+
+  </div>
+
+  <footer>Prepared 22 Jul 2026 · Cyberhaven HR screen · Chellaprabu V</footer>
+</div>
+</body>
+</html>

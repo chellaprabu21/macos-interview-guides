@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Programming — TLS, OpenSSL & HTTP, from Scratch</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a20; --panel2:#1c2028; --ink:#e2e5ea; --dim:#9aa0ab;
+    --blue:#6cb2eb; --teal:#57cbb0; --amber:#e6b673; --red:#e07a86; --green:#a3cf8a; --purple:#c99ee0; --sky:#7dd3f0;
+    --line:#282d36; --code-bg:#0c0e12;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:flex}
+  nav{width:288px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{padding:0 22px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  nav .brand span{font:600 11px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  nav .brand b{display:block;color:var(--sky);font-size:15px;margin-top:4px;font-weight:600}
+  nav a{display:block;padding:7px 22px;color:var(--dim);font-size:13.5px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none;border-left-color:var(--sky)}
+  nav a .num{color:#565c66;font:600 11px var(--mono);margin-right:8px}
+
+  main{flex:1;min-width:0;max-width:820px;padding:44px 52px 140px;margin:0 auto}
+  header.hero{margin-bottom:12px}
+  .crumb{font:600 12px var(--mono);color:var(--sky);letter-spacing:.12em;text-transform:uppercase}
+  h1{font-size:32px;line-height:1.2;margin:12px 0 10px;font-weight:700;letter-spacing:-.02em}
+  .hero p{color:var(--dim);font-size:16px;max-width:62ch}
+
+  h2{font-size:15px;font-family:var(--mono);color:var(--amber);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+  .chapter{border-top:1px solid var(--line);margin-top:60px;padding-top:40px}
+  .chapter-title{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+  .chapter-tag{color:var(--dim);font-size:15px;margin-bottom:8px}
+  h3{font-size:19px;margin:38px 0 8px;font-weight:650;letter-spacing:-.01em}
+  h4{font-size:15px;margin:22px 0 4px;color:var(--teal);font-family:var(--mono);font-weight:600}
+  p{margin:12px 0} strong{color:#fff;font-weight:650}
+  .lead{font-size:17px;color:var(--ink)}
+  ul,ol{margin:12px 0;padding-left:24px} li{margin:7px 0}
+
+  code{font:13.5px var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1.5px 6px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font:13px/1.6 var(--mono);color:#cbd0d8;margin:16px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  pre.ascii{color:#8b93a1;line-height:1.4}
+  .c{color:#5c6470}.k{color:#c99ee0}.s{color:#a3cf8a}.f{color:#6cb2eb}.t{color:#57cbb0}.n{color:#e6b673}.str{color:#a3cf8a}
+
+  .plain{background:linear-gradient(180deg,#1a1e26,#171a20);border:1px solid var(--line);border-radius:12px;padding:4px 20px;margin:18px 0}
+  .plain .tag{font:600 11px var(--mono);color:var(--sky);letter-spacing:.08em;text-transform:uppercase;display:block;margin-top:14px}
+
+  .qa{border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden;background:var(--panel)}
+  .qa .q{padding:14px 18px;font-weight:600;font-size:15.5px;background:var(--panel2);cursor:pointer;list-style:none;position:relative;padding-left:46px}
+  .qa .q::before{content:'Q';position:absolute;left:18px;top:14px;color:var(--bg);background:var(--blue);width:20px;height:20px;border-radius:5px;font:700 12px var(--mono);text-align:center;line-height:20px}
+  .qa .q::after{content:'+';position:absolute;right:18px;color:var(--dim);font-size:18px}
+  .qa[open] .q::after{content:'\2212'}
+  .qa .a{padding:4px 18px 16px;font-size:14.5px;border-top:1px solid var(--line)}
+  .qa .a .model{color:var(--dim);font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-top:12px}
+
+  .note{border-left:3px solid var(--amber);padding:2px 16px;margin:16px 0;font-size:14.5px}
+  .note.gotcha{border-left-color:var(--red)} .note.agent{border-left-color:var(--teal)}
+  .note b:first-child{display:block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+  .note b{color:var(--amber)} .note.gotcha b{color:var(--red)} .note.agent b{color:var(--teal)}
+
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600;font-size:13px}
+  .pill{display:inline-block;font:600 11px var(--mono);padding:2px 9px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);margin-right:6px}
+  @media(max-width:900px){nav{display:none}main{padding:28px 20px 90px}}
+  @media print{nav{display:none}body{background:#fff;color:#111}.qa{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand"><span>Network Programming · Deep Dive</span><b>TLS · OpenSSL · HTTP</b></div>
+  <a href="#how-to"><span class="num">00</span>How to read this</a>
+  <a href="#stack"><span class="num">01</span>The stack: IP → TCP → TLS → HTTP</a>
+  <a href="#tls"><span class="num">02</span>TLS from first principles</a>
+  <a href="#openssl"><span class="num">03</span>OpenSSL, hands-on</a>
+  <a href="#apple"><span class="num">04</span>Apple's TLS &amp; HTTP stacks</a>
+  <a href="#http"><span class="num">05</span>HTTP: protocol + client/server</a>
+  <a href="#agent"><span class="num">06</span>A resilient agent client</a>
+  <a href="#map"><span class="num">07</span>Putting it together</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">JD requirement · network programming: TLS/OpenSSL, HTTP client/server</div>
+  <h1>Network Programming, From Scratch</h1>
+  <p>The layers under every connection, TLS explained from the problem it solves, OpenSSL taught genuinely hands-on, and HTTP from the protocol up to a fleet-scale agent client. Plain-English first, then interview depth.</p>
+</header>
+
+<section id="how-to" style="margin-top:40px">
+<h2>Read me first</h2>
+<p class="lead">Same four beats per topic: <strong>one-sentence version → why it exists → how it works → in the interview</strong> (answers in commit-first-then-caveat style).</p>
+<p>Order is bottom-up: the network stack grounds everything, TLS sits on it, OpenSSL is one implementation of TLS, HTTP rides on top, and the final chapter is the real thing you'd build — an agent's HTTP client that survives millions of devices and hostile networks.</p>
+<div class="note agent"><b>Your honest position on OpenSSL — plan for it</b>Your shipped TLS work has been on Apple's stacks and WebRTC's built-in crypto (BoringSSL, an OpenSSL fork). The JD names OpenSSL specifically. That's fine — the concepts are identical and the API shapes closely match, and WebRTC's DTLS <em>is</em> BoringSSL, which you've operated. Chapter 3 teaches the OpenSSL object model properly so you can speak it fluently, and I give you the exact "commit, then caveat" bridge line to use if pressed on hands-on depth.</div>
+</section>
+
+
+<!-- ================= 01 stack ================= -->
+<section class="chapter" id="stack">
+<h2>Topic 01</h2>
+<div class="chapter-title">The stack: IP → TCP → TLS → HTTP</div>
+<div class="chapter-tag">Four layers, each fixing exactly one failure of the layer below. Hold this and everything else slots in.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>Your data is wrapped in layers: HTTP (what you're saying) rides on TLS (privacy + identity) rides on TCP (reliable, ordered delivery) rides on IP (best-effort routing of packets). Each layer solves one specific problem the one below it doesn't.</p>
+</div>
+
+<h3>Why layering — the key idea</h3>
+<p>IP, the bottom, is deliberately dumb: it routes packets across the internet but makes <em>no promises</em> — packets can be lost, duplicated, reordered, or corrupted. Every layer above exists to fix a specific one of those gaps, so higher layers can pretend the network is perfect.</p>
+<pre class="ascii">
+ your bytes ─▶ [ HTTP ] ─▶ [ TLS ] ─▶ [ TCP ] ─▶ [ IP ] ─▶ wire
+
+   IP    : routes packets, best-effort. Loses / dupes / reorders / corrupts.
+   TCP   : fixes ALL of that → a reliable, ordered byte stream.
+   TLS   : fixes "anyone can read or impersonate" → privacy + identity.
+   HTTP  : structures the conversation → requests and responses.
+</pre>
+
+<h3>TCP vs UDP — the one fork you must know cold</h3>
+<table>
+<tr><th></th><th>TCP</th><th>UDP</th></tr>
+<tr><td>Guarantees</td><td>Reliable, ordered, no duplicates</td><td>None — fire and forget</td></tr>
+<tr><td>Cost</td><td>Handshake (1 round trip) before data; head-of-line blocking</td><td>No setup; you handle loss yourself</td></tr>
+<tr><td>Use</td><td>HTTP, anything needing correctness</td><td>Real-time media, DNS, QUIC/HTTP-3</td></tr>
+</table>
+<p><strong>Head-of-line blocking</strong> is the TCP consequence to remember: because TCP guarantees order, one lost packet stalls delivery of everything after it until the retransmit arrives — even data that already made it. This is exactly why real-time media chooses UDP (a lost video frame should be skipped, not waited for) and why HTTP/3 moved to UDP-based QUIC.</p>
+
+<div class="note agent"><b>This is literally your Zoho/Citrix work</b>WebRTC runs media over UDP precisely to dodge TCP head-of-line blocking, then uses DTLS (TLS over UDP) for security. Your Citrix MTU-discovery tuning and Zoho TURN-relay placement were about squeezing throughput and latency out of exactly this layer. When TCP/UDP comes up, you don't recite it — you've shipped it. Say so.</div>
+
+<h3>Throughput, latency, and why relays helped you</h3>
+<p>A useful mental formula: TCP throughput ≈ <strong>window size ÷ round-trip time</strong>. Cut the RTT and you raise achievable throughput without changing anything else — which is exactly why placing TURN relays closer to users (shrinking RTT) improved your real-time sessions. It also explains why each TLS handshake round-trip has a real cost you want to amortize, which drives connection reuse later.</p>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">Why does one lost packet hurt a TCP connection more than you'd expect?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Head-of-line blocking. TCP guarantees in-order delivery, so a single lost segment stalls delivery of every segment that arrives after it until the retransmission completes — even though that later data is sitting in the receiver's buffer, ready. The application sees a pause, not just one missing packet.</p>
+<p><strong>Nuance:</strong> the pause is roughly a round-trip-time to detect and retransmit, so it's much worse on high-latency links. This is the core reason real-time media uses UDP and HTTP/3 uses QUIC over UDP — they want to skip or independently recover lost data instead of blocking the whole stream. I dealt with this directly tuning WebRTC media paths.</p>
+</div></details>
+
+<details class="qa"><summary class="q">When would you choose UDP over TCP?</summary>
+<div class="a">
+<p><strong>Commit:</strong> When timeliness beats completeness — real-time audio/video, where a late packet is useless so it's better to drop it and move on than to wait for a retransmit. Also for request/response protocols where I build my own lightweight reliability, like DNS, and for QUIC.</p>
+<p><strong>Nuance:</strong> the trade is that I take on everything TCP gave me for free — ordering, loss recovery, congestion control — so I only do it when the latency win justifies that work. In WebRTC that's exactly the bargain: UDP transport plus application-level handling of loss, with DTLS layered on for security.</p>
+</div></details>
+</section>
+<!-- ================= 02 TLS ================= -->
+<section class="chapter" id="tls">
+<h2>Topic 02</h2>
+<div class="chapter-title">TLS from first principles</div>
+<div class="chapter-tag">Derive it from the problem — two strangers on a hostile wire — and every detail follows.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>TLS gives a connection three things: <strong>privacy</strong> (eavesdroppers can't read it), <strong>integrity</strong> (tampering is detected), and <strong>identity</strong> (you're really talking to who you think). It does this by combining certificates, a key agreement, and fast symmetric encryption.</p>
+</div>
+
+<h3>The problem, and the three tools that solve it</h3>
+<p>Two parties who've never met need to talk secretly over a wire anyone can read. Three cryptographic tools combine to make it work — knowing <em>which does what</em> is the whole of TLS understanding:</p>
+<ul>
+<li><strong>Asymmetric crypto</strong> (public/private key pairs) — works between strangers, but slow. Used to <em>agree on a secret</em> and <em>prove identity</em>.</li>
+<li><strong>Symmetric crypto</strong> (one shared key) — fast, but needs a shared key first. Used for the <em>actual bulk data</em> once a key exists.</li>
+<li><strong>Certificates</strong> — a trusted authority (CA) signs a statement binding a public key to a name. This is how you trust a stranger's key: someone you already trust vouched for it.</li>
+</ul>
+<p>So the shape of every TLS connection is: use asymmetric crypto + certificates to authenticate and agree on a shared symmetric key, then switch to fast symmetric encryption for the rest.</p>
+
+<h3>The TLS 1.3 handshake — the 60-second version</h3>
+<pre class="ascii">
+ CLIENT                                             SERVER
+  │  ClientHello: cipher suites I support,
+  │  a key share (my half of a Diffie-Hellman),
+  │  SNI (which hostname I want)                 ──▶
+  │                                              ◀── ServerHello: chosen cipher, server's
+  │                                                  key share; + Certificate (its chain);
+  │                                                  + CertificateVerify (signs the transcript
+  │                                                    to prove it owns the cert's key);
+  │                                                  + Finished
+  │  verify: chain to a trusted root? hostname
+  │  matches cert? not expired/revoked?
+  │  both sides now derive the SAME symmetric key
+  │  from the two key shares (never transmitted!)
+  │  Finished                                    ──▶
+  │  ═══════ encrypted application data both ways ═══════
+</pre>
+<p>Two properties fall out of this and both are favorite questions:</p>
+<ul>
+<li><strong>Forward secrecy.</strong> The shared key is derived from <em>ephemeral</em> (per-connection, throwaway) Diffie-Hellman key shares and is never sent over the wire. So even if an attacker records today's traffic and steals the server's private key <em>next year</em>, they still can't decrypt it — the ephemeral keys are long gone. This is why TLS 1.3 mandates ephemeral key exchange.</li>
+<li><strong>1 round trip.</strong> TLS 1.3 folds key agreement into the first exchange, so you're sending encrypted data after one round trip (1.2 needed two). Fewer RTTs = the latency win, which matters for an agent phoning home constantly.</li>
+</ul>
+
+<h3>Certificate verification — what "verify" actually means</h3>
+<p>When the client receives the server's certificate, "verifying" is three separate checks people often blur:</p>
+<ol>
+<li><strong>Chain of trust</strong> — does the cert chain up to a root CA in my trust store? (Each cert is signed by the one above it.)</li>
+<li><strong>Hostname match</strong> — does the name in the cert match the host I asked for? <em>The chain being valid says nothing about hostname</em> — a valid cert for <code>evil.com</code> is still valid; it's just not <code>bank.com</code>. Forgetting this check is a classic, catastrophic bug.</li>
+<li><strong>Validity &amp; revocation</strong> — not expired, not revoked (OCSP/CRL).</li>
+</ol>
+
+<h3>mTLS and pinning — the two extensions you'll be asked about</h3>
+<ul>
+<li><strong>mTLS (mutual TLS)</strong> — normally only the <em>server</em> proves identity. In mTLS the <em>client</em> also presents a certificate, so both sides authenticate. This is the backbone of device trust: if the client's private key lives in the Secure Enclave, possession of that hardware-bound key <em>is</em> the device's identity — directly your JumpCloud work.</li>
+<li><strong>Certificate pinning</strong> — instead of trusting any valid CA-signed cert, you require a <em>specific</em> key (pin the SPKI hash). This defeats a compromised or rogue CA. The cost is rotation: when the cert changes you must ship the new pin, or you lock yourself out — so pins need a planned rotation path.</li>
+</ul>
+
+<div class="note gotcha"><b>The blur to avoid</b>Encryption ≠ authentication. A connection can be perfectly encrypted to the <em>wrong</em> party — that's a man-in-the-middle. TLS's identity half (certificates + hostname check) is what stops that, and it's the part naive implementations skip. If asked "how would someone MITM your agent," the answer is: by defeating identity, not encryption — which pinning hardens.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">Walk me through the TLS handshake.</summary>
+<div class="a">
+<p><strong>Commit:</strong> In TLS 1.3, the client sends a ClientHello with its supported ciphers and a Diffie-Hellman key share plus the hostname (SNI). The server replies with its chosen cipher, its own key share, its certificate chain, and a signature over the handshake proving it owns the cert's private key. The client verifies the chain, the hostname, and validity; both sides derive the same symmetric key from the two key shares, and everything after is symmetrically encrypted. One round trip.</p>
+<p><strong>Nuance:</strong> the key shares are ephemeral and never transmitted, which gives forward secrecy — recorded traffic stays safe even if the server key later leaks. TLS 1.2 needed two round trips and allowed non-forward-secret modes, which 1.3 removed. For mutual TLS the server also requests a client certificate in that same flow.</p>
+</div></details>
+
+<details class="qa"><summary class="q">What does forward secrecy mean and how does TLS achieve it?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Forward secrecy means past sessions stay secure even if a long-term private key is compromised later. TLS achieves it by deriving each session's key from ephemeral Diffie-Hellman key shares that are generated fresh per connection and never stored or transmitted — so there's nothing left to steal after the fact.</p>
+<p><strong>Nuance:</strong> the server's certificate key only <em>authenticates</em> the handshake; it doesn't encrypt the session, so stealing it lets you impersonate going forward but not decrypt recorded past traffic. TLS 1.3 makes this mandatory by removing the old RSA key-transport modes that lacked it.</p>
+</div></details>
+
+<details class="qa"><summary class="q">How would you implement device trust with TLS?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Mutual TLS with a hardware-bound client key. The device generates its private key inside the Secure Enclave — it never leaves the chip — and holds a certificate proving its identity. On connection the device presents that client certificate and signs the handshake with the enclave key, so the server authenticates the specific device, not just the user.</p>
+<p><strong>Nuance:</strong> I'd pin the server side too, so a compromised CA can't impersonate my backend, with a rotation path for the pin. Possession of the non-exportable enclave key plus posture signals is what the zero-trust backend evaluates — this is exactly the pattern I built at JumpCloud.</p>
+</div></details>
+</section>
+
+
+<!-- ================= 03 OpenSSL ================= -->
+<section class="chapter" id="openssl">
+<h2>Topic 03 · The named library</h2>
+<div class="chapter-title">OpenSSL, hands-on</div>
+<div class="chapter-tag">The JD names it. Learn its object model and you can read, write, and debug TLS code in any C/C++ codebase.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>OpenSSL is the ubiquitous C library that implements TLS and the cryptographic primitives under it. Cross-platform C/C++ code uses it because Apple's TLS stacks are Apple-only. Its whole API revolves around four objects: <code>SSL_CTX</code>, <code>SSL</code>, <code>BIO</code>, and <code>X509</code>.</p>
+</div>
+
+<h3>Why it exists / why it's named in the JD</h3>
+<p>A cross-platform product core — like Omnissa's DEX agent — can't use Secure Transport or Network.framework because those are macOS-only. OpenSSL is the portable answer: the same TLS code compiles on macOS, Linux, and Windows. It's split into two libraries: <strong>libssl</strong> (the TLS protocol) and <strong>libcrypto</strong> (the primitives — ciphers, hashes, keys, X.509).</p>
+
+<h3>The four objects — this is the mental model</h3>
+<table>
+<tr><th>Object</th><th>What it is</th><th>Lifetime</th></tr>
+<tr><td><code>SSL_CTX</code></td><td>A <em>factory</em> holding shared config: certificates, private key, allowed protocol versions, cipher list, CA trust store, verify mode</td><td>Create once per process/role</td></tr>
+<tr><td><code>SSL</code></td><td>One TLS <em>connection</em>, minted from the CTX</td><td>One per connection</td></tr>
+<tr><td><code>BIO</code></td><td>An I/O abstraction — where bytes go: a socket, or a memory buffer</td><td>Attached to an SSL</td></tr>
+<tr><td><code>X509</code></td><td>A certificate object</td><td>As needed</td></tr>
+</table>
+
+<h3>A client connection, start to finish</h3>
+<pre><code><span class="c">// 1. One-time: build the context (the factory)</span>
+SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);   <span class="c">// REQUIRE cert verification</span>
+SSL_CTX_set_default_verify_paths(ctx);            <span class="c">// use system CA trust store</span>
+
+<span class="c">// 2. Per connection: mint an SSL, attach the socket</span>
+SSL *ssl = SSL_new(ctx);
+SSL_set_fd(ssl, sockfd);                          <span class="c">// bytes flow over this socket</span>
+SSL_set_tlsext_host_name(ssl, <span class="str">"api.corp.com"</span>);  <span class="c">// SNI</span>
+
+<span class="c">// 3. THE HOSTNAME CHECK — the #1 OpenSSL footgun (see gotcha)</span>
+SSL_set1_host(ssl, <span class="str">"api.corp.com"</span>);            <span class="c">// verify hostname, not just chain</span>
+
+<span class="c">// 4. Handshake, then use it like a socket</span>
+<span class="k">if</span> (SSL_connect(ssl) != 1) { <span class="c">/* handshake failed — inspect error */</span> }
+SSL_write(ssl, req, req_len);
+<span class="k">int</span> n = SSL_read(ssl, buf, <span class="k">sizeof</span> buf);
+
+<span class="c">// 5. Clean up</span>
+SSL_shutdown(ssl); SSL_free(ssl); SSL_CTX_free(ctx);</code></pre>
+<p>The server side is the mirror image: <code>TLS_server_method()</code>, load your cert and key into the CTX (<code>SSL_CTX_use_certificate_chain_file</code> / <code>SSL_CTX_use_PrivateKey_file</code>), then <code>SSL_accept</code> instead of <code>SSL_connect</code>.</p>
+
+<div class="note gotcha"><b>The classic OpenSSL vulnerability: forgetting the hostname check</b>Historically, <code>SSL_CTX_set_verify(SSL_VERIFY_PEER)</code> checked that the certificate <em>chains to a trusted CA</em> — but NOT that the hostname matches. So a valid cert for any domain passed. Countless apps were silently MITM-able because of this. Modern OpenSSL (1.1.0+) fixed it with <code>SSL_set1_host</code> / <code>X509_VERIFY_PARAM_set1_host</code>, which you must call. Knowing this specific trap is a strong senior signal — it shows you've read real TLS security history, not just tutorials.</div>
+
+<h3>Two more things interviewers probe</h3>
+<h4>Non-blocking I/O: WANT_READ / WANT_WRITE</h4>
+<p>On a non-blocking socket, <code>SSL_connect</code>/<code>SSL_read</code>/<code>SSL_write</code> may return "not done yet" via <code>SSL_get_error</code> returning <code>SSL_ERROR_WANT_READ</code> or <code>SSL_ERROR_WANT_WRITE</code>. That means "the TLS state machine needs more socket I/O before it can proceed" — you wait for the socket to be readable/writable (via your event loop / DispatchSource) and call the same function again. This trips people up because a "read" can need to <em>write</em> (mid-handshake) and vice versa.</p>
+
+<h4>Memory BIOs — and where your WebRTC experience connects</h4>
+<p>Instead of handing OpenSSL a socket, you can give it two <strong>memory BIOs</strong> and pump bytes yourself: TLS writes ciphertext into a buffer you then send however you like, and you feed received ciphertext into a buffer TLS reads. This decouples TLS from the transport — <em>exactly</em> how WebRTC layers DTLS over its own UDP/ICE transport. If you've operated WebRTC's DTLS (BoringSSL), you've worked this pattern, even if you didn't call the raw OpenSSL functions.</p>
+
+<div class="note agent"><b>Your honest bridge line, ready to deliver</b>"My shipped TLS has been on Apple's stacks and on WebRTC's DTLS, which is BoringSSL — an OpenSSL fork with essentially the same API. I know the object model — context, connection, BIO, verify — and the security-critical parts like enforcing hostname verification and handling the non-blocking WANT_READ/WANT_WRITE flow. Wiring up a raw OpenSSL client or server is a day's ramp, not a knowledge gap." Commit, then caveat — delivered with the model above understood, this is a strong answer, not a dodge.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">Walk me through establishing a TLS connection with OpenSSL.</summary>
+<div class="a">
+<p><strong>Commit:</strong> I create an <code>SSL_CTX</code> once — it holds shared config: protocol versions, the CA trust store, and verify mode set to <code>SSL_VERIFY_PEER</code>. Per connection I make an <code>SSL</code> object from it, attach the socket with <code>SSL_set_fd</code>, set the SNI and — critically — the expected hostname with <code>SSL_set1_host</code>, then call <code>SSL_connect</code> to run the handshake. After that I use <code>SSL_read</code>/<code>SSL_write</code> like a socket.</p>
+<p><strong>Nuance:</strong> the easy-to-miss step is hostname verification — older OpenSSL only checked the chain, not the name, so you have to set the expected host explicitly or you're MITM-able. On the server side it's the mirror: load cert and key into the context and call <code>SSL_accept</code>.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Your OpenSSL client accepts a certificate it shouldn't. What's the likely bug?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Almost certainly a missing hostname check. Verifying the peer chains to a trusted CA is necessary but not sufficient — a valid certificate for a different domain will pass chain verification. If I didn't call <code>SSL_set1_host</code> (or the underlying <code>X509_VERIFY_PARAM_set1_host</code>), any CA-signed cert is accepted regardless of the name.</p>
+<p><strong>Nuance:</strong> other candidates are verify mode left at the default (not <code>SSL_VERIFY_PEER</code>) or a custom verify callback that returns success too eagerly. But the hostname omission is the historically famous one, and it's silent — the connection works, it's just trusting the wrong party.</p>
+</div></details>
+
+<details class="qa"><summary class="q">What does SSL_ERROR_WANT_READ mean?</summary>
+<div class="a">
+<p><strong>Commit:</strong> It means I'm on a non-blocking socket and the TLS operation couldn't finish because it needs more data from the socket before it can proceed — so I should wait until the socket is readable and call the same OpenSSL function again. It's the TLS state machine telling me it's mid-step, not an error.</p>
+<p><strong>Nuance:</strong> the subtlety is that even an <code>SSL_write</code> can return WANT_READ, or a read can return WANT_WRITE, because a handshake can be renegotiating underneath. So I drive it off the actual socket-ready event from my event loop rather than assuming read-needs-read. It's the OpenSSL equivalent of integrating any non-blocking I/O with a dispatch source.</p>
+</div></details>
+</section>
+
+<!-- ================= 04 Apple stacks ================= -->
+<section class="chapter" id="apple">
+<h2>Topic 04</h2>
+<div class="chapter-title">Apple's TLS &amp; HTTP stacks</div>
+<div class="chapter-tag">What you actually use on macOS when you're not being cross-platform — and where each fits.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>On Apple platforms you rarely touch OpenSSL — you use higher-level stacks that do TLS for you: <strong>Network.framework</strong> for raw connections, and <strong>URLSession</strong> for HTTP. They handle the handshake, trust evaluation, connection pooling, and HTTP/2 automatically.</p>
+</div>
+
+<h3>The three you should be able to place</h3>
+<table>
+<tr><th>Stack</th><th>Level</th><th>Status / use</th></tr>
+<tr><td><strong>Secure Transport</strong></td><td>Low-level C TLS API</td><td><span class="pill">deprecated</span> Don't reach for it; mention only to show you know it's superseded</td></tr>
+<tr><td><strong>Network.framework</strong><br>(<code>NWConnection</code>)</td><td>Modern connection API</td><td>TLS is built in via <code>NWProtocolTLS</code>; the right choice for custom protocols over TCP/UDP/QUIC</td></tr>
+<tr><td><strong>URLSession</strong></td><td>High-level HTTP client</td><td>The default for HTTP(S) — pooling, HTTP/2, redirects, auth, retries all handled</td></tr>
+</table>
+
+<h3>URLSession — the everyday client</h3>
+<p>For an agent phoning home, URLSession is usually the answer: you get connection reuse, HTTP/2 multiplexing, and system proxy handling for free. The one place you drop in is <strong>trust evaluation</strong>, for certificate pinning:</p>
+<pre><code><span class="c">// Pinning: override the server-trust challenge</span>
+<span class="k">func</span> <span class="f">urlSession</span>(_ s: URLSession, didReceive challenge: URLAuthenticationChallenge,
+     completionHandler h: <span class="k">@escaping</span> (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    <span class="k">guard let</span> trust = challenge.protectionSpace.serverTrust,
+          verifyPinnedKey(trust) <span class="k">else</span> {                 <span class="c">// compare SPKI hash to my pin</span>
+        <span class="k">return</span> h(.cancelAuthenticationChallenge, <span class="k">nil</span>)      <span class="c">// reject — possible MITM</span>
+    }
+    h(.useCredential, URLCredential(trust: trust))
+}</code></pre>
+<p>That <code>SecTrust</code> object is the same Security.framework trust evaluation from the frameworks guide — the stacks connect.</p>
+
+<div class="note"><b>The senior framing</b>"On macOS I default to URLSession for HTTP and Network.framework for custom protocols — TLS, pooling, HTTP/2 come free, and I hook trust evaluation for pinning. When the code has to be cross-platform, that's where OpenSSL comes in, because these stacks are Apple-only." This one sentence shows you know both worlds and <em>why</em> you'd pick each — exactly the judgment a dual-platform agent team wants.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+<details class="qa"><summary class="q">How do you pin a certificate with URLSession?</summary>
+<div class="a">
+<p><strong>Commit:</strong> I implement the URLSession delegate's authentication-challenge method, grab the <code>serverTrust</code> from the challenge, and compare the server's public-key hash against my pinned value — accepting the credential only on a match and cancelling otherwise.</p>
+<p><strong>Nuance:</strong> I pin the SPKI (public-key) hash rather than the whole certificate so the cert can be reissued with the same key without breaking clients, and I keep a rotation plan — usually pinning a backup key too — so a planned key change doesn't lock the fleet out. The trust object itself is standard Security.framework, so I can still run the normal chain evaluation alongside the pin.</p>
+</div></details>
+</section>
+
+
+<!-- ================= 05 HTTP ================= -->
+<section class="chapter" id="http">
+<h2>Topic 05</h2>
+<div class="chapter-title">HTTP: the protocol, and client vs server</div>
+<div class="chapter-tag">What's actually on the wire, how the versions differ, and the concerns on each side.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>HTTP is a request/response protocol: the client sends a method (GET, POST…), a path, headers, and an optional body; the server replies with a status code, headers, and a body. Everything else — versions, keep-alive, pooling — is optimization around that core.</p>
+</div>
+
+<h3>The anatomy</h3>
+<pre class="ascii">
+ REQUEST                          RESPONSE
+ POST /v1/telemetry HTTP/2        HTTP/2 200 OK
+ Host: api.corp.com               Content-Type: application/json
+ Authorization: Bearer …          Content-Length: 18
+ Content-Type: application/json
+                                  {"status":"ok"}
+ {"events":[…]}
+</pre>
+
+<h4>Methods and two properties that decide retry safety</h4>
+<table>
+<tr><th>Method</th><th>Safe? (read-only)</th><th>Idempotent? (repeat = same effect)</th></tr>
+<tr><td>GET</td><td>yes</td><td>yes</td></tr>
+<tr><td>PUT / DELETE</td><td>no</td><td>yes</td></tr>
+<tr><td>POST</td><td>no</td><td><strong>no</strong> — repeating may create duplicates</td></tr>
+</table>
+<p><strong>Idempotency is the concept that governs retries</strong> (huge for an agent): you can safely retry a GET or PUT after a timeout, but retrying a POST risks doing the thing twice. That's why non-idempotent operations need an <em>idempotency key</em> so the server can dedupe.</p>
+
+<h4>Status codes — the ranges, not the numbers</h4>
+<ul>
+<li><strong>2xx</strong> success · <strong>3xx</strong> redirect · <strong>4xx</strong> client error (you sent something wrong — usually don't retry) · <strong>5xx</strong> server error (their fault — retry with backoff). <code>429 Too Many Requests</code> and <code>503</code> often carry a <code>Retry-After</code> header telling you exactly how long to wait.</li>
+</ul>
+
+<h3>The versions — why they exist</h3>
+<table>
+<tr><th>Version</th><th>Key idea</th><th>Fixes</th></tr>
+<tr><td>HTTP/1.1</td><td>One request at a time per connection; keep-alive reuses the connection</td><td>Reused connections, but requests still queue (head-of-line)</td></tr>
+<tr><td>HTTP/2</td><td><strong>Multiplexing</strong>: many concurrent streams over one TCP connection; header compression; binary framing</td><td>App-level head-of-line blocking — but still suffers TCP-level HOL</td></tr>
+<tr><td>HTTP/3</td><td>Runs over <strong>QUIC (UDP)</strong> instead of TCP</td><td>TCP head-of-line blocking entirely — independent streams, faster handshake</td></tr>
+</table>
+<p>Notice the through-line to Topic 01: HTTP/2 solved head-of-line blocking <em>at the application layer</em> but one lost TCP packet still stalls all streams, because they share one TCP connection. HTTP/3 moves to UDP/QUIC to kill that last TCP-level blocking. Same problem, chased down the stack.</p>
+
+<h3>Client vs server concerns</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div>
+<h4>Client library concerns</h4>
+<ul>
+<li><strong>Connection pooling / keep-alive</strong> — reuse connections to amortize the TCP+TLS handshake (recall: each handshake is round-trips you don't want to repeat).</li>
+<li><strong>Timeouts</strong> — separate connect vs read timeouts.</li>
+<li><strong>Retries</strong> — only idempotent requests, with backoff.</li>
+<li><strong>Redirects, auth, compression</strong> — handled for you by good libraries.</li>
+</ul>
+</div>
+<div>
+<h4>Server library concerns</h4>
+<ul>
+<li><strong>Concurrency model</strong> — thread-per-connection (simple, limited) vs event-loop / async (scales to many idle connections).</li>
+<li><strong>TLS termination</strong> — where the handshake happens.</li>
+<li><strong>Backpressure</strong> — refuse or queue when overloaded, don't fall over.</li>
+<li><strong>Keep-alive &amp; timeouts</strong> — reclaim idle connections.</li>
+</ul>
+</div>
+</div>
+
+<h4>The libraries to be able to name</h4>
+<p><strong>Clients:</strong> <code>libcurl</code> (the ubiquitous C client — cross-platform, what a C++ core would use), URLSession (Apple), Alamofire (Swift convenience over URLSession). <strong>Servers:</strong> for a full server, nginx/Apache; embedded in an app, something like <code>libmicrohttpd</code> (C) or Swift NIO. An agent is usually a <em>client</em>, occasionally running a tiny local server for OAuth callbacks or a health endpoint.</p>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">What's the difference between HTTP/1.1, HTTP/2, and HTTP/3?</summary>
+<div class="a">
+<p><strong>Commit:</strong> 1.1 reuses a connection via keep-alive but handles one request at a time on it, so requests queue. HTTP/2 multiplexes many streams over a single TCP connection with header compression, so requests no longer block each other at the application layer. HTTP/3 runs over QUIC on UDP instead of TCP.</p>
+<p><strong>Nuance:</strong> the reason HTTP/3 exists is that HTTP/2 still shares one TCP connection, so a single lost packet stalls all its streams — TCP-level head-of-line blocking. QUIC gives each stream independent delivery and a faster, integrated handshake, removing that last stall. It's the same head-of-line problem solved one layer lower.</p>
+</div></details>
+
+<details class="qa"><summary class="q">A request times out. Do you retry it?</summary>
+<div class="a">
+<p><strong>Commit:</strong> It depends on idempotency. A GET or PUT I retry freely — repeating them has the same effect. A POST I don't blindly retry, because the first one may have succeeded on the server even though my response was lost, so retrying could create a duplicate.</p>
+<p><strong>Nuance:</strong> to make POSTs retry-safe I attach an idempotency key the server uses to dedupe. And I only retry on the right signals — 5xx and network errors, not 4xx client errors — with exponential backoff and jitter. At fleet scale that jitter is essential, which is the next topic.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why does connection pooling matter for a client?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Because setting up a new connection costs a TCP handshake plus a TLS handshake — multiple round trips before any data flows. Pooling keeps connections alive and reuses them, so subsequent requests skip that setup entirely, which is a big latency and CPU win when an agent makes frequent calls.</p>
+<p><strong>Nuance:</strong> HTTP/2 amplifies this by multiplexing many requests over one pooled connection, so I get concurrency without opening more sockets. TLS session resumption further cheapens reconnects when the pool does turn over. The whole point is amortizing handshake cost, which the RTT math makes concrete.</p>
+</div></details>
+</section>
+
+<!-- ================= 06 agent client ================= -->
+<section class="chapter" id="agent">
+<h2>Topic 06 · Where your experience lives</h2>
+<div class="chapter-title">A resilient agent HTTP client</div>
+<div class="chapter-tag">The design questions this role actually asks — surviving millions of devices and hostile networks.</div>
+
+<div class="plain">
+<span class="tag">The one-sentence version</span>
+<p>An agent's network client isn't just "make an HTTPS request." At fleet scale it must avoid overwhelming its own backend, retry safely, respect enterprise proxies, and pin its server — all while sipping battery. This is systems design, and it's where you're strong.</p>
+</div>
+
+<h3>The fleet-scale problem you must name: the thundering herd</h3>
+<p>Picture two million devices running your agent. The backend hiccups for 30 seconds. Every device's request fails at nearly the same instant — and if they all retry on the same schedule, <strong>the retries themselves become a self-inflicted DDoS</strong> that keeps the backend down. The retry storm <em>is</em> the outage. Every mitigation below exists to prevent this.</p>
+
+<h4>Exponential backoff + jitter — the core technique</h4>
+<pre class="ascii">
+ naive retry:     all devices retry at 1s, 2s, 3s …  → synchronized waves, backend stays down
+
+ backoff:         wait 1s, then 2s, 4s, 8s …          → spreads retries over TIME
+ + jitter:        wait (random within the window)     → spreads retries across DEVICES
+                                                        so no two fire in lockstep
+</pre>
+<p><strong>Backoff</strong> spreads a single device's retries out over time; <strong>jitter</strong> (randomizing each device's delay) spreads the <em>whole fleet</em> apart so they don't all hit at once. You need both. Add a <strong>retry budget</strong> (cap total retries) so a persistent failure can't amplify load without bound, and honor <code>Retry-After</code> when the server tells you when to come back.</p>
+
+<h3>The other four ingredients</h3>
+<table>
+<tr><td><strong>Idempotency</strong></td><td>Attach a key to non-idempotent uploads so a retried POST doesn't double-record telemetry (Topic 05).</td></tr>
+<tr><td><strong>Batching + compression</strong></td><td>Don't send one request per event — buffer and send batches, compressed. Fewer handshakes, less bandwidth × millions of devices.</td></tr>
+<tr><td><strong>Proxy awareness</strong></td><td>Enterprises route outbound through HTTP proxies, often via PAC files. Read the system proxy config (SystemConfiguration) and honor it, or uploads fail on corporate networks.</td></tr>
+<tr><td><strong>Pinning + rotation</strong></td><td>Pin your backend's key to defeat rogue CAs — with a rotation path (backup pin) so a planned cert change doesn't brick the fleet. Note: enterprise TLS-inspection proxies break pinning, so plan an exception.</td></tr>
+</table>
+
+<h3>Offline &amp; backpressure — the "it's a laptop" reality</h3>
+<p>A laptop is offline constantly (asleep, no Wi-Fi, on a plane). The agent must buffer telemetry locally with a <strong>bounded</strong> store — and when the bound is hit, drop or coalesce oldest data rather than growing memory without limit. The agent that measures device experience must never <em>become</em> the experience problem by ballooning memory or draining battery. That degradation discipline is a senior design point worth stating explicitly.</p>
+
+<div class="note agent"><b>This is your JumpCloud reality, framed as design</b>You've run an agent at fleet scale, so you can speak to all of this from experience rather than theory: why jitter matters when a region blips, how you batched to cut both bandwidth and backend load, proxy pain on enterprise networks, the pinning-vs-inspection tension. Lead a design answer with the thundering-herd insight and build outward — it signals you think about blast radius, which is exactly the level this role hires for.</div>
+
+<h3 style="margin-top:34px">In the interview</h3>
+
+<details class="qa"><summary class="q">Design the network layer for an agent running on two million devices.</summary>
+<div class="a">
+<p><strong>Commit:</strong> The dominating constraint is avoiding a self-inflicted thundering herd, so retries use exponential backoff <em>with jitter</em> — backoff spreads one device's retries over time, jitter spreads the whole fleet apart so a backend blip doesn't cause synchronized retry waves. I batch and compress telemetry rather than one-request-per-event, attach idempotency keys so retried uploads don't duplicate, and honor <code>Retry-After</code>.</p>
+<p><strong>Nuance:</strong> I buffer offline in a bounded local store that drops or coalesces oldest data under pressure — the agent must never balloon memory. I honor enterprise proxies via the system config, pin the backend key with a rotation path, and keep a kill switch and staged rollout so a bad change can't take down the fleet. All of this I've dealt with running JumpCloud's agent at scale.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Why is jitter necessary if you already have exponential backoff?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Because backoff alone still synchronizes the fleet. If every device fails at the same moment and backs off on the same 1-2-4-8 schedule, they all retry at the same instants — you get retry waves that keep hammering a recovering backend. Jitter randomizes each device's delay so the retries spread out across devices, not just across time.</p>
+<p><strong>Nuance:</strong> the goal is to turn a synchronized spike into smooth, uncorrelated load. Full jitter — picking a random delay within the backoff window — is usually the right variant. Without it, a large fleet's own retry behavior becomes the reason the backend can't recover.</p>
+</div></details>
+
+<details class="qa"><summary class="q">Your telemetry uploads fail only on corporate networks. Where do you look?</summary>
+<div class="a">
+<p><strong>Commit:</strong> Proxies first. Enterprises force outbound traffic through an HTTP proxy, frequently configured by a PAC file, so I check the system proxy configuration and make sure my client resolves and honors it for the destination — a client that ignores the proxy simply can't reach the internet there.</p>
+<p><strong>Nuance:</strong> the second suspect is TLS inspection — many enterprises run a middlebox that terminates and re-signs TLS, which breaks certificate pinning. So my pinning needs an enterprise-aware exception path, or I detect the inspection and handle it deliberately. Both are classic "works at home, fails at the office" agent issues.</p>
+</div></details>
+</section>
+
+
+<!-- ================= 07 map ================= -->
+<section class="chapter" id="map">
+<h2>Putting it together</h2>
+<div class="chapter-title">The whole stack in one request</div>
+<div class="chapter-tag">Trace one telemetry upload top to bottom and you've touched every topic.</div>
+
+<pre class="ascii">
+ agent has a batch of events to send
+   │
+   ├─ HTTP layer      POST /telemetry, idempotency key, gzip body, honor proxy
+   │                  reuse a pooled HTTP/2 connection if one's warm
+   ▼
+   ├─ TLS layer       handshake (or resume), verify chain + hostname + PIN,
+   │                  mutual-TLS client cert from the Secure Enclave
+   │                  (OpenSSL in the C++ core / URLSession on the Apple side)
+   ▼
+   ├─ TCP layer       reliable ordered stream; throughput ≈ window ÷ RTT
+   ▼
+   └─ IP → wire       best-effort packets
+
+ on failure ──▶ exponential backoff + jitter, retry budget, buffer offline (bounded)
+</pre>
+
+<h3>The through-lines interviewers reward</h3>
+<ul>
+<li><strong>Each layer fixes one thing.</strong> IP loses packets → TCP makes it reliable → TLS makes it private and authenticated → HTTP structures it. If you can say what each layer <em>adds</em>, you understand the stack.</li>
+<li><strong>Head-of-line blocking is one idea chased down the stack.</strong> TCP has it (ordering), HTTP/2 removed the app-layer version but kept the TCP one, HTTP/3 went to UDP/QUIC to kill it. Same problem, three layers.</li>
+<li><strong>Encryption ≠ identity.</strong> The dangerous, silent bugs live in the identity half — skipping hostname verification in OpenSSL, not pinning. Encryption to the wrong party is a MITM.</li>
+<li><strong>At fleet scale, your own client is the threat.</strong> Thundering-herd thinking — backoff, jitter, budgets, batching — is the design signal. Lead with it.</li>
+</ul>
+
+<h3>A 3-day drill</h3>
+<table>
+<tr><th>Day</th><th>Focus</th><th>Ready when…</th></tr>
+<tr><td>1</td><td>Topics 01–02: the stack and TLS. Say the TLS 1.3 handshake and forward secrecy out loud; explain TCP vs UDP via your WebRTC work.</td><td>You can derive why HTTP/3 uses UDP from head-of-line blocking.</td></tr>
+<tr><td>2</td><td>Topic 03: OpenSSL. Write the client flow from memory; nail the hostname-verification trap and WANT_READ/WANT_WRITE. Rehearse the honest bridge line.</td><td>You can walk <code>SSL_CTX</code> → <code>SSL</code> → <code>SSL_connect</code> and name the #1 footgun.</td></tr>
+<tr><td>3</td><td>Topics 04–06: Apple stacks, HTTP versions, and the resilient agent client. Design the two-million-device layer aloud.</td><td>You lead the design with thundering herd and build outward.</td></tr>
+</table>
+
+<div class="note"><b>If you blank under pressure</b>Reconstruct from the layer principle: <em>what does each layer promise, and what happens when the network breaks that promise?</em> IP breaks everything, TCP restores reliability, TLS restores privacy and identity, HTTP structures the talk — and at scale, your retries are load. Reason from there and the specifics come back.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

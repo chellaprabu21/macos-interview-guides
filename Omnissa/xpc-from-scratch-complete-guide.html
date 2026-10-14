@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XPC, From Scratch — A Complete Guide</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a20; --panel2:#1c2028; --ink:#e2e5ea; --dim:#9aa0ab;
+    --blue:#6cb2eb; --teal:#57cbb0; --amber:#e6b673; --red:#e07a86; --green:#a3cf8a; --purple:#c99ee0;
+    --line:#282d36; --code-bg:#0c0e12;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:flex}
+  nav{width:280px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{padding:0 22px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  nav .brand span{font:600 11px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  nav .brand b{display:block;color:var(--teal);font-size:15px;margin-top:4px;font-weight:600}
+  nav a{display:block;padding:7px 22px;color:var(--dim);font-size:13.5px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none;border-left-color:var(--teal)}
+  nav a .num{color:#565c66;font:600 11px var(--mono);margin-right:8px}
+
+  main{flex:1;min-width:0;max-width:820px;padding:44px 52px 140px;margin:0 auto}
+  header.hero{margin-bottom:12px}
+  .crumb{font:600 12px var(--mono);color:var(--teal);letter-spacing:.12em;text-transform:uppercase}
+  h1{font-size:32px;line-height:1.2;margin:12px 0 10px;font-weight:700;letter-spacing:-.02em}
+  .hero p{color:var(--dim);font-size:16px;max-width:62ch}
+
+  h2{font-size:15px;font-family:var(--mono);color:var(--amber);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+  .chapter{border-top:1px solid var(--line);margin-top:58px;padding-top:38px}
+  .chapter-title{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+  .chapter-tag{color:var(--dim);font-size:15px;margin-bottom:8px}
+  h3{font-size:19px;margin:36px 0 8px;font-weight:650;letter-spacing:-.01em}
+  h4{font-size:15px;margin:22px 0 4px;color:var(--teal);font-family:var(--mono);font-weight:600}
+  p{margin:12px 0} strong{color:#fff;font-weight:650}
+  .lead{font-size:17px;color:var(--ink)}
+  ul,ol{margin:12px 0;padding-left:24px} li{margin:7px 0}
+
+  code{font:13.5px var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1.5px 6px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font:13px/1.6 var(--mono);color:#cbd0d8;margin:16px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  pre.ascii{color:#8b93a1;line-height:1.4}
+  .c{color:#5c6470}.k{color:#c99ee0}.s{color:#a3cf8a}.f{color:#6cb2eb}.t{color:#57cbb0}.n{color:#e6b673}.str{color:#a3cf8a}
+  .step{counter-reset:none;background:var(--code-bg);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 10px 10px 0;padding:2px 18px;margin:14px 0}
+  .step h4{color:var(--teal)}
+
+  .plain{background:linear-gradient(180deg,#1a1e26,#171a20);border:1px solid var(--line);border-radius:12px;padding:4px 20px;margin:18px 0}
+  .plain .tag{font:600 11px var(--mono);color:var(--teal);letter-spacing:.08em;text-transform:uppercase;display:block;margin-top:14px}
+
+  .note{border-left:3px solid var(--amber);padding:2px 16px;margin:16px 0;font-size:14.5px}
+  .note.gotcha{border-left-color:var(--red)} .note.key{border-left-color:var(--teal)}
+  .note b:first-child{display:block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;color:var(--amber)}
+  .note.gotcha b:first-child{color:var(--red)} .note.key b:first-child{color:var(--teal)}
+
+  .qa{border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden;background:var(--panel)}
+  .qa .q{padding:14px 18px;font-weight:600;font-size:15.5px;background:var(--panel2);cursor:pointer;list-style:none;position:relative;padding-left:46px}
+  .qa .q::before{content:'Q';position:absolute;left:18px;top:14px;color:var(--bg);background:var(--blue);width:20px;height:20px;border-radius:5px;font:700 12px var(--mono);text-align:center;line-height:20px}
+  .qa .q::after{content:'+';position:absolute;right:18px;color:var(--dim);font-size:18px}
+  .qa[open] .q::after{content:'\2212'}
+  .qa .a{padding:4px 18px 16px;font-size:14.5px;border-top:1px solid var(--line)}
+
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600;font-size:13px}
+  .tt{font-family:var(--mono);font-size:12.5px;color:var(--teal)}
+  @media(max-width:900px){nav{display:none}main{padding:28px 20px 90px}}
+  @media print{nav{display:none}body{background:#fff;color:#111}.qa,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand"><span>Deep Dive · one topic</span><b>XPC, from scratch</b></div>
+  <a href="#intro"><span class="num">00</span>Start here</a>
+  <a href="#what"><span class="num">01</span>What XPC actually is</a>
+  <a href="#why"><span class="num">02</span>Why it exists</a>
+  <a href="#under"><span class="num">03</span>What's underneath (gently)</a>
+  <a href="#flavors"><span class="num">04</span>The two flavors of XPC</a>
+  <a href="#apis"><span class="num">05</span>The two API layers</a>
+  <a href="#build"><span class="num">06</span>Build a connection, step by step</a>
+  <a href="#lifecycle"><span class="num">07</span>Lifecycle: launch, crash, reconnect</a>
+  <a href="#security"><span class="num">08</span>Security — the important part</a>
+  <a href="#data"><span class="num">09</span>What data can cross</a>
+  <a href="#worked"><span class="num">10</span>Full worked example</a>
+  <a href="#pitfalls"><span class="num">11</span>Common pitfalls</a>
+  <a href="#interview"><span class="num">12</span>Interview summary</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">A complete, beginner-first guide to one framework</div>
+  <h1>XPC, From Scratch</h1>
+  <p>Everything about XPC, built up from zero — what it is, the problem it solves, how it works underneath, and how to actually use it safely. No prior XPC knowledge assumed. Plain-English explanations, small steps, and one full worked example at the end.</p>
+</header>
+
+<section id="intro" style="margin-top:40px">
+<h2>Start here</h2>
+<p class="lead">This guide assumes you know Swift and the basics of macOS apps, but <strong>nothing about XPC</strong>. Read it top to bottom — each chapter builds on the last.</p>
+<p>The shape of the journey: first <em>what XPC is</em> and <em>why it exists</em> (the ideas), then <em>what's underneath it</em> so the API stops feeling magic, then the practical parts — the two flavors, the API, building a connection, lifecycle, and the security you must get right. It ends with a complete working example you can map onto a real agent.</p>
+<div class="note key"><b>The one sentence to hold in your head</b>XPC lets your program call a function that actually runs <em>in a different process</em>, almost as easily as calling a local method — and the system handles launching that other process, restarting it if it crashes, and moving the data back and forth.</div>
+</section>
+
+
+<!-- ================= 01 what ================= -->
+<section class="chapter" id="what">
+<h2>Chapter 01</h2>
+<div class="chapter-title">What XPC actually is</div>
+<div class="chapter-tag">Before any code — get the picture clear.</div>
+
+<div class="plain">
+<span class="tag">In plain words</span>
+<p>XPC is a way for two separate programs (processes) on the same Mac to talk to each other. One side offers some functionality; the other side calls it. Apple built XPC so this feels like calling methods on an object, even though that object lives in another process entirely.</p>
+</div>
+
+<h3>The core idea: processes are isolated islands</h3>
+<p>Every running program is a <strong>process</strong>, and each process has its own private memory. Process A <em>cannot</em> reach into process B's memory and read a variable — that isolation is a deliberate safety and security feature of the operating system. So if two processes need to cooperate, they need an explicit, official channel to pass messages. That channel is what "IPC" (inter-process communication) means, and <strong>XPC is Apple's preferred IPC mechanism on macOS.</strong></p>
+
+<pre class="ascii">
+ ┌─────────────────┐                          ┌─────────────────┐
+ │   Process A     │      XPC connection       │   Process B     │
+ │  (your app)     │  ◀══════════════════════▶ │  (a helper)     │
+ │                 │   "please do X and reply" │                 │
+ │  own memory     │                           │  own memory     │
+ └─────────────────┘                          └─────────────────┘
+        two isolated processes, talking over a managed channel
+</pre>
+
+<h3>What makes XPC special (vs a raw pipe or socket)</h3>
+<p>You could make two processes talk with a raw socket, but then <em>you</em> would have to build everything: a message format, how to know when the other side is ready, how to serialize your data, and how to restart the helper if it dies. XPC gives you all of that:</p>
+<ul>
+<li><strong>Typed method calls</strong> — you define a Swift protocol, and calling the remote side looks like calling methods on an object.</li>
+<li><strong>Automatic data marshaling</strong> — XPC packs up your arguments, sends them across, and unpacks them on the other side.</li>
+<li><strong>Lifecycle management</strong> — the system (launchd) starts the helper when it's first needed and restarts it if it crashes. You don't manage that process yourself.</li>
+</ul>
+
+<div class="note key"><b>The mental model to carry forward</b>Think of XPC as "remote method calls between two processes, with the OS doing the plumbing." Everything technical in this guide is a detail of <em>how</em> that plumbing works and <em>how to make it secure</em>.</div>
+</section>
+
+
+<!-- ================= 02 why ================= -->
+<section class="chapter" id="why">
+<h2>Chapter 02</h2>
+<div class="chapter-title">Why XPC exists — the problem it solves</div>
+<div class="chapter-tag">If you understand the "why," every design decision in XPC makes sense.</div>
+
+<p>XPC exists for two big reasons. Both come down to: <strong>splitting one program into multiple processes on purpose.</strong></p>
+
+<h3>Reason 1 — Crash isolation &amp; safety</h3>
+<p>Imagine your app parses a risky file format (a PDF, an image, untrusted data). If that parsing code has a bug and crashes — or worse, is exploited — it takes your <em>whole app</em> down with it. But if you move that risky work into a <strong>separate helper process</strong> and talk to it over XPC, then a crash there only kills the helper. Your main app keeps running, and the system just relaunches the helper. You've contained the blast radius.</p>
+<p>You can also give that helper process <em>fewer</em> privileges (a tighter sandbox), so even if it's compromised, the attacker gains very little. This is "privilege separation."</p>
+
+<h3>Reason 2 — Privilege separation (the agent case)</h3>
+<p>This is the one most relevant to endpoint/security software. Some work needs <strong>administrator (root) privileges</strong> — installing things, touching protected system areas. But you never want your big user-facing app running as root; that's a huge attack surface. So the standard pattern is:</p>
+<pre class="ascii">
+ ┌────────────────────────┐        ┌─────────────────────────────┐
+ │  Main app / menu bar   │  XPC   │  Privileged helper (daemon) │
+ │  runs as the USER      │ ◀────▶ │  runs as ROOT               │
+ │  does UI, no power     │        │  does the powerful work     │
+ │  (large, exposed)      │        │  (tiny, careful, locked)    │
+ └────────────────────────┘        └─────────────────────────────┘
+</pre>
+<p>The unprivileged app asks the small, carefully-written privileged helper to do the sensitive operations over XPC. The helper is tiny and exposes only a few narrow, well-guarded methods. This keeps the powerful code small and auditable — exactly how a well-designed macOS agent is structured.</p>
+
+<div class="note key"><b>Why this matters for you</b>A macOS endpoint agent is naturally multi-process: a root daemon does privileged work, system extensions host the security frameworks, and a menu-bar app talks to the user. XPC is the glue between these pieces. So learning XPC isn't academic — it's the communication backbone of the exact kind of software you build.</div>
+
+<h3>The through-line: every XPC feature serves these two goals</h3>
+<p>Keep this in mind as you read on. On-demand launching, crash recovery, the strict security checks, the sandboxing — all of it exists to make "split your program into cooperating processes" safe and practical. When a detail seems fussy (like verifying who's connecting), it's because XPC is often the doorway to <em>privileged</em> code, and that doorway must be guarded.</p>
+</section>
+<!-- ================= 03 underneath ================= -->
+<section class="chapter" id="under">
+<h2>Chapter 03</h2>
+<div class="chapter-title">What's underneath (gently)</div>
+<div class="chapter-tag">A little of the machinery, so the API stops feeling like magic. You don't need to use any of this directly.</div>
+
+<p>You can use XPC without ever touching the layers below — but knowing they exist makes the behavior make sense. Two pieces sit under XPC: <strong>Mach ports</strong> and <strong>launchd</strong>.</p>
+
+<h3>Mach ports — the actual pipes</h3>
+<p>At the lowest level, macOS's kernel (XNU) provides <strong>Mach ports</strong>: think of a Mach port as a secure, kernel-guarded mailbox. A process that holds a "send right" to a port can drop messages into it; the process holding the "receive right" collects them. Crucially, <strong>you can't fake one</strong> — you can only use a port if the kernel gave you permission. XPC messages ultimately travel over Mach ports; XPC is a friendlier layer on top so you deal with dictionaries and method calls instead of raw kernel messaging.</p>
+
+<h3>launchd — the manager that starts things</h3>
+<p><strong>launchd</strong> is the very first process macOS starts (process ID 1) and the manager of all system services. Here's the key part: services register their name with launchd, and launchd holds the "receive right" for them. So when your app wants to talk to a helper, it asks launchd for that helper by name — and launchd does two magical things:</p>
+<ul>
+<li><strong>Starts the helper on demand.</strong> The helper doesn't need to be running. The moment your first message arrives, launchd launches it. When idle, it can be shut down. This saves resources.</li>
+<li><strong>Restarts it if it crashes.</strong> If the helper dies, launchd brings it back under the same name the next time it's needed.</li>
+</ul>
+
+<pre class="ascii">
+ your app: "connect me to com.corp.helper"
+        │
+        ▼
+   ┌─────────┐   holds the name, launches on demand,   ┌──────────────┐
+   │ launchd │ ─────────────────────────────────────▶ │  the helper  │
+   └─────────┘   relaunches if it crashes              └──────────────┘
+</pre>
+
+<div class="note key"><b>Why this matters</b>That "starts on demand and restarts on crash" behavior is XPC's biggest advantage over a hand-built socket server — and it comes from launchd, not from XPC code you write. When we get to lifecycle (Chapter 7), this is why your helper can be "not running" yet still reachable.</div>
+</section>
+
+
+<!-- ================= 04 flavors ================= -->
+<section class="chapter" id="flavors">
+<h2>Chapter 04</h2>
+<div class="chapter-title">The two flavors of XPC</div>
+<div class="chapter-tag">"XPC" is used for two related-but-different things. Know which you're building — this trips up beginners.</div>
+
+<p>When people say "XPC," they might mean one of two setups. They share the same communication API but differ in <em>what the helper is</em> and <em>who manages it</em>.</p>
+
+<h3>Flavor A — XPC Services (the simple one)</h3>
+<p>An <strong>XPC Service</strong> is a small helper bundle that lives <em>inside your app</em> (in <code>YourApp.app/Contents/XPCServices/</code>). It's private to your app, runs unprivileged (often in a tight sandbox), and is fully managed by the system. You use these for <strong>crash isolation</strong> — moving risky work (parsing, plugins, media decoding) into a separate process so a crash there doesn't take down your app.</p>
+<ul>
+<li>Created almost automatically — Xcode has an "XPC Service" target template.</li>
+<li>Addressed by a service name; connected with <code>NSXPCConnection(serviceName:)</code>.</li>
+<li>Lifecycle is entirely automatic; you barely think about it.</li>
+</ul>
+
+<h3>Flavor B — Mach services / privileged helpers &amp; daemons (the powerful one)</h3>
+<p>This is a <strong>separately-installed helper</strong> registered with launchd system-wide — often running as <strong>root</strong>. This is the privilege-separation pattern from Chapter 2, and the one an endpoint agent uses. It's more work to set up (you register it with launchd and must handle security carefully) but it's how you do privileged operations.</p>
+<ul>
+<li>Registered with launchd via a property list declaring a <strong>MachServices</strong> name, or on modern macOS via <strong><code>SMAppService</code></strong> (macOS 13+) — the current way to install login items and daemons. (Older code used <code>SMJobBless</code>.)</li>
+<li>Addressed by a Mach service name; connected with <code>NSXPCConnection(machServiceName:options:)</code>.</li>
+<li><strong>You are responsible for security</strong> — this doorway may lead to root, so verifying the caller is essential (Chapter 8).</li>
+</ul>
+
+<table>
+<tr><th></th><th>XPC Service (Flavor A)</th><th>Mach service / daemon (Flavor B)</th></tr>
+<tr><td>Where it lives</td><td>Inside your app bundle</td><td>Installed system-wide via launchd</td></tr>
+<tr><td>Privilege</td><td>Unprivileged, sandboxed</td><td>Often root</td></tr>
+<tr><td>Purpose</td><td>Crash isolation, sandbox risky work</td><td>Privilege separation — do powerful work safely</td></tr>
+<tr><td>Connect with</td><td><span class="tt">NSXPCConnection(serviceName:)</span></td><td><span class="tt">NSXPCConnection(machServiceName:options:)</span></td></tr>
+<tr><td>Setup effort</td><td>Low (Xcode template)</td><td>Higher (register + secure)</td></tr>
+<tr><td>Security burden</td><td>Light</td><td>Heavy — you must validate callers</td></tr>
+</table>
+
+<div class="note key"><b>Which should you learn first?</b>Understand both, but the communication code — protocols, connections, method calls — is <em>identical</em> between them. Only the setup and security differ. So learn the connection mechanics once (next chapters), then apply them to whichever flavor you need. For agent work, Flavor B is your world.</div>
+</section>
+
+
+<!-- ================= 05 apis ================= -->
+<section class="chapter" id="apis">
+<h2>Chapter 05</h2>
+<div class="chapter-title">The two API layers</div>
+<div class="chapter-tag">There's a low-level C API and a friendly Swift/Obj-C API. Use the friendly one — but recognize the other.</div>
+
+<h3>The low-level C API (recognize it, don't reach for it)</h3>
+<p>The original XPC API is pure C. You work with <code>xpc_connection_t</code> and pass <strong>dictionaries</strong> (<code>xpc_object_t</code>) of key-value data. You'll see it in older code and Apple's C samples:</p>
+<pre><code><span class="c">// Low-level C style — messages are dictionaries you build by hand</span>
+xpc_connection_t conn = xpc_connection_create_mach_service(<span class="str">"com.corp.helper"</span>, NULL, <span class="n">0</span>);
+xpc_connection_set_event_handler(conn, ^(xpc_object_t event) { <span class="c">/* handle reply */</span> });
+xpc_connection_resume(conn);
+
+xpc_object_t msg = xpc_dictionary_create(NULL, NULL, <span class="n">0</span>);
+xpc_dictionary_set_string(msg, <span class="str">"command"</span>, <span class="str">"status"</span>);
+xpc_connection_send_message(conn, msg);</code></pre>
+<p>It works, but it's verbose and untyped — you're manually building dictionaries and reading them back with string keys. Fine for tiny C tools; painful for real apps.</p>
+
+<h3>The high-level API: NSXPCConnection (use this)</h3>
+<p><strong><code>NSXPCConnection</code></strong> (Objective-C, fully usable from Swift) is the modern, recommended layer. Instead of dictionaries, you define a <strong>Swift protocol</strong> describing what the remote side can do, and then you just <em>call its methods</em>. XPC turns those calls into messages for you. This is dramatically cleaner and type-safe, so the rest of this guide uses it.</p>
+
+<p>Three types make up the high-level API — meet them now, use them next chapter:</p>
+<table>
+<tr><td class="tt">NSXPCConnection</td><td>The connection itself — one per link between two processes</td></tr>
+<tr><td class="tt">NSXPCInterface</td><td>Wraps your protocol so XPC knows the shape of the calls</td></tr>
+<tr><td class="tt">NSXPCListener</td><td>On the <em>server</em> side — listens for incoming connections</td></tr>
+</table>
+
+<div class="note"><b>The rule of thumb</b>Use <code>NSXPCConnection</code> for anything you write in Swift or Obj-C. Only drop to the C API if you're in a pure-C context or need something the high-level API doesn't expose. Everything from here uses <code>NSXPCConnection</code>.</div>
+</section>
+
+<!-- ================= 06 build ================= -->
+<section class="chapter" id="build">
+<h2>Chapter 06</h2>
+<div class="chapter-title">Build a connection, step by step</div>
+<div class="chapter-tag">The heart of XPC. We'll go one small step at a time — this is the pattern you'll reuse everywhere.</div>
+
+<p>Every NSXPCConnection setup has the same shape. There's a <strong>server side</strong> (the helper that offers functionality) and a <strong>client side</strong> (whoever calls it). Let's build both, slowly.</p>
+
+<h3>Step 1 — Define the shared protocol (the contract)</h3>
+<p>Both processes need to agree on what can be called. You write a protocol, marked <code>@objc</code> (XPC is Objective-C underneath), and <strong>share the same file</strong> in both targets. This is the entire "API" between them.</p>
+<pre><code><span class="c">// SharedProtocol.swift — compiled into BOTH the app and the helper</span>
+<span class="k">@objc protocol</span> <span class="t">HelperProtocol</span> {
+    <span class="k">func</span> <span class="f">currentStatus</span>(reply: <span class="k">@escaping</span> (String) -> Void)
+    <span class="k">func</span> <span class="f">install</span>(package: String, reply: <span class="k">@escaping</span> (Bool) -> Void)
+}</code></pre>
+<div class="note key"><b>Why every method has a "reply" closure</b>XPC calls are <strong>asynchronous</strong> — the other process runs the work and calls you back. So instead of returning a value directly, each method takes a <code>reply</code> closure that the remote side invokes with the result. A method that returns nothing and expects no reply is "fire and forget"; a method with a reply block waits for an answer. (In newer Swift you can also use <code>async</code> methods, but reply blocks are the classic form to understand first.)</div>
+
+<h3>Step 2 — The server: create a listener</h3>
+<p>The helper process sets up an <code>NSXPCListener</code> and becomes its delegate. The listener waits for incoming connections.</p>
+<pre><code><span class="k">class</span> <span class="t">HelperMain</span>: NSObject, NSXPCListenerDelegate {
+    <span class="k">let</span> listener: NSXPCListener
+
+    <span class="k">override init</span>() {
+        listener = NSXPCListener(machServiceName: <span class="str">"com.corp.helper"</span>)  <span class="c">// Flavor B</span>
+        <span class="k">super</span>.init()
+        listener.delegate = <span class="k">self</span>
+    }
+    <span class="k">func</span> <span class="f">run</span>() {
+        listener.resume()      <span class="c">// start listening</span>
+        RunLoop.current.run()  <span class="c">// keep the process alive</span>
+    }
+}</code></pre>
+
+<h3>Step 3 — The server: accept a connection and expose an object</h3>
+<p>When a client connects, the delegate method <code>shouldAcceptNewConnection</code> is called. This is where you (1) <em>decide whether to accept</em> — the security checkpoint, covered in Chapter 8 — and (2) tell XPC which object actually handles the calls.</p>
+<pre><code><span class="k">func</span> <span class="f">listener</span>(_ listener: NSXPCListener,
+              shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
+
+    <span class="c">// (security check goes here — see Chapter 8)</span>
+
+    <span class="c">// Tell XPC the shape of the calls...</span>
+    newConnection.exportedInterface = NSXPCInterface(with: HelperProtocol.<span class="k">self</span>)
+    <span class="c">// ...and the object that implements them:</span>
+    newConnection.exportedObject = HelperImplementation()
+
+    newConnection.resume()   <span class="c">// activate the connection</span>
+    <span class="k">return true</span>              <span class="c">// accept</span>
+}</code></pre>
+<p>And the implementation object is just a normal class conforming to the protocol:</p>
+<pre><code><span class="k">class</span> <span class="t">HelperImplementation</span>: NSObject, HelperProtocol {
+    <span class="k">func</span> <span class="f">currentStatus</span>(reply: <span class="k">@escaping</span> (String) -> Void) {
+        reply(<span class="str">"healthy"</span>)                    <span class="c">// call the reply to send the answer back</span>
+    }
+    <span class="k">func</span> <span class="f">install</span>(package: String, reply: <span class="k">@escaping</span> (Bool) -> Void) {
+        <span class="k">let</span> ok = doPrivilegedInstall(package)
+        reply(ok)
+    }
+}</code></pre>
+
+<h3>Step 4 — The client: connect and get a proxy</h3>
+<p>Now the app side. You create a connection to the same service name, tell it the interface, resume it, and ask for a <strong>proxy object</strong>. The proxy <em>looks</em> like something conforming to your protocol — but calling its methods actually sends messages to the helper.</p>
+<pre><code><span class="k">let</span> connection = NSXPCConnection(machServiceName: <span class="str">"com.corp.helper"</span>, options: .privileged)
+connection.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.<span class="k">self</span>)
+connection.resume()
+
+<span class="k">let</span> proxy = connection.remoteObjectProxy <span class="k">as</span>? HelperProtocol
+proxy?.currentStatus { status <span class="k">in</span>
+    print(<span class="str">"Helper says:"</span>, status)     <span class="c">// this runs when the helper replies</span>
+}</code></pre>
+
+<div class="note key"><b>The whole thing in one breath</b>Server: make a listener → accept connections → hand XPC an object that implements the protocol. Client: make a connection → get a proxy → call methods on it. XPC ships each call to the helper, runs it there, and delivers the reply back. That's the entire model — everything else is lifecycle and security around this core.</div>
+
+<h3>A note on error handling the proxy</h3>
+<p>Use <code>remoteObjectProxyWithErrorHandler</code> instead of the plain proxy so you catch connection failures (helper unavailable, crashed mid-call):</p>
+<pre><code><span class="k">let</span> proxy = connection.remoteObjectProxyWithErrorHandler { error <span class="k">in</span>
+    print(<span class="str">"XPC call failed:"</span>, error)   <span class="c">// e.g. helper couldn't be reached</span>
+} <span class="k">as</span>? HelperProtocol</code></pre>
+</section>
+
+
+<!-- ================= 07 lifecycle ================= -->
+<section class="chapter" id="lifecycle">
+<h2>Chapter 07</h2>
+<div class="chapter-title">Lifecycle: launch, crash, reconnect</div>
+<div class="chapter-tag">What happens over time — and the two handlers that make your client resilient.</div>
+
+<h3>The helper starts on demand</h3>
+<p>Remember launchd from Chapter 3: your helper does <strong>not</strong> need to be running when your app starts. The first time your client sends a message, launchd launches the helper, which sets up its listener and accepts the connection. When idle, the helper may be shut down again. You never call "start the helper" yourself — connecting <em>is</em> starting it.</p>
+
+<h3>Two things can go wrong, and each has a handler</h3>
+<p>Connections don't live forever. Set these two handlers on the <em>client's</em> connection right after creating it:</p>
+<table>
+<tr><th>Handler</th><th>Fires when</th><th>What to do</th></tr>
+<tr><td class="tt">interruptionHandler</td><td>The helper <strong>crashed</strong>, but the connection can be re-established (launchd will relaunch on the next call)</td><td>Log it; expect to retry. The connection object is still usable.</td></tr>
+<tr><td class="tt">invalidationHandler</td><td>The connection is <strong>permanently dead</strong> — it will never work again (helper removed, or you called <code>invalidate()</code>)</td><td>Clean up; don't reuse this connection. Create a fresh one if needed.</td></tr>
+</table>
+<pre><code>connection.interruptionHandler = {
+    print(<span class="str">"Helper crashed — will reconnect on next call"</span>)
+}
+connection.invalidationHandler = {
+    print(<span class="str">"Connection permanently invalid — discard it"</span>)
+}</code></pre>
+
+<div class="note key"><b>The distinction, made simple</b><strong>Interruption = temporary</strong> (the helper fell over but can come back). <strong>Invalidation = permanent</strong> (this connection is finished forever). A robust client logs interruptions and keeps going, and on invalidation throws the connection away and builds a new one if it still needs the helper.</div>
+
+<h3>Tearing down cleanly</h3>
+<p>When you're done, call <code>connection.invalidate()</code>. This ends the connection and triggers the invalidation handler. Always invalidate connections you no longer need so resources are released.</p>
+
+<h3>The lifecycle, start to finish</h3>
+<pre class="ascii">
+ app launches (helper NOT running)
+   │
+   ├─ client creates connection, sets handlers, resume()
+   ├─ client calls a method  ──▶ launchd LAUNCHES the helper on demand
+   │                             helper accepts, runs the call, replies
+   │
+   ├─ helper crashes  ──▶ interruptionHandler fires; next call relaunches it
+   │
+   └─ app done  ──▶ connection.invalidate()  ──▶ invalidationHandler fires
+</pre>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">What's the difference between the interruption and invalidation handlers?</summary>
+<div class="a"><p><strong>Commit:</strong> The interruption handler fires when the remote process crashes but the connection can still be recovered — launchd will relaunch the helper on the next message, so I can keep using the connection. The invalidation handler fires when the connection is permanently dead and will never work again, so I discard it and, if needed, create a new one.</p>
+<p><strong>Nuance:</strong> in practice I log interruptions and let the next call transparently relaunch the helper, while on invalidation I tear down any state tied to that connection. I also call <code>invalidate()</code> myself when I'm done, which triggers that same handler, so cleanup lives in one place.</p></div></details>
+<details class="qa"><summary class="q">Does the helper need to be running before the app connects?</summary>
+<div class="a"><p><strong>Commit:</strong> No. launchd manages the helper and starts it on demand — the first message from my app causes launchd to launch it. That's a core XPC advantage: I don't supervise the helper's process myself, and it can stay shut down while idle.</p>
+<p><strong>Nuance:</strong> the same mechanism restarts the helper if it crashes, so my client just needs to handle the brief interruption and retry. This on-demand-launch-and-relaunch behavior is exactly why XPC is preferable to a hand-rolled socket server for a helper.</p></div></details>
+</section>
+
+<!-- ================= 08 security ================= -->
+<section class="chapter" id="security">
+<h2>Chapter 08 · The most important chapter</h2>
+<div class="chapter-title">Security — verifying who's connecting</div>
+<div class="chapter-tag">If your helper is privileged, this doorway leads to root. Guarding it correctly is the difference between a helper and a vulnerability.</div>
+
+<div class="plain">
+<span class="tag">The core danger, in plain words</span>
+<p>Any process on the machine can try to connect to your helper's service. If your helper does privileged things and you accept every connection, then <em>any</em> app — including malware — can ask your root helper to do those privileged things for it. You must verify that the connecting process is really <em>your</em> app before accepting.</p>
+</div>
+
+<h3>The wrong way: trusting the PID</h3>
+<p>A beginner's instinct is to check the connecting process's ID (PID) and see if it "looks right." <strong>Don't.</strong> PIDs are recycled — the OS reuses them — so a malicious process can end up with a PID you previously trusted. Checking the PID alone is a well-known vulnerability, not a defense.</p>
+
+<h3>The right way: verify the code signature</h3>
+<p>The correct check is: <strong>"was the connecting process built and signed by my team?"</strong> You verify the connecting process's <em>code signature</em> against a requirement that pins your Team ID and signing identity. Only a binary your team signed can pass — malware can't forge your signature.</p>
+
+<h4>The modern, easy way (macOS 13+): setCodeSigningRequirement</h4>
+<p>Apple added a one-line API that does the whole check for you. You give the listener (or connection) a requirement string, and XPC rejects any peer that doesn't match — before your delegate even sees it:</p>
+<pre><code><span class="c">// On the helper's listener — reject anyone not signed by my team, automatically</span>
+listener.setCodeSigningRequirement(
+    <span class="str">"anchor apple generic and certificate leaf[subject.OU] = \"YOURTEAMID\""</span>
+)</code></pre>
+<p>That requirement string reads as: "signed with a certificate chaining to Apple, whose leaf certificate's organizational unit (your Team ID) is YOURTEAMID." If you're on macOS 13 or later, <strong>this is the recommended approach</strong> — one line, and XPC enforces it for you.</p>
+
+<h4>The manual way (older systems): check the audit token yourself</h4>
+<p>On older macOS, or for finer control, you verify inside <code>shouldAcceptNewConnection</code> using the connection's <strong>audit token</strong> — a kernel-verified identity token (much stronger than a PID; it can't be forged or confused by PID reuse). You build a code object from it and check it against your requirement:</p>
+<pre><code><span class="k">func</span> <span class="f">listener</span>(_ l: NSXPCListener,
+              shouldAcceptNewConnection c: NSXPCConnection) -> Bool {
+
+    <span class="k">var</span> token = c.auditToken                 <span class="c">// kernel-verified identity of the caller</span>
+    <span class="k">let</span> tokenData = Data(bytes: &amp;token, count: MemoryLayout.size(ofValue: token))
+
+    <span class="k">var</span> code: SecCode?
+    <span class="k">let</span> attrs = [kSecGuestAttributeAudit: tokenData] <span class="k">as</span> CFDictionary
+    SecCodeCopyGuestWithAttributes(<span class="k">nil</span>, attrs, [], &amp;code)
+
+    <span class="k">var</span> requirement: SecRequirement?
+    SecRequirementCreateWithString(
+        <span class="str">"anchor apple generic and certificate leaf[subject.OU] = \"YOURTEAMID\""</span> <span class="k">as</span> CFString,
+        [], &amp;requirement)
+
+    <span class="k">let</span> status = SecCodeCheckValidity(code!, [], requirement)
+    <span class="k">return</span> status == errSecSuccess          <span class="c">// accept ONLY if the signature matches</span>
+}</code></pre>
+
+<div class="note key"><b>Why the audit token, not the PID</b>The audit token is stamped by the kernel and carries a version number that distinguishes a live process from a dead one whose PID got reused. It's unforgeable. The PID is just a number that gets recycled. So the audit token answers "who is <em>really</em> on the other end," which is exactly what you need before doing privileged work for them.</div>
+
+<h3>Two more security habits</h3>
+<ul>
+<li><strong>Keep the interface tiny.</strong> Expose only the few methods the helper truly needs. Every exposed method is attack surface.</li>
+<li><strong>Validate every argument.</strong> Even after verifying the caller, treat every value they send as untrusted — check ranges, sizes, and paths. A trusted caller can still be buggy or send bad data.</li>
+</ul>
+
+<h3 style="margin-top:30px">In the interview</h3>
+<details class="qa"><summary class="q">How do you secure an XPC connection?</summary>
+<div class="a"><p><strong>Commit:</strong> I verify the connecting process's code signature, not its PID. On macOS 13 and later I use <code>setCodeSigningRequirement</code> on the listener with a requirement pinning my Team ID, so XPC rejects any peer my team didn't sign before my code even runs. On older systems I do it manually in <code>shouldAcceptNewConnection</code> using the connection's audit token to build a <code>SecCode</code> and checking it against that requirement.</p>
+<p><strong>Nuance:</strong> I avoid the PID because PIDs are recycled, so a malicious process could inherit one I trusted — the audit token is kernel-verified and unforgeable, so it's the correct identity. Beyond authenticating the caller, I keep the exposed interface minimal and validate every argument, since a privileged helper's method surface is an attack surface even for a legitimate caller.</p></div></details>
+<details class="qa"><summary class="q">Why is checking the process ID (PID) not enough?</summary>
+<div class="a"><p><strong>Commit:</strong> Because PIDs are reused by the operating system. A process can exit and its PID can be reassigned to a different, possibly malicious process — so a PID I checked and trusted a moment ago might now belong to something else. It's a classic time-of-check-to-time-of-use problem.</p>
+<p><strong>Nuance:</strong> the audit token solves this because it's kernel-verified and includes a PID-version that distinguishes a live process from a reincarnated PID. So identity checks should always be based on the audit token and the code signature it lets me verify, never the raw PID.</p></div></details>
+</section>
+
+
+<!-- ================= 09 data ================= -->
+<section class="chapter" id="data">
+<h2>Chapter 09</h2>
+<div class="chapter-title">What data can cross</div>
+<div class="chapter-tag">Not everything can be sent between processes. Here's what's allowed and how to enable custom types.</div>
+
+<h3>The basics: only serializable data crosses</h3>
+<p>Because the two processes have separate memory, XPC has to <strong>serialize</strong> your arguments — turn them into bytes, send them, and rebuild them on the other side. So you can only pass things that know how to serialize themselves. Out of the box: strings, numbers, booleans, dates, data, arrays, and dictionaries of those. Under the hood these conform to <strong><code>NSSecureCoding</code></strong>.</p>
+
+<h3>Passing your own custom types</h3>
+<p>To send a custom class, it must conform to <code>NSSecureCoding</code>, and — for security — you must explicitly <strong>whitelist</strong> which classes are allowed as arguments to a given method. XPC won't just accept any class; you declare the expected ones so a malicious sender can't smuggle an unexpected object type in. You do this on the <code>NSXPCInterface</code>:</p>
+<pre><code><span class="k">let</span> interface = NSXPCInterface(with: HelperProtocol.<span class="k">self</span>)
+<span class="c">// Allow MyReport objects as the argument to this method's reply:</span>
+interface.setClasses(
+    [MyReport.<span class="k">self</span>, NSArray.<span class="k">self</span>],
+    <span class="k">for</span>: #selector(HelperProtocol.fetchReport(reply:)),
+    argumentIndex: <span class="n">0</span>,
+    ofReply: <span class="k">true</span>)          <span class="c">// true = it's in the reply; false = it's an argument</span></code></pre>
+
+<div class="note gotcha"><b>The beginner surprise</b>You can't send arbitrary Swift structs or classes over XPC. If a value won't serialize (conform to NSSecureCoding) it can't cross the boundary. The usual fix is to send simple data — a string, a <code>Data</code> blob, or a Codable type you encode to <code>Data</code> yourself and decode on the other side — rather than fighting to make a complex object NSSecureCoding-compliant.</div>
+
+<div class="note key"><b>Practical tip</b>For anything beyond simple values, a clean pattern is: define a <code>Codable</code> struct, encode it to <code>Data</code> with <code>JSONEncoder</code>/<code>PropertyListEncoder</code> before sending, and decode it on the other side. Then your XPC methods only ever pass <code>Data</code> — which always crosses cleanly — and you keep the rich types in Swift on each end.</div>
+</section>
+
+<!-- ================= 10 worked ================= -->
+<section class="chapter" id="worked">
+<h2>Chapter 10</h2>
+<div class="chapter-title">Full worked example</div>
+<div class="chapter-tag">Everything so far, assembled into one complete privileged-helper setup. Read it as the summary of the whole guide.</div>
+
+<p>A menu-bar app that asks a root helper to report status and install a package. Three files: the shared protocol, the helper, and the client.</p>
+
+<h4>File 1 — Shared protocol (in both targets)</h4>
+<pre><code><span class="c">// HelperProtocol.swift</span>
+<span class="k">@objc protocol</span> <span class="t">HelperProtocol</span> {
+    <span class="k">func</span> <span class="f">currentStatus</span>(reply: <span class="k">@escaping</span> (String) -> Void)
+    <span class="k">func</span> <span class="f">install</span>(package: String, reply: <span class="k">@escaping</span> (Bool, String) -> Void)
+}</code></pre>
+
+<h4>File 2 — The helper (runs as root, managed by launchd)</h4>
+<pre><code><span class="c">// main.swift of the helper</span>
+<span class="k">import</span> Foundation
+
+<span class="k">class</span> <span class="t">HelperImpl</span>: NSObject, HelperProtocol {
+    <span class="k">func</span> <span class="f">currentStatus</span>(reply: <span class="k">@escaping</span> (String) -> Void) {
+        reply(<span class="str">"healthy · v2.4.0"</span>)
+    }
+    <span class="k">func</span> <span class="f">install</span>(package: String, reply: <span class="k">@escaping</span> (Bool, String) -> Void) {
+        <span class="k">guard</span> package.hasSuffix(<span class="str">".pkg"</span>) <span class="k">else</span> {        <span class="c">// validate input!</span>
+            <span class="k">return</span> reply(<span class="k">false</span>, <span class="str">"not a pkg"</span>)
+        }
+        <span class="k">let</span> ok = runInstaller(package)                <span class="c">// the privileged work</span>
+        reply(ok, ok ? <span class="str">"installed"</span> : <span class="str">"failed"</span>)
+    }
+}
+
+<span class="k">class</span> <span class="t">Delegate</span>: NSObject, NSXPCListenerDelegate {
+    <span class="k">func</span> <span class="f">listener</span>(_ l: NSXPCListener,
+                  shouldAcceptNewConnection c: NSXPCConnection) -> Bool {
+        c.exportedInterface = NSXPCInterface(with: HelperProtocol.<span class="k">self</span>)
+        c.exportedObject = HelperImpl()
+        c.resume()
+        <span class="k">return true</span>
+    }
+}
+
+<span class="k">let</span> listener = NSXPCListener(machServiceName: <span class="str">"com.corp.helper"</span>)
+<span class="k">let</span> delegate = Delegate()
+listener.delegate = delegate
+<span class="k">if</span> #available(macOS <span class="n">13</span>, *) {                          <span class="c">// SECURITY: one-line caller check</span>
+    listener.setCodeSigningRequirement(
+        <span class="str">"anchor apple generic and certificate leaf[subject.OU] = \"YOURTEAMID\""</span>)
+}
+listener.resume()
+RunLoop.current.run()                                <span class="c">// keep the helper alive</span></code></pre>
+
+<h4>File 3 — The client (the app)</h4>
+<pre><code><span class="c">// In the app</span>
+<span class="k">final class</span> <span class="t">HelperClient</span> {
+    <span class="k">private var</span> connection: NSXPCConnection?
+
+    <span class="k">private func</span> <span class="f">makeConnection</span>() -> NSXPCConnection {
+        <span class="k">let</span> c = NSXPCConnection(machServiceName: <span class="str">"com.corp.helper"</span>, options: .privileged)
+        c.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.<span class="k">self</span>)
+        c.interruptionHandler = { print(<span class="str">"helper crashed; will relaunch"</span>) }
+        c.invalidationHandler = { print(<span class="str">"connection dead; discard"</span>) }
+        c.resume()
+        <span class="k">return</span> c
+    }
+
+    <span class="k">func</span> <span class="f">status</span>(_ done: <span class="k">@escaping</span> (String) -> Void) {
+        <span class="k">if</span> connection == <span class="k">nil</span> { connection = makeConnection() }
+        <span class="k">let</span> proxy = connection?.remoteObjectProxyWithErrorHandler { err <span class="k">in</span>
+            done(<span class="str">"error: \(err.localizedDescription)"</span>)
+        } <span class="k">as</span>? HelperProtocol
+        proxy?.currentStatus(reply: done)
+    }
+}
+<span class="c">// usage: HelperClient().status { print("Helper:", $0) }</span></code></pre>
+
+<div class="note key"><b>See every chapter in here</b>Shared protocol (Ch 6) · listener + exported object (Ch 6) · Mach service, Flavor B (Ch 4) · <code>setCodeSigningRequirement</code> security (Ch 8) · interruption/invalidation handlers (Ch 7) · error-handling proxy (Ch 6) · input validation (Ch 8) · <code>RunLoop</code> to stay alive (Ch 3, launchd on-demand). This one example <em>is</em> the whole guide.</div>
+</section>
+
+
+<!-- ================= 11 pitfalls ================= -->
+<section class="chapter" id="pitfalls">
+<h2>Chapter 11</h2>
+<div class="chapter-title">Common pitfalls</div>
+<div class="chapter-tag">The mistakes beginners hit — knowing them upfront saves hours.</div>
+
+<table>
+<tr><th>Pitfall</th><th>What happens</th><th>Fix</th></tr>
+<tr><td>Forgetting <code>resume()</code></td><td>Connection or listener silently does nothing — no calls ever go through</td><td>Always call <code>resume()</code> after configuring; connections start <em>suspended</em></td></tr>
+<tr><td>Not calling the reply block</td><td>The caller waits forever; resources leak</td><td>Call each reply <strong>exactly once</strong> on every path, including errors</td></tr>
+<tr><td>Calling the reply block twice</td><td>Crash</td><td>Exactly once — never zero, never two</td></tr>
+<tr><td>Accepting every connection</td><td>Any process (incl. malware) can drive your helper</td><td>Verify the code signature (Ch 8)</td></tr>
+<tr><td>Assuming a thread</td><td>Incoming calls arrive on an internal queue, not main; you race shared state</td><td>Protect shared state; hop to main for UI</td></tr>
+<tr><td>Sending non-serializable types</td><td>Call fails or object doesn't arrive</td><td>Send NSSecureCoding types, or encode to <code>Data</code> (Ch 9)</td></tr>
+<tr><td>Reusing an invalidated connection</td><td>Calls silently fail</td><td>On invalidation, discard and create a fresh connection</td></tr>
+</table>
+
+<div class="note gotcha"><b>The two that bite everyone</b>(1) <strong>Forgetting <code>resume()</code></strong> — connections are born suspended, so nothing happens until you resume, and there's no error to tell you why. (2) <strong>The reply block contract</strong> — call it exactly once. Zero calls hangs the caller; two calls crashes. When you have multiple code paths (success, validation failure, error), make sure every single one calls reply once.</div>
+</section>
+
+
+<!-- ================= 12 interview ================= -->
+<section class="chapter" id="interview">
+<h2>Chapter 12</h2>
+<div class="chapter-title">Interview summary</div>
+<div class="chapter-tag">The whole guide, compressed into what you'd say out loud.</div>
+
+<h3>The 30-second explanation of XPC</h3>
+<p><em>"XPC is macOS's IPC framework for letting separate processes talk. You define a Swift protocol, and calling the remote side looks like calling methods on an object — XPC marshals the arguments and delivers the reply. It's built on Mach ports and integrated with launchd, so the helper starts on demand and relaunches if it crashes. It's used mainly for two things: crash isolation, by moving risky work into a sandboxed helper, and privilege separation, where a small root helper does powerful work for an unprivileged app."</em></p>
+
+<h3>The must-know facts, ranked</h3>
+<ol>
+<li><strong>Security is the headline.</strong> Verify the caller's <em>code signature</em>, not its PID — via <code>setCodeSigningRequirement</code> on macOS 13+, or the audit token manually. PIDs are recycled and unsafe.</li>
+<li><strong>launchd gives on-demand launch and crash recovery</strong> — the reason XPC beats a hand-rolled socket server.</li>
+<li><strong>The connection model:</strong> server exposes an object via a listener; client gets a proxy and calls methods; XPC ships the call and reply.</li>
+<li><strong>Interruption (temporary) vs invalidation (permanent)</strong> — handle both; discard invalidated connections.</li>
+<li><strong>Reply blocks fire exactly once;</strong> only serializable (NSSecureCoding) data crosses.</li>
+</ol>
+
+<h3>Quick reference card</h3>
+<table>
+<tr><td class="tt">NSXPCConnection</td><td>The link between two processes</td></tr>
+<tr><td class="tt">NSXPCListener</td><td>Server side — accepts connections</td></tr>
+<tr><td class="tt">NSXPCInterface</td><td>Wraps your @objc protocol</td></tr>
+<tr><td class="tt">exportedObject</td><td>The object that handles incoming calls (server)</td></tr>
+<tr><td class="tt">remoteObjectProxy</td><td>The stand-in you call methods on (client)</td></tr>
+<tr><td class="tt">shouldAcceptNewConnection</td><td>Where you accept/reject + secure the connection</td></tr>
+<tr><td class="tt">setCodeSigningRequirement</td><td>One-line caller verification (macOS 13+)</td></tr>
+<tr><td class="tt">auditToken</td><td>Kernel-verified caller identity (manual verification)</td></tr>
+<tr><td class="tt">interruption / invalidation</td><td>Temporary crash vs permanent death</td></tr>
+</table>
+
+<div class="note key"><b>How this connects to your bigger picture</b>XPC is one of the two IPC mechanisms named in macOS agent roles (the other is Unix domain sockets). The honest senior framing: XPC when both ends are Apple-native and you want typed calls plus launchd lifecycle; Unix sockets when a portable C/C++ core or non-Apple component needs in. You now understand XPC deeply enough to make and defend that choice — which is exactly what a systems interviewer wants to hear.</div>
+
+<h3>A 2-day plan to own this</h3>
+<table>
+<tr><th>Day</th><th>Do</th><th>Ready when…</th></tr>
+<tr><td>1</td><td>Read Ch 1–7. Build the worked example's protocol + helper + client in a scratch project; get one round-trip call working.</td><td>You can explain the connect→proxy→reply flow without notes.</td></tr>
+<tr><td>2</td><td>Add security (Ch 8), break it on purpose (wrong Team ID → rejected), test crash/interruption. Rehearse the 30-second explanation.</td><td>You can secure a connection and explain audit-token-vs-PID cold.</td></tr>
+</table>
+</section>
+
+</main>
+</div>
+</body>
+</html>

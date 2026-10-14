@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Databases — from absolute scratch</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1e26;--soft:#4a5261;--faint:#78808f;--paper:#f2f3f0;--surf:#fff;--surf2:#e9eae3;
+  --line:#dbdbd2;--lineS:#c4c5b8;
+  --db:#1c5f7c;--dbT:#e3f0f5;
+  --idx:#6b3fa0;--idxT:#efe9f7;
+  --go:#186147;--goT:#e0efe8;
+  --warn:#9a5c16;--warnT:#f8efdc;
+  --stop:#a03a2a;--stopT:#f9e7e2;
+  --cbg:#131922;--cink:#e6edf3;--ck:#a5c9f5;--cs:#9fd6a0;--cc:#6d798c;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.2px;line-height:1.64;-webkit-font-smoothing:antialiased}
+  #pg{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--db),var(--idx));z-index:60}
+  .shell{display:flex;min-height:100vh}
+  #sb{width:288px;flex:0 0 288px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#0e1519;color:#c3ced5;padding:22px 13px 42px}
+  .bd{font-family:'Sora';font-weight:800;font-size:17.5px;color:#fff;line-height:1.2}
+  .bd .s{display:block;font-family:'JetBrains Mono';font-weight:400;font-size:10px;color:#7f929c;margin-top:7px;line-height:1.5}
+  .ct{font-family:'JetBrains Mono';font-size:10.5px;color:#7f929c;margin:15px 4px 6px;border-top:1px solid #1f2b31;padding-top:12px}
+  nav .grp{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#5c7079;margin:14px 9px 5px}
+  nav a{display:flex;gap:9px;text-decoration:none;color:#a3b2ba;font-size:12.8px;padding:6px 8px;border-radius:7px;line-height:1.3}
+  nav a .n{font-family:'JetBrains Mono';font-size:10px;color:#697d86;min-width:20px}
+  nav a:hover{background:#17232a;color:#fff}nav a.active{background:var(--db);color:#fff}
+  main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 115px}
+  .col{width:100%;max-width:848px}
+  header.h{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+  .kick{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--idx);margin:0 0 13px}
+  h1{font-family:'Sora';font-weight:800;font-size:clamp(27px,4.3vw,39px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .led{font-size:17.2px;color:var(--soft);max-width:63ch;margin:0}
+  section{padding:44px 0 4px;border-top:1px solid var(--line);margin-top:26px}
+  section:first-of-type{border-top:none;margin-top:0}
+  .sn{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;color:var(--db)}
+  h2{font-family:'Sora';font-weight:800;font-size:26px;letter-spacing:-.015em;margin:5px 0 5px;line-height:1.12}
+  .ss{color:var(--faint);font-size:14.8px;margin:0 0 18px}
+  h3{font-family:'Sora';font-weight:700;font-size:18.5px;margin:28px 0 7px;letter-spacing:-.01em}
+  h4{font-family:'Sora';font-weight:700;font-size:15px;margin:20px 0 5px}
+  p{margin:0 0 13px}ul,ol{margin:0 0 14px;padding-left:21px}li{margin:5px 0}
+  code{font-family:'JetBrains Mono';font-size:.84em;background:var(--surf2);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+  pre{background:var(--cbg);color:var(--cink);border-radius:10px;padding:15px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12.3px;line-height:1.58;margin:12px 0 14px}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .k{color:var(--ck)}.s{color:var(--cs)}.c{color:var(--cc);font-style:italic}
+  .bx{border-radius:10px;padding:13px 16px;margin:14px 0;border:1px solid var(--line);border-left-width:4px;background:var(--surf)}
+  .bx .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:5px}
+  .go{border-left-color:var(--go);background:var(--goT)}.go .l{color:var(--go)}
+  .st{border-left-color:var(--stop);background:var(--stopT)}.st .l{color:var(--stop)}
+  .wn{border-left-color:var(--warn);background:var(--warnT)}.wn .l{color:var(--warn)}
+  .dbb{border-left-color:var(--db);background:var(--dbT)}.dbb .l{color:var(--db)}
+  .ix{border-left-color:var(--idx);background:var(--idxT)}.ix .l{color:var(--idx)}
+  .bx p:last-child{margin-bottom:0}
+  details.q{border:1px solid var(--lineS);border-radius:11px;margin:10px 0;background:var(--surf);overflow:hidden}
+  details.q>summary{cursor:pointer;list-style:none;padding:13px 42px 13px 15px;position:relative;font-weight:600;font-size:14.8px}
+  details.q>summary::-webkit-details-marker{display:none}
+  details.q>summary:hover{background:var(--surf2)}
+  details.q>summary::after{content:"+";position:absolute;right:15px;top:11px;font-family:'JetBrains Mono';font-size:17px;color:var(--faint)}
+  details.q[open]>summary::after{content:"–"}
+  .bod{padding:0 15px 15px;border-top:1px solid var(--line)}
+  .bod p:first-child{margin-top:12px}
+  .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:12px 0 3px;font-weight:600}
+  .tb{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.7px}
+  .tb th,.tb td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tb th{font-family:'Sora';font-weight:700;font-size:12.2px;border-bottom:2px solid var(--ink)}
+  .tb td:first-child{font-family:'JetBrains Mono';font-size:11.7px;color:var(--db)}
+  .data{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.8px;font-family:'JetBrains Mono'}
+  .data th,.data td{padding:5px 9px;border:1px solid var(--lineS);text-align:left}
+  .data th{background:var(--surf2);font-weight:500;font-size:11.5px}
+  .data td{background:var(--surf)}
+  .data tr.hl td{background:var(--goT)}
+  .dg{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:18px 15px;margin:16px 0}
+  .dg .cap{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);text-align:center;margin-top:12px}
+  .fl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .nd{background:var(--surf2);border:1.5px solid var(--lineS);border-radius:9px;padding:8px 11px;font-size:12.2px;text-align:center;min-width:66px;line-height:1.35}
+  .nd b{font-family:'JetBrains Mono';font-size:9.5px;display:block;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .nd.d{border-color:var(--db);background:var(--dbT)}
+  .nd.i{border-color:var(--idx);background:var(--idxT)}
+  .nd.g{border-color:var(--go);background:var(--goT)}
+  .nd.r{border-color:var(--stop);background:var(--stopT)}
+  .ar{font-family:'JetBrains Mono';color:var(--faint);font-size:15px}
+  .tp{display:none}
+  @media (max-width:920px){.shell{flex-direction:column}#sb{position:fixed;left:0;top:0;transform:translateX(-100%);transition:.25s;z-index:50}#sb.o{transform:translateX(0)}.tp{display:flex;align-items:center;gap:14px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);padding:11px 16px;z-index:40}.tp .bg{font-size:21px;background:none;border:none;cursor:pointer}.tp .t{font-family:'Sora';font-weight:800;font-size:14px}main{padding:0 17px 90px}header.h{padding:26px 0 18px}#sc{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;display:none}#sc.o{display:block}}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div class="tp"><button class="bg" id="bg">☰</button><span class="t">Databases from scratch</span></div>
+<div id="sc"></div>
+<div class="shell">
+<aside id="sb">
+  <div class="bd">Databases<br>from scratch<span class="s">no prior knowledge assumed ·<br>every piece, every trade-off</span></div>
+  <div class="ct">18 sections</div>
+  <nav id="toc">
+    <div class="grp">The absolute basics</div>
+    <a href="#what"><span class="n">01</span><span>What a database is</span></a>
+    <a href="#table"><span class="n">02</span><span>Tables, rows, columns</span></a>
+    <a href="#disk"><span class="n">03</span><span>How it's stored ★</span></a>
+    <a href="#keys"><span class="n">04</span><span>Keys ★</span></a>
+    <a href="#rel"><span class="n">05</span><span>Relationships &amp; joins</span></a>
+    <div class="grp">Making it fast</div>
+    <a href="#slow"><span class="n">06</span><span>Why queries get slow</span></a>
+    <a href="#index"><span class="n">07</span><span>Indexes — the idea ★</span></a>
+    <a href="#btree"><span class="n">08</span><span>Inside a B-tree</span></a>
+    <a href="#composite"><span class="n">09</span><span>Composite indexes ★</span></a>
+    <a href="#idxcost"><span class="n">10</span><span>What indexes cost</span></a>
+    <a href="#plan"><span class="n">11</span><span>Reading a query plan</span></a>
+    <div class="grp">Correctness</div>
+    <a href="#txn"><span class="n">12</span><span>Transactions &amp; ACID</span></a>
+    <a href="#concurrent"><span class="n">13</span><span>Concurrency problems</span></a>
+    <a href="#isolation"><span class="n">14</span><span>Isolation levels</span></a>
+    <a href="#lock"><span class="n">15</span><span>Locks &amp; deadlocks</span></a>
+    <div class="grp">Design &amp; scale</div>
+    <a href="#normal"><span class="n">16</span><span>Normalisation</span></a>
+    <a href="#scale"><span class="n">17</span><span>Scaling</span></a>
+    <a href="#nosql"><span class="n">18</span><span>SQL vs NoSQL</span></a>
+  </nav>
+</aside>
+<main><div class="col">
+
+<header class="h">
+  <p class="kick">Assumes nothing · builds every concept from the ground up</p>
+  <h1>Databases, from absolute scratch.</h1>
+  <p class="led">Starting with what a table physically <em>is</em> on a disk — because indexes, keys, and every performance decision only make sense once you can picture that. Each section builds on the last, and every concept comes with its trade-off.</p>
+</header>
+
+<!-- 01 -->
+<section id="what">
+  <div class="sn">01</div>
+  <h2>What a database actually is</h2>
+  <p class="ss">Strip away the mystique first.</p>
+
+  <p>A database is a <strong>program</strong> that stores data in files on a disk and answers questions about it. That's it. It's software, running as a process, reading and writing files — like any other program.</p>
+
+  <p>You could store your data in a text file. People do. A database exists because a text file fails at four things once data gets large or shared:</p>
+
+  <table class="tb">
+    <tr><th>Problem</th><th>What a database provides</th></tr>
+    <tr><td><strong>Finding things fast</strong></td><td>Indexes — you don't scan the whole file to find one row</td></tr>
+    <tr><td><strong>Many users at once</strong></td><td>Concurrency control — two people editing simultaneously don't corrupt each other</td></tr>
+    <tr><td><strong>Crashes</strong></td><td>Durability — a power cut mid-write doesn't leave half a record</td></tr>
+    <tr><td><strong>Related data</strong></td><td>Relationships and joins — combining data that lives in different places</td></tr>
+  </table>
+
+  <div class="bx dbb"><span class="l">Hold this picture</span>
+    <p>Everything in this document is machinery for one of those four problems. When a concept feels arbitrary, ask which of the four it's solving — there's always an answer.</p></div>
+</section>
+
+<!-- 02 -->
+<section id="table">
+  <div class="sn">02</div>
+  <h2>Tables, rows, and columns</h2>
+  <p class="ss">The vocabulary, made concrete.</p>
+
+  <p>A <strong>table</strong> is like a spreadsheet. It has named <strong>columns</strong> with fixed types, and <strong>rows</strong> of actual data.</p>
+
+  <table class="data">
+    <tr><th>id</th><th>name</th><th>email</th><th>city</th><th>created_at</th></tr>
+    <tr><td>1</td><td>Priya</td><td>priya@ex.com</td><td>Bengaluru</td><td>2026-01-15</td></tr>
+    <tr><td>2</td><td>Arun</td><td>arun@ex.com</td><td>Chennai</td><td>2026-02-03</td></tr>
+    <tr><td>3</td><td>Meera</td><td>meera@ex.com</td><td>Bengaluru</td><td>2026-02-11</td></tr>
+    <tr><td>4</td><td>Karthik</td><td>karthik@ex.com</td><td>Madurai</td><td>2026-03-02</td></tr>
+  </table>
+
+  <p>Creating that table:</p>
+<pre><code><span class="k">CREATE TABLE</span> users (
+    id          <span class="k">INTEGER</span>       <span class="k">PRIMARY KEY</span>,
+    name        <span class="k">VARCHAR</span>(100)  <span class="k">NOT NULL</span>,
+    email       <span class="k">VARCHAR</span>(255)  <span class="k">NOT NULL UNIQUE</span>,
+    city        <span class="k">VARCHAR</span>(100),
+    created_at  <span class="k">TIMESTAMP</span>     <span class="k">DEFAULT</span> now()
+);</code></pre>
+
+  <h3>What each part means</h3>
+  <table class="tb">
+    <tr><th>Piece</th><th>Meaning</th></tr>
+    <tr><td><code>INTEGER</code>, <code>VARCHAR(100)</code></td><td>The <strong>type</strong> — what kind of value, and how much space it may take</td></tr>
+    <tr><td><code>NOT NULL</code></td><td>This column must always have a value</td></tr>
+    <tr><td><code>UNIQUE</code></td><td>No two rows may share this value</td></tr>
+    <tr><td><code>DEFAULT now()</code></td><td>If you don't supply a value, use this</td></tr>
+    <tr><td><code>PRIMARY KEY</code></td><td>See §04 — the most important one</td></tr>
+  </table>
+
+  <p>These are <strong>constraints</strong> — rules the database enforces on every write. Their value is that they can't be forgotten. Application code can have a bug that inserts a duplicate email; a <code>UNIQUE</code> constraint rejects it regardless of which application, script, or human tries.</p>
+
+  <div class="bx go"><span class="l">The trade-off — constraints</span>
+    <p><strong>For:</strong> guaranteed data integrity, enforced no matter what writes. Bugs become errors rather than corruption.</p>
+    <p><strong>Against:</strong> every constraint is a check on every write, so writes cost more. And changing a constraint later on a large table can require a lengthy migration.</p>
+    <p><strong>Verdict:</strong> use them. Corrupt data is far more expensive than slightly slower writes, and it's often unrecoverable.</p></div>
+</section>
+
+<!-- 03 -->
+<section id="disk">
+  <div class="sn">03 / ★ THE FOUNDATION</div>
+  <h2>How a table is actually stored</h2>
+  <p class="ss">This is the section that makes indexes obvious later. Take it slowly.</p>
+
+  <h3>Rows live in pages</h3>
+  <p>The disk isn't read one row at a time. The database reads and writes in fixed-size blocks called <strong>pages</strong> — typically <strong>8 KB</strong>. A page holds as many rows as fit.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:6px">
+      <div class="nd d" style="min-width:460px"><b>page 1 · 8 KB</b>rows 1, 2, 3, … up to ~50 rows</div>
+      <div class="nd d" style="min-width:460px"><b>page 2 · 8 KB</b>rows 51, 52, 53, …</div>
+      <div class="nd d" style="min-width:460px"><b>page 3 · 8 KB</b>rows 101, 102, …</div>
+      <div class="nd" style="min-width:460px">… thousands more pages …</div>
+    </div>
+    <div class="cap">The table file is just a long sequence of pages.</div>
+  </div>
+
+  <div class="bx dbb"><span class="l">The consequence that matters</span>
+    <p><strong>Reading one row costs a whole page.</strong> If you want row 52, the database reads all 8 KB of page 2 into memory. There's no way to read less — that's how disks and the OS work.</p>
+    <p style="margin-top:8px">So the real currency of database performance is <strong>how many pages you touch</strong>, not how many rows you want.</p></div>
+
+  <h3>The buffer pool — memory as a cache</h3>
+  <p>Reading from disk is roughly <strong>100,000× slower</strong> than reading from RAM. So the database keeps recently-used pages in memory, in an area called the <strong>buffer pool</strong>.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd g"><b>in buffer pool</b>~100 nanoseconds</div>
+      <span class="ar">vs</span>
+      <div class="nd r"><b>from SSD</b>~100 microseconds<br>(1000× slower)</div>
+      <span class="ar">vs</span>
+      <div class="nd r"><b>from spinning disk</b>~10 milliseconds<br>(100,000× slower)</div>
+    </div>
+    <div class="cap">Most database tuning is really about keeping the pages you need in memory.</div>
+  </div>
+
+  <div class="bx go"><span class="l">The trade-off — buffer pool size</span>
+    <p><strong>Bigger:</strong> more of your data stays in RAM, dramatically faster reads.</p>
+    <p><strong>Smaller:</strong> leaves memory for other things, but more disk reads.</p>
+    <p><strong>The rule of thumb:</strong> if your <em>working set</em> — the data actually being accessed — fits in the buffer pool, everything is fast. Once it doesn't, performance falls off a cliff. That cliff is the single most important thing to know about database performance.</p></div>
+
+  <h3>The heap — rows are unordered</h3>
+  <p>By default rows are stored in a <strong>heap</strong>: essentially insertion order, with no sorting. New rows go wherever there's space, including gaps left by deletions.</p>
+  <p>This matters enormously. Because rows are unordered, <strong>finding a specific row means checking every page</strong> unless you have help. That "help" is an index — which is where §07 comes in.</p>
+
+  <h3>The write-ahead log (WAL)</h3>
+  <p>A problem: if a crash happens mid-write, a page could be half-updated and the data corrupt.</p>
+  <p>The solution: before changing any data page, the database first writes a description of the change to a <strong>sequential log file</strong>, and flushes that to disk. Only then does it modify the actual pages, which can happen later and lazily.</p>
+
+  <div class="dg">
+    <div class="fl">
+      <div class="nd"><b>1</b>you commit</div><span class="ar">→</span>
+      <div class="nd g"><b>2</b>write to WAL,<br>flush to disk</div><span class="ar">→</span>
+      <div class="nd"><b>3</b>commit returns —<br>you're safe now</div><span class="ar">→</span>
+      <div class="nd d"><b>4</b>data pages updated<br>later, lazily</div>
+    </div>
+    <div class="cap">Durability comes from step 2, not step 4.</div>
+  </div>
+
+  <div class="bx dbb"><span class="l">Why this design is clever</span>
+    <p>Writing to the WAL is <strong>sequential</strong> — the disk head doesn't move, or on an SSD it's one contiguous write. Updating data pages is <strong>random</strong> — scattered across the file. Sequential writes are vastly faster. So the WAL lets you get durability at sequential-write speed, and defer the expensive random writes.</p>
+    <p style="margin-top:8px">After a crash, the database replays the WAL to reconstruct any changes that hadn't reached the data pages. Nothing committed is ever lost.</p></div>
+</section>
+
+<!-- 04 -->
+<section id="keys">
+  <div class="sn">04 / ★</div>
+  <h2>Keys</h2>
+  <p class="ss">The word "key" gets used for several different things. Here they are, separated.</p>
+
+  <h3>Primary key</h3>
+  <p><strong>The column (or columns) that uniquely identifies each row.</strong> Every table should have one.</p>
+  <table class="data">
+    <tr><th>id ← primary key</th><th>name</th><th>email</th></tr>
+    <tr><td>1</td><td>Priya</td><td>priya@ex.com</td></tr>
+    <tr><td>2</td><td>Arun</td><td>arun@ex.com</td></tr>
+  </table>
+  <p>Properties enforced automatically:</p>
+  <ul>
+    <li><strong>Unique</strong> — no two rows share a value</li>
+    <li><strong>Not null</strong> — every row must have one</li>
+    <li><strong>Indexed</strong> — the database creates an index on it automatically, because it knows you'll look rows up by it</li>
+  </ul>
+
+  <h4>Which column should be the primary key?</h4>
+  <table class="tb">
+    <tr><th>Choice</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td><strong>Auto-increment integer</strong><br>1, 2, 3…</td><td>Small (4–8 bytes), sequential so new rows pack neatly, fast to compare</td><td><strong>Guessable</strong> — <code>/users/1</code>, <code>/users/2</code> lets anyone enumerate. Awkward across multiple servers.</td></tr>
+    <tr><td><strong>UUID v4</strong><br>random 128-bit</td><td>Unguessable, generatable anywhere without coordination</td><td>Large (16 bytes), and <strong>random order causes page splits</strong> — see below</td></tr>
+    <tr><td><strong>UUID v7</strong><br>time-ordered</td><td>Unguessable <em>and</em> roughly sequential — best of both</td><td>Still 16 bytes; newer, less universally supported</td></tr>
+    <tr><td><strong>Natural key</strong><br>e.g. email</td><td>No extra column</td><td><strong>Avoid.</strong> Real-world values change — people change emails — and then every reference breaks</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">Why random UUIDs hurt — an important detail</span>
+    <p>Index entries are stored <strong>sorted</strong>. With sequential IDs, every new row appends to the end of the index — one page stays hot in memory and fills neatly.</p>
+    <p style="margin-top:8px">With random UUIDs, each insert lands in a <em>random</em> position. That means touching a random page (probably not in memory), and often <strong>splitting</strong> a full page into two half-full ones. The index becomes bloated and insert throughput drops noticeably. UUID v7 fixes this by embedding a timestamp so values sort roughly by creation time.</p></div>
+
+  <h3>Foreign key</h3>
+  <p><strong>A column that points at another table's primary key.</strong> It's how tables relate.</p>
+  <table class="data">
+    <tr><th colspan="3">orders</th></tr>
+    <tr><th>id (PK)</th><th>user_id (FK → users.id)</th><th>total</th></tr>
+    <tr><td>101</td><td>1</td><td>450.00</td></tr>
+    <tr><td>102</td><td>1</td><td>120.00</td></tr>
+    <tr><td>103</td><td>3</td><td>890.00</td></tr>
+  </table>
+  <p>Order 101 belongs to user 1. The database can <strong>enforce</strong> that: insert an order with <code>user_id = 999</code> when no such user exists, and it's rejected. That's <strong>referential integrity</strong>.</p>
+
+<pre><code><span class="k">CREATE TABLE</span> orders (
+    id      <span class="k">INTEGER PRIMARY KEY</span>,
+    user_id <span class="k">INTEGER NOT NULL REFERENCES</span> users(id) <span class="k">ON DELETE CASCADE</span>,
+    total   <span class="k">DECIMAL</span>(10,2)
+);</code></pre>
+  <p><code>ON DELETE CASCADE</code> means deleting a user deletes their orders. Alternatives: <code>RESTRICT</code> (refuse to delete a user who has orders) or <code>SET NULL</code>.</p>
+
+  <div class="bx go"><span class="l">The trade-off — foreign keys</span>
+    <p><strong>For:</strong> orphaned data becomes impossible. You can't have an order pointing at a deleted user, no matter what buggy code runs.</p>
+    <p><strong>Against:</strong> every insert into <code>orders</code> requires a check against <code>users</code>, so writes are slower. They complicate bulk loading, and they make sharding hard — a foreign key can't span servers.</p>
+    <p><strong>Verdict:</strong> use them in normal applications. Very large distributed systems sometimes drop them and enforce integrity in the application, accepting the risk for write throughput. Know that it's a deliberate trade, not an oversight.</p></div>
+
+  <h3>The other "keys"</h3>
+  <table class="tb">
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td><strong>Composite key</strong></td><td>A primary key made of multiple columns together, e.g. <code>(order_id, product_id)</code></td></tr>
+    <tr><td><strong>Candidate key</strong></td><td>Any column that <em>could</em> serve as primary key (unique and not null). You pick one; the rest stay as unique constraints.</td></tr>
+    <tr><td><strong>Surrogate key</strong></td><td>An artificial ID with no business meaning — the auto-increment or UUID. Preferred, because it never needs to change.</td></tr>
+    <tr><td><strong>Natural key</strong></td><td>A real-world identifier (email, ISBN). Avoid as primary key — real-world values change.</td></tr>
+    <tr><td><strong>Index key</strong></td><td>Confusingly, the column(s) an index is built on. Nothing to do with uniqueness.</td></tr>
+  </table>
+</section>
+
+<!-- 05 -->
+<section id="rel">
+  <div class="sn">05</div>
+  <h2>Relationships &amp; joins</h2>
+  <p class="ss">Why data is split across tables, and how you put it back together.</p>
+
+  <h3>Why not one big table?</h3>
+  <p>Suppose you stored users and orders together:</p>
+  <table class="data">
+    <tr><th>order_id</th><th>total</th><th>user_name</th><th>user_email</th><th>user_city</th></tr>
+    <tr><td>101</td><td>450</td><td>Priya</td><td>priya@ex.com</td><td>Bengaluru</td></tr>
+    <tr><td>102</td><td>120</td><td>Priya</td><td>priya@ex.com</td><td>Bengaluru</td></tr>
+    <tr><td>103</td><td>890</td><td>Meera</td><td>meera@ex.com</td><td>Bengaluru</td></tr>
+  </table>
+  <p>Three problems, and they're the classic ones:</p>
+  <ul>
+    <li><strong>Update anomaly</strong> — Priya changes her email; you must update every row that mentions her, and if you miss one the data is now inconsistent.</li>
+    <li><strong>Insertion anomaly</strong> — you can't record a user who hasn't ordered yet, because there's no row to put them in.</li>
+    <li><strong>Deletion anomaly</strong> — delete Meera's only order and you lose her details entirely.</li>
+  </ul>
+  <p>Splitting into <code>users</code> and <code>orders</code> fixes all three: each fact lives in exactly one place.</p>
+
+  <h3>The three relationship types</h3>
+  <table class="tb">
+    <tr><th>Type</th><th>Example</th><th>How it's built</th></tr>
+    <tr><td><strong>One-to-many</strong></td><td>One user, many orders</td><td>Foreign key on the "many" side (<code>orders.user_id</code>)</td></tr>
+    <tr><td><strong>One-to-one</strong></td><td>One user, one profile</td><td>Foreign key with a unique constraint. Often just merge into one table unless you're splitting rarely-used columns.</td></tr>
+    <tr><td><strong>Many-to-many</strong></td><td>Students ↔ courses</td><td><strong>A junction table</strong> — <code>enrolments(student_id, course_id)</code>. There's no other way.</td></tr>
+  </table>
+
+  <h3>Joins</h3>
+  <p>A <strong>join</strong> combines rows from two tables by matching a column.</p>
+<pre><code><span class="k">SELECT</span> u.name, o.total
+<span class="k">FROM</span> users u
+<span class="k">JOIN</span> orders o <span class="k">ON</span> o.user_id = u.id;</code></pre>
+  <p>For each order, find the user with the matching id, and output both.</p>
+
+  <table class="tb">
+    <tr><th>Join type</th><th>Returns</th></tr>
+    <tr><td><code>INNER JOIN</code></td><td>Only rows with a match on both sides. The default.</td></tr>
+    <tr><td><code>LEFT JOIN</code></td><td>All rows from the left table; <code>NULL</code>s where there's no match. Use for "all users and their orders, including users with none."</td></tr>
+    <tr><td><code>RIGHT JOIN</code></td><td>Mirror of left. Rarely used — people flip the table order instead.</td></tr>
+    <tr><td><code>FULL OUTER JOIN</code></td><td>Everything from both sides, nulls where unmatched.</td></tr>
+    <tr><td><code>CROSS JOIN</code></td><td>Every combination. Usually an accident — n × m rows.</td></tr>
+  </table>
+
+  <h3>How joins actually execute</h3>
+  <p>Worth knowing, because it explains why some joins are slow:</p>
+  <table class="tb">
+    <tr><th>Algorithm</th><th>How it works</th><th>Good when</th></tr>
+    <tr><td><strong>Nested loop</strong></td><td>For each row on the left, look up matches on the right</td><td>One side is small, and the other has an index on the join column</td></tr>
+    <tr><td><strong>Hash join</strong></td><td>Build a hash table from the smaller side, then scan the larger and probe it</td><td>Both sides are large, no useful index. Needs memory.</td></tr>
+    <tr><td><strong>Merge join</strong></td><td>Sort both sides, then walk them in step</td><td>Both already sorted on the join column</td></tr>
+  </table>
+  <div class="bx st"><span class="l">The classic slow join</span>
+    <p>A <strong>nested loop over two large tables with no index</strong> on the join column. For every one of a million left rows it scans a million right rows — a trillion comparisons. This is what people mean when they say "joins are slow." Joins aren't slow; <em>unindexed</em> joins are.</p></div>
+</section>
+
+<!-- 06 -->
+<section id="slow">
+  <div class="sn">06</div>
+  <h2>Why queries get slow</h2>
+  <p class="ss">The problem indexes exist to solve. Build the intuition before the solution.</p>
+
+  <p>You have a table with <strong>10 million users</strong>, and you run:</p>
+<pre><code><span class="k">SELECT</span> * <span class="k">FROM</span> users <span class="k">WHERE</span> email = <span class="s">'meera@ex.com'</span>;</code></pre>
+
+  <p>The database has no idea where that row is. Rows are stored in a heap, unordered. So it does the only thing it can: <strong>a full table scan.</strong></p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:6px">
+      <div class="nd r" style="min-width:440px"><b>read page 1</b>check ~50 rows · none match</div>
+      <div class="nd r" style="min-width:440px"><b>read page 2</b>check ~50 rows · none match</div>
+      <div class="nd" style="min-width:440px">… 200,000 pages …</div>
+      <div class="nd g" style="min-width:440px"><b>page 137,442</b>found it</div>
+    </div>
+    <div class="cap">10M rows ÷ 50 per page ≈ 200,000 pages read. At 8 KB each, that's 1.6 GB of I/O to find one row.</div>
+  </div>
+
+  <div class="bx st"><span class="l">Two things to notice</span>
+    <p><strong>1. It's O(n).</strong> Double the table, double the work. Ten million rows means ten million rows examined.</p>
+    <p><strong>2. It gets worse with concurrency.</strong> One such query is slow. A hundred at once evict everything useful from the buffer pool, and the whole database grinds — a single missing index can take down a service.</p></div>
+
+  <p>What you want instead: some structure that lets you jump straight to the right page. That's an index.</p>
+</section>
+
+<!-- 07 -->
+<section id="index">
+  <div class="sn">07 / ★ THE KEY IDEA</div>
+  <h2>Indexes — the idea</h2>
+  <p class="ss">If you understand a book's index, you already understand this.</p>
+
+  <div class="bx ix"><span class="l">The analogy</span>
+    <p>A 900-page textbook. You want everything about "photosynthesis." You could read all 900 pages — that's a full table scan. Or you flip to the index at the back, which is <strong>sorted alphabetically</strong>, find "photosynthesis → p. 412," and go straight there.</p>
+    <p style="margin-top:8px">A database index is exactly this: <strong>a separate, sorted structure that maps values to row locations.</strong></p></div>
+
+  <h3>What it looks like</h3>
+<pre><code><span class="k">CREATE INDEX</span> idx_users_email <span class="k">ON</span> users(email);</code></pre>
+  <p>This builds a second structure alongside the table:</p>
+
+  <div class="dg">
+    <div class="fl" style="align-items:flex-start;gap:24px">
+      <div>
+        <div style="font-family:'JetBrains Mono';font-size:11px;color:var(--faint);margin-bottom:6px;text-align:center">INDEX (sorted by email)</div>
+        <table class="data" style="margin:0">
+          <tr><th>email</th><th>→ location</th></tr>
+          <tr><td>arun@ex.com</td><td>page 2, slot 7</td></tr>
+          <tr><td>karthik@ex.com</td><td>page 9, slot 2</td></tr>
+          <tr class="hl"><td>meera@ex.com</td><td>page 4, slot 1</td></tr>
+          <tr><td>priya@ex.com</td><td>page 1, slot 3</td></tr>
+        </table>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono';font-size:11px;color:var(--faint);margin-bottom:6px;text-align:center">TABLE (unordered heap)</div>
+        <table class="data" style="margin:0">
+          <tr><th>page</th><th>rows</th></tr>
+          <tr><td>1</td><td>Priya, …</td></tr>
+          <tr><td>2</td><td>Arun, …</td></tr>
+          <tr class="hl"><td>4</td><td>Meera, …</td></tr>
+          <tr><td>9</td><td>Karthik, …</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="cap">The index is sorted. The table isn't. That's the entire trick.</div>
+  </div>
+
+  <h3>Why sorting changes everything</h3>
+  <p>Because the index is sorted, you can <strong>binary search</strong> it: look at the middle, decide left or right, discard half, repeat.</p>
+  <table class="tb">
+    <tr><th>Rows</th><th>Full scan (checks)</th><th>Index lookup (checks)</th></tr>
+    <tr><td>1,000</td><td>1,000</td><td>~10</td></tr>
+    <tr><td>1,000,000</td><td>1,000,000</td><td>~20</td></tr>
+    <tr><td>1,000,000,000</td><td>1,000,000,000</td><td>~30</td></tr>
+  </table>
+  <p>That's <strong>O(log n)</strong> versus O(n). A billion rows costs only 50% more work than a million — this is why indexes feel like magic.</p>
+
+  <div class="bx go"><span class="l">The one-sentence version</span>
+    <p><strong>An index trades extra storage and slower writes for dramatically faster reads on the indexed column.</strong> Every trade-off in §10 follows from that sentence.</p></div>
+</section>
+
+<!-- 08 -->
+<section id="btree">
+  <div class="sn">08</div>
+  <h2>Inside a B-tree</h2>
+  <p class="ss">The actual structure. Understanding it explains several behaviours that otherwise seem arbitrary.</p>
+
+  <p>Databases don't use a flat sorted list — they use a <strong>B-tree</strong> (specifically a B+tree). A tree of pages, where each page holds many keys.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:10px">
+      <div class="nd i" style="min-width:300px"><b>root page</b>&lt; 500 | 500–999 | ≥ 1000</div>
+      <span class="ar">↓ pick one branch</span>
+      <div class="fl">
+        <div class="nd i"><b>internal</b>&lt;200 | 200–499</div>
+        <div class="nd i"><b>internal</b>500–749 | 750–999</div>
+        <div class="nd i"><b>internal</b>1000–1499 | ≥1500</div>
+      </div>
+      <span class="ar">↓</span>
+      <div class="fl">
+        <div class="nd g"><b>leaf</b>actual keys<br>+ row pointers</div>
+        <span class="ar">↔</span>
+        <div class="nd g"><b>leaf</b>keys →</div>
+        <span class="ar">↔</span>
+        <div class="nd g"><b>leaf</b>keys →</div>
+      </div>
+    </div>
+    <div class="cap">Leaves hold the data and are linked sideways. Internal pages are signposts only.</div>
+  </div>
+
+  <h3>Properties, and what each one buys you</h3>
+  <table class="tb">
+    <tr><th>Property</th><th>Consequence</th></tr>
+    <tr><td><strong>Very wide</strong> — each page holds hundreds of keys</td><td>The tree is shallow. Even a billion rows is only 3–4 levels deep, so a lookup is 3–4 page reads.</td></tr>
+    <tr><td><strong>Always balanced</strong></td><td>Every lookup costs the same. No worst case where the tree degenerates into a list.</td></tr>
+    <tr><td><strong>Leaves are linked sideways</strong></td><td><strong>Range queries are fast.</strong> Find the start, then walk sideways. This is why B-trees beat hash indexes.</td></tr>
+    <tr><td><strong>Leaves are sorted</strong></td><td><code>ORDER BY</code> on an indexed column needs no sort step — just read the leaves in order.</td></tr>
+  </table>
+
+  <h3>Page splits — why insert order matters</h3>
+  <p>When a leaf page fills and a new key must go in the middle, the page <strong>splits</strong> into two half-full pages.</p>
+  <div class="bx wn"><span class="l">The practical consequence</span>
+    <p><strong>Sequential inserts</strong> (auto-increment IDs, timestamps) always append to the rightmost leaf. One page stays hot in memory, fills completely, then a new one starts. Efficient and compact.</p>
+    <p style="margin-top:8px"><strong>Random inserts</strong> (UUID v4) land anywhere, splitting pages all over the tree. The index grows larger than necessary, pages sit half-empty, and inserts touch cold pages. This is the concrete reason UUID v7 exists.</p></div>
+
+  <h3>Other index types, briefly</h3>
+  <table class="tb">
+    <tr><th>Type</th><th>Use</th><th>Limitation</th></tr>
+    <tr><td><strong>B-tree</strong></td><td>Equality, ranges, sorting, prefix matching. The default for good reason.</td><td>—</td></tr>
+    <tr><td><strong>Hash</strong></td><td>Equality only, O(1)</td><td><strong>No ranges, no sorting.</strong> Rarely worth it — B-trees are nearly as fast and far more flexible.</td></tr>
+    <tr><td><strong>GIN / inverted</strong></td><td>Full-text search, JSON containment, array membership</td><td>Large, slower to update</td></tr>
+    <tr><td><strong>GiST / R-tree</strong></td><td>Geographic and geometric queries</td><td>Specialised</td></tr>
+    <tr><td><strong>Partial index</strong></td><td>Index only some rows: <code>WHERE deleted_at IS NULL</code></td><td>Only helps queries with the same condition</td></tr>
+  </table>
+
+  <h3>Clustered vs non-clustered — an important distinction</h3>
+  <table class="tb">
+    <tr><th></th><th>Clustered</th><th>Non-clustered (secondary)</th></tr>
+    <tr><td>What it is</td><td>The table rows are stored <em>inside</em> the index, in key order</td><td>A separate structure pointing at rows in the heap</td></tr>
+    <tr><td>How many per table</td><td><strong>One</strong> — data can only be sorted one way</td><td>As many as you like</td></tr>
+    <tr><td>Lookup cost</td><td>Find the leaf — <strong>the row is right there</strong></td><td>Find the leaf, then a <strong>second read</strong> to fetch the row</td></tr>
+    <tr><td>Range queries</td><td>Very fast — matching rows are physically adjacent</td><td>Slower — rows scattered across the heap</td></tr>
+  </table>
+  <p>MySQL InnoDB clusters on the primary key always. PostgreSQL uses heaps with all indexes secondary. That extra row fetch is why the planner sometimes chooses a table scan even when an index exists — see §11.</p>
+</section>
+
+<!-- 09 -->
+<section id="composite">
+  <div class="sn">09 / ★</div>
+  <h2>Composite indexes</h2>
+  <p class="ss">An index on several columns. The rules here are the most commonly-tested database knowledge.</p>
+
+<pre><code><span class="k">CREATE INDEX</span> idx_orders <span class="k">ON</span> orders(user_id, created_at, status);</code></pre>
+
+  <h3>The phone-book analogy</h3>
+  <p>A phone book is sorted by <strong>surname, then first name</strong>. So:</p>
+  <ul>
+    <li>Find everyone named <strong>Sharma</strong> → easy, they're together</li>
+    <li>Find <strong>Sharma, Priya</strong> → easy, within the Sharmas it's sorted by first name</li>
+    <li>Find everyone named <strong>Priya</strong> (any surname) → <strong>you must read the whole book</strong></li>
+  </ul>
+  <p>A composite index behaves identically. It's sorted by the first column, then by the second within that, and so on.</p>
+
+  <h3>The leftmost-prefix rule</h3>
+  <p>With an index on <code>(user_id, created_at, status)</code>:</p>
+<pre><code><span class="c">-- ✓ USES the index</span>
+<span class="k">WHERE</span> user_id = 42
+<span class="k">WHERE</span> user_id = 42 <span class="k">AND</span> created_at &gt; <span class="s">'2026-01-01'</span>
+<span class="k">WHERE</span> user_id = 42 <span class="k">AND</span> created_at &gt; <span class="s">'...'</span> <span class="k">AND</span> status = <span class="s">'paid'</span>
+
+<span class="c">-- ✗ CANNOT use it (no leftmost prefix)</span>
+<span class="k">WHERE</span> created_at &gt; <span class="s">'2026-01-01'</span>
+<span class="k">WHERE</span> status = <span class="s">'paid'</span>
+<span class="k">WHERE</span> created_at &gt; <span class="s">'...'</span> <span class="k">AND</span> status = <span class="s">'paid'</span></code></pre>
+  <p>You must use the columns from the <strong>left</strong>, without gaps. Skipping the first column makes the index useless — exactly like searching a phone book by first name.</p>
+
+  <div class="bx st"><span class="l">The second rule — ranges stop the index</span>
+    <p>With <code>WHERE user_id = 42 AND created_at &gt; '2026-01-01' AND status = 'paid'</code>:</p>
+    <p style="margin-top:8px">The index seeks efficiently on <code>user_id</code> (equality) and then on <code>created_at</code> (range). But once a <strong>range</strong> is used, everything after it can no longer be seeked — the rows for <code>status</code> are scattered across that range. So <code>status</code> is checked by filtering rows after retrieval, not by the index.</p>
+    <p style="margin-top:8px"><strong>The rule: put equality columns first, range columns last.</strong> Knowing this is what distinguishes someone who has actually tuned queries.</p></div>
+
+  <h3>Covering indexes</h3>
+  <p>If the index contains <strong>every column the query needs</strong>, the database never touches the table at all — an <strong>index-only scan</strong>.</p>
+<pre><code><span class="c">-- Index on (user_id, created_at, status)</span>
+<span class="k">SELECT</span> status <span class="k">FROM</span> orders <span class="k">WHERE</span> user_id = 42;
+<span class="c">-- status is IN the index → no row fetch needed → very fast</span>
+
+<span class="k">SELECT</span> * <span class="k">FROM</span> orders <span class="k">WHERE</span> user_id = 42;
+<span class="c">-- needs all columns → must fetch each row from the heap</span></code></pre>
+  <p>This can be an order-of-magnitude difference, because you eliminate one random read <em>per matching row</em>. It's also a concrete reason to avoid <code>SELECT *</code>.</p>
+
+  <div class="bx go"><span class="l">The trade-off — how many columns?</span>
+    <p><strong>More columns:</strong> covers more queries, more index-only scans.</p>
+    <p><strong>Cost:</strong> the index grows, so fewer entries per page, so more pages to read and more memory consumed — and every write updates a larger structure.</p>
+    <p><strong>Verdict:</strong> add columns for genuinely hot queries, not speculatively. A wide index that covers nothing important is pure cost.</p></div>
+</section>
+
+<!-- 10 -->
+<section id="idxcost">
+  <div class="sn">10</div>
+  <h2>What indexes cost</h2>
+  <p class="ss">Indexes are not free. This is the trade-off section.</p>
+
+  <h3>Cost 1 — writes get slower</h3>
+  <p>Every <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> must update <strong>every affected index</strong>.</p>
+  <div class="dg">
+    <div class="fl">
+      <div class="nd g"><b>0 indexes</b>1 write</div><span class="ar">→</span>
+      <div class="nd"><b>3 indexes</b>4 writes</div><span class="ar">→</span>
+      <div class="nd r"><b>8 indexes</b>9 writes</div>
+    </div>
+    <div class="cap">Insert throughput falls roughly linearly with index count.</div>
+  </div>
+
+  <h3>Cost 2 — storage</h3>
+  <p>Each index is a full copy of its columns plus pointers. On a heavily-indexed table, <strong>indexes often exceed the size of the table itself</strong> — and they compete with table data for buffer-pool memory.</p>
+
+  <h3>Cost 3 — the planner may ignore it anyway</h3>
+  <p>An index on a low-<strong>selectivity</strong> column is usually useless. Selectivity = how well a value narrows the result.</p>
+  <table class="tb">
+    <tr><th>Column</th><th>Distinct values</th><th>Useful index?</th></tr>
+    <tr><td><code>email</code></td><td>10,000,000 of 10,000,000</td><td><strong>Excellent</strong> — one row per value</td></tr>
+    <tr><td><code>city</code></td><td>~500</td><td>Depends — fine for a rare city, useless for the biggest</td></tr>
+    <tr><td><code>is_active</code></td><td>2</td><td><strong>Useless alone</strong> — matches half the table</td></tr>
+  </table>
+  <div class="bx dbb"><span class="l">Why a scan can beat an index</span>
+    <p>Using a secondary index means a random read <em>per matching row</em>. If a query matches 40% of the table, that's millions of random reads — slower than sequentially scanning the whole table, which the disk does very efficiently.</p>
+    <p style="margin-top:8px">So the planner is often <em>correct</em> to ignore your index. That surprises people, and understanding why is a genuine signal of depth.</p></div>
+
+  <h3>Cost 4 — maintenance</h3>
+  <p>Indexes fragment over time. Unused indexes are pure overhead — they slow every write and consume memory for nothing. Auditing and dropping them is real, ongoing work.</p>
+
+  <div class="bx go"><span class="l">The decision rule</span>
+    <p><strong>Index for the queries you actually run, not the columns you have.</strong> Look at what's slow and frequent. Check selectivity. Prefer one well-designed composite index over three single-column ones. Verify with <code>EXPLAIN</code> rather than assuming. And periodically drop what isn't used.</p></div>
+</section>
+
+<!-- 11 -->
+<section id="plan">
+  <div class="sn">11</div>
+  <h2>Reading a query plan</h2>
+  <p class="ss">How you find out what the database is actually doing, instead of guessing.</p>
+
+<pre><code><span class="k">EXPLAIN ANALYZE</span>
+<span class="k">SELECT</span> * <span class="k">FROM</span> orders <span class="k">WHERE</span> user_id = 42;</code></pre>
+
+<pre><code>Index Scan using idx_orders on orders
+  (cost=0.43..8.45 rows=12 width=64)
+  (actual time=0.021..0.038 rows=14 loops=1)
+  Index Cond: (user_id = 42)
+Planning Time: 0.112 ms
+Execution Time: 0.061 ms</code></pre>
+
+  <h3>What to look for</h3>
+  <table class="tb">
+    <tr><th>Signal</th><th>Meaning</th></tr>
+    <tr><td><code>Seq Scan</code> on a large table</td><td><strong>Red flag</strong> if you expected an index. Missing or unusable index.</td></tr>
+    <tr><td><code>Index Scan</code> / <code>Index Only Scan</code></td><td>Good. "Only" means covering — no table access at all.</td></tr>
+    <tr><td><code>rows=12</code> vs <code>actual rows=14</code></td><td>Close is fine. <strong>Wildly different</strong> means stale statistics — run <code>ANALYZE</code>. Bad estimates cause bad plans.</td></tr>
+    <tr><td><code>Nested Loop</code> over two big tables</td><td>Red flag — usually a missing index on the join column</td></tr>
+    <tr><td><code>Sort</code> with <code>external merge Disk</code></td><td>Sorting spilled to disk; working memory too small</td></tr>
+    <tr><td>Large <code>loops=N</code></td><td>This step ran N times — multiply its cost</td></tr>
+  </table>
+
+  <h3>Common causes of slow queries</h3>
+  <table class="tb">
+    <tr><th>Cause</th><th>Fix</th></tr>
+    <tr><td><strong>N+1 queries</strong> — one query for a list, then one per item</td><td>The classic ORM bug. Batch or join.</td></tr>
+    <tr><td><strong>Non-sargable predicate</strong> — <code>WHERE YEAR(created) = 2026</code></td><td>Wrapping the column in a function defeats the index. Rewrite as a range: <code>created &gt;= '2026-01-01' AND created &lt; '2027-01-01'</code>. Same for <code>LIKE '%x'</code>.</td></tr>
+    <tr><td><code>SELECT *</code></td><td>Fetches unneeded columns and defeats covering indexes</td></tr>
+    <tr><td><strong>Deep offset pagination</strong> — <code>OFFSET 100000</code></td><td>Produces and discards 100,000 rows. Use cursor pagination: <code>WHERE id &gt; :last</code>.</td></tr>
+    <tr><td><strong>Stale statistics</strong></td><td>Planner mis-estimates, picks a bad plan. Run <code>ANALYZE</code>.</td></tr>
+    <tr><td><strong>Too many connections</strong></td><td>Databases die from connection exhaustion before CPU. Use a pooler.</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">The word to know</span>
+    <p><strong>Sargable</strong> — "Search ARGument ABLE": a predicate the engine can satisfy with an index seek. Wrapping the column in a function, doing arithmetic on it, or a leading wildcard all make it non-sargable. The fix is always to move the operation to the <em>other</em> side of the comparison.</p></div>
+</section>
+
+<!-- 12 -->
+<section id="txn">
+  <div class="sn">12</div>
+  <h2>Transactions &amp; ACID</h2>
+  <p class="ss">How the database keeps data correct when things go wrong.</p>
+
+  <h3>The problem</h3>
+  <p>Transfer ₹500 from A to B — two operations:</p>
+<pre><code><span class="k">UPDATE</span> accounts <span class="k">SET</span> balance = balance - 500 <span class="k">WHERE</span> id = 1;
+<span class="c">-- ← power cut here</span>
+<span class="k">UPDATE</span> accounts <span class="k">SET</span> balance = balance + 500 <span class="k">WHERE</span> id = 2;</code></pre>
+  <p>₹500 has vanished. A <strong>transaction</strong> makes both happen or neither:</p>
+<pre><code><span class="k">BEGIN</span>;
+  <span class="k">UPDATE</span> accounts <span class="k">SET</span> balance = balance - 500 <span class="k">WHERE</span> id = 1;
+  <span class="k">UPDATE</span> accounts <span class="k">SET</span> balance = balance + 500 <span class="k">WHERE</span> id = 2;
+<span class="k">COMMIT</span>;   <span class="c">-- both, or ROLLBACK → neither</span></code></pre>
+
+  <h3>ACID</h3>
+  <table class="tb">
+    <tr><th>Letter</th><th>Guarantee</th><th>How</th></tr>
+    <tr><td><strong>A</strong>tomicity</td><td>All or nothing</td><td>Undo log — on rollback or crash, changes are reversed</td></tr>
+    <tr><td><strong>C</strong>onsistency</td><td>Constraints hold before and after</td><td>Constraint checking on every write</td></tr>
+    <tr><td><strong>I</strong>solation</td><td>Concurrent transactions don't see each other's half-done work</td><td>Locking and/or MVCC — see §13–14</td></tr>
+    <tr><td><strong>D</strong>urability</td><td>Committed data survives a crash</td><td>WAL flushed to disk <em>before</em> commit returns</td></tr>
+  </table>
+
+  <div class="bx wn"><span class="l">Two clarifications</span>
+    <p><strong>The C is weak.</strong> It means "the database's own constraints hold," not "your business logic is right." It's also a completely different thing from the C in CAP.</p>
+    <p style="margin-top:8px"><strong>Durability costs latency.</strong> Commit means the WAL was <code>fsync</code>'d to physical storage, and that flush is often the dominant cost of a small transaction. Some systems offer relaxed durability — acknowledge before flushing — trading a tiny crash window for much higher throughput.</p></div>
+
+  <div class="bx go"><span class="l">The trade-off — transaction size</span>
+    <p><strong>Long transactions:</strong> more work is atomic, but locks are held longer, more contention, and in MVCC systems they prevent cleanup of old row versions, causing <strong>table bloat</strong>.</p>
+    <p><strong>Short transactions:</strong> better concurrency, but you must handle partial completion yourself.</p>
+    <p><strong>Rule:</strong> keep transactions as short as possible. Never wait for user input or a network call inside one.</p></div>
+</section>
+
+<!-- 13 -->
+<section id="concurrent">
+  <div class="sn">13</div>
+  <h2>What goes wrong with concurrency</h2>
+  <p class="ss">The specific failures isolation levels exist to prevent. Know the names.</p>
+
+  <table class="tb">
+    <tr><th>Anomaly</th><th>What happens</th></tr>
+    <tr><td><strong>Dirty read</strong></td><td>You read data another transaction wrote but hasn't committed — and it then rolls back. You acted on data that never existed.</td></tr>
+    <tr><td><strong>Non-repeatable read</strong></td><td>You read a row twice in one transaction and get different values, because someone committed a change in between.</td></tr>
+    <tr><td><strong>Phantom read</strong></td><td>You run the same <em>query</em> twice and get different <em>rows</em>, because someone inserted matching data.</td></tr>
+    <tr><td><strong>Lost update</strong></td><td>Two transactions read the same row, both modify it, both write. One update silently disappears.</td></tr>
+    <tr><td><strong>Write skew</strong></td><td>Two transactions each read a consistent state and write to <em>different</em> rows, together breaking an invariant. Subtle and nasty.</td></tr>
+  </table>
+
+  <h3>Lost update, concretely</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:7px">
+      <div class="nd" style="min-width:440px"><b>T1</b>reads balance = 1000</div>
+      <div class="nd" style="min-width:440px"><b>T2</b>reads balance = 1000</div>
+      <div class="nd" style="min-width:440px"><b>T1</b>writes 1000 − 100 = 900</div>
+      <div class="nd r" style="min-width:440px"><b>T2</b>writes 1000 − 200 = 800  ← T1's deduction is gone</div>
+    </div>
+    <div class="cap">Two withdrawals, only one applied. The classic race.</div>
+  </div>
+  <p>Fixes: do it in one statement (<code>SET balance = balance - 100</code>, which the database handles atomically), lock the row (<code>SELECT ... FOR UPDATE</code>), or use optimistic concurrency (§15).</p>
+
+  <h3>Write skew, concretely</h3>
+  <p>Rule: at least one doctor must be on call. Two are on call; both try to go off duty simultaneously. Each checks "is another doctor on call?" — both see yes — and each removes themselves. Now zero doctors are on call.</p>
+  <p>Neither wrote the same row, so no lock conflicted. <strong>Only Serializable isolation prevents this.</strong></p>
+</section>
+
+<!-- 14 -->
+<section id="isolation">
+  <div class="sn">14</div>
+  <h2>Isolation levels</h2>
+  <p class="ss">The dial between correctness and concurrency. Know each level by the anomaly it prevents.</p>
+
+  <table class="tb">
+    <tr><th>Level</th><th>Prevents</th><th>Still allows</th></tr>
+    <tr><td>Read uncommitted</td><td>Nothing</td><td>Dirty reads. Almost never used.</td></tr>
+    <tr><td><strong>Read committed</strong></td><td>Dirty reads</td><td>Non-repeatable and phantom reads. <strong>PostgreSQL's default.</strong></td></tr>
+    <tr><td><strong>Repeatable read</strong></td><td>+ non-repeatable reads</td><td>Phantoms in the standard. <strong>MySQL InnoDB's default</strong>, which also blocks most phantoms.</td></tr>
+    <tr><td><strong>Serializable</strong></td><td>Everything, including write skew</td><td>— but costs concurrency and causes aborts you must retry</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The trade-off</span>
+    <p><strong>Higher isolation:</strong> fewer surprises, easier reasoning, correct by default.</p>
+    <p><strong>Cost:</strong> less concurrency, more blocking or more transaction aborts that the application must catch and retry.</p>
+    <p><strong>What most systems do:</strong> run at read committed and handle the specific races explicitly — atomic single statements, row locks, or version columns where a lost update would actually matter. Serializable everywhere is correct but usually too expensive.</p></div>
+
+  <h3>MVCC — how readers avoid blocking</h3>
+  <p><strong>Multi-Version Concurrency Control.</strong> Instead of locking rows for readers, the database keeps <strong>multiple versions</strong> of each row. Each transaction sees a consistent snapshot as of when it started.</p>
+  <div class="dg">
+    <div class="fl">
+      <div class="nd g"><b>readers</b>never block writers</div>
+      <span class="ar">↔</span>
+      <div class="nd g"><b>writers</b>never block readers</div>
+    </div>
+    <div class="cap">The single biggest reason PostgreSQL and Oracle handle mixed workloads well.</div>
+  </div>
+  <div class="bx wn"><span class="l">The cost of MVCC — vacuum and bloat</span>
+    <p>Old row versions accumulate and must be cleaned up. In PostgreSQL that's <strong>vacuum</strong>. A long-running transaction holds back the cleanup horizon — the database can't remove versions that transaction might still need — so dead rows pile up and the table <strong>bloats</strong>.</p>
+    <p style="margin-top:8px">This is a very common production problem, and it's why "keep transactions short" is operational advice, not just theory.</p></div>
+</section>
+
+<!-- 15 -->
+<section id="lock">
+  <div class="sn">15</div>
+  <h2>Locks &amp; deadlocks</h2>
+  <p class="ss">How the database stops two writers corrupting each other — and how that goes wrong.</p>
+
+  <h3>Lock types</h3>
+  <table class="tb">
+    <tr><th>Lock</th><th>Behaviour</th></tr>
+    <tr><td><strong>Shared (read)</strong></td><td>Many transactions may hold it simultaneously</td></tr>
+    <tr><td><strong>Exclusive (write)</strong></td><td>Only one holder; blocks all others</td></tr>
+    <tr><td><strong>Row lock</strong></td><td>Fine-grained, best concurrency, more memory</td></tr>
+    <tr><td><strong>Table lock</strong></td><td>Coarse; blocks everything. Some engines <strong>escalate</strong> to this when one transaction holds too many row locks — which can turn a normal query into a system-wide stall.</td></tr>
+    <tr><td><strong>Gap lock</strong></td><td>Locks the range <em>between</em> index entries, to prevent phantom inserts</td></tr>
+  </table>
+
+  <h3>Optimistic vs pessimistic</h3>
+  <table class="tb">
+    <tr><th></th><th>Pessimistic</th><th>Optimistic</th></tr>
+    <tr><td>Approach</td><td>Lock first: <code>SELECT ... FOR UPDATE</code></td><td>Read, then verify nothing changed at write time</td></tr>
+    <tr><td>Best when</td><td>Conflicts are likely</td><td>Conflicts are rare</td></tr>
+    <tr><td>Failure mode</td><td>Blocking, deadlocks, lower throughput</td><td>Wasted work and retries under contention</td></tr>
+  </table>
+<pre><code><span class="c">-- Optimistic: the WHERE clause IS the concurrency check</span>
+<span class="k">UPDATE</span> accounts
+   <span class="k">SET</span> balance = 900, version = version + 1
+ <span class="k">WHERE</span> id = 1 <span class="k">AND</span> version = 7;
+<span class="c">-- 0 rows affected → someone else won → re-read and retry</span></code></pre>
+
+  <h3>Deadlocks</h3>
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:7px">
+      <div class="nd" style="min-width:420px"><b>T1</b>locks row A · now wants row B</div>
+      <div class="nd" style="min-width:420px"><b>T2</b>locks row B · now wants row A</div>
+      <div class="nd r" style="min-width:420px"><b>both wait forever</b>database detects the cycle and aborts one</div>
+    </div>
+    <div class="cap">Each holds what the other needs.</div>
+  </div>
+
+  <div class="bx go"><span class="l">Prevention</span>
+    <p><strong>Consistent lock ordering</strong> — if every transaction acquires resources in the same order (say, ascending by ID), a cycle cannot form. Beyond that: keep transactions short, never wait for user input inside one, and <strong>make the application retry on deadlock</strong> — in a busy system they're normal, not exceptional.</p>
+    <p style="margin-top:8px">Note this is the identical principle to lock ordering in concurrent programming. Same problem, different layer.</p></div>
+</section>
+
+<!-- 16 -->
+<section id="normal">
+  <div class="sn">16</div>
+  <h2>Normalisation</h2>
+  <p class="ss">How to decide what goes in which table.</p>
+
+  <p><strong>Normalisation</strong> means organising data so each fact lives in exactly one place. The informal rule captures it:</p>
+  <div class="bx dbb"><span class="l">The rule</span>
+    <p><em>Every non-key attribute depends on <strong>the key, the whole key, and nothing but the key</strong>.</em></p></div>
+
+  <table class="tb">
+    <tr><th>Form</th><th>Requirement</th></tr>
+    <tr><td><strong>1NF</strong></td><td>Atomic values — no lists crammed into one column</td></tr>
+    <tr><td><strong>2NF</strong></td><td>No column depends on only <em>part</em> of a composite key</td></tr>
+    <tr><td><strong>3NF</strong></td><td>No column depends on another non-key column</td></tr>
+  </table>
+
+  <h3>Denormalisation — deliberately breaking the rules</h3>
+  <p>Sometimes you duplicate data on purpose, to avoid a join on a hot read path.</p>
+  <table class="tb">
+    <tr><th>Normalised</th><th>Denormalised</th></tr>
+    <tr><td>Single source of truth</td><td>Data duplicated in several places</td></tr>
+    <tr><td>Updates touch one row</td><td>Updates must touch every copy</td></tr>
+    <tr><td>Reads need joins</td><td>Reads are a single lookup</td></tr>
+    <tr><td>No inconsistency possible</td><td><strong>Inconsistency is possible</strong> — you now own keeping copies in sync</td></tr>
+  </table>
+
+  <div class="bx go"><span class="l">The guidance</span>
+    <p><strong>Normalise until it hurts, denormalise until it works.</strong> Start normalised — it's correct by construction. Denormalise only where you've <em>measured</em> a read path that needs it, and be explicit that you've created a second place the truth lives, with a mechanism to keep them in step.</p>
+    <p style="margin-top:8px">The mistake isn't denormalising. It's denormalising accidentally and having no plan for divergence.</p></div>
+</section>
+
+<!-- 17 -->
+<section id="scale">
+  <div class="sn">17</div>
+  <h2>Scaling</h2>
+  <p class="ss">In order of cost. Most teams reach for step 5 when steps 1–3 would have sufficed.</p>
+
+  <div class="dg">
+    <div class="fl" style="flex-direction:column;gap:8px">
+      <div class="nd g" style="min-width:460px"><b>1 · optimise</b>indexes, query rewrites, connection pooling — most "we need to shard" ends here</div>
+      <div class="nd g" style="min-width:460px"><b>2 · cache</b>a read that never reaches the database is free</div>
+      <div class="nd d" style="min-width:460px"><b>3 · vertical scaling</b>a bigger machine. Unfashionable, but a single modern instance goes very far</div>
+      <div class="nd d" style="min-width:460px"><b>4 · read replicas</b>copies serving reads — for read-heavy workloads</div>
+      <div class="nd r" style="min-width:460px"><b>5 · sharding</b>split data across servers. Powerful, and effectively a one-way door</div>
+    </div>
+    <div class="cap">Each step costs more operationally than the one above.</div>
+  </div>
+
+  <h3>Read replicas</h3>
+  <p>Writes go to a primary; copies stream the WAL and serve reads.</p>
+  <div class="bx st"><span class="l">The trade-off — replication lag</span>
+    <p>Replicas are always slightly behind. The bug this causes: a user updates their profile, is redirected, the read hits a lagging replica, and <strong>their change appears to have vanished</strong>.</p>
+    <p style="margin-top:8px">Fixes: read from the primary for a short window after a write, use a token carrying the write position so the replica waits to catch up, or make the UI optimistic. <strong>Synchronous</strong> replication removes the lag but adds a network round trip to every write.</p></div>
+
+  <h3>Sharding</h3>
+  <p>Split rows across servers by a <strong>shard key</strong> — e.g. all data for tenant 1–1000 on server A, 1001–2000 on server B.</p>
+  <table class="tb">
+    <tr><th>What you gain</th><th>What you lose</th></tr>
+    <tr><td>Horizontal write scaling</td><td><strong>Cross-shard joins</strong> — no longer a single query</td></tr>
+    <tr><td>Each shard is smaller and faster</td><td><strong>Cross-shard transactions</strong> — atomicity across servers is very hard</td></tr>
+    <tr><td>Failure is isolated to one shard</td><td>Global uniqueness and auto-increment need rethinking</td></tr>
+    <tr><td></td><td><strong>Resharding is painful</strong> — plan for it up front</td></tr>
+  </table>
+  <div class="bx wn"><span class="l">The shard key is the decision</span>
+    <p>Choose badly and you get <strong>hot shards</strong> (one enormous tenant swamping a server) or queries that fan out to every shard, which is slower than not sharding at all. For multi-tenant systems <code>tenant_id</code> is usually right, because most queries are naturally tenant-scoped.</p>
+    <p style="margin-top:8px">Mitigate resharding pain by creating more <em>logical</em> shards than physical servers up front — growth then becomes a rebalance rather than a rewrite.</p></div>
+</section>
+
+<!-- 18 -->
+<section id="nosql">
+  <div class="sn">18</div>
+  <h2>SQL vs NoSQL</h2>
+  <p class="ss">The final trade-off, and the one most often decided for the wrong reasons.</p>
+
+  <table class="tb">
+    <tr><th>Type</th><th>Examples</th><th>Fits when</th></tr>
+    <tr><td><strong>Relational</strong></td><td>PostgreSQL, MySQL</td><td>Joins, multi-row transactions, constraints, ad-hoc queries</td></tr>
+    <tr><td><strong>Key-value</strong></td><td>Redis, DynamoDB</td><td>Access is <em>always</em> by primary key. Caching, session state, rate limiting.</td></tr>
+    <tr><td><strong>Document</strong></td><td>MongoDB</td><td>Variable shape, hierarchical data read as a unit</td></tr>
+    <tr><td><strong>Wide-column</strong></td><td>Cassandra</td><td>Write-heavy, time-series, massive horizontal scale</td></tr>
+    <tr><td><strong>Time-series</strong></td><td>InfluxDB, Timescale</td><td>Telemetry — writes dominate, queries are windowed aggregates</td></tr>
+    <tr><td><strong>Graph</strong></td><td>Neo4j</td><td>Relationship traversal is the primary query</td></tr>
+  </table>
+
+  <div class="bx st"><span class="l">The myth</span>
+    <p>"NoSQL scales, SQL doesn't." <strong>False.</strong> PostgreSQL handles enormous workloads on a single instance. What NoSQL systems really do is <em>remove features</em> — joins, multi-row transactions, flexible queries — and horizontal scaling becomes easier once those are gone.</p>
+    <p style="margin-top:8px">So the honest framing is: <strong>NoSQL scales more easily because it does less</strong>, and if you need what it dropped, you'll rebuild it badly in your application.</p></div>
+
+  <div class="bx go"><span class="l">The decision rule</span>
+    <p>Choose by <strong>access pattern</strong>, not by category. Do you need joins and multi-row transactions? Relational. Is every access a single-key lookup with no joins? Key-value fits naturally — and <em>that's why</em> it scales, not because of the label. Is it append-heavy telemetry queried by time window? Time-series.</p>
+    <p style="margin-top:8px">Most mature systems use more than one — <strong>polyglot persistence</strong> — chosen deliberately per workload rather than standardised for its own sake.</p></div>
+
+  <h3>CAP, stated correctly</h3>
+  <p>Under a <strong>network partition</strong>, a distributed system must choose: <strong>consistency</strong> (refuse to answer rather than return stale data) or <strong>availability</strong> (answer, possibly staleness). It is <em>not</em> "pick two of three" — partitions are a fact of networks, not an option.</p>
+  <div class="bx wn"><span class="l">PACELC — the better version</span>
+    <p>CAP only describes partition behaviour. <strong>PACELC</strong> extends it: <em>if Partition, choose Availability or Consistency; Else, choose Latency or Consistency.</em> More useful, because it covers normal operation — where the real trade-off is that stronger consistency means more coordination means higher latency.</p></div>
+</section>
+
+<div class="bx dbb" style="margin-top:40px"><span class="l">The ten things to carry away</span>
+  <ol style="margin:6px 0 0">
+    <li>Data lives in <strong>8 KB pages</strong>; performance is about how many pages you touch.</li>
+    <li>Reading from memory is ~1000× faster than disk — the <strong>buffer pool</strong> is where tuning happens.</li>
+    <li>A <strong>primary key</strong> uniquely identifies a row; a <strong>foreign key</strong> points at another table's primary key.</li>
+    <li>Without an index, finding a row means <strong>scanning every page</strong>.</li>
+    <li>An index is a <strong>sorted structure</strong> mapping values to locations — O(log n) instead of O(n).</li>
+    <li>Composite indexes follow the <strong>leftmost-prefix rule</strong>, and a range condition stops the index for columns after it.</li>
+    <li>Indexes <strong>slow every write</strong> and consume storage — index for queries you run, not columns you have.</li>
+    <li><strong>Transactions</strong> give all-or-nothing; <strong>isolation levels</strong> trade correctness against concurrency.</li>
+    <li>Keep transactions <strong>short</strong> — long ones cause blocking and MVCC bloat.</li>
+    <li>Scale in order: <strong>optimise → cache → bigger machine → replicas → shard</strong>. Sharding is a one-way door.</li>
+  </ol></div>
+
+<p style="margin-top:40px;color:var(--faint);font-size:12.5px;font-family:'JetBrains Mono';border-top:1px solid var(--line);padding-top:18px">
+  Databases from scratch · pages → keys → indexes → query plans → transactions → isolation → scaling.
+</p>
+
+</div></main>
+</div>
+<script>
+  var pg=document.getElementById('pg');
+  function os(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;pg.style.width=(m>0?(h.scrollTop/m)*100:0)+'%';}
+  document.addEventListener('scroll',os,{passive:true});window.addEventListener('resize',os);
+  var ls=[].slice.call(document.querySelectorAll('#toc a'));
+  var ss=ls.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.getAttribute('id');ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+id)})}})},{rootMargin:'-14% 0px -76% 0px',threshold:0});
+  ss.forEach(function(s){sp.observe(s)});
+  var sb=document.getElementById('sb'),sc=document.getElementById('sc'),bg=document.getElementById('bg');
+  function tg(o){sb.classList.toggle('o',o);sc.classList.toggle('o',o)}
+  if(bg)bg.addEventListener('click',function(){tg(!sb.classList.contains('o'))});
+  if(sc)sc.addEventListener('click',function(){tg(false)});
+  ls.forEach(function(l){l.addEventListener('click',function(){tg(false)})});
+</script>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JumpCloud Device Registration &amp; Authentication Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .layer-card {
+      border-left: 4px solid var(--accent);
+      margin: 1rem 0;
+    }
+    .layer-card.security { border-left-color: var(--green); background: var(--green-bg); }
+    .layer-card.registration { border-left-color: var(--blue); background: var(--blue-bg); }
+    .layer-card.auth { border-left-color: var(--amber); background: var(--amber-bg); }
+    .toc { columns: 2; column-gap: 2rem; margin: 1rem 0; }
+    .toc li { break-inside: avoid; margin-bottom: .35rem; }
+    @media (max-width: 640px) { .toc { columns: 1; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="badge">Architecture Reference</span>
+    <h1>Device Registration &amp; Authentication</h1>
+    <p>How JumpCloud devices enroll, prove identity to our servers, and protect data in transit and at rest.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="index.html">← Interview Prep Hub</a>
+    <a href="#registration">Registration</a>
+    <a href="#authentication">Authentication</a>
+    <a href="#security">Security</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Overview</h2>
+      <p class="lead">JumpCloud uses <strong>multiple identity layers</strong> on each endpoint. A managed device typically has: (1) a <strong>system identity</strong> (agent client certificate) for daemon-to-cloud communication, (2) optional <strong>MDM identity</strong> (Apple/Microsoft enrollment certs), (3) per-user <strong>device-trust certificates</strong> for browser mTLS, and (4) <strong>hardware-bound keys</strong> (Secure Enclave DUK) for JumpCloud Go. All cloud communication uses TLS; agent and device-trust paths add mutual TLS (mTLS).</p>
+
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph device [Managed Endpoint macOS]
+    AgentDaemon[jumpcloud-agent root daemon]
+    UserAgent[jc-user-agent per user]
+    Keychain[User keychain device-trust cert]
+    DUK[Secure Enclave DUK]
+    Tray[Tray SSO extension]
+    AgentDaemon --- UserAgent
+    UserAgent --- Keychain
+    Tray --- DUK
+  end
+
+  subgraph cloud [JumpCloud Cloud]
+    Kickstart[Kickstart SI SignCSR]
+    AgentServer[Agent Server]
+    DevicesSvc[jumpcloud-devices]
+    AuthSvc[jumpcloud-auth]
+    DURTsvc[DURT Service]
+    AppleMDM[jumpcloud-apple-mdm]
+  end
+
+  AgentDaemon -->|"mTLS system cert"| AgentServer
+  AgentDaemon -->|"mTLS system cert"| Kickstart
+  UserAgent -->|"TLS plus CSR"| AgentServer
+  Keychain -->|"mTLS device-trust cert"| DevicesSvc
+  DUK -->|"TLS plus signed JWT"| DURTsvc
+  Tray --> AuthSvc
+  AppleMDM -->|"MDM check-in Mdm-Signature"| AgentDaemon
+        </div>
+      </div>
+    </section>
+
+    <section id="registration">
+      <h2>Registration — How a Device Joins the Org</h2>
+      <p>Registration creates a <strong>system record</strong> in JumpCloud and establishes cryptographic credentials. There are three primary registration paths.</p>
+
+      <h3>Path 1 — Agent System Registration (all platforms)</h3>
+      <div class="card registration layer-card">
+        <p><strong>Trigger:</strong> Admin installs agent with a <code>connect key</code> (org-scoped enrollment token).</p>
+        <p><strong>Outcome:</strong> Device appears in Admin Console Systems tab with a unique <code>systemKey</code> and agent client certificate.</p>
+        <ul class="files">
+          <li><code>registration/seal_renew.go</code> — generate UUID, CSR, sign cert, register</li>
+          <li><code>registration/register.go</code> — download config template, call registerNewSystem</li>
+          <li><code>SI/routes/provision/SignCsr.js</code> — kickstart signs agent CSR with org CA</li>
+        </ul>
+      </div>
+
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant Admin
+  participant Agent as jumpcloud-agent
+  participant Kickstart as Kickstart SI
+  participant SI as Systems Inventory
+
+  Admin->>Agent: Install with connect key
+  Agent->>Agent: Generate UUID and RSA private key
+  Agent->>Agent: Build CSR with certuuid in SAN
+  Agent->>Kickstart: POST SignCSR multipart
+  Kickstart->>Kickstart: Sign with org provisioning CA
+  Kickstart-->>Agent: PEM client certificate
+  Agent->>Agent: Save cert key root CA bundle
+  Agent->>Kickstart: registerNewSystem mTLS
+  Kickstart->>SI: Create system document
+  SI-->>Agent: jcagent.conf with systemKey
+  Agent->>Agent: Persist systemKey locally
+        </div>
+      </div>
+
+      <h3>Path 2 — Apple MDM Enrollment</h3>
+      <div class="card registration layer-card">
+        <p><strong>Trigger:</strong> DEP/ABM auto-enroll or user opens enrollment profile URL.</p>
+        <p><strong>Outcome:</strong> MDM-managed device with identity cert, APNs push token, command queue; linked to JumpCloud system via association.</p>
+        <ul class="files">
+          <li><code>jumpcloud-apple-mdm/business/checkin.go</code> — Authenticate, enqueue profiles</li>
+          <li><code>jumpcloud-apple-mdm/services/scep.go</code> — SCEP identity certificate</li>
+          <li><code>jumpcloud-apple-mdm/endpoints/checkin.go</code> — verify Mdm-Signature PKCS7</li>
+        </ul>
+      </div>
+
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant Mac as macOS Device
+  participant MDM as jumpcloud-apple-mdm
+  participant SCEP as SCEP endpoint
+  participant Agent as jumpcloud-agent
+
+  Mac->>SCEP: Enrollment profile plus CSR
+  SCEP-->>Mac: MDM identity certificate
+  Mac->>MDM: CheckIn Authenticate
+  MDM->>MDM: Validate enrollment token and topic
+  MDM->>MDM: Insert device record
+  MDM->>Mac: Install agent ES SSO profiles
+  Mac->>Agent: Agent starts with connect key or MDM link
+  Agent->>MDM: Association token reported
+        </div>
+      </div>
+
+      <h3>Path 3 — JumpCloud Go DURT Registration (per user)</h3>
+      <div class="card registration layer-card">
+        <p><strong>Trigger:</strong> User completes SSO login and registers JumpCloud Go (browser extension or Safari SSO extension).</p>
+        <p><strong>Outcome:</strong> Device User Key (DUK) in Secure Enclave bound to user+system; DURT refresh token stored in keychain.</p>
+        <ul class="files">
+          <li><code>jumpcloud-durt-macos/DurtService/DurtService.swift</code> — register with DUK public key</li>
+          <li><code>jumpcloud-durt-macos/DurtService/DUK.swift</code> — SecureEnclave P256 key</li>
+          <li><code>docs/jc_go/ARCHITECTURE.md</code> — Register flow overview</li>
+        </ul>
+      </div>
+
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant User
+  participant Go as DURT Client macOS
+  participant DUK as Secure Enclave
+  participant DURT as DURT Service
+
+  User->>Go: SSO login obtain idToken
+  Go->>DUK: Generate or load DUK P256 key
+  DUK-->>Go: Public key never export private key
+  Go->>Go: Build signed JWT with device key and cert chain
+  Go->>DURT: POST register
+  DURT->>DURT: Validate user system org binding
+  DURT-->>Go: Issue DURT refresh token
+  Go->>Go: Store DURT in keychain
+        </div>
+      </div>
+
+      <h3>Path 4 — Device-Trust User Certificate (per user, on demand)</h3>
+      <div class="card registration layer-card">
+        <p><strong>Trigger:</strong> Admin enables device trust for user; user-agent requests cert on login.</p>
+        <p><strong>Outcome:</strong> X.509 cert in user keychain (<code>jumpcloud-device-trust-keychain-db</code>) with trusted-app ACL for Safari/Chrome.</p>
+        <ul class="files">
+          <li><code>certificates/certificate_handler.go</code> — CSR to agent-server signDeviceIdentificationCSR</li>
+          <li><code>user-agent/cert/cert_darwin.go</code> — keychain install and browser auto-select</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="authentication">
+      <h2>Authentication — How the Device Proves Identity</h2>
+      <p>After registration, the device authenticates differently depending on <strong>what it is accessing</strong>.</p>
+
+      <table>
+        <thead>
+          <tr><th>Use Case</th><th>Credential</th><th>Protocol</th><th>Server Validates</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Agent heartbeat, policies, osquery upload</td>
+            <td>System client cert (mTLS)</td>
+            <td>HTTPS mTLS</td>
+            <td>Cert serial maps to systemKey; org CA chain</td>
+          </tr>
+          <tr>
+            <td>Portal SSO device trust</td>
+            <td>Device-trust user cert (mTLS)</td>
+            <td>Browser mTLS to devices/auth</td>
+            <td>Cert serial to SystemsToUsers lookup</td>
+          </tr>
+          <tr>
+            <td>Login window device login</td>
+            <td>User password/TOTP + systemObjectId</td>
+            <td>DeviceTrust gRPC Authenticate</td>
+            <td>User-system binding in auth service</td>
+          </tr>
+          <tr>
+            <td>JumpCloud Go app access</td>
+            <td>DUK-signed DURT refresh</td>
+            <td>HTTPS JWT to DURT then DUST to auth</td>
+            <td>Hardware key signature + live signals</td>
+          </tr>
+          <tr>
+            <td>Apple MDM check-in</td>
+            <td>MDM identity cert</td>
+            <td>HTTPS plus Mdm-Signature header</td>
+            <td>PKCS7 signature over request body</td>
+          </tr>
+          <tr>
+            <td>CAP / OAuth policy check</td>
+            <td>DeviceAssertion JWT</td>
+            <td>Embedded in OAuth session</td>
+            <td>Auth PDP validates claims and signals</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Agent mTLS — Ongoing System Authentication</h3>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant Agent as jumpcloud-agent
+  participant JC as jcclient HTTP client
+  participant Server as Agent Server
+
+  Agent->>JC: Do HTTP request
+  JC->>JC: Attach client cert from opt jc
+  JC->>JC: Verify server against root CA
+  JC->>Server: TLS handshake mTLS
+  Server->>Server: Map cert to systemKey
+  Server-->>JC: 200 response
+  Note over Agent,Server: certChecker auto-renews before expiry
+        </div>
+      </div>
+      <p><code>jcclient/jc_client.go</code> loads client cert + key from config dir; <code>certificateReloader</code> hot-swaps certs on renewal without restart.</p>
+
+      <h3>Device Trust — Browser mTLS to Assertion JWT</h3>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant Browser
+  participant Portal as User Portal
+  participant Devices as jumpcloud-devices
+  participant Auth as jumpcloud-auth
+
+  Browser->>Portal: Login with device-trust cert selected
+  Browser->>Devices: mTLS present cert serial
+  Devices->>Devices: Lookup SystemsToUsers by serial
+  Devices-->>Portal: DeviceIdentification JWT
+  Portal->>Auth: Session with device assertion
+  Auth->>Auth: CAP PDP evaluate FDE managed OS
+  Auth-->>Browser: ALLOW MFA or DENY
+        </div>
+      </div>
+
+      <h3>DeviceTrust RPC — Login Window OAuth-like Flow</h3>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant LW as Login Plugin
+  participant Auth as jumpcloud-auth DeviceTrust
+
+  LW->>Auth: Authenticate org system user creds
+  Auth->>Auth: Verify user bound to system
+  Auth-->>LW: authentication_token JWT
+  LW->>Auth: Authorize with auth token
+  Auth-->>LW: authorization_code
+  LW->>Auth: GetToken with code
+  Auth-->>LW: ID token for portal session
+        </div>
+      </div>
+      <p>Defined in <code>jumpcloud-auth/proto/jumpcloud/auth/device_trust.proto</code>. Not RFC 8628 device code flow — custom 3-leg OAuth-like chain scoped to device context.</p>
+
+      <h3>JumpCloud Go — DURT Access at App Open</h3>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant Browser
+  participant DURTc as DURT Client
+  participant Agent as jumpcloud-agent
+  participant DURT as DURT Service
+  participant Auth as jumpcloud-auth
+
+  Browser->>DURTc: Open protected app
+  DURTc->>Agent: GetSignals local gRPC
+  Agent-->>DURTc: OS EDR firewall signals
+  DURTc->>DURTc: DUK sign refresh request
+  DURTc->>DURT: Exchange DURT for DUST
+  DURT->>Auth: DUST with device context
+  Auth->>Auth: Mint DeviceAssertion with signals
+  Auth-->>Browser: Authenticated app session
+        </div>
+      </div>
+    </section>
+
+    <section id="security">
+      <h2>Data Security — In Transit and At Rest</h2>
+
+      <h3>Security Layers Summary</h3>
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Mechanism</th><th>Protects</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Transport</td><td>TLS 1.2+ to JumpCloud endpoints</td><td>Confidentiality and integrity of all API traffic</td></tr>
+          <tr><td>Mutual TLS</td><td>Agent system cert; device-trust user cert</td><td>Server verifies specific device or user-device pair</td></tr>
+          <tr><td>Server identity</td><td>Root CA bundle in agent config dir</td><td>Agent rejects rogue servers (pinning via trust store)</td></tr>
+          <tr><td>Keys at rest</td><td>macOS Keychain; Secure Enclave for DUK</td><td>Private keys non-exportable; ACL limits callers</td></tr>
+          <tr><td>Trusted apps</td><td>SecKeychain ACL on device-trust key</td><td>Only Safari Chrome WebKit use private key</td></tr>
+          <tr><td>Service account</td><td>Dedicated keychain at opt jc plus ES extension</td><td>Privileged creds protected from user processes</td></tr>
+          <tr><td>Local IPC</td><td>Unix socket gRPC with transport credentials</td><td>Only local signed processes call agent API</td></tr>
+          <tr><td>Assertions</td><td>Signed JWTs DeviceAssertion DUST</td><td>Tamper-evident device context for CAP</td></tr>
+          <tr><td>MDM integrity</td><td>Mdm-Signature PKCS7 on check-in body</td><td>Proves request from enrolled device cert</td></tr>
+          <tr><td>Hardware binding</td><td>Secure Enclave P256 DUK</td><td>Token refresh requires physical device key</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Credential Storage on Device</h3>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart LR
+  subgraph rootKeys [Root Scope opt jc]
+    SysCert[Agent system cert and key]
+    SysKey[systemKey UUID in jcagent.conf]
+    SAcKC[Service account keychain]
+  end
+
+  subgraph userKeys [User Scope per login]
+    DTCert[Device-trust cert and key]
+    DURTstore[DURT refresh token]
+  end
+
+  subgraph hardware [Hardware Bound]
+    DUK[Secure Enclave DUK non-exportable]
+  end
+
+  SysCert -->|"mTLS all agent traffic"| Cloud[JumpCloud Cloud]
+  DTCert -->|"mTLS browser SSO"| Cloud
+  DUK -->|"signs DURT refresh"| Cloud
+  DURTstore --- DUK
+        </div>
+      </div>
+
+      <h3>Trust Boundaries</h3>
+      <div class="card security layer-card">
+        <ul class="files">
+          <li><strong>Internet boundary:</strong> TLS + mTLS; server validates cert chain and maps to org/system/user.</li>
+          <li><strong>Root vs user boundary:</strong> Root daemon holds system identity and collects posture; user agent holds browser certs in user keychain (TCC and keychain scoping).</li>
+          <li><strong>Local boundary:</strong> Tray and user-agent reach daemon via local gRPC — not exposed to network.</li>
+          <li><strong>Hardware boundary:</strong> DUK never leaves Secure Enclave; signing delegated via XPC helper.</li>
+        </ul>
+      </div>
+
+      <h3>What Each Server Trusts</h3>
+      <table>
+        <thead>
+          <tr><th>Service</th><th>Trusts From Device</th><th>Issues Back</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Kickstart / SI</td><td>CSR + connect key (registration only)</td><td>Signed agent client cert, systemKey</td></tr>
+          <tr><td>Agent Server</td><td>Agent mTLS client cert</td><td>Policies, commands, cert signing for device-trust</td></tr>
+          <tr><td>jumpcloud-devices</td><td>Device-trust cert serial or session code</td><td>DeviceIdentification JWT</td></tr>
+          <tr><td>jumpcloud-auth</td><td>DeviceTrust creds, DUST, OAuth tokens</td><td>ID tokens, DeviceAssertion JWT, CAP verdict</td></tr>
+          <tr><td>DURT Service</td><td>DUK-signed JWT + idToken</td><td>DURT refresh token, DUST session token</td></tr>
+          <tr><td>jumpcloud-apple-mdm</td><td>MDM identity cert + Mdm-Signature</td><td>Configuration profiles, MDM commands</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>End-to-End Lifecycle</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  Install[Admin installs agent or MDM enrolls]
+  SysReg[System registration mTLS cert plus systemKey]
+  MDMProf[MDM delivers profiles agent ES SSO]
+  UserLogin[User logs in to macOS]
+  DevCert[Optional device-trust cert issued]
+  GoReg[Optional JumpCloud Go DURT register]
+  Daily[Daily operation]
+
+  Install --> SysReg
+  Install --> MDMProf
+  SysReg --> Daily
+  MDMProf --> Daily
+  UserLogin --> DevCert
+  UserLogin --> GoReg
+  DevCert --> Daily
+  GoReg --> Daily
+
+  Daily --> AgentOps[Agent mTLS policies telemetry]
+  Daily --> PortalSSO[Portal mTLS device assertion]
+  Daily --> AppGo[Go DUK DURT plus live signals]
+  Daily --> CAP[CAP PDP ALLOW MFA DENY]
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Key Source Files</h2>
+      <table>
+        <thead><tr><th>Topic</th><th>Repository</th><th>Path</th></tr></thead>
+        <tbody>
+          <tr><td>Agent seal and register</td><td>jumpcloud-agent</td><td><code>registration/seal_renew.go</code>, <code>registration/register.go</code></td></tr>
+          <tr><td>HTTP mTLS client</td><td>jumpcloud-agent</td><td><code>jcclient/jc_client.go</code>, <code>jcclient/send.go</code></td></tr>
+          <tr><td>Device-trust cert CSR</td><td>jumpcloud-agent</td><td><code>certificates/certificate_handler.go</code></td></tr>
+          <tr><td>Keychain and ACLs</td><td>jumpcloud-agent</td><td><code>keychain/keychain_darwin.go</code>, <code>user-agent/cert/cert_darwin.go</code></td></tr>
+          <tr><td>Local IPC</td><td>jumpcloud-agent</td><td><code>localgrpc/local_grpc_handler.go</code></td></tr>
+          <tr><td>Device ID token</td><td>jumpcloud-devices</td><td><code>services/device_identification.go</code></td></tr>
+          <tr><td>DeviceTrust RPC</td><td>jumpcloud-auth</td><td><code>proto/.../device_trust.proto</code>, <code>services/device_trust.go</code></td></tr>
+          <tr><td>Device assertions CAP</td><td>jumpcloud-auth</td><td><code>assertions/device.go</code>, <code>policies/authn/pdp.go</code></td></tr>
+          <tr><td>DURT registration</td><td>jumpcloud-durt-macos</td><td><code>DurtService/DurtService.swift</code>, <code>DUK.swift</code></td></tr>
+          <tr><td>Apple MDM enroll</td><td>jumpcloud-apple-mdm</td><td><code>business/checkin.go</code>, <code>endpoints/checkin.go</code></td></tr>
+          <tr><td>Kickstart CSR sign</td><td>SI</td><td><code>routes/provision/SignCsr.js</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Related Study Modules</h2>
+      <ul class="files">
+        <li><a href="module-01-macos-agent-arch.html">Module 01</a> — multi-process agent architecture</li>
+        <li><a href="module-02-keychain-secure-enclave.html">Module 02</a> — keychain and Secure Enclave</li>
+        <li><a href="module-03-device-binding.html">Module 03</a> — device binding and assertions</li>
+        <li><a href="module-04-jc-go.html">Module 04</a> — JumpCloud Go DURT flows</li>
+        <li><a href="module-07-apple-mdm.html">Module 07</a> — Apple MDM provisioning</li>
+        <li><a href="module-10-zero-trust-synthesis.html">Module 10</a> — full-stack capstone</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="index.html">← Back to Interview Prep Hub</a></p>
+    <p style="margin-top:.5rem;font-size:.85rem;color:var(--muted);">Diagrams require internet (Mermaid CDN). Hard-refresh if diagrams do not appear.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

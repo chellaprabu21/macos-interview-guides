@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JumpCloud Go &amp; Native Messaging Host — Layman Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #fffdf8;
+      --surface: #ffffff;
+      --surface2: #f7f4ee;
+      --border: #e8e2d6;
+      --text: #292524;
+      --muted: #57534e;
+      --accent: #0f766e;
+      --accent-bg: #f0fdfa;
+      --green: #047857;
+      --green-bg: #ecfdf5;
+      --amber: #b45309;
+      --amber-bg: #fffbeb;
+      --red: #b91c1c;
+      --red-bg: #fef2f2;
+      --blue: #1d4ed8;
+      --blue-bg: #eff6ff;
+      --purple: #6d28d9;
+      --purple-bg: #f5f3ff;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 20px; }
+    body { font-family: "Source Sans 3", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.85; }
+    p { margin-bottom: 1.1rem; }
+    ul, ol { margin: 0 0 1.1rem 1.4rem; }
+    li { margin-bottom: .5rem; }
+
+    header {
+      background: linear-gradient(180deg, #f0fdfa, var(--bg));
+      border-bottom: 2px solid var(--border);
+      padding: 3rem 2rem 1.75rem;
+      text-align: center;
+    }
+    header h1 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: clamp(1.7rem, 4vw, 2.35rem);
+      margin-bottom: .75rem;
+      color: #0f172a;
+    }
+    header p { color: var(--muted); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+    .nav-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; margin-top: 1.5rem; }
+    .nav-pills a {
+      text-decoration: none; color: var(--muted); font-size: .85rem; font-weight: 600;
+      padding: .45rem .9rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+    }
+    .nav-pills a:hover { color: var(--accent); border-color: #5eead4; background: var(--accent-bg); }
+
+    main { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+    section { margin-bottom: 3.5rem; }
+    h2 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.55rem; color: #0f172a; margin-bottom: 1rem;
+      padding-bottom: .5rem; border-bottom: 3px solid var(--accent);
+    }
+    h3 { font-size: 1.2rem; font-weight: 700; color: #115e59; margin: 1.75rem 0 .65rem; }
+
+    .big-number {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2.35rem; height: 2.35rem; border-radius: 50%;
+      background: var(--accent); color: white; font-weight: 800; font-size: 1.05rem;
+      margin-right: .55rem; vertical-align: middle;
+    }
+
+    .story-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.35rem 1.45rem; margin: 1.25rem 0;
+    }
+    .story-box .label {
+      display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--accent); font-weight: 800; margin-bottom: .4rem;
+    }
+
+    .do { background: var(--green-bg); border-left: 5px solid var(--green); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+    .dont { background: var(--red-bg); border-left: 5px solid var(--red); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+    .pause { background: var(--amber-bg); border-left: 5px solid var(--amber); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+    .info { background: var(--blue-bg); border-left: 5px solid var(--blue); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+    .zt { background: var(--purple-bg); border-left: 5px solid var(--purple); padding: 1.2rem 1.35rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1.4rem 0; }
+
+    .step-card {
+      display: flex; gap: 1rem; margin-bottom: 1.25rem; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.15rem 1.25rem;
+    }
+    .step-card .n {
+      flex-shrink: 0; width: 2.25rem; height: 2.25rem; border-radius: 50%;
+      background: var(--accent); color: white; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-card h4 { margin: 0 0 .3rem; font-size: 1.05rem; color: #0f172a; }
+    .step-card p { margin: 0; color: var(--muted); font-size: .98rem; line-height: 1.65; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: .92rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin: 1.4rem 0;
+    }
+    th, td { padding: .8rem .95rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+    th { background: var(--surface2); font-weight: 700; font-size: .78rem; text-transform: uppercase; color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+
+    .diagram {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.3rem; margin: 1.4rem 0; overflow-x: auto;
+    }
+
+    .vocab { display: grid; gap: .7rem; margin: 1.25rem 0; }
+    .vocab-item {
+      background: var(--accent-bg); border: 1px solid #99f6e4; border-radius: 12px;
+      padding: .95rem 1.1rem;
+    }
+    .vocab-item .word { font-weight: 800; color: #115e59; }
+    .vocab-item .meaning { color: var(--muted); font-size: .95rem; margin-top: .25rem; }
+
+    .hop {
+      display: grid; grid-template-columns: 1fr; gap: .75rem; margin: 1.25rem 0;
+    }
+    .hop-item {
+      background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+      padding: 1rem 1.15rem;
+    }
+    .hop-item .who { font-weight: 800; color: #0f172a; margin-bottom: .25rem; }
+    .hop-item .how { color: var(--muted); font-size: .95rem; }
+
+    code { font-family: ui-monospace, monospace; font-size: .85em; background: #f5f5f4; padding: .1rem .35rem; border-radius: 4px; color: #115e59; }
+
+    footer {
+      text-align: center; padding: 2rem; color: var(--muted); font-size: .92rem;
+      border-top: 2px solid var(--border); background: var(--surface);
+    }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>JumpCloud Go &amp; the Native Messaging Host</h1>
+  <p>
+    How the browser talks to the JumpCloud agent through a safe local bridge —
+    explained for humans — and how that enables Zero Trust access to work apps.
+  </p>
+  <div class="nav-pills">
+    <a href="#what">What is Go?</a>
+    <a href="#problem">The problem</a>
+    <a href="#cast">The cast</a>
+    <a href="#nmh">What is NMH?</a>
+    <a href="#hops">Two hops</a>
+    <a href="#install">Install</a>
+    <a href="#register">Register</a>
+    <a href="#access">Open an app</a>
+    <a href="#zero-trust">Zero Trust</a>
+    <a href="#safari">Safari note</a>
+    <a href="#security">Security</a>
+    <a href="#story">Full story</a>
+  </div>
+</header>
+
+<main>
+
+<!-- WHAT -->
+<section id="what">
+  <h2><span class="big-number">1</span> What is JumpCloud Go?</h2>
+
+  <p>
+    JumpCloud Go is <strong>passwordless SSO</strong> from your browser into work apps
+    (Slack, Google Workspace, GitHub, etc.).
+  </p>
+
+  <p>
+    Instead of typing a password every time, JumpCloud Go proves two things together:
+  </p>
+  <ul>
+    <li>You are the right <strong>person</strong> (on this managed machine)</li>
+    <li>This is the right <strong>device</strong> (hardware-backed key + live device signals)</li>
+  </ul>
+
+  <div class="story-box">
+    <span class="label">Plain English</span>
+    <p style="margin:0">
+      JumpCloud Go is like a smart door opener for work apps. The browser asks a tiny local JumpCloud helper:
+      “Can this person on this laptop open Slack right now?” The helper checks with the vault chip and JumpCloud cloud,
+      then hands the browser a short ticket to let you in.
+    </p>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <h2><span class="big-number">2</span> The problem: browsers are sandboxed</h2>
+
+  <p>
+    A browser extension lives in a sandbox. For good reasons, it <strong>cannot</strong>:
+  </p>
+  <ul>
+    <li>Open the TPM / Secure Enclave and ask it to sign things</li>
+    <li>Talk directly to the JumpCloud agent service (named pipe / Unix socket)</li>
+    <li>Read private keys or device signals sitting on the OS</li>
+  </ul>
+
+  <div class="pause">
+    So JumpCloud needs a <strong>trusted local bridge</strong> between the web world and the agent world.
+    That bridge is the <strong>Native Messaging Host (NMH)</strong>.
+  </div>
+</section>
+
+<!-- CAST -->
+<section id="cast">
+  <h2><span class="big-number">3</span> Meet the cast (who does what)</h2>
+
+  <table>
+    <thead><tr><th>Player</th><th>What it is</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Browser extension</strong></td>
+        <td>JumpCloud Go add-on (Chrome / Edge / Firefox)</td>
+        <td>UI, starts SSO, talks to NMH</td>
+      </tr>
+      <tr>
+        <td><strong>NMH</strong></td>
+        <td>Small JumpCloud program the browser launches</td>
+        <td>Translator: browser JSON ↔ agent gRPC</td>
+      </tr>
+      <tr>
+        <td><strong>JumpCloud agent</strong></td>
+        <td>Always-on device service</td>
+        <td>Vault signing, signal collection, cloud calls</td>
+      </tr>
+      <tr>
+        <td><strong>DURT cloud</strong></td>
+        <td><code>go.jumpcloud.com</code> backend</td>
+        <td>Register/access APIs, issues sessions, CAP with signals</td>
+      </tr>
+      <tr>
+        <td><strong>jumpcloud-auth</strong></td>
+        <td>Auth / Conditional Access service</td>
+        <td>Turns Go session into device trust for Zero Trust policies</td>
+      </tr>
+      <tr>
+        <td><strong>Work app</strong></td>
+        <td>Slack, Google, …</td>
+        <td>Accepts SSO ticket and logs you in</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  Ext["Browser<br/>extension"] -->|"Native Messaging<br/>stdin/stdout JSON"| NMH["NMH<br/>local helper"]
+  NMH -->|"local gRPC<br/>pipe / socket"| Agent["JumpCloud<br/>agent"]
+  Agent -->|"HTTPS signed JWTs"| Cloud["go.jumpcloud.com"]
+  Cloud -->|"short session"| Agent
+  Agent --> NMH
+  NMH --> Ext
+  Ext -->|"SSO ticket"| App["Work app"]
+    </pre>
+  </div>
+</section>
+
+<!-- NMH -->
+<section id="nmh">
+  <h2><span class="big-number">4</span> What is a Native Messaging Host?</h2>
+
+  <p>
+    Native Messaging is a <strong>browser feature</strong>, not a JumpCloud invention.
+    Chrome (and Edge / Firefox) can launch a known local program and talk to it using
+    short JSON messages over the program’s standard input/output — like passing notes through a mail slot.
+  </p>
+
+  <div class="vocab">
+    <div class="vocab-item">
+      <div class="word">Manifest</div>
+      <div class="meaning">
+        A tiny JSON file that tells the browser: “If someone asks for host
+        <code>com.jumpcloud.jumpcloudgo</code>, run this exact executable.”
+      </div>
+    </div>
+    <div class="vocab-item">
+      <div class="word">Message format</div>
+      <div class="meaning">
+        Length (4 bytes) + JSON body. Strict and small. No open network port to the web.
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="n">1</div>
+    <div>
+      <h4>Extension asks browser for the host</h4>
+      <p><code>chrome.runtime.connectNative("com.jumpcloud.jumpcloudgo")</code></p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">2</div>
+    <div>
+      <h4>Browser looks up the manifest</h4>
+      <p>Registry (Windows) or file paths under <code>/etc/.../native-messaging-hosts/</code> (Linux).</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">3</div>
+    <div>
+      <h4>Browser starts the NMH executable</h4>
+      <p>Example: <code>JumpCloudGo-Chrome.exe</code> (Windows) or <code>jumpcloudgo-chrome</code> (Linux).</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">4</div>
+    <div>
+      <h4>They exchange JSON messages</h4>
+      <p>Extension sends “register” or “get access session.” NMH replies with success/error + session.</p>
+    </div>
+  </div>
+
+  <div class="dont">
+    <strong>Important:</strong> The NMH is <em>not</em> where the cryptographically hard work lives.
+    It is a short-lived messenger. The agent (DURT service) does signing, signal collect, and cloud calls.
+  </div>
+</section>
+
+<!-- TWO HOPS -->
+<section id="hops">
+  <h2><span class="big-number">5</span> Two hops — why communication is split</h2>
+
+  <div class="hop">
+    <div class="hop-item">
+      <div class="who">Hop 1 — Extension ↔ NMH</div>
+      <div class="how">
+        Browser Native Messaging: stdin/stdout JSON. The web page never gets a local network socket.
+        Only the extension + a JumpCloud-signed host can talk this way.
+      </div>
+    </div>
+    <div class="hop-item">
+      <div class="who">Hop 2 — NMH ↔ Agent</div>
+      <div class="how">
+        Local gRPC over a named pipe (Windows: <code>\\.\pipe\jumpcloud-durt</code>)
+        or Unix socket (Linux: <code>/tmp/jumpcloud-durt</code>).
+        Agent checks: “Is the caller a JumpCloud-signed NMH?” and “Is the OS user the right person?”
+      </div>
+    </div>
+  </div>
+
+  <div class="story-box">
+    <span class="label">Analogy</span>
+    <p style="margin:0">
+      The extension is a receptionist in the lobby (browser).<br/>
+      NMH is a trusted courier who runs upstairs.<br/>
+      The agent is the vault office — only people with the right JumpCloud badge (signed process) get in.
+    </p>
+  </div>
+
+  <h3>What the agent verifies before doing anything</h3>
+  <ol>
+    <li><strong>Process check</strong> — caller is the JumpCloud NMH (Authenticode on Windows, GPG-signed binary on Linux).</li>
+    <li><strong>User check</strong> — the OS user owning the connection matches the JumpCloud username being asked about.</li>
+  </ol>
+  <p>If either fails → request rejected. A random malware process cannot simply call “RegisterUser.”</p>
+</section>
+
+<!-- INSTALL -->
+<section id="install">
+  <h2><span class="big-number">6</span> How NMH gets installed</h2>
+
+  <p>When the JumpCloud agent installs, it also lays down Go pieces:</p>
+  <ul>
+    <li>NMH executable (downloaded as part of agent packaging from <code>jumpcloud-durt-client</code>)</li>
+    <li>Native Messaging manifest JSON for Chrome / Edge / Firefox</li>
+    <li>Registry keys (Windows) or system paths (Linux)</li>
+  </ul>
+
+  <table>
+    <thead><tr><th>Platform</th><th>Where browser finds NMH</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Windows</td>
+        <td><code>HKLM\SOFTWARE\Google\Chrome\NativeMessagingHosts\com.jumpcloud.jumpcloudgo</code> (and Edge / Firefox equivalents)</td>
+      </tr>
+      <tr>
+        <td>Linux</td>
+        <td><code>/etc/opt/chrome/native-messaging-hosts/</code>, Chromium + Firefox paths; binary under <code>/opt/jc_user_ro/bin/</code></td>
+      </tr>
+      <tr>
+        <td>macOS</td>
+        <td>Manifest under Chrome NativeMessagingHosts from installer; Mac Go core is often via <code>jumpcloud-durt-macos</code> / Safari SSO (see later)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info">
+    On Windows, the agent can <strong>self-repair</strong> broken NMH registry keys at startup
+    (<code>ensureNativeMessagingHostKeys()</code>) so Chrome keeps finding the host after someone messes with the registry.
+  </div>
+</section>
+
+<!-- REGISTER -->
+<section id="register">
+  <h2><span class="big-number">7</span> First time: register (create your vault stamp)</h2>
+
+  <p>Happens once per user on a device when JumpCloud Go is enabled.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Ext as Extension
+  participant NMH as NMH
+  participant Agent as Agent DURT service
+  participant Chip as TPM / Secure Enclave
+  participant Cloud as go.jumpcloud.com
+
+  Ext->>NMH: Register (id_token from portal login)
+  NMH->>Agent: gRPC RegisterUser
+  Agent->>Agent: Authorize process + user
+  Agent->>Chip: Create DUK (private stays in chip)
+  Chip-->>Agent: Public key only
+  Agent->>Cloud: POST /register (signed JWT)
+  Cloud-->>Agent: DURT
+  Agent->>Agent: Save DURT locally
+  Agent-->>NMH: Success
+  NMH-->>Ext: Registered
+    </pre>
+  </div>
+
+  <div class="step-card">
+    <div class="n">1</div>
+    <div>
+      <h4>You log into User Portal</h4>
+      <p>Extension gets an ID token proving who you are.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">2</div>
+    <div>
+      <h4>Extension → NMH → Agent: RegisterUser</h4>
+      <p>Agent checks NMH is JumpCloud-signed and OS user matches.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">3</div>
+    <div>
+      <h4>Create DUK in hardware</h4>
+      <p>If no TPM/SE → JumpCloud Go not supported. Private key never leaves the chip.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">4</div>
+    <div>
+      <h4>Cloud registers public key + issues DURT</h4>
+      <p>DURT is your long-lived refresh “library card,” stored encrypted on the OS (not in the vault chip).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ACCESS -->
+<section id="access">
+  <h2><span class="big-number">8</span> Every day: open a work app</h2>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant You as You
+  participant Ext as Extension
+  participant NMH as NMH
+  participant Agent as Agent
+  participant Chip as Vault chip
+  participant Cloud as go.jumpcloud.com
+  participant App as Work app
+
+  You->>Ext: Click Slack / Google
+  Ext->>NMH: Get access session
+  NMH->>Agent: GetNewAccessSession
+  Agent->>Agent: Load DURT + collect live signals
+  Agent->>Chip: Sign access request with DUK
+  Chip-->>Agent: Signature
+  Agent->>Cloud: POST /access
+  Cloud->>Cloud: Verify stamp + CAP on signals
+  Cloud-->>Agent: Short session (DUST) + new DURT
+  Agent-->>Ext: Session via NMH
+  Ext->>App: Complete SSO with session ticket
+  App-->>You: Logged in
+    </pre>
+  </div>
+
+  <div class="vocab">
+    <div class="vocab-item">
+      <div class="word">DUK</div>
+      <div class="meaning">Hardware vault stamp. Signs every access request.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="word">DURT</div>
+      <div class="meaning">Long refresh token. Rotated on every successful access.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="word">DUST / session</div>
+      <div class="meaning">Short ticket for this SSO. Extension uses it; cloud/auth use it for trust.</div>
+    </div>
+  </div>
+
+  <h3>Extra gate: periodic step-up</h3>
+  <p>
+    Roughly every 12 hours (or when required), Windows Hello / Touch ID / PIN may be asked again
+    before access continues. That refreshes “this human is still at the keyboard.”
+  </p>
+</section>
+
+<!-- ZERO TRUST -->
+<section id="zero-trust">
+  <h2><span class="big-number">9</span> How this is used for Zero Trust</h2>
+
+  <div class="zt">
+    <strong>Zero Trust idea:</strong> never trust “just because they know a password.”
+    Continuously check <em>who</em>, <em>which device</em>, and <em>device health</em>
+    before allowing access.
+  </div>
+
+  <p>JumpCloud Go helps Zero Trust in three concrete ways:</p>
+
+  <h3>A. Device-bound user proof (hardware)</h3>
+  <p>
+    Access requests are signed by the DUK in TPM / Secure Enclave.
+    Stealing a password (or even a DURT file) is not enough without that physical device’s chip.
+  </p>
+
+  <h3>B. Live device signals at SSO time</h3>
+  <p>
+    When the extension asks for a session, the agent attaches fresh signals
+    (OS, CrowdStrike, SentinelOne, and similar) into the signed access request.
+  </p>
+  <ul>
+    <li>Collected by the agent (~30 second cache)</li>
+    <li>Sent only on JumpCloud Go access — not on every normal browser page load</li>
+    <li>Cloud Conditional Access Policies can require EDR healthy / OS rules before issuing session</li>
+  </ul>
+
+  <h3>C. Device assertion for Conditional Access (ADR-011)</h3>
+  <p>
+    After Go succeeds, auth can mint a <strong>device assertion</strong> from the DUST —
+    without calling devices service again. CAP evaluates that assertion alongside user policies.
+  </p>
+
+  <table>
+    <thead><tr><th></th><th>Old Device Trust cert path</th><th>JumpCloud Go path</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>How device is proven</td>
+        <td>Browser presents a device cert (mTLS)</td>
+        <td>DUST session from signed Go access</td>
+      </tr>
+      <tr>
+        <td>Key storage</td>
+        <td>Per-user keychain / cert install</td>
+        <td>DUK in TPM / Secure Enclave</td>
+      </tr>
+      <tr>
+        <td>Live EDR signals</td>
+        <td>Limited / not this path</td>
+        <td>Yes — attached on GetNewAccessSession</td>
+      </tr>
+      <tr>
+        <td>Where CAP runs</td>
+        <td>Auth with cert-based assertion</td>
+        <td>Auth with Go device assertion (can prefer this)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="do">
+    <strong>Zero Trust in one sentence:</strong>
+    JumpCloud Go uses NMH so the browser can safely ask the managed agent to
+    hardware-sign “allow this user on this healthy device into this app,” then Conditional Access decides allow / step-up / deny.
+  </div>
+
+  <div class="pause">
+    Without NMH, the extension could not reach the agent. Without the agent, it could not reach the vault chip or live signals.
+    NMH is the missing link that makes browser SSO zero-trust capable.
+  </div>
+</section>
+
+<!-- SAFARI -->
+<section id="safari">
+  <h2><span class="big-number">10</span> Safari / macOS is a special case</h2>
+
+  <p>
+    Safari does <strong>not</strong> use the Chrome-style Native Messaging Host for JumpCloud Go.
+    Apple’s path uses an <strong>App SSO Extension</strong> in the JumpCloud tray app
+    (<code>jcagent-tray-ssoe</code>) plus the macOS Go client (<code>jumpcloud-durt-macos</code>).
+  </p>
+
+  <div class="info">
+    Same products goals (register, DUK in Secure Enclave, access session, Zero Trust).
+    Different plumbing: Apple SSO Extension / XPC instead of Chrome Native Messaging.
+  </div>
+
+  <p>
+    On macOS, the Go agent’s DURT listener may be a no-op stub in the Go agent binary —
+    the Swift client owns the vault work.
+  </p>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <h2><span class="big-number">11</span> Security controls (why this is safe design)</h2>
+
+  <table>
+    <thead><tr><th>Control</th><th>What it stops</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Browser sandbox + NMH only</td>
+        <td>Websites cannot talk to the agent socket directly</td>
+      </tr>
+      <tr>
+        <td>JumpCloud-signed NMH binary</td>
+        <td>Fake host pretending to be JumpCloud Go</td>
+      </tr>
+      <tr>
+        <td>Agent process/user authorization</td>
+        <td>Wrong process or wrong OS user requesting another user’s session</td>
+      </tr>
+      <tr>
+        <td>DUK non-exportable in TPM/SE</td>
+        <td>Copying the private key to another machine</td>
+      </tr>
+      <tr>
+        <td>DURT rotation + remote revoke</td>
+        <td>Reuse after logout / password change / device transfer</td>
+      </tr>
+      <tr>
+        <td>12h step-up + PKCE</td>
+        <td>Long-lived silent abuse; OAuth request binding</td>
+      </tr>
+      <tr>
+        <td>CAP on live signals</td>
+        <td>Unmanaged / unhealthy devices getting SSO even with user credentials</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="dont">
+    Do not confuse channels:<br/>
+    • Agent ↔ SI/devices poll uses <strong>mTLS</strong> with <code>client.key</code>.<br/>
+    • JumpCloud Go register/access uses <strong>HTTPS + signed JWTs</strong> (device cert on register envelope; DUK on access).<br/>
+    • Extension ↔ agent uses <strong>NMH + local gRPC</strong>, not mTLS.
+  </div>
+</section>
+
+<!-- FULL STORY -->
+<section id="story">
+  <h2><span class="big-number">12</span> Full story in order</h2>
+
+  <div class="step-card">
+    <div class="n">1</div>
+    <div>
+      <h4>Agent installs</h4>
+      <p>Device enrolls; NMH + manifest registered so Chrome knows how to launch JumpCloud Go.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">2</div>
+    <div>
+      <h4>Admin enables JumpCloud Go / Zero Trust policies</h4>
+      <p>CAP can require managed device, EDR, encryption, etc.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">3</div>
+    <div>
+      <h4>User installs Go extension and registers once</h4>
+      <p>Extension → NMH → agent creates DUK in vault → cloud stores public key → DURT saved.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">4</div>
+    <div>
+      <h4>User opens a protected app</h4>
+      <p>Extension asks NMH for a session; agent signs with DUK and includes live signals.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">5</div>
+    <div>
+      <h4>Cloud applies Zero Trust</h4>
+      <p>Validate stamp + policies + signals → issue short session or deny / step-up.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">6</div>
+    <div>
+      <h4>Auth may mint device assertion</h4>
+      <p>CAP continues treating this login as from a trusted, currently assessed device.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="n">7</div>
+    <div>
+      <h4>App lets the user in</h4>
+      <p>No long-term password for that hop — short ticket + trust evaluation.</p>
+    </div>
+  </div>
+
+  <div class="do">
+    <strong>Interview one-liner:</strong>
+    “JumpCloud Go uses a Native Messaging Host as a sandboxed bridge from the browser extension
+    to the local agent. The agent hardware-signs access requests and attaches live device signals;
+    the cloud and Conditional Access enforce Zero Trust before issuing a short SSO session.”
+  </div>
+
+  <h3>Where to look in code</h3>
+  <table>
+    <thead><tr><th>Topic</th><th>Path</th></tr></thead>
+    <tbody>
+      <tr><td>Official architecture</td><td><code>docs/jc_go/ARCHITECTURE.md</code></td></tr>
+      <tr><td>NMH registry repair (Windows)</td><td><code>nativemessaginghost/</code>, <code>agent/agent_windows.go</code></td></tr>
+      <tr><td>Register / access logic</td><td><code>vendor/.../jumpcloud-durt-client/service/register.go</code>, <code>access.go</code></td></tr>
+      <tr><td>Caller authorization</td><td><code>.../security/permissions_windows.go</code>, <code>permissions_linux.go</code></td></tr>
+      <tr><td>Local listener</td><td><code>.../service/listener_windows.go</code>, <code>listener_linux.go</code></td></tr>
+      <tr><td>Device signals</td><td><code>signal/</code> in jumpcloud-agent</td></tr>
+      <tr><td>Zero Trust ADR</td><td><code>jumpcloud-auth/docs/adrs/adr-011-device-trust-jc-go.md</code></td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:1.75rem;">
+    Related:
+    <a href="jumpcloud-secure-enclave-tpm-layman-steps.html">Secure Enclave / TPM steps</a> ·
+    <a href="jumpcloud-secure-enclave-guide.html">SE technical guide</a> ·
+    <a href="jumpcloud-mtls-complete-guide.html">mTLS guide</a> ·
+    <a href="ban-3495/context/JumpCloud-Go-explained.html">Go explained (BAN-3495 context)</a>
+  </p>
+</section>
+
+</main>
+
+<footer>
+  JumpCloud Go &amp; Native Messaging Host — layman guide (agent + DURT client + Zero Trust / CAP)
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { padding: 18 } });
+</script>
+</body>
+</html>

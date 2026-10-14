@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 05 - OAuth, CAP &amp; Policy Decision Point</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="badge">Module 05 of 10</span>
+    <h1>OAuth / OIDC Flows with Device Context (CAP / PDP)</h1>
+    <p>How JumpCloud's Conditional Access Policy evaluates device posture at authentication time - and how it maps to Okta Identity Engine auth policies.</p>
+  </header>
+  <nav class="nav-bar">
+    <a href="module-04-jc-go.html">← Module 04</a>
+    <a href="index.html">Hub</a>
+    <a href="module-06-webauthn.html">Module 06 →</a>
+  </nav>
+
+  <main>
+    <section>
+      <h2>Concept Summary</h2>
+      <p class="lead">CAP is JumpCloud's Policy Decision Point (PDP). At login or OAuth token exchange, auth evaluates rules against user context, network context, and - critically - <strong>device context</strong>. Outcomes: ALLOW, MFA step-up, or DENY. Device data arrives via three paths with very different freshness characteristics.</p>
+    </section>
+
+    <section>
+      <h2>JumpCloud Implementation</h2>
+      <ul class="files">
+        <li><code>jumpcloud-auth/providers/oauth/state_manager.go</code> - device assertion preferred over User-Agent; signal parsing</li>
+        <li><code>jumpcloud-auth/services/session_token.go</code> - DUST → DeviceAssertion builder</li>
+        <li><code>jumpcloud-auth/policies/authn/pdp.go</code> - CAP conditions: FDE, CrowdStrike ZTA, managed device</li>
+        <li><code>planning/ban-3495/context/CAP-end-to-end-flow.html</code> - technical flows</li>
+        <li><code>planning/ban-3495/context/CAP-explained-simple.html</code> - plain English</li>
+      </ul>
+      <p>In OAuth state manager: <strong>DeviceAssertion &gt; User-Agent &gt; nil</strong>. Signals embedded in assertion are parsed for CAP evaluation (ZR-1776): OS, CrowdStrike ZTA score, SentinelOne status, etc.</p>
+    </section>
+
+    <section>
+      <h2>Okta Translation Table</h2>
+      <table>
+        <thead><tr><th>JumpCloud CAP</th><th>Okta OIE Equivalent</th></tr></thead>
+        <tbody>
+          <tr><td>DeviceAssertion JWT</td><td>Device context in authentication policy</td></tr>
+          <tr><td><code>MANAGED_DEVICE</code> condition</td><td>Device management status = Managed</td></tr>
+          <tr><td><code>DEVICE_ENCRYPTED</code> / FDE claim</td><td>Disk encryption posture signal</td></tr>
+          <tr><td>CrowdStrike ZTA score signal</td><td>Third-party risk / custom device claims</td></tr>
+          <tr><td>MFA step-up outcome</td><td>Additional factor required rule</td></tr>
+          <tr><td>Device state Registered</td><td>FastPass enrolled / device registered</td></tr>
+          <tr><td><code>device.provider.deviceAccess.joined</code> analog</td><td>System bound to org via agent + MDM</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Three Device-Data Paths</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph pathA [Path A - Portal SSO Login]
+    Portal[User Portal login]
+    Mongo[Mongo systems document JWT]
+    StaleA["Freshness ~2 hours"]
+    Portal --> Mongo --> StaleA
+  end
+
+  subgraph pathB [Path B - JumpCloud Go]
+    GoApp[Each app access]
+    DURT["DURT and GetSignals"]
+    LiveB["Freshness ~30 seconds"]
+    GoApp --> DURT --> LiveB
+  end
+
+  subgraph pathC [Path C - Auth Layer Only]
+    AuthOnly[All requests]
+    IP[IP geo User-Agent]
+    LiveC[Real-time]
+    AuthOnly --> IP --> LiveC
+  end
+
+  StaleA --> PDP[CAP PDP Evaluate]
+  LiveB --> PDP
+  LiveC --> PDP
+  PDP --> Allow[ALLOW]
+  PDP --> MFA[MFA step-up]
+  PDP --> Deny[DENY]
+
+  subgraph future [Future - BAN-3495 UDTL]
+    UDTL[compliance_verdicts near-real-time]
+    UDTL -.-> PDP
+  end
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>CAP Evaluation Flow</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+  participant User
+  participant PEP as PEP Portal or Go
+  participant Auth as jumpcloud-auth PDP
+  participant Policy as CAP Rules
+
+  User->>PEP: Login or app access
+  PEP->>Auth: OAuth / session request + device assertion
+  Auth->>Auth: Parse signals from assertion
+  Auth->>Policy: Evaluate conditions
+  alt All conditions pass
+    Policy-->>Auth: ALLOW
+  else Risk detected
+    Policy-->>Auth: MFA required
+  else Posture fail
+    Policy-->>Auth: DENY
+  end
+  Auth-->>User: Outcome
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Interview Q&amp;A</h2>
+      <div class="qa-item">
+        <div class="qa-q">Why is the Mongo portal path a Zero Trust gap?</div>
+        <div class="qa-a">System report updates on ~2 hour cadence. User could disable FileVault after login and retain access until next sync. Go path fixes this for app access; UDTL (BAN-3495) fixes it platform-wide with delta events and &lt;30s SLA for critical attrs.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">How does OAuth state manager use device context?</div>
+        <div class="qa-a">Prefers DeviceAssertion over User-Agent parsing (ZR-808). Parses signals claim for CAP conditions (ZR-1776). This is the same architectural slot Okta uses for device risk signals in OIE authentication policies.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">What's the PEP vs PDP split?</div>
+        <div class="qa-a">PDP = auth service <code>AuthnPolicyDecisions.Evaluate</code>. PEP = User Portal, JumpCloud Go, future BeyondCorp - enforcement points that call PDP and block/step-up based on verdict. Standard Zero Trust reference architecture.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">Example CAP rule you'd explain?</div>
+        <div class="qa-a">"Require managed device + FileVault enabled + CrowdStrike ZTA score above threshold for admin console access." Maps to Okta rule: Managed + Registered device + custom CrowdStrike claim + phishing-resistant factor for sensitive apps.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gaps &amp; Honest Limits</h2>
+      <div class="card gap">
+        <ul class="files">
+          <li>No unified posture store yet - three siloed paths; UDTL is ZR-2375 platform work.</li>
+          <li>BeyondCorp (BAN-3496) consumer blocked on UDTL consumption API.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="module-04-jc-go.html">← Module 04</a> · <a href="module-06-webauthn.html">Module 06 →</a></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="mermaid-boot.js"></script>
+</body>
+</html>

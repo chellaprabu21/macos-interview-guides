@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Omnissa macOS Engineer — Complete Interview Study Guide</title>
+<style>
+  :root{
+    --bg:#16181d; --panel:#1d2026; --panel2:#22262e; --ink:#d7dae0; --dim:#8b919c;
+    --blue:#5aa9e6; --teal:#4ec9b0; --amber:#e0af68; --red:#e06c75; --green:#98c379;
+    --line:#2c313a; --code-bg:#12141a; --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 var(--sans)}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  a:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  .layout{display:flex;min-height:100vh}
+  nav{width:264px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+      padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .brand{font:600 12px var(--mono);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;
+      padding:0 18px 14px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav .brand b{display:block;color:var(--teal);font-size:14px;letter-spacing:.02em;margin-top:2px}
+  nav a{display:block;padding:5px 18px;color:var(--dim);font-size:13px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);text-decoration:none;background:var(--panel2)}
+  nav a.grp{margin-top:10px;font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#5c626d;pointer-events:none}
+
+  main{flex:1;min-width:0;max-width:920px;padding:36px 44px 120px}
+  header.hero{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px}
+  .crumb{font:600 12px var(--mono);color:var(--teal);letter-spacing:.14em;text-transform:uppercase}
+  h1{font-size:30px;line-height:1.2;margin:10px 0 8px;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--dim);max-width:64ch}
+  h2{font-size:21px;margin:52px 0 6px;padding-top:14px;border-top:1px solid var(--line);letter-spacing:-.01em}
+  h2 .tag{font:600 11px var(--mono);color:var(--bg);background:var(--teal);border-radius:4px;
+      padding:2px 7px;vertical-align:3px;margin-left:10px;letter-spacing:.06em}
+  h2 .tag.warn{background:var(--amber)}
+  h3{font-size:16px;margin:26px 0 6px;color:var(--blue)}
+  p{margin:8px 0}
+  .lead{color:var(--dim);margin-bottom:14px}
+  code{font:13px var(--mono);background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--teal)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;
+      overflow-x:auto;font:12.5px/1.55 var(--mono);color:#c8ccd4;margin:12px 0}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .c{color:#5f6672}.k{color:#c678dd}.s{color:var(--green)}.f{color:var(--blue)}.t{color:var(--teal)}.n{color:#d19a66}
+
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:600;font-size:12.5px}
+  td:first-child{white-space:nowrap}
+
+  details{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:8px 0;overflow:hidden}
+  details summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:14px;list-style:none;position:relative;padding-left:32px}
+  details summary::before{content:'▸';position:absolute;left:13px;color:var(--teal);transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  details summary:hover{background:var(--panel2)}
+  details .body{padding:2px 16px 14px 32px;border-top:1px solid var(--line);font-size:14px}
+  details .body p:first-child{margin-top:10px}
+  .q details summary{font-weight:500}
+  .q details summary .lvl{font:600 10px var(--mono);border-radius:3px;padding:1px 6px;margin-right:8px;letter-spacing:.05em}
+  .lvl.core{background:#1f3a4d;color:var(--blue)}
+  .lvl.deep{background:#3d2f1e;color:var(--amber)}
+  .lvl.trap{background:#3d2426;color:var(--red)}
+
+  .callout{border-left:3px solid var(--amber);background:var(--panel);border-radius:0 8px 8px 0;padding:10px 16px;margin:14px 0;font-size:14px}
+  .callout.good{border-left-color:var(--green)}
+  .callout.bad{border-left-color:var(--red)}
+  .callout b:first-child{color:var(--amber)}
+  .callout.good b:first-child{color:var(--green)}
+  .callout.bad b:first-child{color:var(--red)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:13.5px}
+  .card h4{margin:0 0 6px;font-size:13px;color:var(--teal);font-family:var(--mono);letter-spacing:.04em}
+  ul{margin:6px 0;padding-left:22px}
+  li{margin:4px 0}
+  .src{font-size:12.5px;color:var(--dim)}
+  .kbd{font:600 11px var(--mono);background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 6px}
+
+  @media(max-width:900px){nav{display:none}main{padding:24px 18px 80px}.grid2{grid-template-columns:1fr}}
+  @media print{nav{display:none}body{background:#fff;color:#111}details{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand">Interview Prep<b>Omnissa · macOS DEEM</b></div>
+  <a href="#overview">0 · Role, Loop & Strategy</a>
+  <a class="grp" href="#">Technical Core</a>
+  <a href="#cpp">1 · C++ Deep Dive</a>
+  <a href="#swift">2 · Swift Depth</a>
+  <a href="#interop">3 · C++/Swift Interop</a>
+  <a href="#frameworks">4 · macOS Frameworks</a>
+  <a href="#sysext">5 · System Extensions & Signing</a>
+  <a href="#concurrency">6 · Concurrency & IPC</a>
+  <a href="#networking">7 · Networking & TLS</a>
+  <a href="#packaging">8 · Packaging & Installers</a>
+  <a href="#buildtest">9 · CMake & Google Test</a>
+  <a href="#perf">10 · Performance & Instruments</a>
+  <a class="grp" href="#">Rounds</a>
+  <a href="#dsa">11 · DSA Round Plan</a>
+  <a href="#design">12 · Design Round</a>
+  <a href="#behavioral">13 · Managerial / Fitment</a>
+  <a class="grp" href="#">Wrap</a>
+  <a href="#plan">14 · 12-Day Study Plan</a>
+  <a href="#sources">15 · Sources</a>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="crumb">Omnissa · DEEM Team · Chennai/Bangalore · Software/Sr. Software Engineer</div>
+  <h1>macOS C++/Swift Engineer — Complete Interview Study Guide</h1>
+  <p class="sub">Built for Chella against JD R-101977. Every JD requirement mapped to concepts, likely questions, model answers, and your own experience hooks. Gaps (CMake, Google Test) get dedicated crash courses. Strategy throughout: <b>commit first, then caveat</b>.</p>
+</header>
+
+<h2 id="overview">0 · The Role, the Loop, and Your Strategy</h2>
+
+<h3>What DEEM is and why you fit</h3>
+<p>DEEM = Digital Employee Experience Management, part of Omnissa's platform (the former VMware End-User Computing business, spun out in 2024, ~4,000 employees). The DEX Agent collects device health, performance, and experience telemetry from macOS endpoints at very large enterprise scale, and increasingly does remediation. This is <b>your exact domain</b>: a privileged native macOS agent (daemon + extensions), fleet-scale, performance-sensitive, C++ core with Swift/Obj-C at the platform boundary.</p>
+<p>Your one-line positioning: <i>"I build and tech-lead exactly this kind of software today — JumpCloud's macOS agent on millions of devices: System Extensions, Endpoint Security, XPC, packaging, notarization, and performance work in Instruments. At Zoho and Citrix I lived in the C++ side — integrating the native WebRTC C++ stack into Swift/Obj-C clients and tuning UDP transport in a large cross-platform C++ codebase."</i></p>
+
+<h3>The interview loop (from candidate reports)</h3>
+<table>
+<tr><th>Round</th><th>Format</th><th>What to expect</th></tr>
+<tr><td>Screen / OA</td><td>HackerRank or recruiter call</td><td>Sometimes an LLD-style OA (implement methods against a given class design), medium difficulty.</td></tr>
+<tr><td>L1 Technical</td><td>60 min</td><td>DSA — LeetCode medium (strings, trees, stacks/queues seen in reports) + domain warm-up. Code in C++ here, not Swift — it signals fluency for a C++-heavy JD.</td></tr>
+<tr><td>L2 Technical</td><td>60 min</td><td>Domain depth: macOS frameworks, C++ internals, concurrency, IPC, memory. Expect "explain how X works under the hood" chains.</td></tr>
+<tr><td>Design</td><td>60 min</td><td>LLD/HLD — e.g., design a telemetry agent, a process scheduler/orchestrator with priorities (asked before), an event pipeline. Draw components, talk trade-offs.</td></tr>
+<tr><td>Managerial / Fitment</td><td>30–45 min</td><td>Hiring manager + director round. Projects, motivations, escalations, on-call, "why leave JumpCloud." Candidates have been rejected purely for weak project storytelling — do not coast here.</td></tr>
+</table>
+
+<div class="callout"><b>Level mismatch — prepare the answer.</b> You're Staff with tech-lead scope interviewing for Software/Sr. This <i>will</i> come up ("why would you leave / step down?"). Commit to one clean answer: depth over title — you want to go deeper into the C++/systems core of a DEX agent, the domain is a perfect superset of your work, and Omnissa's macOS charter is growing. Never say "keeping options open." One Glassdoor reviewer reported an HM who fixated on exactly this question — have it cold.</div>
+
+<div class="callout good"><b>Commit first, then caveat.</b> Your flagged pattern is over-hedging. For every question in this guide: give the direct answer in the first sentence, then add nuance. "XPC validation? Check the audit token's code-signing requirement on every connection — then here's why Team ID alone isn't enough…" — not "well, it depends…"</div>
+
+<h3>JD requirement → your evidence map</h3>
+<table>
+<tr><th>JD requirement</th><th>Your strongest evidence</th><th>Prep weight</th></tr>
+<tr><td>C++, Swift, interop</td><td>WebRTC C++ stack into Swift/Obj-C clients (Zoho); Citrix C++ codebase</td><td>Heavy — §1–3</td></tr>
+<tr><td>ES, NE, Security, SystemConfiguration, CF, IOKit</td><td>JumpCloud agent: ES/NE providers, Keychain/Secure Enclave, IOKit</td><td>Heavy — §4</td></tr>
+<tr><td>Multithreading, IPC (sockets, XPC)</td><td>Daemon ↔ System Extension over XPC/Unix sockets</td><td>Heavy — §6</td></tr>
+<tr><td>TLS/OpenSSL, HTTP</td><td>Secure Transport, WebSocket/WebRTC hardening; OpenSSL specifics need review</td><td>Medium — §7</td></tr>
+<tr><td>Signing, notarization, Gatekeeper</td><td>You own this at JumpCloud</td><td>Light — §5</td></tr>
+<tr><td>pkgbuild, productbuild, Distribution XML, scripts</td><td>You own this at JumpCloud</td><td>Light — §8</td></tr>
+<tr><td>CMake cross-platform C++</td><td><b>Gap</b> — crash course + bridge script</td><td>Focused — §9</td></tr>
+<tr><td>Google Test, coverage, static analysis</td><td><b>Gap</b> on GTest specifically — crash course</td><td>Focused — §9</td></tr>
+<tr><td>Profiling & instrumentation</td><td>Instruments/LLDB memory & concurrency work</td><td>Medium — §10</td></tr>
+</table>
+
+<h2 id="cpp">1 · C++ Deep Dive <span class="tag">HEAVY</span></h2>
+<p class="lead">The #1 required qualification. Expect "under the hood" chains: they ask a simple question, then drill three levels down. Answer patterns below give the committed first sentence, then the depth.</p>
+
+<h3>1.1 Memory & object lifetime</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>Stack vs heap; what does <code>new</code> actually do?</summary><div class="body">
+<p><b>Commit:</b> <code>new</code> does two things — calls <code>operator new</code> to allocate raw memory (ultimately from the heap via malloc-like machinery), then invokes the constructor on that memory. <code>delete</code> reverses it: destructor first, then <code>operator delete</code>.</p>
+<p>Depth: placement new separates the two (<code>new (ptr) T(...)</code> constructs without allocating — how <code>std::vector</code> builds elements in reserved capacity). Array <code>new[]</code> must be paired with <code>delete[]</code>; mismatching is UB because the compiler may stash the element count in a header before the array.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>RAII — explain it and why it matters in an agent</summary><div class="body">
+<p><b>Commit:</b> RAII ties resource lifetime to object lifetime: acquire in the constructor, release in the destructor, so cleanup runs deterministically on every exit path including exceptions. It's the single most important C++ idiom.</p>
+<p>Agent hook: in a long-running daemon, leaked file descriptors, mach ports, or ES clients accumulate until the process is killed. Wrap every OS handle — <code>es_client_t</code>, sockets, CFTypes — in RAII wrappers (<code>std::unique_ptr</code> with custom deleter is the quickest). Your Instruments leak-hunting stories slot here.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>Rule of Three / Five / Zero</summary><div class="body">
+<p><b>Commit:</b> If you write any one of destructor, copy constructor, or copy assignment, you almost certainly need all three (Rule of Three); with move semantics add move constructor and move assignment (Five). Best is Rule of Zero — own resources only via members that already manage themselves (smart pointers, containers) so you write none.</p>
+<p>Trap follow-up: declaring a destructor suppresses implicit move operations — the class silently falls back to copies. Classic hidden-perf-bug question.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Smart pointers — unique_ptr vs shared_ptr vs weak_ptr, and costs</summary><div class="body">
+<p><b>Commit:</b> <code>unique_ptr</code> is sole ownership, zero overhead vs a raw pointer, move-only. <code>shared_ptr</code> is shared ownership via an atomically ref-counted control block. <code>weak_ptr</code> observes without owning — it breaks reference cycles and is the answer to "how do you prevent shared_ptr leaks."</p>
+<p>Depth: <code>shared_ptr</code> costs two pointers (object + control block), atomic inc/dec on every copy (contention on hot paths), and a heap allocation for the control block — <code>make_shared</code> fuses object+block into one allocation but keeps memory alive until the last <code>weak_ptr</code> dies. Only the ref-count is thread-safe; concurrent writes through the pointer still need synchronization. <code>enable_shared_from_this</code> for handing out shared ownership from <code>this</code> (async callbacks in an agent — keep-alive pattern: capture <code>shared_from_this()</code> in the lambda).</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Move semantics — what actually happens; std::move</summary><div class="body">
+<p><b>Commit:</b> A move transfers ownership of resources instead of copying them — the move constructor steals the source's internals (pointer, size, capacity for a vector) and leaves it valid-but-unspecified. <code>std::move</code> does nothing at runtime; it's a cast to rvalue reference that makes overload resolution pick the move.</p>
+<p>Depth: rvalue vs lvalue references; forwarding references (<code>T&amp;&amp;</code> in a deduced context) plus <code>std::forward</code> for perfect forwarding; moved-from objects must remain destructible; RVO/NRVO means <code>return std::move(local)</code> is a pessimization — it blocks copy elision.</p></div></details>
+<details><summary><span class="lvl trap">TRAP</span>Common UB they probe: dangling refs, ODR, strict aliasing, data races</summary><div class="body">
+<p>Ready list: use-after-free / dangling reference from returning a ref to a local; iterator invalidation (push_back reallocation while iterating); signed integer overflow is UB; data race = two threads, same memory, at least one write, no synchronization → UB, not "just stale reads"; <code>reinterpret_cast</code> type punning violates strict aliasing (use <code>memcpy</code> or <code>std::bit_cast</code>).</p></div></details>
+</div>
+
+<h3>1.2 Polymorphism & object layout</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>How do virtual functions work?</summary><div class="body">
+<p><b>Commit:</b> Each polymorphic class gets a vtable — a static array of function pointers; each object carries a hidden vptr to its class's vtable, set by the constructor. A virtual call loads vptr → indexes vtable → indirect call.</p>
+<p>Depth chain they follow: cost = one extra indirection plus lost inlining/branch prediction, negligible unless in a tight loop; why virtual destructors — deleting a derived object through a base pointer without one is UB (derived destructor never runs); calling virtuals in constructors dispatches to the class under construction, not the eventual derived type; pure virtual (<code>=0</code>) makes the class abstract.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>vtable follow-ups: multiple inheritance, virtual inheritance, RTTI</summary><div class="body">
+<p>Multiple inheritance → multiple vptrs and this-pointer adjustment thunks. Virtual inheritance solves the diamond by sharing one base subobject, paid for with vbase offsets. <code>dynamic_cast</code> uses RTTI stored via the vtable; cross-casts and downcasts return nullptr (pointers) or throw (references). If they ask "how would you avoid virtual dispatch": CRTP / static polymorphism, or <code>std::variant</code> + <code>std::visit</code>.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>const correctness, static, inline, extern "C"</summary><div class="body">
+<p>Rapid-fire set: <code>const</code> member functions promise not to mutate observable state (<code>mutable</code> escapes for caches/mutexes); <code>static</code> members are per-class; function-local statics are initialized thread-safely on first use since C++11 (Meyers singleton — likely relevant to agent singletons); <code>inline</code> today mostly means "multiple identical definitions allowed" (ODR), not "please inline"; <code>extern "C"</code> disables name mangling — exactly how a C++ core exposes a C ABI for Swift/Obj-C to call. That last one is your interop bridge — volunteer it.</p></div></details>
+</div>
+
+<h3>1.3 Templates & STL</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>STL containers — complexity + when to use what</summary><div class="body">
+<table>
+<tr><th>Container</th><th>Backing</th><th>Key ops</th><th>Note</th></tr>
+<tr><td>vector</td><td>contiguous array</td><td>index O(1), push_back amortized O(1)</td><td>Default choice; cache-friendly beats big-O in practice</td></tr>
+<tr><td>deque</td><td>chunked blocks</td><td>push front/back O(1)</td><td>Stable-ish but not contiguous</td></tr>
+<tr><td>list</td><td>doubly linked</td><td>splice O(1)</td><td>Almost never the right answer — say so, they like it</td></tr>
+<tr><td>map / set</td><td>red-black tree</td><td>O(log n), ordered</td><td>Ordered iteration, range queries</td></tr>
+<tr><td>unordered_map / set</td><td>hash buckets</td><td>O(1) avg, O(n) worst</td><td>Iterator invalidation on rehash; pointer/ref stability of values</td></tr>
+<tr><td>priority_queue</td><td>heap over vector</td><td>push/pop O(log n)</td><td>Their past "priority orchestrator" design question wants this</td></tr>
+</table>
+<p>Invalidation rules are a favorite trap: vector reallocation invalidates everything; unordered_map rehash invalidates iterators but not references; map/list are stable.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Templates: instantiation, specialization, SFINAE vs concepts</summary><div class="body">
+<p><b>Commit:</b> Templates are compile-time code generation — each unique argument set instantiates a distinct concrete type/function. Definitions must be visible at instantiation (why templates live in headers).</p>
+<p>Depth: full vs partial specialization; two-phase lookup; SFINAE ("substitution failure is not an error") as the pre-C++20 way to constrain overloads via <code>enable_if</code>; C++20 concepts as the readable replacement (<code>template&lt;typename T&gt; requires std::integral&lt;T&gt;</code>). Mention <code>constexpr</code>/<code>if constexpr</code> for compile-time branching. You don't need metaprogramming wizardry — clear fundamentals + honesty about depth beats bluffing.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>Exceptions vs error codes in systems code; noexcept</summary><div class="body">
+<p><b>Commit:</b> Exceptions for truly exceptional, non-local failures with RAII doing cleanup; error codes / <code>std::optional</code> / <code>expected</code>-style returns on hot paths and across module or language boundaries — and <b>never let exceptions cross a C ABI or into Swift/Obj-C frames</b>: catch at the boundary and translate. That boundary rule is the agent-engineering answer they want.</p>
+<p><code>noexcept</code>: promise not to throw; violating it calls <code>std::terminate</code>. Move constructors should be noexcept or <code>vector</code> falls back to copying on reallocation — sneaky perf question.</p></div></details>
+</div>
+
+<h2 id="swift">2 · Swift Depth <span class="tag">HEAVY</span></h2>
+<p class="lead">You're strong here — the risk is under-preparing the "explain precisely" versions of things you do by instinct.</p>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>ARC — how it works, and vs C++ smart pointers</summary><div class="body">
+<p><b>Commit:</b> ARC is compile-time automatic reference counting: the compiler inserts retain/release at ownership boundaries; when count hits zero, deinit runs immediately. It's deterministic — no garbage collector, no pauses.</p>
+<p>Great comparative answer for this JD: ARC ≈ intrusive <code>shared_ptr</code> semantics baked into the language; <code>weak</code> ≈ <code>weak_ptr</code> (auto-nils via side tables); <code>unowned</code> ≈ non-owning raw pointer (crash if dangling, no nil-check cost). Retain cycles = the shared_ptr cycle problem: closures capture self strongly → <code>[weak self]</code>. Know that ARC applies to classes/closures, not structs/enums.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>Value vs reference types; copy-on-write</summary><div class="body">
+<p><b>Commit:</b> Structs/enums are value types — copied on assignment, no shared mutable state, no ARC traffic; classes are reference types. Standard collections (Array, String, Dictionary) are structs with copy-on-write: cheap copies share storage until a mutation on non-uniquely-referenced storage triggers a real copy (<code>isKnownUniquelyReferenced</code>).</p>
+<p>Systems angle: value types kill a whole class of data races by construction — thread-safety by copying. That's why agent config/telemetry snapshots as structs is a good design answer.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Protocols, generics, existentials — static vs dynamic dispatch</summary><div class="body">
+<p><b>Commit:</b> Generic constraints (<code>func f&lt;T: Proto&gt;(_ t: T)</code>) are resolved statically — specialization, inlining, no boxing. Existentials (<code>any Proto</code>) use a witness table + boxed storage — dynamic dispatch, heap allocation if the value doesn't fit the inline buffer (3 words).</p>
+<p>Depth: protocol witness tables vs class vtables; <code>some</code> (opaque types) = static type hidden from caller, zero existential cost; PATs (associated types) historically forced generics — <code>any</code> lifted that in Swift 5.7+. This maps directly to the C++ question "templates vs virtual dispatch" — draw the parallel out loud; interviewers for a dual-language role reward exactly that.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>Closures: capture semantics, escaping, @Sendable</summary><div class="body">
+<p>Closures capture variables by reference by default (capture list <code>[x]</code> copies at creation); <code>@escaping</code> means outliving the call — requires explicit <code>self</code>, hence retain-cycle discipline. <code>@Sendable</code> closures forbid capturing non-thread-safe state — the compiler enforcing what you enforce by review in C++.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>GCD vs Swift structured concurrency — when each, in an agent</summary><div class="body">
+<p><b>Commit:</b> GCD: queues + blocks, manual discipline — serial queues as locks, target hierarchies, <code>DispatchSource</code> for kernel events. Structured concurrency: async/await + actors — compiler-checked isolation, cancellation, task trees. In a daemon that talks to C++ and ES callbacks, GCD/pthreads still dominate at the boundary; actors shine for shared state above it.</p>
+<p>Know cold: actor reentrancy (state can change across an <code>await</code>), <code>Task.detached</code> vs child tasks, cooperative thread pool ≠ unlimited threads (never block it with sync waits — thread-pool starvation), continuations (<code>withCheckedThrowingContinuation</code>) to wrap callback APIs — exactly how you bridge a C++ completion callback into async Swift.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>Error handling; optionals under the hood</summary><div class="body">
+<p><code>throws</code>/<code>do-catch</code> is sugar over typed error returns (not stack unwinding like C++ — cheap); <code>Result</code> for stored/async errors. Optionals are <code>enum Optional { case none, some(Wrapped) }</code> — pattern matching, not null pointers; <code>!</code> force-unwrap traps deterministically.</p></div></details>
+</div>
+
+<h2 id="interop">3 · C++/Swift Interoperability <span class="tag">HEAVY</span></h2>
+<p class="lead">Explicitly in the JD's first bullet, and your genuine differentiator (WebRTC C++ ↔ Swift/Obj-C at Zoho). Own this section — lead with experience, then mechanics.</p>
+
+<h3>3.1 The three bridging routes — know all, recommend by context</h3>
+<table>
+<tr><th>Route</th><th>How</th><th>When</th></tr>
+<tr><td>Objective-C++ (.mm)</td><td>Wrap C++ classes inside Obj-C classes; Swift sees the Obj-C API via the bridging/umbrella header. C++ types hidden behind pimpl in the header.</td><td>The battle-tested default for shipped products — this is what you used with WebRTC. Say so.</td></tr>
+<tr><td>C ABI shim</td><td><code>extern "C"</code> functions + opaque handles (<code>void*</code>/struct pointers); Swift imports the C header directly.</td><td>Cross-platform C++ cores (like a DEX agent core) that must expose a stable ABI; no Obj-C dependency.</td></tr>
+<tr><td>Direct Swift/C++ interop (Swift 5.9+)</td><td>Enable C++ interop in the build; Swift imports C++ types/functions from module maps; value types map naturally, <code>std::string</code>/<code>std::vector</code> get Swift overlays.</td><td>New code, Xcode-managed builds. Caveats: no exceptions across the boundary, limited template/move-only support, evolving. Knowing the caveats is the senior signal.</td></tr>
+</table>
+
+<h3>3.2 The questions they'll actually ask</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>"How did you bridge C++ into Swift in a real product?"</summary><div class="body">
+<p>Your story, structured: WebRTC is a C++ codebase; the app layer was Swift/Obj-C. You wrapped the C++ session/track/stats APIs in Objective-C++ facade classes (.mm) — C++ members hidden via pimpl so no C++ types leaked into headers Swift could see. Ownership rule: the Obj-C wrapper owns the C++ object (unique_ptr in the impl), created in init, destroyed in dealloc — ARC lifetime drives C++ lifetime. Callbacks from C++ threads were marshaled onto known dispatch queues before touching Swift/ObjC state. Stats polling fed your RTT/jitter tuning work.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Memory ownership across the boundary — the rules</summary><div class="body">
+<p><b>Commit:</b> One side owns; the boundary documents it. Patterns: (1) ARC owns wrapper, wrapper's unique_ptr owns C++ object; (2) C++ core owns, hands Swift opaque handles + explicit destroy function; (3) ref-counted C++ objects retained/released through the shim. Never let a raw C++ pointer outlive its owner into a Swift closure — copy the data or retain the owner into the callback context.</p>
+<p>CoreFoundation angle they may chain into: CF ownership rules — "Create/Copy" names return +1 you must <code>CFRelease</code>; in Swift, <code>Unmanaged</code> with <code>takeRetainedValue()</code> (consumes the +1) vs <code>takeUnretainedValue()</code>. Toll-free bridging (CFString ↔ NSString ↔ String).</p></div></details>
+<details><summary><span class="lvl trap">TRAP</span>Exceptions, threads, and strings across the boundary</summary><div class="body">
+<p>Three traps, one answer each: <b>Exceptions</b> — C++ exceptions crossing into Swift/Obj-C frames are UB; catch in the shim, convert to error codes/NSError. <b>Threads</b> — C++ callback threads have no autorelease pool and no main-actor guarantees; wrap in <code>@autoreleasepool</code> (Obj-C++) and dispatch to a queue. <b>Strings</b> — <code>std::string</code> ↔ <code>String</code> copies via UTF-8; watch lifetime of <code>c_str()</code> pointers (dies with the string); NSString interior pointers likewise.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>"What does the Obj-C runtime add?" (message dispatch vs C++ calls)</summary><div class="body">
+<p>Obj-C method calls go through <code>objc_msgSend</code> — dynamic selector lookup with caching; slower than a C++ virtual call but enables swizzling, KVO, dynamic proxies. Swift calls into Obj-C use the same machinery; pure Swift uses vtables/witness tables/static dispatch. Good closing line: pick the boundary so hot paths stay inside C++ or inside Swift, and cross it coarsely (batched telemetry, not per-event chatter).</p></div></details>
+</div>
+
+<h2 id="frameworks">4 · macOS Frameworks <span class="tag">HEAVY</span></h2>
+<p class="lead">The JD names six: Endpoint Security, Network Extension, Security, SystemConfiguration, CoreFoundation, IOKit. This is your home turf at JumpCloud — the prep goal is precise vocabulary, not new learning.</p>
+
+<h3>4.1 Endpoint Security (ES)</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>ES architecture: client, events, AUTH vs NOTIFY</summary><div class="body">
+<p><b>Commit:</b> ES is the userspace replacement for kernel-auditing kexts: you create an <code>es_client_t</code> (<code>es_new_client</code>) from a process holding the <code>com.apple.developer.endpoint-security.client</code> entitlement (restricted — Apple approval), subscribe to event types, and receive messages on a handler block. Two flavors: <b>NOTIFY</b> (observe after the fact) and <b>AUTH</b> (the kernel blocks the operation until you respond allow/deny).</p>
+<p>Key events to name: <code>ES_EVENT_TYPE_AUTH_EXEC</code>, <code>AUTH_OPEN</code>, <code>NOTIFY_FORK</code>, <code>NOTIFY_EXIT</code>, file events (create/rename/unlink), <code>NOTIFY_XP_MALWARE_DETECTED</code>. Process info arrives in <code>es_process_t</code>: audit token, signing ID, Team ID, CDHash, path.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>AUTH deadlines, muting, and performance — the senior questions</summary><div class="body">
+<p><b>Deadlines:</b> every AUTH message carries a deadline (in the message); miss it and the kernel decides for you — and repeated misses get your client killed (<code>ES_CLIENT_RESULT_ERR_...</code> / watchdog). So: respond fast, never block the handler on network/disk; copy the message (<code>es_retain_message</code>) if deferring, decide on another queue, respond with <code>es_respond_auth_result</code>. Use caching (allow-verdict cache keyed by CDHash) so repeat exec of the same binary is O(1).</p>
+<p><b>Muting:</b> <code>es_mute_process</code> / <code>es_mute_path</code> to drop noisy known-good sources (your own agent!) — the difference between 3% and 30% CPU on a busy Mac. Also mention inversion (mute-all-except) for targeted monitoring.</p>
+<p>DEX angle: for an experience/telemetry agent, prefer NOTIFY subscriptions and aggressive muting; AUTH is for security posture enforcement — you've done both sides at JumpCloud.</p></div></details>
+</div>
+
+<h3>4.2 Network Extension (NE)</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>Provider types — pick the right one</summary><div class="body">
+<table>
+<tr><th>Provider</th><th>Sees / controls</th><th>Use</th></tr>
+<tr><td>NEFilterDataProvider (content filter)</td><td>Every socket's flows inline; allow/deny/peek per flow. Data never leaves the extension sandbox.</td><td>Firewalling, DLP, per-app visibility</td></tr>
+<tr><td>NEDNSProxyProvider</td><td>All DNS queries</td><td>DNS security/telemetry</td></tr>
+<tr><td>NEPacketTunnelProvider</td><td>L3 packets via virtual utun interface</td><td>Full VPN</td></tr>
+<tr><td>NEAppProxyProvider</td><td>Per-app TCP/UDP flows</td><td>Per-app VPN/ZTNA (your Zscaler prep transfers here)</td></tr>
+<tr><td>NETransparentProxyProvider</td><td>Selected flows, transparently</td><td>Modern ZTNA-style interception without full VPN</td></tr>
+</table>
+<p>Flow vocabulary: <code>NEFilterFlow</code> carries app signing identifier + audit token → per-process attribution. Verdicts: allow, drop, needRules, peek more bytes. Filter data provider runs sandboxed with no network access by design (privacy) — control provider handles config.</p></div></details>
+</div>
+
+<h3>4.3 Security.framework, Keychain, Secure Enclave</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>Keychain & Secure Enclave — your device-trust story as an answer</summary><div class="body">
+<p><b>Commit:</b> Keychain items are <code>SecItem</code> records gated by access control (<code>kSecAttrAccessible*</code>, ACLs, access groups); Secure Enclave keys (<code>kSecAttrTokenIDSecureEnclave</code>) are generated inside the SEP — the private key never exists in host memory; you get a key handle and the SEP performs signatures. Attach <code>SecAccessControl</code> (biometry/device-passcode) for use-time gating.</p>
+<p>Then your story: certificate-based device trust at JumpCloud — device identity key in the Enclave, CSR out, cert into Keychain, mutual-TLS/conditional-access signals from possession + posture. This one answer covers Security.framework, PKI, and zero-trust simultaneously — rehearse it as a 90-second set piece.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Code-signing APIs: SecCode / SecStaticCode / designated requirements</summary><div class="body">
+<p>For validating <i>other</i> processes (the agent-security question): <code>SecCodeCopyGuestWithAttributes</code> from an audit token → <code>SecCodeCheckValidity</code> against a requirement string (e.g., <code>anchor apple generic and certificate leaf[subject.OU] = "TEAMID"</code>). This is how you harden XPC — connect it in §6.</p></div></details>
+</div>
+
+<h3>4.4 SystemConfiguration & CoreFoundation</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>SystemConfiguration — what lives there</summary><div class="body">
+<p><code>SCDynamicStore</code>: the live system config database (network state, DNS, proxies, console user) with change notifications — how an agent reacts to network transitions without polling. <code>SCNetworkReachability</code> (legacy; prefer <code>NWPathMonitor</code> from Network.framework — saying that is a currency signal). <code>SCPreferences</code> for network set config. DEX relevance: network-change events are core experience telemetry.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>CoreFoundation memory rules + runloop integration</summary><div class="body">
+<p>The Create/Copy rule (+1, you release) vs Get rule (borrowed); <code>CFRetain/CFRelease</code>; toll-free bridging with Foundation; in Swift, <code>Unmanaged&lt;T&gt;</code>. CFRunLoop: sources/timers/observers — many old C APIs (SCDynamicStore, IOKit notifications) deliver via runloop sources or can be pointed at dispatch queues (<code>SCDynamicStoreSetDispatchQueue</code>); prefer queues in a daemon.</p></div></details>
+</div>
+
+<h3>4.5 IOKit</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>IOKit from userspace — what an agent uses it for</summary><div class="body">
+<p><b>Commit:</b> IOKit is the driver framework; from userspace you query the IORegistry — the live device tree — via matching: <code>IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IOUSBHostDevice"), ...)</code>, then read properties (<code>IORegistryEntryCreateCFProperties</code>). Notifications (<code>IONotificationPort</code>) for device add/remove. DEX/agent uses: hardware inventory (serial, model), battery/power state (<code>IOPMPowerSource</code>), USB device monitoring, display info, sleep/wake notifications (<code>IORegisterForSystemPower</code>) — sleep/wake is classic experience telemetry.</p>
+<p>Currency note to volunteer: kexts are deprecated; DriverKit/dexts replaced them for drivers, and for monitoring you use ES + IOKit userspace APIs — you never need a kext for an agent today.</p></div></details>
+</div>
+
+<h2 id="sysext">5 · System Extensions, Signing, Notarization, TCC <span class="tag">LIGHT</span></h2>
+<p class="lead">You own this daily — skim for vocabulary precision.</p>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>System Extension lifecycle & why they replaced kexts</summary><div class="body">
+<p>Kexts ran in kernel space — one bug panics the machine, and they weakened platform security. System Extensions (ES clients, NE providers, DriverKit) run in userspace with entitlements, installed via <code>OSSystemExtensionRequest</code> from the containing app in <code>/Applications</code>, approved by the user (or silently via MDM profile — the fleet answer), activated/upgraded/deactivated through <code>systemextensionsctl</code>-visible state machine. Extension survives app deletion until deactivated. Delivery for fleets: MDM pushes the SysExt + TCC/notification payloads → zero-touch activation — say this; it's the enterprise-agent differentiator.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>Signing chain: certificates → entitlements → hardened runtime → notarization → Gatekeeper</summary><div class="body">
+<p>The 60-second narrative: Developer ID signs the binary (codesign, secure timestamps); entitlements are baked into the signature; hardened runtime restricts dylib injection/debugging unless exception entitlements are present; notarization (<code>notarytool</code>) submits to Apple for automated malware scan → staple the ticket to the pkg/app; Gatekeeper checks quarantine-flagged first launches: valid Dev ID + notarization ticket, else blocked. Verification: <code>codesign -dv --verify</code>, <code>spctl -a -vvv</code>. TCC: privacy database gating Full Disk Access, screen recording etc. — for agents, granted via MDM PPPC profiles instead of user prompts.</p></div></details>
+</div>
+
+<h2 id="concurrency">6 · Concurrency & IPC <span class="tag">HEAVY</span></h2>
+<p class="lead">JD: "multi-threading, concurrency, and inter-process communication (Unix domain sockets, XPC)." Expect at least one full question chain here.</p>
+
+<h3>6.1 Threads, locks, atomics</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>Mutex vs spinlock vs read-write lock vs semaphore</summary><div class="body">
+<p>Mutex: sleeps the thread on contention — default. Spinlock: burns CPU waiting — only for tiny critical sections where sleep/wake costs more; on macOS use <code>os_unfair_lock</code> (never the deprecated OSSpinLock — priority-inversion prone). RW lock: many readers or one writer — read-heavy state like agent config. Semaphore: counting resource gate; <code>dispatch_semaphore</code>. Condition variable: wait-for-predicate with a mutex, always in a while loop (spurious wakeups).</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Deadlock — conditions, and one you actually debugged</summary><div class="body">
+<p><b>Commit:</b> Four Coffman conditions — mutual exclusion, hold-and-wait, no preemption, circular wait; break any one, classically by global lock ordering. Then go concrete: dispatch_sync onto the queue you're already on is the #1 macOS deadlock; lock inversion between a callback thread and main thread is #2. Have your own Instruments/LLDB war story ready (you listed concurrency defects on the resume — pick one, 60 seconds, symptom → hypothesis → tool → fix → prevention).</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Atomics & memory ordering — how deep to go</summary><div class="body">
+<p>Safe depth: <code>std::atomic</code> gives race-free single-variable access; default <code>seq_cst</code> ordering is safest; acquire/release pairs synchronize "everything before the release-store is visible after the acquire-load" — the basis of lock-free flags and double-checked locking done right. Relaxed = counters only. If pushed further: say you reach for proven primitives over hand-rolled lock-free structures in a shipping agent — that's the senior answer, not a dodge.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>GCD mechanics rapid-fire</summary><div class="body">
+<p>Serial vs concurrent queues; queues ≠ threads (thread pool underneath, ~1 thread per core plus overcommit); <code>dispatch_async</code> vs <code>sync</code>; target queue hierarchies to serialize subsystems; QoS classes and priority inversion (sync wait from high-QoS on low-QoS work gets boosted); <code>DispatchSource</code> for signals/timers/fd events — a daemon's event backbone; barriers on concurrent queues for reader-writer patterns.</p></div></details>
+</div>
+
+<h3>6.2 IPC: XPC and Unix domain sockets</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>XPC — architecture and the security question they always ask</summary><div class="body">
+<p><b>Commit:</b> XPC is macOS's structured IPC over Mach messages: <code>NSXPCConnection</code> exposes a protocol-typed remote object (or the C <code>xpc_connection_t</code> API); launchd owns service lifecycle — on-demand launch, crash relaunch — via MachServices in the daemon's plist.</p>
+<p>The security follow-up (guaranteed for an agent role): <b>never trust the connection by default.</b> In <code>listener(_:shouldAcceptNewConnection:)</code>, take the connection's audit token, build <code>SecCode</code> from it, and verify a designated requirement (your Team ID + signing identifier + hardened runtime); optionally check entitlements. PID checks are race-prone (PID reuse) — audit token is the correct identity. Also: define narrow protocols, validate every input (it's a trust boundary), and set interruption/invalidation handlers for reconnect logic.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>Unix domain sockets — and when you'd pick them over XPC</summary><div class="body">
+<p><b>Commit:</b> UDS = socket API (<code>AF_UNIX</code>) with a filesystem path endpoint; kernel-buffered byte stream (or datagrams), works with kqueue/dispatch sources, and crucially is <b>cross-platform-friendly</b> — the natural transport when your agent core is portable C++ (Omnissa's world). XPC when both ends are Apple-native and you want launchd lifecycle + typed protocols; UDS when the C++ core, CLI tools, or non-Apple components need in. Peer credentials via <code>getpeereid</code>/<code>LOCAL_PEERCRED</code>; permissions via socket file mode + directory perms. You run both at JumpCloud — say which carries what and why.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Framing, versioning, and backpressure on a UDS protocol</summary><div class="body">
+<p>Streams don't preserve message boundaries → length-prefixed frames (4-byte LE length + payload, cap max size); version field in a header for rolling upgrades (daemon and UI updated at different times — fleet reality); backpressure: bounded queues + drop/coalesce telemetry rather than ballooning memory — a DEX agent must degrade gracefully, never become the experience problem it measures. This paragraph is design-round gold; reuse it in §12.</p></div></details>
+</div>
+
+<h2 id="networking">7 · Networking & TLS <span class="tag">MEDIUM</span></h2>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>TLS 1.3 handshake — the 90-second version</summary><div class="body">
+<p>ClientHello (supported suites, key share via ECDHE, SNI) → ServerHello + certificate + CertVerify + Finished → client verifies chain to trusted root, checks hostname, sends Finished → symmetric session keys derived (HKDF) → application data. 1.3 = 1-RTT, forward secrecy mandatory (ephemeral keys), old suites gone. mTLS adds a client certificate — tie to your device-trust cert work. Certificate pinning: pin SPKI hash, plan rotation.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>OpenSSL vs Apple stacks — the JD says OpenSSL</summary><div class="body">
+<p><b>Commit:</b> Cross-platform C++ cores use OpenSSL because Secure Transport/Network.framework are Apple-only. Know the object model: <code>SSL_CTX</code> (per-process config: cert, key, verify mode, min TLS version) → <code>SSL</code> per connection → <code>SSL_connect/read/write</code>; verify callback + <code>SSL_get_verify_result</code>; BIO abstraction for memory/socket I/O. Honest framing if probed: your shipped TLS work used Apple's stacks and WebRTC's built-in (BoringSSL-based) crypto; you know the OpenSSL API shape and the concepts are identical. Commit, then caveat.</p></div></details>
+<details><summary><span class="lvl core">CORE</span>HTTP client in an agent: pooling, retries, backoff</summary><div class="body">
+<p>Keep-alive + connection pooling (HTTP/2 multiplexing where available); timeouts on connect/read separately; retries only on idempotent requests, with exponential backoff + jitter (thundering-herd at fleet scale — million devices retrying in sync will DDoS your own backend; you've lived this at JumpCloud); request coalescing/batching for telemetry; proxy awareness via SystemConfiguration (PAC files, enterprise proxies) — very Omnissa-relevant.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Sockets rapid-fire (they may go old-school)</summary><div class="body">
+<p>TCP vs UDP trade-offs (your Citrix MTU story = ready-made answer); <code>SO_REUSEADDR</code>, <code>TCP_NODELAY</code> (Nagle vs latency); non-blocking I/O + kqueue on macOS (epoll's cousin); EOF = read returns 0; partial writes are normal — loop; SIGPIPE on write-to-closed (set <code>SO_NOSIGPIPE</code>). DNS: A/AAAA, caching, mDNSResponder on macOS.</p></div></details>
+</div>
+
+<h2 id="packaging">8 · Packaging & Installers <span class="tag">LIGHT</span></h2>
+<p class="lead">JD names pkgbuild, productbuild, Distribution XML, pre/post scripts explicitly. You own this — have the pipeline narrative crisp.</p>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>The pipeline, end to end, in one breath</summary><div class="body">
+<pre><code><span class="c"># 1. Component pkg: payload + component plist + scripts</span>
+pkgbuild --root ./payload --identifier com.corp.agent --version 2.4.0 \
+         --scripts ./scripts --install-location / Agent.pkg
+<span class="c"># 2. Distribution (product) pkg: wraps components + Distribution XML</span>
+productbuild --distribution Distribution.xml --package-path . Installer.pkg
+<span class="c"># 3. Sign with Developer ID *Installer* cert (not Application cert)</span>
+productsign --sign "Developer ID Installer: Corp (TEAMID)" Installer.pkg Signed.pkg
+<span class="c"># 4. Notarize + staple</span>
+xcrun notarytool submit Signed.pkg --keychain-profile ci --wait
+xcrun stapler staple Signed.pkg</code></pre>
+<p>Distribution XML: title, os-version/arch requirements, JS <code>installation-check</code>/<code>volume-check</code>, choice outline, pkg-refs. Scripts: <code>preinstall</code>/<code>postinstall</code>, exit 0 or the install fails; run as root; <code>$3</code> = target volume. Gotchas worth volunteering: component plist <code>BundleIsRelocatable</code> must be false for agents; postinstall loads the LaunchDaemon (<code>launchctl bootstrap system</code>); upgrades must handle "daemon already running" (bootout first); receipts via <code>pkgutil --pkgs</code>.</p></div></details>
+</div>
+
+<h2 id="buildtest">9 · CMake & Google Test — Gap Crash Courses <span class="tag warn">GAP</span></h2>
+<p class="lead">Your two honest gaps. Goal: conversational competence + a confident bridge line, not false mastery. Each is a 2-hour study block.</p>
+
+<h3>9.1 CMake in two hours</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>Mental model + the file you should be able to sketch</summary><div class="body">
+<p>CMake is a build-system <i>generator</i>: CMakeLists.txt → generates Ninja/Make/Xcode projects. Modern CMake is <b>target-based</b>: everything hangs off targets, and properties propagate via <code>PUBLIC/PRIVATE/INTERFACE</code>.</p>
+<pre><code><span class="f">cmake_minimum_required</span>(VERSION 3.20)
+<span class="f">project</span>(agent CXX)
+<span class="f">set</span>(CMAKE_CXX_STANDARD 17)
+
+<span class="f">add_library</span>(agent_core STATIC src/core.cpp src/telemetry.cpp)
+<span class="f">target_include_directories</span>(agent_core <span class="k">PUBLIC</span> include)   <span class="c"># consumers get it too</span>
+<span class="f">target_link_libraries</span>(agent_core <span class="k">PRIVATE</span> OpenSSL::SSL)  <span class="c"># impl detail, not propagated</span>
+
+<span class="f">add_executable</span>(agentd src/main.cpp)
+<span class="f">target_link_libraries</span>(agentd <span class="k">PRIVATE</span> agent_core)
+
+<span class="k">if</span>(APPLE)
+  <span class="f">target_link_libraries</span>(agentd <span class="k">PRIVATE</span> <span class="s">"-framework SystemConfiguration"</span> <span class="s">"-framework IOKit"</span>)
+<span class="k">endif</span>()</code></pre>
+<p>Vocabulary to have: out-of-source builds (<code>cmake -B build -G Ninja</code>, <code>cmake --build build</code>); <code>find_package</code> + imported targets (<code>OpenSSL::SSL</code>); <code>CMAKE_BUILD_TYPE</code> Debug/Release/RelWithDebInfo; toolchain files for cross-compiling; <code>FetchContent</code> for vendoring deps (how you'd pull googletest); generator expressions (<code>$&lt;$&lt;CONFIG:Debug&gt;:...&gt;</code>) — recognize, don't memorize; CTest as the test runner. PUBLIC vs PRIVATE vs INTERFACE is the most-asked conceptual bit: PRIVATE = build me only, INTERFACE = consumers only, PUBLIC = both.</p>
+<p><b>Bridge line:</b> "My cross-platform C++ work at Citrix sat on an established build system I consumed rather than authored; I've since worked through modern target-based CMake — happy to whiteboard a CMakeLists for the agent core." Commit, then caveat.</p></div></details>
+</div>
+
+<h3>9.2 Google Test in one hour</h3>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>The 90% you need</summary><div class="body">
+<pre><code><span class="c">// test_cache.cpp</span>
+<span class="k">#include</span> <span class="s">&lt;gtest/gtest.h&gt;</span>
+<span class="k">#include</span> <span class="s">&lt;gmock/gmock.h&gt;</span>
+
+TEST(VerdictCache, ReturnsCachedAllow) {              <span class="c">// standalone test</span>
+  VerdictCache c;
+  c.put(<span class="s">"cdhash1"</span>, Verdict::Allow);
+  EXPECT_EQ(c.get(<span class="s">"cdhash1"</span>), Verdict::Allow);       <span class="c">// EXPECT = continue, ASSERT = abort test</span>
+}
+
+<span class="k">class</span> <span class="t">AgentFixture</span> : <span class="k">public</span> ::testing::Test {       <span class="c">// fixture: shared SetUp/TearDown</span>
+ <span class="k">protected</span>:
+  <span class="k">void</span> <span class="f">SetUp</span>() <span class="k">override</span> { agent.start(); }
+  Agent agent;
+};
+TEST_F(AgentFixture, EmitsHeartbeat) { EXPECT_TRUE(agent.heartbeatSent()); }
+
+<span class="k">class</span> <span class="t">MockTransport</span> : <span class="k">public</span> Transport {            <span class="c">// gMock: mock virtual interfaces</span>
+ <span class="k">public</span>:
+  MOCK_METHOD(<span class="k">bool</span>, send, (<span class="k">const</span> Payload&amp;), (<span class="k">override</span>));
+};
+TEST(Uploader, RetriesOnFailure) {
+  MockTransport t;
+  EXPECT_CALL(t, send(::testing::_)).Times(3)
+      .WillOnce(::testing::Return(<span class="k">false</span>))
+      .WillOnce(::testing::Return(<span class="k">false</span>))
+      .WillOnce(::testing::Return(<span class="k">true</span>));
+  Uploader(t).upload({});
+}</code></pre>
+<p>Also know the words: parameterized tests (<code>TEST_P</code> + <code>INSTANTIATE_TEST_SUITE_P</code>); death tests (<code>EXPECT_DEATH</code>); test discovery via CTest (<code>gtest_discover_tests</code>); design-for-test = dependency injection behind interfaces so OS calls (ES, sockets) are mockable. Coverage: <code>--coverage</code>/llvm-cov; static analysis: clang-tidy, clang static analyzer, ASan/TSan/UBSan — you can honestly claim sanitizer experience via Xcode's TSan/ASan; say so.</p>
+<p><b>Bridge line:</b> "My unit testing has been XCTest on the Apple side with the same patterns — fixtures, DI, mocks; GTest/gMock is syntax, and I've now written both."</p></div></details>
+</div>
+
+<h2 id="perf">10 · Performance & Instruments <span class="tag">MEDIUM</span></h2>
+<div class="q">
+<details><summary><span class="lvl core">CORE</span>"How do you find a performance problem in the agent?" — the method answer</summary><div class="body">
+<p><b>Commit:</b> Measure before touching anything. Reproduce → profile → hypothesize → fix → re-measure, with the metric defined up front (CPU%, wakeups/sec, RSS, I/O). Tools by symptom:</p>
+<table>
+<tr><th>Symptom</th><th>Tool</th><th>What you look at</th></tr>
+<tr><td>CPU hot</td><td>Time Profiler</td><td>Inverted call tree, per-thread; watch for spin loops, excessive polling</td></tr>
+<tr><td>Memory growth</td><td>Allocations + Leaks</td><td>Generations/mark-heap between idle cycles; abandoned memory vs true leaks; retain cycles via Memory Graph</td></tr>
+<tr><td>Race/deadlock</td><td>TSan; Instruments' system trace</td><td>TSan in CI on unit tests; lock contention in System Trace</td></tr>
+<tr><td>Energy/wakeups</td><td>Energy Log, <code>powermetrics</code></td><td>Timer coalescing, idle-wake counts — fleet agents get blamed for battery; DEX cares deeply</td></tr>
+<tr><td>Custom spans</td><td>os_signpost + Instruments</td><td>Instrument your own pipeline stages; ship os_log telemetry</td></tr>
+</table>
+<p>Close with a real story (your TURN/WebRTC RTT-jitter tuning or a leak you fixed): baseline number → change → after number. Numbers make the answer.</p></div></details>
+<details><summary><span class="lvl deep">DEEP</span>Binary/runtime performance trivia they may probe</summary><div class="body">
+<p>Cache locality beats algorithmic micro-wins (vector over list — again); false sharing (two atomics on one cache line — pad to 64B); branch prediction; <code>-O2</code> vs <code>-Os</code>; dyld launch cost and static vs dynamic linking; page-ins vs RSS vs footprint (use <code>footprint</code>, not just Activity Monitor).</p></div></details>
+</div>
+
+<h2 id="dsa">11 · DSA Round Plan <span class="tag">MEDIUM</span></h2>
+<p class="lead">Reported Omnissa questions: strings, trees, stack-using-vector (follow-up: using queues), digit sums — LeetCode medium. Solve in C++ to reinforce the JD signal. 25–30 problems over the prep window is enough at your level.</p>
+<div class="grid2">
+<div class="card"><h4>Strings</h4><ul><li>Reverse words / in-place ops</li><li>Longest substring w/o repeat (sliding window)</li><li>Group anagrams (hash)</li><li>String compression, atoi edge cases</li></ul></div>
+<div class="card"><h4>Trees</h4><ul><li>All traversals, recursive + iterative (stack!)</li><li>Level order (queue), zigzag</li><li>LCA, diameter, validate BST</li><li>Serialize/deserialize</li></ul></div>
+<div class="card"><h4>Stacks / Queues</h4><ul><li>Stack via queues & queue via stacks (asked!)</li><li>Min-stack, valid parentheses</li><li>Monotonic stack (next greater element)</li><li>LRU cache (list + hash) — also LLD-friendly</li></ul></div>
+<div class="card"><h4>Also cover</h4><ul><li>Two pointers, binary search variants</li><li>Heap: top-K, merge K lists (priority orchestrator!)</li><li>Intervals: merge/insert</li><li>Producer-consumer with condition variable — concurrency coding Q</li></ul></div>
+</div>
+<div class="callout"><b>C++ interview hygiene:</b> use <code>std::string_view</code> for parsing, reserve vectors, pass by const-ref, say the complexity before coding, and narrate iterator-invalidation awareness when erasing in loops. These small signals separate "knows C++" from "writes C++."</div>
+
+<h2 id="design">12 · Design Round <span class="tag">HEAVY</span></h2>
+<p class="lead">Omnissa has asked "design a process orchestrator with priorities" (LLD) and system-design basics. For this team, expect agent-flavored design. Prepare these three cold:</p>
+
+<div class="q">
+<details><summary><span class="lvl core">PREP</span>Design 1: A macOS DEX telemetry agent (their product — near-certain territory)</summary><div class="body">
+<p><b>Components:</b> LaunchDaemon core (C++ portable engine: scheduler, event pipeline, storage, uploader) · platform providers behind an interface (ES client, IOKit/power, SCDynamicStore network events, log scrapers) · System Extension(s) where entitlements demand · menubar/UI app · IPC spine (UDS to the C++ core; XPC where Apple-native) · MDM-delivered profiles for activation/TCC.</p>
+<p><b>Pipeline:</b> providers → bounded lock-free-ish queue → enrichment (process attribution via audit token) → local ring-buffer store (SQLite/flat segments, crash-safe) → batched, compressed, mTLS upload with backoff+jitter → server ACK → prune. Config pull with signed manifests + feature flags for staged rollout.</p>
+<p><b>The trade-offs to volunteer:</b> resource budget (&lt;1–2% CPU, wakeup discipline — the agent must not become the DEX problem); drop/coalesce under backpressure with loss accounting; offline buffering caps; privacy filtering at the edge; upgrade safety (two-process watchdog, versioned IPC frames); fleet blast-radius thinking — staged rollout, kill switch. You can seed everything here from your JumpCloud architecture — this round is yours to win.</p></div></details>
+<details><summary><span class="lvl core">PREP</span>Design 2: Priority process orchestrator (their repeat LLD)</summary><div class="body">
+<p>API: <code>submit(task, priority)</code>, <code>cancel(id)</code>, worker pool <code>run()</code>. Core: <code>std::priority_queue</code> (or map of queues per priority for FIFO-within-priority — mention both, pick map+FIFO to avoid starvation discussion ambiguity), mutex + condition_variable for the worker wait loop, graceful shutdown via poison pill/stop flag. Extensions they push: starvation → aging; dynamic priorities; delayed tasks (min-heap on deadline); thread-pool sizing; exceptions in tasks (capture into future/promise). Write real C++ here — this doubles as the concurrency coding question.</p></div></details>
+<details><summary><span class="lvl core">PREP</span>Design 3: Fleet software distribution / self-update</summary><div class="body">
+<p>You built the Software App Catalog — reuse it: signed manifest (version, hash, staged-rollout ring) → agent polls with jitter → downloads via CDN, verifies signature + hash → installs pkg (installer -pkg), health-checks, auto-rolls-back on failed heartbeat. Discuss delta updates, notarization in the pipeline, and the "never brick the fleet" invariants: canary rings, kill switch, watchdog process.</p></div></details>
+</div>
+
+<h2 id="behavioral">13 · Managerial / Fitment Round <span class="tag">MEDIUM</span></h2>
+<p class="lead">Candidates get rejected here for weak project narration. The JD's own culture bullets — design reviews, 5-whys, RCCAs, on-call, escalations, ownership — are the question list. Map each to one rehearsed story:</p>
+<table>
+<tr><th>JD signal</th><th>Your story (60–90s, STAR, end with a number)</th></tr>
+<tr><td>Customer-impacting escalation</td><td>Pick your sharpest JumpCloud escalation: enterprise customer, agent issue in the field, how you triaged remotely, hotfix + staged rollout, prevention added.</td></tr>
+<tr><td>RCCA / 5-whys</td><td>A production defect you root-caused past the symptom (memory/concurrency bug via Instruments/LLDB fits) — show the "why × 5" chain and the systemic fix (test, lint, design change).</td></tr>
+<tr><td>Design/code review culture</td><td>As tech lead: how you run reviews — secure-by-design checklist for privileged code, what you block on vs coach on.</td></tr>
+<tr><td>On-call</td><td>Your rotation reality: alert quality, runbooks you wrote, an incident you led, MTTR improvement.</td></tr>
+<tr><td>Process improvement</td><td>CI/unit-test coverage push, or AI-native workflow adoption (Cursor/BMAD) with a concrete velocity outcome.</td></tr>
+<tr><td>Why Omnissa / why this role</td><td>Depth over title: DEX agent = your exact stack with a bigger C++ core; Omnissa's platform charter post-spinout; Chennai/Bangalore hybrid fits. <b>Never</b> hint at parallel offers or "exploring."</td></tr>
+<tr><td>Why leave JumpCloud</td><td>Committed answer, no company negativity: you've shipped the charter you were hired for; you want a C++-deep systems role in the DEX/UEM space at a company where endpoint agents are the core product.</td></tr>
+</table>
+<div class="callout bad"><b>Anti-patterns from real Omnissa candidate reports:</b> an HM fixated on "why would you leave a top company" and read hesitation as inconsistency; another candidate was rejected purely for unconvincing project explanations. Both failures are narrative failures, not skill failures. Rehearse out loud.</div>
+
+<h2 id="plan">14 · 12-Day Study Plan</h2>
+<table>
+<tr><th>Day</th><th>Focus</th><th>Output check</th></tr>
+<tr><td>1–2</td><td>§1 C++ deep dive; write the answers out loud</td><td>Explain vtables, move semantics, shared_ptr internals with zero hedging</td></tr>
+<tr><td>3</td><td>§2 Swift + §3 interop; script the WebRTC bridging story</td><td>90-second interop set piece recorded and reviewed</td></tr>
+<tr><td>4</td><td>§4 frameworks vocabulary pass (ES deadlines/muting, NE providers, IOKit registry)</td><td>Whiteboard the ES AUTH flow from memory</td></tr>
+<tr><td>5</td><td>§6 concurrency & IPC; write the priority orchestrator in C++ for real</td><td>Compiling orchestrator w/ condition variable + tests</td></tr>
+<tr><td>6</td><td>§9 CMake (2h) + GTest (1h); wire GTest into the orchestrator via CMake</td><td>ctest runs green — now the "gap" is hands-on truth</td></tr>
+<tr><td>7</td><td>§7 networking/OpenSSL + §8 packaging refresh</td><td>Recite TLS 1.3 + the pkg pipeline unprompted</td></tr>
+<tr><td>8–9</td><td>§11 DSA: 6–8 problems/day in C++ (strings, trees, stacks, heap)</td><td>Mediums in ≤25 min with narrated complexity</td></tr>
+<tr><td>10</td><td>§12 design: run all three designs on paper, 35 min each</td><td>Component diagrams reproducible from memory</td></tr>
+<tr><td>11</td><td>§13 behavioral: write + rehearse all 7 stories out loud</td><td>Each ≤90s, ends with a metric</td></tr>
+<tr><td>12</td><td>Full mock loop (use Claude: one DSA, one domain grill, one design, one HM round), then rest</td><td>Weakest 3 answers re-drilled</td></tr>
+</table>
+
+<h2 id="sources">15 · Sources & Further Study</h2>
+<div class="grid2">
+<div class="card"><h4>Apple — primary</h4><ul class="src">
+<li>Endpoint Security: developer.apple.com/documentation/endpointsecurity</li>
+<li>Network Extension: developer.apple.com/documentation/networkextension</li>
+<li>System Extensions: developer.apple.com/system-extensions</li>
+<li>Notarization &amp; hardened runtime: developer.apple.com/documentation/security/notarizing_macos_software_before_distribution</li>
+<li>XPC: developer.apple.com/documentation/xpc + Creating XPC Services article</li>
+<li>IOKit fundamentals: developer.apple.com/documentation/iokit</li>
+<li>WWDC: "System Extensions and DriverKit" (2019), "Build an Endpoint Security app" (2020), "Filter network traffic" (2019), "Meet Swift C++ interoperability" (2023)</li>
+<li>Swift/C++ interop official guide: swift.org/documentation/cxx-interop</li>
+<li>Quinn "the Eskimo" posts on XPC security &amp; code signing — search Apple Developer Forums "On XPC Security" / "TN3127"</li></ul></div>
+<div class="card"><h4>C++ — canonical</h4><ul class="src">
+<li>Scott Meyers, <i>Effective Modern C++</i> — items 1–42 are interview fuel</li>
+<li>cppreference.com — the reference; read std::memory_order, smart pointer pages</li>
+<li>Anthony Williams, <i>C++ Concurrency in Action</i> — ch. 2–5 for this loop</li>
+<li>isocpp.org C++ Core Guidelines (RAII, ownership)</li>
+<li>CMake: cmake.org/cmake/help/latest/guide/tutorial + "Modern CMake" (cliutils.gitlab.io/modern-cmake)</li>
+<li>GoogleTest primer: google.github.io/googletest/primer.html + gMock for Dummies</li></ul></div>
+<div class="card"><h4>macOS internals / agents</h4><ul class="src">
+<li>Jonathan Levin, <i>*OS Internals</i> Vol I &amp; III — launchd, Mach, security model</li>
+<li>Patrick Wardle, <i>The Art of Mac Malware</i> Vol II (free at taomm.org) — best applied ES/NE monitoring text in print</li>
+<li>objective-see.org tools + blog — real ES/NE agent patterns</li>
+<li>Howard Oakley (eclecticlight.co) — signing, notarization, TCC deep dives</li>
+<li>objc.io — Swift internals essays</li></ul></div>
+<div class="card"><h4>Company & interview intel</h4><ul class="src">
+<li>omnissa.com — platform pages: DEX/DEEM product marketing for their vocabulary (Experience Score, proactive remediation)</li>
+<li>Omnissa Tech Zone (techzone.omnissa.com) — DEX architecture docs; read the DEX solution overview before the HM round</li>
+<li>Glassdoor Omnissa interview reviews; LeetCode discuss "Omnissa MTS" threads — loop shape and repeat questions</li>
+<li>Your own prior prep packs (NetworkExtension/VPN primer from Check Point prep; system-design pack) — directly reusable</li></ul></div>
+</div>
+
+<div class="callout good" style="margin-top:28px"><b>Final reality check.</b> This loop plays to your strengths more than any interview you've run this cycle — it's your day job plus a C++ core you genuinely have history with. The only ways you lose it: hedged answers, a fumbled "why this role at this level," or cold DSA. All three are fixable in 12 days. Commit first, then caveat.</div>
+
+</main>
+</div>
+</body>
+</html>
